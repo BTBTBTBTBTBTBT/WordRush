@@ -113,7 +113,7 @@ export function TitlePencil({ onClick, label }: { onClick: () => void; label: st
   // never competes with the section art. 30px coin, 44px hit area, 80% opacity (iOS GameOrderTitleAccessory).
   return (
     <button type="button" data-squish aria-label={label} onClick={onClick} className="order-pencil order-coin">
-      <span aria-hidden="true" className="order-coin-face"><FamIcon name="shuffle" size={15} ink="var(--order-coin-ink)" /></span>
+      <span aria-hidden="true" className="order-coin-face"><FamIcon name="refresh" size={15} ink="var(--order-coin-ink)" /></span>
     </button>
   );
 }

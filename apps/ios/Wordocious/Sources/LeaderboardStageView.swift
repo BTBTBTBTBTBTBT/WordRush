@@ -15,9 +15,22 @@ struct LeaderboardStageCard<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
+        // Founder 10-09: only the sky wash is clipped to the card; the cloud bank sits ABOVE the wash but behind the
+        // content, unclipped (never cut by the corners), rising a little above the card with its top dissolving into the
+        // cast row so the stage doesn't read as a separate box.
         VStack(spacing: 0) { content() }
-            .background { LeaderboardStageBackdrop(accent: accent) }
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .background(alignment: .top) {
+                Image("art-lb-clouds").resizable().scaledToFit()
+                    .padding(.horizontal, -18)
+                    .opacity(0.85)
+                    .offset(y: -6)
+                    .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.22),
+                                                 .init(color: .black, location: 0.6), .init(color: .clear, location: 0.92)],
+                                         startPoint: .top, endPoint: .bottom).offset(y: -6))
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+            .background { LeaderboardStageBackdrop(accent: accent).clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous)) }
     }
 }
 
@@ -32,13 +45,12 @@ struct LeaderboardStageBackdrop: View {
                 .init(color: accent.opacity(LeaderboardStage.skyMid), location: 0.52),
                 .init(color: accent.opacity(LeaderboardStage.skyBottom), location: 1),
             ], startPoint: .top, endPoint: .bottom)
-            // Founder 10-09: the cloud bank ends ABOVE the WORDOCIOUS row (its edge hid the label): lifted, and its lower
-            // edge fades out instead of stopping under the text.
-            Image("art-lb-clouds").resizable().scaledToFit()
-                .frame(maxWidth: .infinity).opacity(0.75).offset(y: -26)
-                .mask(LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.62),
-                                             .init(color: .clear, location: 0.92)], startPoint: .top, endPoint: .bottom))
-                .accessibilityHidden(true)
+            // Founder 10-09: the stage's tint fades in over its first ~60 pt (no hard top edge under the cast row); the
+            // cloud bank lives on the card (unclipped), see LeaderboardStageCard.
+            .mask(VStack(spacing: 0) {
+                LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 60)
+                Color.black
+            })
             VStack { Spacer(minLength: 0)
                 Image("art-lb-sunburst").resizable().scaledToFit()
                     .frame(maxWidth: .infinity).scaleEffect(1.3, anchor: .bottom)
@@ -113,10 +125,18 @@ struct StageTitleRow: View {
             let day = LeaderboardService.todayLocal()
             let title = LeaderboardBannerView.todayTitle()
             let host = LeaderboardStage.host(day: day)
+            // Founder 10-09: the day's name fills the cloud on two big lines (FRIDAY'S over FINEST); your mascot and the day's
+            // host stand larger at either side of the second line; the floating weekday prop is gone.
+            let words = title.split(separator: " ").map(String.init)
+            let line1 = words.count > 1 ? words.dropLast().joined(separator: " ") : title
+            let line2 = words.count > 1 ? words.last! : ""
             VStack(spacing: 1) {
+                BubbleOneLine(text: line1, palette: .leaderboard, size: 42)
+                    .id(taps)
+                    .padding(.horizontal, 4)
                 HStack(alignment: .bottom, spacing: 2) {
                     // Your mascot leans toward the title (base fixed); a tap hops it and bounces the letters.
-                    StageOwnMascot(size: 62, wizardHat: LeaderboardStage.wearsWizardHat(day: day))
+                    StageOwnMascot(size: 70, wizardHat: LeaderboardStage.wearsWizardHat(day: day))
                         .rotationEffect(.degrees(envReduce || Theme.reduceMotion ? 0 : LeaderboardStage.mascotLeanDegrees), anchor: .bottom)
                         .offset(y: hop)
                         .contentShape(Rectangle())
@@ -124,29 +144,26 @@ struct StageTitleRow: View {
                         .accessibilityHidden(false)
                         .accessibilityLabel("Your mascot")
                         .accessibilityAddTraits(.isButton)
-                    BubbleTextView(text: title, palette: .leaderboard, maxSize: 30, minSize: 20)
+                    BubbleOneLine(text: line2, palette: .leaderboard, size: 42)
                         .id(taps)
                         .frame(maxWidth: .infinity)
-                        .padding(.bottom, 10)
-                    ArtThumbs.image("art-pose-\(host.castId)-\(host.pose)", points: 70)
+                        .padding(.bottom, 14)
+                    ArtThumbs.image("art-pose-\(host.castId)-\(host.pose)", points: 90)
                         .resizable().interpolation(.high).scaledToFit()
-                        .frame(width: 66, height: 66)
+                        .frame(width: 72, height: 72)
                         .scaleEffect(x: -1, y: 1)
                         .shadow(color: Color(hex: 0x3C1478).opacity(0.22), radius: 4, x: 0, y: 3)
                         .accessibilityHidden(true)
                 }
-                .frame(minHeight: 76)
-                // The weekday's prop floats beside the title with its own little motion.
-                .overlay(alignment: .topTrailing) {
-                    StageDayProp(prop: LeaderboardStage.dayProp(day: day)).padding(.trailing, 70).offset(y: -4)
-                }
+                .frame(minHeight: 70)
+                .padding(.top, -25)
                 // Ticks once a second for the reset clock; the date flips at local midnight.
                 TimelineView(.periodic(from: .now, by: 1)) { ctx in
                     let date = ctx.date.formatted(.dateTime.month(.abbreviated).day()).uppercased()
-                    // It sits on the pale clouds in every theme (Halloween night too): always the dark warm ink.
+                    // Founder 10-09: the cloud fades out above this line now, so on a dark theme it takes a warm light ink.
                     Text("\(date) · RESETS IN \(LeaderboardBannerView.resetClock())")
                         .font(Brand.font(10.5, .black)).tracking(0.6).monospacedDigit()
-                        .foregroundStyle(Self.ink)
+                        .foregroundStyle(Theme.isDark ? Color(hex: 0xFDE68A).opacity(0.92) : Self.ink)
                         .lineLimit(1).minimumScaleFactor(0.7)
                 }
             }

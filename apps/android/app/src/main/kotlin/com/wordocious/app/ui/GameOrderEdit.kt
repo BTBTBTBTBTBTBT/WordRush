@@ -215,7 +215,7 @@ fun GameOrderPencil(state: GameOrderEditState, section: GameOrderSection, modifi
                 .background(fill, androidx.compose.foundation.shape.CircleShape)
                 .border(1.dp, hair, androidx.compose.foundation.shape.CircleShape),
             contentAlignment = Alignment.Center,
-        ) { FamIconImage(FamIcon.SHUFFLE, ink, 15.dp) }
+        ) { FamIconImage(FamIcon.REFRESH, ink, 15.dp) }   // circular arrows (shuffle is Muddle's icon)
     }
 }
 

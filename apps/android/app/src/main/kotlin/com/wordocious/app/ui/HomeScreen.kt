@@ -290,14 +290,20 @@ fun HomeScreen(
             // daily's row is on the server.
             val recordedTick by com.wordocious.app.data.DailyCompletionsService.recordedTick.collectAsState()
             val authUserId = authProfile?.id
+            // Founder 10-09: while the session restores at launch the profile is still null — keep the cached runs
+            // (zeroing them flipped the headline "FLAWLESS 3-PEAT!" to the plain line and back, nudging the banner).
+            val authLoading by com.wordocious.app.data.AuthService.isLoading.collectAsState()
             val cachedRows = remember { com.wordocious.app.data.HomeStreaksService.cachedRowStreaks() }
             val wordStreaks by produceState(
                 initialValue = com.wordocious.core.DayStreaks(cachedRows?.wordSweep ?: 0, cachedRows?.wordFlawless ?: 0),
-                recordedTick, authUserId,
+                recordedTick, authUserId, authLoading,
             ) {
-                if (authUserId == null) { value = com.wordocious.core.DayStreaks(0, 0); return@produceState }
+                if (authUserId == null) { if (!authLoading) value = com.wordocious.core.DayStreaks(0, 0); return@produceState }
                 val s = com.wordocious.app.data.MatchStatsService.dailySweepStats()
-                value = com.wordocious.core.DayStreaks(s.currentSweepStreak, s.currentFlawlessStreak)
+                // A swept day IS a run of at least one: a zero read then is early / partial, so the cached run stays.
+                if (s.currentSweepStreak > 0 || s.currentFlawlessStreak > 0 ||
+                    com.wordocious.core.groupTier(progress(wordKeys)) == com.wordocious.core.BannerTier.NONE)
+                    value = com.wordocious.core.DayStreaks(s.currentSweepStreak, s.currentFlawlessStreak)
             }
             // 2.8 items 7 + 48: the best flawless run ever, so the headline can say "NEW BEST!".
             val bestFlawless by produceState(initialValue = 0, recordedTick, authUserId) {
@@ -305,10 +311,12 @@ fun HomeScreen(
             }
             val puzzleStreaks by produceState(
                 initialValue = com.wordocious.core.DayStreaks(cachedRows?.puzzlesSweep ?: 0, cachedRows?.puzzlesFlawless ?: 0),
-                recordedTick, authUserId, puzzleKeys,
+                recordedTick, authUserId, puzzleKeys, authLoading,
             ) {
-                value = if (authUserId == null) com.wordocious.core.DayStreaks(0, 0)
-                        else com.wordocious.app.data.HomeStreaksService.puzzleStreaks(puzzleKeys)
+                if (authUserId == null) { if (!authLoading) value = com.wordocious.core.DayStreaks(0, 0); return@produceState }
+                val fresh = com.wordocious.app.data.HomeStreaksService.puzzleStreaks(puzzleKeys)
+                if (fresh.sweep > 0 || fresh.flawless > 0 ||
+                    com.wordocious.core.groupTier(progress(puzzleKeys)) == com.wordocious.core.BannerTier.NONE) value = fresh
             }
             // Keep the widget's row runs in step with the banner's.
             androidx.compose.runtime.LaunchedEffect(wordStreaks, puzzleStreaks, authUserId) {

@@ -282,7 +282,8 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
         data-puppet-ready={puppetsOn ? '' : undefined}
         data-musical={musical ? '' : undefined}
         className={`castrow relative pointer-events-none select-none ${className}`}
-        style={{ paddingTop: crown ? '5%' : 4, ...style }}
+        // Founder 10-09: the crown's room is always reserved (Pro resolves late; growing the row shifted Home).
+        style={{ paddingTop: '5%', ...style }}
       >
         {ground && (
           <span

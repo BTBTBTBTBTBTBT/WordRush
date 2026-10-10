@@ -223,5 +223,5 @@ private fun RowScope.RecordsHeader(daily: Boolean, onDaily: (Boolean) -> Unit, r
             Modifier.weight(1f), maxLines = 2,
         )
     }
-    SoftSegment(listOf(true to "DAILY", false to "ALL-TIME"), daily, onDaily)
+    SoftSegment(listOf(true to "DAILY", false to "ALL-TIME"), daily, onChange = onDaily)
 }

@@ -391,7 +391,9 @@ fun LivingCastHeader(
         val width = if (constraints.hasBoundedWidth) constraints.maxWidth else (360.dp.roundToPx())
         val h = SeasonSkins.figureHeight(width.toFloat(), season)
         val lift = CastCrops.STAGGER * h
-        val crownSpace = if (crown) h * CROWN_SPACE else 0f
+        // Founder 10-09: the crown's room is always reserved — Pro resolves a beat after launch, and growing the row then
+        // shoved Home down on every cold start.
+        val crownSpace = h * CROWN_SPACE
         val total = (h + lift + crownSpace).roundToInt()
         val overlap = CastCrops.OVERLAP * width
         val placeables = measurables.take(MascotId.entries.size).mapIndexed { i, m ->

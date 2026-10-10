@@ -80,7 +80,7 @@ export default function HomePage() {
   // (only a footer re-tap on Home scrolls it to the top).
   const homeScrollRef = useRef<HTMLDivElement | null>(null);
   useTabScrollMemory('/', homeScrollRef);
-  const { user, profile, signOut, isProActive } = useAuth();
+  const { user, profile, signOut, isProActive, loading: authLoading } = useAuth();
   const [limitModal, setLimitModal] = useState<{ open: boolean; modeName: string; modeHref: string }>({ open: false, modeName: '', modeHref: '' });
   const [inviteOpen, setInviteOpen] = useState(false);
   const livePlayerCount = useLivePlayerCount();
@@ -307,7 +307,8 @@ export default function HomePage() {
   const completionsKey = Array.from(todayDailies.keys()).sort().join(',');
   const puzzleKeys = puzzleCards.map((c) => c.dbKey as string).join(',');
   useEffect(() => {
-    if (!user?.id) { setSweepStreaks({ sweep: 0, flawless: 0 }); setPuzzleStreaks({ sweep: 0, flawless: 0 }); return; }
+    // Founder 10-09: while the session is still restoring, keep the cached runs (zeroing them flipped the headline).
+    if (!user?.id) { if (authLoading) return; setSweepStreaks({ sweep: 0, flawless: 0 }); setPuzzleStreaks({ sweep: 0, flawless: 0 }); return; }
     let cancelled = false;
     // AU5: after the cold-start intro has landed.
     const cancelWait = afterIntro(() => {
@@ -337,7 +338,7 @@ export default function HomePage() {
         .catch(() => {});
     });
     return () => { cancelled = true; cancelWait(); };
-  }, [user?.id, completionsKey, puzzleKeys]);
+  }, [user?.id, authLoading, completionsKey, puzzleKeys]);
 
   useEffect(() => {
     if (!user?.id || playMode !== 'unlimited') return;

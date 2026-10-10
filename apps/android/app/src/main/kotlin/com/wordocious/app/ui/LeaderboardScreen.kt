@@ -993,7 +993,7 @@ internal fun LbSectionLabel(text: String, modifier: Modifier = Modifier) = LbBoa
 /** Everyone | Friends (§207 toggle) as the tinted segmented control. */
 @Composable
 private fun FriendsSegment(friendsOnly: Boolean, onChange: (Boolean) -> Unit) =
-    SoftSegment(listOf(false to "Everyone", true to "Friends"), friendsOnly, onChange, small = true)
+    SoftSegment(listOf(false to "Everyone", true to "Friends"), friendsOnly, small = true, onChange = onChange)
 
 /**
  * The play row (FINISH_SPEC C2, compressed by AS4): ONE compact tinted row in the game's
