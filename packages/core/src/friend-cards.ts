@@ -42,7 +42,7 @@ export interface CardGame {
 export interface GameTile {
   gameId: string;
   kind: FriendlyKind;
-  /** One short word: "Your pick", "Your move", "1 of 6", "GHO…". */
+  /** What waits, in plain words under the game's name: "Pick rock, paper or scissors", "Your word must start with E". */
   word: string;
   yourTurn: boolean;
 }
@@ -74,26 +74,29 @@ export interface FriendsLayout {
 
 const MAX_FRAGMENT = 6;
 
-/** The one-word state under a game tile. */
+/**
+ * What waits, in plain words (founder 10-09: the old two-word states like "Starts E" / "Your pick" were confusing
+ * for anyone new to the pocket games). The tile shows the game's name above this line.
+ */
 export function tileWord(kind: FriendlyKind, state: FriendlyState, me: Side, yourTurn: boolean): string {
   switch (kind) {
-    case 'rps': return yourTurn ? 'Your pick' : 'Picked';
-    case 'ttt': return yourTurn ? 'Your move' : 'Their move';
-    case 'coin': return yourTurn ? 'Your call' : 'Their call';
+    case 'rps': return yourTurn ? 'Pick rock, paper or scissors' : 'Waiting for their pick';
+    case 'ttt': return yourTurn ? 'Your turn to place a tile' : 'Waiting for their move';
+    case 'coin': return yourTurn ? 'Call heads or tails' : 'Waiting for their call';
     case 'pass': {
       const used = state.kind === 'pass' ? state.guesses.length : 0;
-      return yourTurn ? `${Math.min(used + 1, PASS_MAX_GUESSES)} of ${PASS_MAX_GUESSES}` : 'Their guess';
+      return yourTurn ? `Your guess (${Math.min(used + 1, PASS_MAX_GUESSES)} of ${PASS_MAX_GUESSES})` : 'Waiting for their guess';
     }
     case 'ghost': {
-      if (!yourTurn) return 'Their letter';
+      if (!yourTurn) return 'Waiting for their letter';
       const f = state.kind === 'ghost' ? state.fragment.toUpperCase() : '';
-      if (!f) return 'Start it';
-      return f.length > MAX_FRAGMENT ? `${f.slice(0, MAX_FRAGMENT)}…` : `${f}…`;
+      if (!f) return 'Start the word: add a letter';
+      return `Add a letter to ${f.length > MAX_FRAGMENT ? `${f.slice(0, MAX_FRAGMENT)}…` : f}`;
     }
     case 'chain': {
-      if (!yourTurn) return 'Their word';
+      if (!yourTurn) return 'Waiting for their word';
       const last = state.kind === 'chain' ? state.words[state.words.length - 1] : undefined;
-      return last ? `Starts ${last.word[last.word.length - 1].toUpperCase()}` : 'Any word';
+      return last ? `Your word must start with ${last.word[last.word.length - 1].toUpperCase()}` : 'Start the chain with any word';
     }
   }
 }

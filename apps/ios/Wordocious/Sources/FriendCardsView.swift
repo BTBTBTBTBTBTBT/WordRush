@@ -137,11 +137,18 @@ struct FriendCardView: View {
         Button {
             if let g = games[t.gameId] { onOpenGame(g) }
         } label: {
+            // Founder 10-09: the game's NAME, then what waits in plain words (two lines), never a cryptic two-word state.
             VStack(spacing: 3) {
-                gameArt(t.kind, size: 38)
-                Text(t.word).font(Brand.font(11, .black))
+                gameArt(t.kind, size: 34)
+                Text(t.kind.title).font(Brand.font(12, .black))
                     .foregroundStyle(quiet ? FriendsInk.rowSub : FriendsInk.heading)
-                    .lineLimit(1).minimumScaleFactor(0.6)
+                    .lineLimit(1).minimumScaleFactor(0.65)
+                Text(t.word).font(Brand.font(10.5, .bold))
+                    .foregroundStyle(quiet ? FriendsInk.rowSub : FriendsInk.heading.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2).minimumScaleFactor(0.8)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxHeight: .infinity, alignment: .top)
             }
             .padding(.vertical, 8).padding(.horizontal, 6)
             .frame(maxWidth: .infinity)

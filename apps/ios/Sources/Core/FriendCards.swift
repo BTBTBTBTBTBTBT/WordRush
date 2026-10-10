@@ -90,26 +90,27 @@ public enum FriendCards {
     /// The one-word state under a game tile.
     public static func tileWord(kind: FriendlyKind, state: FriendlyState, me: FriendlySide, yourTurn: Bool) -> String {
         switch kind {
-        case .rps: return yourTurn ? "Your pick" : "Picked"
-        case .ttt: return yourTurn ? "Your move" : "Their move"
-        case .coin: return yourTurn ? "Your call" : "Their call"
+        // Plain words under the game's name (founder 10-09; core friend-cards.ts tileWord).
+        case .rps: return yourTurn ? "Pick rock, paper or scissors" : "Waiting for their pick"
+        case .ttt: return yourTurn ? "Your turn to place a tile" : "Waiting for their move"
+        case .coin: return yourTurn ? "Call heads or tails" : "Waiting for their call"
         case .pass:
             var used = 0
             if case .pass(let p) = state { used = p.guesses.count }
             let cap = FriendlyGames.passMaxGuesses
-            return yourTurn ? "\(min(used + 1, cap)) of \(cap)" : "Their guess"
+            return yourTurn ? "Your guess (\(min(used + 1, cap)) of \(cap))" : "Waiting for their guess"
         case .ghost:
-            if !yourTurn { return "Their letter" }
+            if !yourTurn { return "Waiting for their letter" }
             var f = ""
             if case .ghost(let g) = state { f = g.fragment.uppercased() }
-            if f.isEmpty { return "Start it" }
-            return f.count > maxFragment ? "\(String(f.prefix(maxFragment)))…" : "\(f)…"
+            if f.isEmpty { return "Start the word: add a letter" }
+            return "Add a letter to \(f.count > maxFragment ? "\(String(f.prefix(maxFragment)))…" : f)"
         case .chain:
-            if !yourTurn { return "Their word" }
+            if !yourTurn { return "Waiting for their word" }
             if case .chain(let c) = state, let last = c.words.last?.word.last {
-                return "Starts \(String(last).uppercased())"
+                return "Your word must start with \(String(last).uppercased())"
             }
-            return "Any word"
+            return "Start the chain with any word"
         }
     }
 

@@ -75,28 +75,29 @@ object FriendCards {
 
     /** The one-word state under a game tile. */
     fun tileWord(kind: FriendlyKind, state: FriendlyState, me: Side, yourTurn: Boolean): String = when (kind) {
-        FriendlyKind.RPS -> if (yourTurn) "Your pick" else "Picked"
-        FriendlyKind.TTT -> if (yourTurn) "Your move" else "Their move"
-        FriendlyKind.COIN -> if (yourTurn) "Your call" else "Their call"
+        // Plain words under the game's name (founder 10-09; core friend-cards.ts tileWord).
+        FriendlyKind.RPS -> if (yourTurn) "Pick rock, paper or scissors" else "Waiting for their pick"
+        FriendlyKind.TTT -> if (yourTurn) "Your turn to place a tile" else "Waiting for their move"
+        FriendlyKind.COIN -> if (yourTurn) "Call heads or tails" else "Waiting for their call"
         FriendlyKind.PASS -> {
             val used = (state as? PassState)?.guesses?.size ?: 0
-            if (yourTurn) "${minOf(used + 1, PASS_MAX_GUESSES)} of $PASS_MAX_GUESSES" else "Their guess"
+            if (yourTurn) "Your guess (${minOf(used + 1, PASS_MAX_GUESSES)} of $PASS_MAX_GUESSES)" else "Waiting for their guess"
         }
         FriendlyKind.GHOST -> {
             if (!yourTurn) {
-                "Their letter"
+                "Waiting for their letter"
             } else {
                 val f = ((state as? GhostState)?.fragment ?: "").uppercase()
-                if (f.isEmpty()) "Start it"
-                else if (f.length > MAX_FRAGMENT) "${f.take(MAX_FRAGMENT)}…" else "$f…"
+                if (f.isEmpty()) "Start the word: add a letter"
+                else "Add a letter to ${if (f.length > MAX_FRAGMENT) "${f.take(MAX_FRAGMENT)}…" else f}"
             }
         }
         FriendlyKind.CHAIN -> {
             if (!yourTurn) {
-                "Their word"
+                "Waiting for their word"
             } else {
                 val last = (state as? ChainState)?.words?.lastOrNull()
-                if (last != null && last.word.isNotEmpty()) "Starts ${last.word.last().uppercaseChar()}" else "Any word"
+                if (last != null && last.word.isNotEmpty()) "Your word must start with ${last.word.last().uppercaseChar()}" else "Start the chain with any word"
             }
         }
     }

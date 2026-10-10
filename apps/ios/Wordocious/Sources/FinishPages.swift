@@ -494,21 +494,23 @@ struct PodiumView: View {
             let avatar: CGFloat = compact ? (first ? 48 : 40) : (first ? 54 : 44)
             let stands = PodiumFigure.standsFull(e)
             // Name, points and detail: on a standing podium they ride on a soft plaque that overlaps the step's top edge.
+            // A light-only card turns dark under a dark season surface (Halloween night): the ink follows the card then.
+            let lightInk = lightOnly && SeasonKit.surfaces?.dark != true
             let plaque = VStack(spacing: 2) {
                 Text(e.name)
                     .font(Brand.font(compact ? 12 : 13, .black))
-                    .foregroundStyle(lightOnly ? FinishInk.title : FinishInk.heading)
+                    .foregroundStyle(lightInk ? FinishInk.title : FinishInk.heading)
                     .lineLimit(1).minimumScaleFactor(0.7)
                 // Points stay the headline number (#1 a touch larger), then one muted
                 // detail line (single line, shrink-to-fit, never wraps into the step).
                 Text(e.value)
                     .font(Brand.font((compact ? 11 : 12) + (first ? 1.5 : 0), .heavy)).monospacedDigit()
-                    .foregroundStyle(lightOnly ? FinishInk.muted : FinishInk.secondary)
+                    .foregroundStyle(lightInk ? FinishInk.muted : FinishInk.secondary)
                     .lineLimit(1).minimumScaleFactor(0.7)
                 if let d = e.detail, !d.isEmpty {
                     Text(d)
                         .font(Brand.font(compact ? 9 : 10, first ? .heavy : .bold)).monospacedDigit()
-                        .foregroundStyle((lightOnly ? FinishInk.muted : FinishInk.secondary).opacity(first ? 0.95 : 0.8))
+                        .foregroundStyle((lightInk ? FinishInk.muted : FinishInk.secondary).opacity(first ? 0.95 : 0.8))
                         .lineLimit(1).minimumScaleFactor(0.6)
                 }
             }
