@@ -209,9 +209,12 @@ struct DailyProvider: TimelineProvider {
         let now = Date()
         let snap = loadSnapshot()
         let midnight = nextLocalMidnight(after: now)
+        // Founder 10-10 (the large widget stayed blank on device): WidgetKit renders EVERY entry up front, and the large
+        // layout draws ~20 images per entry — 40 entries blew its render budget. At most 6 entries now (~the next
+        // 5 hours, the label steps hourly; the countdown itself ticks live), then a fresh timeline is requested.
         var dates: [Date] = [now]
         var t = now
-        while dates.count < 40 {
+        while dates.count < 6 {
             let left = midnight.timeIntervalSince(t)
             let step: TimeInterval = left <= 3600 ? 900 : 3600
             var rem = left.truncatingRemainder(dividingBy: step)
@@ -221,8 +224,11 @@ struct DailyProvider: TimelineProvider {
             dates.append(t)
         }
         var entries = dates.map { DailyEntry(date: $0, snap: snap) }
-        entries.append(DailyEntry(date: midnight, snap: loadSnapshot(for: midnight.addingTimeInterval(1))))
-        completion(Timeline(entries: entries, policy: .after(midnight)))
+        let reachesMidnight = (dates.last ?? now).addingTimeInterval(3600) >= midnight
+        if reachesMidnight {
+            entries.append(DailyEntry(date: midnight, snap: loadSnapshot(for: midnight.addingTimeInterval(1))))
+        }
+        completion(Timeline(entries: entries, policy: .after(reachesMidnight ? midnight : (dates.last ?? now).addingTimeInterval(60))))
     }
 }
 
@@ -519,7 +525,12 @@ private struct DailyRing: View {
                                 .font(WType.black(min(WType.hero * 1.15, d * 0.34)))
                                 .monospacedDigit().foregroundStyle(WInk.gold(dark))
                                 .lineLimit(1).minimumScaleFactor(0.4)
-                            if d >= 60 { Caps(text: "FLAWLESS", color: WInk.gold(dark), tracking: 0.6) }
+                            // Founder 10-10 ("×3 FLAWLES"): the label shrinks to fit inside the gold ring, never truncates.
+                            if d >= 60 {
+                                Text("FLAWLESS").font(WType.black(WType.caps)).tracking(0.4)
+                                    .foregroundStyle(WInk.gold(dark))
+                                    .lineLimit(1).minimumScaleFactor(0.35).allowsTightening(true)
+                            }
                         } else {
                             Text("FLAWLESS")
                                 .font(WType.black(min(WType.hero * 0.6, d * 0.16)))
@@ -539,7 +550,8 @@ private struct DailyRing: View {
                     }
                     }
                 }
-                .frame(width: (d - 2 * lw) * 0.82)
+                // The gold flawless ring art is thicker (its sparkle stars ride on it): its text keeps a wider margin.
+                .frame(width: flawless ? d * 0.56 : (d - 2 * lw) * 0.82)
             }
             .frame(width: d, height: d)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
