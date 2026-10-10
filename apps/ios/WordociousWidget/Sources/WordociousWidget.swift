@@ -337,48 +337,6 @@ private struct Caps: View {
     }
 }
 
-/// ART_SPEC §20 glossy tile (the letter-tile recipe, no rim): a darker body showing as a
-/// bottom lip, the face's light → base gradient, and a soft white gloss on its top.
-private struct GlossyTile: View {
-    let hex: String
-    let size: CGFloat
-
-    var body: some View {
-        let r = size * 0.24
-        let lip = size * 0.07
-        ZStack(alignment: .top) {
-            RoundedRectangle(cornerRadius: r, style: .continuous).fill(shade(hex, -0.22))
-            RoundedRectangle(cornerRadius: r, style: .continuous)
-                .fill(LinearGradient(stops: [.init(color: shade(hex, 0.18), location: 0),
-                                             .init(color: shade(hex, 0), location: 0.7),
-                                             .init(color: shade(hex, -0.06), location: 1)],
-                                     startPoint: .top, endPoint: .bottom))
-                .frame(height: size - lip)
-            RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
-                .fill(LinearGradient(colors: [.white.opacity(0.30), .white.opacity(0)], startPoint: .top, endPoint: .bottom))
-                .frame(width: size * 0.84, height: (size - lip) * 0.42)
-                .padding(.top, size * 0.08)
-        }
-        .frame(width: size, height: size)
-    }
-}
-
-/// The white check / cross drawn on a finished tile (a shape, not a glyph).
-private struct TileMark: Shape {
-    let won: Bool
-    func path(in r: CGRect) -> Path {
-        var p = Path()
-        func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: r.minX + r.width * x, y: r.minY + r.height * y) }
-        if won {
-            p.move(to: pt(0.2, 0.54)); p.addLine(to: pt(0.42, 0.75)); p.addLine(to: pt(0.8, 0.3))
-        } else {
-            p.move(to: pt(0.28, 0.28)); p.addLine(to: pt(0.72, 0.72))
-            p.move(to: pt(0.72, 0.28)); p.addLine(to: pt(0.28, 0.72))
-        }
-        return p
-    }
-}
-
 /// The 3D game icon for a daily (`game-<catalog id>`; the catalog ids are the DB keys
 /// lowercased except Classic / Six / Seven).
 // Founder 10-10 (the Large widget can't be added on device — memory): the name check is a static set, never
@@ -395,41 +353,41 @@ private func gameIconAsset(_ key: String) -> String? {
 
 private func dailyURL(_ m: WSnapshot.Mode) -> URL? { URL(string: "wordocious://daily/\(m.key)") }
 
-/// One daily as a chip: to play = a pale wash of the game's color holding its 3D icon;
-/// done = the glossy tile in the game's color with a white check (a missed one: slate
-/// with a white cross). No outlines.
+/// One daily as a chip: to play = a pale wash of the game's color holding its 3D icon; done = the app's own banner
+/// look (Home's PickerTile) — a deeper wash, the full icon and the 3D W (won, purple) / L (lost, red) badge in the
+/// top-right corner. Founder 10-10: "instead of the checks … the same W and L look that the menus have". No outlines.
 private struct DailyChip: View {
     let mode: WSnapshot.Mode
     let size: CGFloat
     let dark: Bool
 
     var body: some View {
-        let lip = size * 0.07
+        let wash = mode.played ? (dark ? 0.30 : 0.26) : (dark ? 0.17 : 0.15)
         ZStack {
-            if mode.played {
-                GlossyTile(hex: mode.won ? mode.colorHex : WInk.slateHex, size: size)
-                TileMark(won: mode.won)
-                    .stroke(Color.white, style: StrokeStyle(lineWidth: max(2, size * 0.09), lineCap: .round, lineJoin: .round))
-                    .frame(width: size * 0.5, height: size * 0.5)
-                    .shadow(color: shade(mode.won ? mode.colorHex : WInk.slateHex, -0.35).opacity(0.45), radius: 0, x: 0, y: size * 0.02)
-                    .offset(y: -lip / 2)
+            RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+                .fill(dark ? shade(mode.colorHex, 0.45).opacity(wash) : Color(widgetHex: mode.colorHex).opacity(wash))
+            if let icon = gameIconAsset(mode.key) {
+                Image(icon).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: size * 0.8, height: size * 0.8)
             } else {
-                RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
-                    .fill(dark ? shade(mode.colorHex, 0.45).opacity(0.17) : Color(widgetHex: mode.colorHex).opacity(0.15))
-                if let icon = gameIconAsset(mode.key) {
-                    Image(icon).resizable().interpolation(.high).scaledToFit()
-                        .frame(width: size * 0.8, height: size * 0.8)
-                } else {
-                    Text(mode.iconText ?? mode.glyph)
-                        .font(WType.black(size * 0.36)).minimumScaleFactor(0.5).lineLimit(1)
-                        .foregroundStyle(Color(widgetHex: mode.colorHex))
-                        .padding(size * 0.12)
-                }
+                Text(mode.iconText ?? mode.glyph)
+                    .font(WType.black(size * 0.36)).minimumScaleFactor(0.5).lineLimit(1)
+                    .foregroundStyle(Color(widgetHex: mode.colorHex))
+                    .padding(size * 0.12)
             }
         }
         .frame(width: size, height: size)
+        .overlay(alignment: .topTrailing) {
+            // The app's badge (HomeCardSpec / PickerTile: ~0.36 of the tile, nudged 4 pt past the corner at a 36 pt tile).
+            if mode.played {
+                let b = max(12, size * 0.38)
+                Image(mode.won ? "icon3d-badge-w" : "icon3d-badge-l").resizable().interpolation(.high).scaledToFit()
+                    .frame(width: b, height: b)
+                    .offset(x: size * 0.11, y: -size * 0.11)
+            }
+        }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(mode.title), \(mode.played ? (mode.won ? "solved" : "played") : "not played, tap to play")")
+        .accessibilityLabel("\(mode.title), \(mode.played ? (mode.won ? "won" : "lost") : "not played, tap to play")")
     }
 }
 
@@ -609,6 +567,8 @@ private struct DailyRing: View {
 private struct FlameStreak: View {
     let streak: Int
     let size: CGFloat
+    /// Founder 10-10 (small widget: "streak numbers barely readable"): bigger numerals + a darker double shadow.
+    var big = false
 
     var body: some View {
         ZStack {
@@ -616,12 +576,13 @@ private struct FlameStreak: View {
                 .saturation(streak == 0 ? 0.3 : 1)
                 .opacity(streak == 0 ? 0.7 : 1)
             Text("\(streak)")
-                .font(WType.black(size * (streak >= 100 ? 0.27 : 0.34)))
+                .font(WType.black(size * (streak >= 100 ? (big ? 0.32 : 0.27) : (big ? 0.42 : 0.34))))
                 .monospacedDigit()
                 .foregroundStyle(Color.white)
-                .shadow(color: Color(widgetHex: "#c2410c").opacity(0.7), radius: 0, x: 0, y: max(0.5, size * 0.025))
+                .shadow(color: Color(widgetHex: big ? "#7c2d12" : "#c2410c").opacity(big ? 0.95 : 0.7), radius: 0, x: 0, y: max(0.5, size * 0.025))
+                .shadow(color: Color.black.opacity(big ? 0.4 : 0), radius: big ? 1.2 : 0)
                 .lineLimit(1).minimumScaleFactor(0.5)
-                .frame(width: size * 0.56)
+                .frame(width: size * (big ? 0.64 : 0.56))
                 .offset(y: -size * 0.03)
         }
         .frame(width: size, height: size)
@@ -635,6 +596,7 @@ private struct FlameStreak: View {
 private struct TrophyStreak: View {
     let streak: Int
     let size: CGFloat
+    var big = false
 
     private var tier: Int {
         switch streak { case 30...: return 30; case 10...: return 10; case 7...: return 7; case 5...: return 5; default: return 3 }
@@ -644,12 +606,13 @@ private struct TrophyStreak: View {
         ZStack {
             Image("streak-trophy-\(tier)").resizable().interpolation(.high).scaledToFit()
             Text("\(streak)")
-                .font(WType.black(size * (streak >= 100 ? 0.27 : 0.34)))
+                .font(WType.black(size * (streak >= 100 ? (big ? 0.32 : 0.27) : (big ? 0.42 : 0.34))))
                 .monospacedDigit()
                 .foregroundStyle(Color.white)
-                .shadow(color: Color(widgetHex: "#b45309").opacity(0.75), radius: 0, x: 0, y: max(0.5, size * 0.025))
+                .shadow(color: Color(widgetHex: big ? "#78350f" : "#b45309").opacity(big ? 0.95 : 0.75), radius: 0, x: 0, y: max(0.5, size * 0.025))
+                .shadow(color: Color.black.opacity(big ? 0.4 : 0), radius: big ? 1.2 : 0)
                 .lineLimit(1).minimumScaleFactor(0.5)
-                .frame(width: size * 0.56)
+                .frame(width: size * (big ? 0.64 : 0.56))
                 .offset(y: size * 0.27)
         }
         .frame(width: size, height: size)
@@ -664,12 +627,13 @@ private struct TrophyStreak: View {
 private struct StreakPair: View {
     let snap: WSnapshot
     let size: CGFloat
+    var big = false
 
     var body: some View {
         let run = snap.flawlessRun
         HStack(alignment: .center, spacing: size * 0.06) {
-            FlameStreak(streak: snap.streak, size: size)
-            if run >= 2 { TrophyStreak(streak: run, size: size) }
+            FlameStreak(streak: snap.streak, size: size, big: big)
+            if run >= 2 { TrophyStreak(streak: run, size: size, big: big) }
         }
     }
 }
@@ -875,7 +839,7 @@ struct SmallView: View {
         GeometryReader { g in
             let hasPuzzles = !snap.puzzleModes.isEmpty
             let W: CGFloat = g.size.width, H: CGFloat = g.size.height
-            let top: CGFloat = 34, bottom: CGFloat = 22, vGap: CGFloat = 5
+            let top: CGFloat = 34, bottom: CGFloat = 32, vGap: CGFloat = 4
             let ring: CGFloat = max(40, min((W - 8) / (hasPuzzles ? 2 : 1), H - top - bottom - 2 * vGap))
             let dDone = !snap.modes.isEmpty && snap.modes.allSatisfy(\.played)
             let pDone = hasPuzzles && snap.puzzleModes.allSatisfy(\.played)
@@ -905,19 +869,23 @@ struct SmallView: View {
                     }
                 }
                 Spacer(minLength: vGap)
-                // Founder 10-10: today's total points join the bottom line, between the streak and the countdown.
+                // Founder 10-10: the streak pair (bigger numerals) on the left; today's points over the live countdown on the
+                // right — one line held the pair, the points and the timer at ~170 pt and clipped ("1,…"), so the right side stacks.
                 HStack(spacing: 4) {
-                    StreakPair(snap: snap, size: bottom)
+                    StreakPair(snap: snap, size: bottom, big: true)
                     Spacer(minLength: 2)
-                    (Text(WidgetStats.pointsText(snap.dayStats(at: date).points)).foregroundColor(WInk.number(dark))
-                        + Text(" PTS").foregroundColor(WInk.label(dark).opacity(0.75)))
-                        .font(WType.black(WType.caps)).tracking(0.5).monospacedDigit()
-                        .lineLimit(1).minimumScaleFactor(0.6)
-                    Spacer(minLength: 2)
-                    // The gold clock sprite (night art 10-03) leads the live countdown.
-                    Image("art-badge-icon-clock-sprite").resizable().interpolation(.high)
-                        .frame(width: 11, height: 11).accessibilityHidden(true)
-                    CapsTimer(date: date, color: WInk.number(dark), width: 48)
+                    VStack(alignment: .trailing, spacing: 1) {
+                        (Text(WidgetStats.pointsText(snap.dayStats(at: date).points)).foregroundColor(WInk.number(dark))
+                            + Text(" PTS").foregroundColor(WInk.label(dark).opacity(0.75)))
+                            .font(WType.black(WType.caps)).tracking(0.5).monospacedDigit()
+                            .lineLimit(1).minimumScaleFactor(0.6)
+                        // The gold clock sprite (night art 10-03) leads the live countdown.
+                        HStack(spacing: 3) {
+                            Image("art-badge-icon-clock-sprite").resizable().interpolation(.high)
+                                .frame(width: 11, height: 11).accessibilityHidden(true)
+                            CapsTimer(date: date, color: WInk.number(dark), width: 48)
+                        }
+                    }
                 }
                 .frame(height: bottom)
             }

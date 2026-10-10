@@ -19,7 +19,8 @@ shrink() {  # <max long side px> <imageset glob...>
 cd $DST
 shrink 192 mascot-*.imageset art-halloween-*.imageset streak-trophy-*.imageset   # <= 60 pt
 shrink 160 game-*.imageset                                                       # <= 45 pt
-shrink 128 icon3d-*.imageset                                                     # flame 34 pt, badges <= 20 pt
+shrink 128 icon3d-*.imageset                                                     # flame 34 pt
+shrink 96 icon3d-badge-*.imageset                                                # W / L badges <= 22 pt
 shrink 66 art-badge-icon-clock-sprite.imageset                                   # 11 pt
 shrink 96 art-badge-icon-star-sprite.imageset art-badge-icon-zap-sprite.imageset
 shrink 600 widget-wordmark-large-*.imageset                                      # 16 pt tall = ~133 pt wide
