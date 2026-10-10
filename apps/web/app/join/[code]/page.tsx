@@ -8,7 +8,7 @@ import { StateCard } from '@/components/ui/soft-popup';
 import {
   GIFT_BAR, GIFT_GOLD, INVITE_ACCENT, INVITE_BAR, InviteReceivedBody, InviteStateBody, ProUnlockedBody,
 } from '@/components/friends/invite-screens';
-import { softBackground } from '@/lib/soft-surface';
+import { UtilityPage } from '@/components/ui/utility-page';
 import { useAuth } from '@/lib/auth-context';
 import { logLandingVisit } from '@/lib/landing-visits';
 import { ADS_SERVING } from '@wordle-duel/core';
@@ -80,14 +80,14 @@ export default function JoinReferralPage() {
   };
 
   // T2 / T4 (docs/FINISH_SPEC.md): every state is a tinted card with a cast
-  // pose (or scene) and a candy button — never a bare text line. The pitch is
+  // pose (or scene) and a candy button — never a bare text line. 2.8: on the friends wall under the live cast row. The pitch is
   // the invite in the Friends pink; Pro unlocked / not eligible sit in gold.
   const centered = (node: React.ReactNode, accent: string = INVITE_ACCENT, gradient: string = INVITE_BAR) => (
-    <div className="min-h-screen-stable flex items-center justify-center px-5 py-8" style={{ background: softBackground(accent, 0.07) }}>
+    <UtilityPage tint="friends">
       <StateCard accent={accent} gradient={gradient}>
         {node}
       </StateCard>
-    </div>
+    </UtilityPage>
   );
 
   if (loading || status === 'loading') {

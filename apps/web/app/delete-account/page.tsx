@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { InfoPageHeader } from '@/components/ui/info-page-header';
-import { barCard } from '@/components/ui/soft-popup';
-import { softBackground } from '@/lib/soft-surface';
+import { InfoPageLayout, SectionCard } from '@/components/ui/info-page';
+import { SOFT_INK } from '@/lib/soft-surface';
 
 export const metadata: Metadata = {
   title: 'Delete your Wordocious account',
@@ -42,98 +41,74 @@ const DELETED = [
 
 export default function DeleteAccountPage() {
   return (
-    <div className="min-h-screen pb-12" style={{ background: softBackground('#7c3aed', 0.06) }}>
-      <InfoPageHeader title="Delete Account" art="art-titlecast-deleteaccount" />
-      <div className="max-w-2xl mx-auto px-4 pt-1 pb-6 space-y-4">
-        <div
-          className="p-5"
-          style={barCard('#7c3aed', { radius: 18, share: 0.09, bar: 6 })}
-        >
-          <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>
-            Deleting your Wordocious account
-          </h2>
+    <InfoPageLayout title="Delete Account" art="art-titlecast-deleteaccount">
+        <SectionCard accent="#7c3aed" heading="Deleting your Wordocious account">
           <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
             Wordocious is published by ShowLoud, LLC. You can permanently delete your
             account and its data at any time, from the app or from this website. Deletion
             is immediate and cannot be undone.
           </p>
-        </div>
+        </SectionCard>
 
-        <div
-          className="p-5"
-          style={barCard('#7c3aed', { radius: 18, share: 0.09, bar: 6 })}
-        >
-          <h2 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>How to delete your account</h2>
+        <SectionCard accent="#7c3aed" heading="How to delete your account">
           <ol className="text-xs leading-relaxed space-y-2.5" style={{ color: 'var(--color-text-secondary)' }}>
             <li className="flex gap-2.5">
-              <span className="font-black" style={{ color: '#7c3aed' }}>1.</span>
+              <span className="font-black" style={{ color: SOFT_INK.value }}>1.</span>
               <span>Sign in to Wordocious — in the Android or iOS app, or at{' '}
-                <Link href="/" className="underline" style={{ color: '#7c3aed' }}>wordocious.com</Link>.</span>
+                <Link href="/" className="underline" style={{ color: SOFT_INK.value }}>wordocious.com</Link>.</span>
             </li>
             <li className="flex gap-2.5">
-              <span className="font-black" style={{ color: '#7c3aed' }}>2.</span>
+              <span className="font-black" style={{ color: SOFT_INK.value }}>2.</span>
               <span>Open <strong>Settings</strong> (the gear icon in the top-right of the home screen).</span>
             </li>
             <li className="flex gap-2.5">
-              <span className="font-black" style={{ color: '#7c3aed' }}>3.</span>
+              <span className="font-black" style={{ color: SOFT_INK.value }}>3.</span>
               <span>Scroll to the <strong>Account</strong> section and tap <strong>Delete Account</strong>.</span>
             </li>
             <li className="flex gap-2.5">
-              <span className="font-black" style={{ color: '#7c3aed' }}>4.</span>
+              <span className="font-black" style={{ color: SOFT_INK.value }}>4.</span>
               <span>Confirm. Your account and the data below are removed immediately.</span>
             </li>
           </ol>
           <p className="text-xs leading-relaxed mt-4" style={{ color: 'var(--color-text-muted)' }}>
-            Can’t sign in? Email <a href="mailto:support@wordocious.com" className="underline" style={{ color: '#7c3aed' }}>support@wordocious.com</a>{' '}
+            Can’t sign in? Email <a href="mailto:support@wordocious.com" className="underline" style={{ color: SOFT_INK.value }}>support@wordocious.com</a>{' '}
             from the address on the account and we will delete it for you.
           </p>
-        </div>
+        </SectionCard>
 
-        <div
-          className="p-5"
-          style={barCard('#7c3aed', { radius: 18, share: 0.09, bar: 6 })}
-        >
-          <h2 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>What is deleted</h2>
+        <SectionCard accent="#7c3aed" heading="What is deleted">
           <ul className="text-xs leading-relaxed space-y-1.5" style={{ color: 'var(--color-text-secondary)' }}>
             {DELETED.map(([label, detail]) => (
               <li key={label} className="flex gap-2">
-                <span style={{ color: '#7c3aed' }}>&#8226;</span>
+                <span style={{ color: SOFT_INK.value }}>&#8226;</span>
                 <span><strong>{label}</strong> &mdash; {detail}</span>
               </li>
             ))}
           </ul>
-        </div>
+        </SectionCard>
 
-        <div
-          className="p-5"
-          style={barCard('#7c3aed', { radius: 18, share: 0.09, bar: 6 })}
-        >
-          <h2 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>What is kept, and for how long</h2>
+        <SectionCard accent="#7c3aed" heading="What is kept, and for how long">
           <ul className="text-xs leading-relaxed space-y-1.5" style={{ color: 'var(--color-text-secondary)' }}>
             <li className="flex gap-2">
-              <span style={{ color: '#7c3aed' }}>&#8226;</span>
+              <span style={{ color: SOFT_INK.value }}>&#8226;</span>
               <span><strong>Head-to-head match records</strong> &mdash; a completed VS match belongs to two players, so the match result is kept for your opponent. Your name is removed from it and it no longer links to you.</span>
             </li>
             <li className="flex gap-2">
-              <span style={{ color: '#7c3aed' }}>&#8226;</span>
+              <span style={{ color: SOFT_INK.value }}>&#8226;</span>
               <span><strong>Payment records</strong> &mdash; Apple, Google and Stripe keep their own transaction records for tax and accounting purposes, for as long as the law requires. We cannot delete those on your behalf; contact the store you purchased through.</span>
             </li>
             <li className="flex gap-2">
-              <span style={{ color: '#7c3aed' }}>&#8226;</span>
+              <span style={{ color: SOFT_INK.value }}>&#8226;</span>
               <span><strong>Crash reports</strong> &mdash; anonymous diagnostic reports already sent are retained for up to <strong>90 days</strong> and then deleted automatically.</span>
             </li>
             <li className="flex gap-2">
-              <span style={{ color: '#7c3aed' }}>&#8226;</span>
+              <span style={{ color: SOFT_INK.value }}>&#8226;</span>
               <span><strong>Backups</strong> &mdash; encrypted database backups roll off within <strong>30 days</strong>. Deleted data may persist in a backup until then, and is never restored to a live account.</span>
             </li>
           </ul>
-        </div>
+        </SectionCard>
 
-        <div
-          className="p-5"
-          style={barCard('#e11d48', { radius: 18, share: 0.09, bar: 6 })}
-        >
-          <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-loss-text)' }}>Cancel your subscription first</h2>
+        <SectionCard accent="#e11d48" heading={<span style={{ color: 'var(--color-loss-text)' }}>Cancel your subscription first</span>}>
           <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
             Deleting your Wordocious account does <strong>not</strong> cancel an active Pro
             subscription, because the subscription is held by the app store, not by us.
@@ -141,13 +116,12 @@ export default function DeleteAccountPage() {
             subscription settings — or, if you subscribed on the website, through the
             billing portal — before deleting your account.
           </p>
-        </div>
+        </SectionCard>
 
         <p className="text-xs font-bold text-center" style={{ color: 'var(--color-text-muted)' }}>
-          See our <Link href="/privacy" className="underline" style={{ color: '#7c3aed' }}>Privacy Policy</Link> for
+          See our <Link href="/privacy" className="underline" style={{ color: SOFT_INK.value }}>Privacy Policy</Link> for
           how we handle data generally.
         </p>
-      </div>
-    </div>
+    </InfoPageLayout>
   );
 }

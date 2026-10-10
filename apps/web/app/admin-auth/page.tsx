@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase-client';
+import { UtilityCard, UtilityPage } from '@/components/ui/utility-page';
 
 // Session relay for the /admin middleware gate. The browser session lives in
 // localStorage (supabase-js), which a server-side gate can never read; the
@@ -34,9 +35,9 @@ function Relay() {
   }, [params]);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 13, fontWeight: 700 }}>
-      Checking your session…
-    </div>
+    <UtilityPage>
+      <UtilityCard pose="art-pose-u-meditate" title="One moment" line="Checking your session…" busy />
+    </UtilityPage>
   );
 }
 
