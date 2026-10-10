@@ -214,8 +214,8 @@ export function highlightsLayout(count: number): { mode: 'fold' | 'grid'; shown:
 /** The Head-to-Head strip's one line: "VS 3–1 · Pocket 2–2" (a side with no games is left out). */
 export function headToHeadLine(vs: PocketRecord, pocket: PocketRecord): string {
   const parts: string[] = [];
-  if (vs.wins + vs.losses + vs.draws > 0) parts.push(`VS ${pocketLine(vs)}`);
-  if (pocket.wins + pocket.losses + pocket.draws > 0) parts.push(`Pocket ${pocketLine(pocket)}`);
+  if (vs.wins + vs.losses + vs.draws > 0) parts.push(`Daily scores ${pocketLine(vs)}`);
+  if (pocket.wins + pocket.losses + pocket.draws > 0) parts.push(`Pocket games ${pocketLine(pocket)}`);
   return parts.length ? parts.join(' · ') : 'No games together yet';
 }
 

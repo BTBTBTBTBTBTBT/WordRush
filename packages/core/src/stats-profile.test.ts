@@ -102,8 +102,8 @@ describe('player profile rules', () => {
     expect(highlightsLayout(2)).toEqual({ mode: 'grid', shown: 2 });
   });
   it('words the head-to-head line', () => {
-    expect(headToHeadLine({ wins: 3, losses: 1, draws: 0 }, { wins: 2, losses: 2, draws: 0 })).toBe('VS 3–1 · Pocket 2–2');
-    expect(headToHeadLine({ wins: 0, losses: 0, draws: 0 }, { wins: 1, losses: 0, draws: 0 })).toBe('Pocket 1–0');
+    expect(headToHeadLine({ wins: 3, losses: 1, draws: 0 }, { wins: 2, losses: 2, draws: 0 })).toBe('Daily scores 3–1 · Pocket games 2–2');
+    expect(headToHeadLine({ wins: 0, losses: 0, draws: 0 }, { wins: 1, losses: 0, draws: 0 })).toBe('Pocket games 1–0');
     expect(headToHeadLine({ wins: 0, losses: 0, draws: 0 }, { wins: 0, losses: 0, draws: 0 })).toBe('No games together yet');
   });
   it('colors section titles from the cast', () => {

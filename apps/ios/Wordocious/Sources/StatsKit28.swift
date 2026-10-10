@@ -170,7 +170,7 @@ struct PocketGamesSection: View {
     }
 }
 
-/// HEAD TO HEAD: every friend you have played (VS or a pocket game) — their mascot, "VS 1–0 · Pocket 2–1" and a
+/// HEAD TO HEAD: every friend you have played (VS or a pocket game) — their mascot, "Daily scores 1–0 · Pocket games 2–1" (daily scores = the days you both played, by total points) and a
 /// two-color record bar.
 struct HeadToHeadSection: View {
     let records: StatsProfile.PocketRecords?

@@ -164,8 +164,8 @@ object StatsProfile {
     /** "VS 3–1 · Pocket 2–2"; a side with no games is left out. */
     fun headToHeadLine(vs: PocketRecord, pocket: PocketRecord): String {
         val parts = ArrayList<String>()
-        if (vs.played) parts.add("VS ${pocketLine(vs)}")
-        if (pocket.played) parts.add("Pocket ${pocketLine(pocket)}")
+        if (vs.played) parts.add("Daily scores ${pocketLine(vs)}")
+        if (pocket.played) parts.add("Pocket games ${pocketLine(pocket)}")
         return if (parts.isEmpty()) "No games together yet" else parts.joinToString(" · ")
     }
 

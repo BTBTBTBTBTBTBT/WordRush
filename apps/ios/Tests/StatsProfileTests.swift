@@ -101,8 +101,8 @@ final class StatsProfileTests: XCTestCase {
 
     func testHeadToHeadLineAndColors() {
         typealias P = StatsProfile.PocketRecord
-        XCTAssertEqual(StatsProfile.headToHeadLine(vs: P(wins: 3, losses: 1), pocket: P(wins: 2, losses: 2)), "VS 3–1 · Pocket 2–2")
-        XCTAssertEqual(StatsProfile.headToHeadLine(vs: P(), pocket: P(wins: 1)), "Pocket 1–0")
+        XCTAssertEqual(StatsProfile.headToHeadLine(vs: P(wins: 3, losses: 1), pocket: P(wins: 2, losses: 2)), "Daily scores 3–1 · Pocket games 2–2")
+        XCTAssertEqual(StatsProfile.headToHeadLine(vs: P(), pocket: P(wins: 1)), "Pocket games 1–0")
         XCTAssertEqual(StatsProfile.headToHeadLine(vs: P(), pocket: P()), "No games together yet")
         XCTAssertEqual(StatsProfile.sectionTitleColor("Head to Head"), "#2563eb")
         XCTAssertEqual(StatsProfile.sectionTitleColor("unknown"), "#7c3aed")

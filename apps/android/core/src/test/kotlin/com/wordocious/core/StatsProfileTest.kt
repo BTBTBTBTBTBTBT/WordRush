@@ -104,8 +104,8 @@ class StatsProfileTest {
     }
 
     @Test fun headToHeadLineAndColors() {
-        assertEquals("VS 3–1 · Pocket 2–2", StatsProfile.headToHeadLine(PocketRecord(3, 1), PocketRecord(2, 2)))
-        assertEquals("Pocket 1–0", StatsProfile.headToHeadLine(PocketRecord(), PocketRecord(1)))
+        assertEquals("Daily scores 3–1 · Pocket games 2–2", StatsProfile.headToHeadLine(PocketRecord(3, 1), PocketRecord(2, 2)))
+        assertEquals("Pocket games 1–0", StatsProfile.headToHeadLine(PocketRecord(), PocketRecord(1)))
         assertEquals("No games together yet", StatsProfile.headToHeadLine(PocketRecord(), PocketRecord()))
         assertEquals("#2563eb", StatsProfile.sectionTitleColor("Head to Head"))
         assertEquals("#7c3aed", StatsProfile.sectionTitleColor("unknown"))

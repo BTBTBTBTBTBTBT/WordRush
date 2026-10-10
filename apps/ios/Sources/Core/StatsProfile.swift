@@ -192,8 +192,8 @@ public enum StatsProfile {
     /// "VS 3–1 · Pocket 2–2"; a side with no games is left out.
     public static func headToHeadLine(vs: PocketRecord, pocket: PocketRecord) -> String {
         var parts: [String] = []
-        if vs.played { parts.append("VS \(pocketLine(vs))") }
-        if pocket.played { parts.append("Pocket \(pocketLine(pocket))") }
+        if vs.played { parts.append("Daily scores \(pocketLine(vs))") }
+        if pocket.played { parts.append("Pocket games \(pocketLine(pocket))") }
         return parts.isEmpty ? "No games together yet" : parts.joined(separator: " · ")
     }
 
