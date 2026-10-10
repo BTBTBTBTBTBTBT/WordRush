@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyFriendlyMove, newFriendlyState } from './friendly-games';
-import { allFriendsLabel, cardPresence, friendsLayout, theirTurnLine, tileWord, waitingHeadline, type CardFriend, type CardGame } from './friend-cards';
+import { allFriendsLabel, cardPresence, friendsLayout, raceBadge, raceBadgeLines, theirTurnLine, tileWord, waitingHeadline, type CardFriend, type CardGame } from './friend-cards';
 
 const f = (id: string, username: string, online = false, activity: string | null = null): CardFriend => ({ id, username, online, activity });
 const rps = newFriendlyState('rps');
@@ -23,14 +23,29 @@ describe('friend cards', () => {
     expect(cardPresence(true, null)).toBe('on now');
   });
 
-  it('tile words are one short word per game', () => {
-    expect(tileWord('rps', rps, 'a', true)).toBe('Your pick');
-    expect(tileWord('pass', newFriendlyState('pass'), 'a', true)).toBe('1 of 6');
+  it('tile words say what waits, in plain words', () => {
+    expect(tileWord('rps', rps, 'a', true)).toBe('Pick rock, paper or scissors');
+    expect(tileWord('rps', rps, 'a', false)).toBe('Waiting for their pick');
+    expect(tileWord('pass', newFriendlyState('pass'), 'a', true)).toBe('Your guess (1 of 6)');
     const ghost = applyFriendlyMove(newFriendlyState('ghost'), 'a', { kind: 'ghost', letter: 'G' }, { isWord: () => false, hasPrefix: () => true });
     if (!ghost.ok) throw new Error('ghost move');
-    expect(tileWord('ghost', ghost.state, 'b', true)).toBe('G…');
-    expect(tileWord('ghost', newFriendlyState('ghost'), 'a', true)).toBe('Start it');
-    expect(tileWord('chain', newFriendlyState('chain'), 'a', false)).toBe('Their word');
+    expect(tileWord('ghost', ghost.state, 'b', true)).toBe('Add a letter to G');
+    expect(tileWord('ghost', newFriendlyState('ghost'), 'a', true)).toBe('Start the word: add a letter');
+    expect(tileWord('chain', newFriendlyState('chain'), 'a', false)).toBe('Waiting for their word');
+    expect(tileWord('chain', newFriendlyState('chain'), 'a', true)).toBe('Start the chain with any word');
+  });
+
+  it('race badges: flawless / sweep for all 8, plus the day streak past 1', () => {
+    expect(raceBadge(null, null, null)).toBeNull();
+    expect(raceBadge(3, 2, 40)).toBe('40-DAY STREAK');
+    expect(raceBadge(8, 0, 0)).toBe('SWEEP');
+    expect(raceBadge(8, 0, 1)).toBe('SWEEP');
+    expect(raceBadge(8, 3, 89)).toBe('FLAWLESS · 89-DAY STREAK');
+    expect(raceBadge(undefined, undefined, 26)).toBe('26-DAY STREAK');
+    expect(raceBadge(0, 0, 2)).toBe('2-DAY STREAK');
+    expect(raceBadgeLines('FLAWLESS · 89-DAY STREAK')).toEqual(['FLAWLESS', '89-DAY STREAK']);
+    expect(raceBadgeLines('SWEEP')).toEqual(['SWEEP']);
+    expect(raceBadgeLines(null)).toEqual([]);
   });
 
   it('puts online friends first, then waiting turns, and files the rest under All friends', () => {

@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -88,7 +89,18 @@ internal fun LeaderboardStageCard(accent: Color, content: @Composable ColumnScop
             )
         })
         Image(
-            painterResource(R.drawable.art_lb_clouds), null, Modifier.fillMaxWidth().alpha(0.75f).offset(y = (-6).dp),
+            // Founder 10-09: the cloud bank ends ABOVE the WORDOCIOUS row (its edge hid the label): lifted, and its lower
+            // edge fades out instead of stopping under the text.
+            painterResource(R.drawable.art_lb_clouds), null,
+            Modifier.fillMaxWidth().alpha(0.75f).offset(y = (-26).dp)
+                .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+                .drawWithContent {
+                    drawContent()
+                    drawRect(
+                        Brush.verticalGradient(0f to Color.Black, 0.62f to Color.Black, 0.92f to Color.Transparent),
+                        blendMode = BlendMode.DstIn,
+                    )
+                },
             contentScale = ContentScale.FillWidth,
         )
         Box(Modifier.matchParentSize(), contentAlignment = Alignment.BottomCenter) {
@@ -213,21 +225,10 @@ private fun ResetLine() {
     )
 }
 
-/** The compact "Your board" pill (`art_lb_btn_yourboard`, label drawn live) = today's VIEW BOARD. */
+/** The compact "Your board" button = today's VIEW BOARD: the family gold cast button, small (founder 10-09: the art pill read as ugly). */
 @Composable
 internal fun YourBoardPill(onClick: () -> Unit, label: String = "Your board") {
-    Box(
-        Modifier.size(width = 112.dp, height = 36.dp)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClickLabel = label, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Image(painterResource(R.drawable.art_lb_btn_yourboard), null, Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
-        Text(
-            label.uppercase(), fontSize = 11.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.3.sp,
-            color = Color(0xFF4C1D95), maxLines = 1, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(start = 30.dp, end = 8.dp),
-        )
-    }
+    CastButton(text = label, onClick = onClick, color = CastColor.GOLD, size = CastSize.S)
 }
 
 /**

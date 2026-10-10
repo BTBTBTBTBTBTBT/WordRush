@@ -121,6 +121,21 @@ object FriendCards {
     /** The label on the collapsed list: "All friends · 12". */
     fun allFriendsLabel(count: Int): String = "All friends · $count"
 
+    /**
+     * Today's highlight on the daily race: "FLAWLESS" / "SWEEP" (all 8 played) plus "N-DAY STREAK" past 1, joined with " · ".
+     * Null when there is nothing to show (core friend-cards.ts raceBadge).
+     */
+    fun raceBadge(played: Int?, flawlessRun: Int?, streak: Int?): String? {
+        val all = (played ?: 0) >= 8
+        val day = if (all) (if ((flawlessRun ?: 0) > 0) "FLAWLESS" else "SWEEP") else null
+        val run = if ((streak ?: 0) > 1) "$streak-DAY STREAK" else null
+        val parts = listOfNotNull(day, run)
+        return if (parts.isEmpty()) null else parts.joinToString(" · ")
+    }
+
+    /** The badge's parts for display: two parts stack on two lines. */
+    fun raceBadgeLines(badge: String?): List<String> = if (badge.isNullOrEmpty()) emptyList() else badge.split(" · ")
+
     /** Whether any card has a game waiting on you. */
     fun hasYourTurn(layout: FriendsLayout): Boolean = layout.cards.any { it.waiting > 0 }
 

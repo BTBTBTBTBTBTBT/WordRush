@@ -21,11 +21,13 @@ final class FriendCardsFixtureTests: XCTestCase {
     private struct CountText: Decodable { let n: Int; let text: String }
     private struct NameText: Decodable { let n: Int; let name: String; let text: String }
     private struct PresenceCase: Decodable { let online: Bool; let activity: String?; let text: String? }
+    private struct BadgeCase: Decodable { let played: Int?; let flawlessRun: Int?; let streak: Int?; let text: String?; let lines: [String] }
     private struct Words: Decodable {
         let waiting: [CountText]
         let theirTurn: [NameText]
         let presence: [PresenceCase]
         let all: [CountText]
+        let badges: [BadgeCase]
     }
     private struct Fixtures: Decodable {
         let tiles: [TileCase]
@@ -60,5 +62,11 @@ final class FriendCardsFixtureTests: XCTestCase {
         for c in w.theirTurn { XCTAssertEqual(FriendCards.theirTurnLine(c.n, name: c.name), c.text) }
         for c in w.presence { XCTAssertEqual(FriendCards.cardPresence(online: c.online, activity: c.activity), c.text) }
         for c in w.all { XCTAssertEqual(FriendCards.allFriendsLabel(c.n), c.text) }
+        XCTAssertFalse(w.badges.isEmpty)
+        for c in w.badges {
+            let text = FriendCards.raceBadge(played: c.played, flawlessRun: c.flawlessRun, streak: c.streak)
+            XCTAssertEqual(text, c.text)
+            XCTAssertEqual(FriendCards.raceBadgeLines(text), c.lines)
+        }
     }
 }

@@ -13,7 +13,7 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "Your pick"
+      "word": "Pick rock, paper or scissors"
     },
     {
       "kind": "rps",
@@ -30,7 +30,7 @@
       },
       "me": "a",
       "yourTurn": false,
-      "word": "Picked"
+      "word": "Waiting for their pick"
     },
     {
       "kind": "rps",
@@ -47,7 +47,7 @@
       },
       "me": "b",
       "yourTurn": true,
-      "word": "Your pick"
+      "word": "Pick rock, paper or scissors"
     },
     {
       "kind": "ttt",
@@ -74,7 +74,7 @@
       },
       "me": "b",
       "yourTurn": true,
-      "word": "Your move"
+      "word": "Your turn to place a tile"
     },
     {
       "kind": "ttt",
@@ -101,7 +101,7 @@
       },
       "me": "b",
       "yourTurn": false,
-      "word": "Their move"
+      "word": "Waiting for their move"
     },
     {
       "kind": "ttt",
@@ -128,7 +128,7 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "Your move"
+      "word": "Your turn to place a tile"
     },
     {
       "kind": "coin",
@@ -144,7 +144,7 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "Your call"
+      "word": "Call heads or tails"
     },
     {
       "kind": "coin",
@@ -160,7 +160,7 @@
       },
       "me": "b",
       "yourTurn": false,
-      "word": "Their call"
+      "word": "Waiting for their call"
     },
     {
       "kind": "pass",
@@ -172,7 +172,7 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "1 of 6"
+      "word": "Your guess (1 of 6)"
     },
     {
       "kind": "pass",
@@ -207,7 +207,7 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "3 of 6"
+      "word": "Your guess (3 of 6)"
     },
     {
       "kind": "pass",
@@ -242,7 +242,7 @@
       },
       "me": "b",
       "yourTurn": false,
-      "word": "Their guess"
+      "word": "Waiting for their guess"
     },
     {
       "kind": "ghost",
@@ -260,7 +260,7 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "Start it"
+      "word": "Start the word: add a letter"
     },
     {
       "kind": "ghost",
@@ -282,7 +282,7 @@
       },
       "me": "b",
       "yourTurn": true,
-      "word": "GHO…"
+      "word": "Add a letter to GHO"
     },
     {
       "kind": "ghost",
@@ -304,7 +304,7 @@
       },
       "me": "a",
       "yourTurn": false,
-      "word": "Their letter"
+      "word": "Waiting for their letter"
     },
     {
       "kind": "chain",
@@ -319,7 +319,7 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "Any word"
+      "word": "Start the chain with any word"
     },
     {
       "kind": "chain",
@@ -340,7 +340,7 @@
       },
       "me": "b",
       "yourTurn": true,
-      "word": "Starts E"
+      "word": "Your word must start with E"
     },
     {
       "kind": "chain",
@@ -361,7 +361,7 @@
       },
       "me": "a",
       "yourTurn": false,
-      "word": "Their word"
+      "word": "Waiting for their word"
     }
   ],
   "layouts": [
@@ -644,31 +644,31 @@
               {
                 "gameId": "4",
                 "kind": "pass",
-                "word": "3 of 6",
+                "word": "Your guess (3 of 6)",
                 "yourTurn": true
               },
               {
                 "gameId": "2",
                 "kind": "ttt",
-                "word": "Your move",
+                "word": "Your turn to place a tile",
                 "yourTurn": true
               },
               {
                 "gameId": "1",
                 "kind": "rps",
-                "word": "Your pick",
+                "word": "Pick rock, paper or scissors",
                 "yourTurn": true
               },
               {
                 "gameId": "3",
                 "kind": "coin",
-                "word": "Your call",
+                "word": "Call heads or tails",
                 "yourTurn": true
               },
               {
                 "gameId": "5",
                 "kind": "ghost",
-                "word": "GHO…",
+                "word": "Add a letter to GHO",
                 "yourTurn": true
               }
             ],
@@ -676,7 +676,7 @@
               {
                 "gameId": "6",
                 "kind": "chain",
-                "word": "Their word",
+                "word": "Waiting for their word",
                 "yourTurn": false
               }
             ],
@@ -705,7 +705,7 @@
               {
                 "gameId": "7",
                 "kind": "ttt",
-                "word": "Their move",
+                "word": "Waiting for their move",
                 "yourTurn": false
               }
             ],
@@ -814,7 +814,7 @@
               {
                 "gameId": "1",
                 "kind": "rps",
-                "word": "Your pick",
+                "word": "Pick rock, paper or scissors",
                 "yourTurn": true
               }
             ],
@@ -833,7 +833,7 @@
               {
                 "gameId": "2",
                 "kind": "ttt",
-                "word": "Their move",
+                "word": "Waiting for their move",
                 "yourTurn": false
               }
             ],
@@ -887,7 +887,7 @@
               {
                 "gameId": "1",
                 "kind": "rps",
-                "word": "Your pick",
+                "word": "Pick rock, paper or scissors",
                 "yourTurn": true
               }
             ],
@@ -971,6 +971,98 @@
       {
         "n": 12,
         "text": "All friends · 12"
+      }
+    ],
+    "badges": [
+      {
+        "played": null,
+        "flawlessRun": null,
+        "streak": null,
+        "text": null,
+        "lines": []
+      },
+      {
+        "played": 3,
+        "flawlessRun": 2,
+        "streak": 40,
+        "text": "40-DAY STREAK",
+        "lines": [
+          "40-DAY STREAK"
+        ]
+      },
+      {
+        "played": 8,
+        "flawlessRun": 0,
+        "streak": 0,
+        "text": "SWEEP",
+        "lines": [
+          "SWEEP"
+        ]
+      },
+      {
+        "played": 8,
+        "flawlessRun": 0,
+        "streak": 1,
+        "text": "SWEEP",
+        "lines": [
+          "SWEEP"
+        ]
+      },
+      {
+        "played": 8,
+        "flawlessRun": 0,
+        "streak": 2,
+        "text": "SWEEP · 2-DAY STREAK",
+        "lines": [
+          "SWEEP",
+          "2-DAY STREAK"
+        ]
+      },
+      {
+        "played": 8,
+        "flawlessRun": 3,
+        "streak": 89,
+        "text": "FLAWLESS · 89-DAY STREAK",
+        "lines": [
+          "FLAWLESS",
+          "89-DAY STREAK"
+        ]
+      },
+      {
+        "played": 7,
+        "flawlessRun": 3,
+        "streak": 89,
+        "text": "89-DAY STREAK",
+        "lines": [
+          "89-DAY STREAK"
+        ]
+      },
+      {
+        "played": 12,
+        "flawlessRun": 1,
+        "streak": null,
+        "text": "FLAWLESS",
+        "lines": [
+          "FLAWLESS"
+        ]
+      },
+      {
+        "played": null,
+        "flawlessRun": null,
+        "streak": 26,
+        "text": "26-DAY STREAK",
+        "lines": [
+          "26-DAY STREAK"
+        ]
+      },
+      {
+        "played": 0,
+        "flawlessRun": 0,
+        "streak": 2,
+        "text": "2-DAY STREAK",
+        "lines": [
+          "2-DAY STREAK"
+        ]
       }
     ]
   }

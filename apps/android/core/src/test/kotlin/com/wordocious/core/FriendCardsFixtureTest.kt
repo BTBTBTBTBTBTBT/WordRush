@@ -109,5 +109,14 @@ class FriendCardsFixtureTest {
             val o = c.jsonObject
             assertEquals(o["text"].strOrNull(), FriendCards.allFriendsLabel(o["n"]!!.jsonPrimitive.int))
         }
+        val badges = words["badges"]!!.jsonArray
+        assertTrue(badges.isNotEmpty())
+        for (c in badges) {
+            val o = c.jsonObject
+            fun intOrNull(k: String) = (o[k] as? JsonPrimitive)?.takeIf { it !is JsonNull }?.int
+            val text = FriendCards.raceBadge(intOrNull("played"), intOrNull("flawlessRun"), intOrNull("streak"))
+            assertEquals("badge $o", o["text"].strOrNull(), text)
+            assertEquals("lines $o", o["lines"]!!.jsonArray.map { it.jsonPrimitive.content }, FriendCards.raceBadgeLines(text))
+        }
     }
 }

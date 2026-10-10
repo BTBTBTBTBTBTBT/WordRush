@@ -23,7 +23,7 @@ import { CandyBadge } from '@/components/ui/candy-badge';
 import { Icon3D } from '@/components/ui/icon3d';
 import { UiIcon } from '@/components/ui/ui-icon';
 import { FamilyActionMenu, FAMILY_MENU_INK, type FamilyMenuAction } from '@/components/ui/family-action-menu';
-import { FRIENDLY_KINDS, FRIENDLY_TITLES, allFriendsLabel, friendsLayout, type CardFriend, type CardGame, type FriendlyKind } from '@wordle-duel/core';
+import { FRIENDLY_KINDS, FRIENDLY_TITLES, allFriendsLabel, friendsLayout, raceBadge, raceBadgeLines, type CardFriend, type CardGame, type FriendlyKind } from '@wordle-duel/core';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
 import { shareWeeklyRaceCard } from '@/lib/leaderboard-share-flow';
@@ -38,12 +38,10 @@ import {
 } from '@/lib/friends-service';
 import { getActiveGames, loadGames, onGamesChange, resignGame, type GameView } from '@/lib/friendly-games-client';
 import {
-  FR, KIND_COLOR, KIND_SUB, bannerModel, bestFriendStreak, friendAction, friendLine, friendOnline, lastSeenMs, midnightClock, nobodyOnLine, onNow,
-  raceChips, sortActiveGames,
+  FR, KIND_COLOR, KIND_SUB, friendAction, friendLine, friendOnline, lastSeenMs, midnightClock, sortActiveGames,
 } from '@/lib/friends-play';
 import { TodaysRace } from './todays-race';
 import { ActivityFeed } from './activity-feed';
-import { FriendsBanner } from './friends-banner';
 import { FriendCards } from './friend-cards';
 import { InvitesRow } from '@/components/invites/invites-row';
 import { HaveACodeButton } from '@/components/invites/have-a-code';
@@ -213,6 +211,10 @@ export function FriendsPanel() {
 
   const [sharingRace, setSharingRace] = useState(false);
   const [showPastWeeks, setShowPastWeeks] = useState(false);
+  // Founder 10-09: Today's Race leads (podium + top 5); everyone else, This week and Last week fold away (iOS FriendsPanelView).
+  const [showAllToday, setShowAllToday] = useState(false);
+  const [showWeek, setShowWeek] = useState(false);
+  const [showAllWeek, setShowAllWeek] = useState(false);
 
   const friends = user ? getFriends() : [];
   const sortedGames = useMemo(() => sortActiveGames(games), [games]);
@@ -244,14 +246,6 @@ export function FriendsPanel() {
   const myId = profile?.id ?? user.id;
   const myName = profile?.username ?? 'You';
 
-  // ── Banner ────────────────────────────────────────────────────────────────
-  const online = onNow(friends, now);
-  const { rows: todayRows, input: bannerInput } = bannerModel(
-    friends,
-    { id: myId, username: myName, todayPoints: meDigest?.todayPoints ?? 0, playedToday: meDigest?.playedToday ?? 0 },
-    online.map((f) => f.username),
-  );
-
   // ── Weekly race (§212/§216/§232/§238) ─────────────────────────────────────
   const standings = (() => {
     if (friends.length === 0) return [];
@@ -278,6 +272,120 @@ export function FriendsPanel() {
   const podium = standings.slice(0, 3);
   const raceStarted = standings.some((e) => e.pts > 0);
   const crownId = raceStarted ? podium[0].id : null;
+
+  // ── Today's race (founder 10-09): the page leads with it ──────────────────
+  const todayStandings = (() => {
+    if (friends.length === 0) return [];
+    const entries = friends.map((f) => ({
+      id: f.id, username: f.username, avatar_url: f.avatar_url,
+      avatar_emoji: f.avatar_emoji ?? null, level: f.level,
+      avatar_config: f.avatar_config, avatar_cast_id: f.avatar_cast_id, avatar_frame: f.avatar_frame, is_pro: f.is_pro,
+      pts: f.todayPoints ?? 0, me: false,
+      badge: raceBadge(f.playedToday, f.flawlessStreak, f.streak),
+    }));
+    if (profile) {
+      entries.push({
+        id: profile.id, username: 'You', avatar_url: profile.avatar_url ?? null,
+        avatar_emoji: (profile as { avatar_emoji?: string | null }).avatar_emoji ?? null,
+        level: profile.level ?? 0,
+        avatar_config: undefined, avatar_cast_id: undefined, avatar_frame: undefined, is_pro: undefined,
+        pts: meDigest?.todayPoints ?? 0, me: true,
+        badge: raceBadge(meDigest?.playedToday, meDigest?.flawlessStreak, profile.daily_login_streak),
+      });
+    }
+    entries.sort((a, b) => b.pts - a.pts);
+    return entries;
+  })();
+  const todayStarted = todayStandings.some((e) => e.pts > 0);
+
+  type RaceRow = (typeof standings)[number] & { badge?: string | null };
+  const GOLD_BADGE = '#F5B82E';
+
+  /** The shared podium (gold / silver / bronze steps, letter-tile avatars); the crown on first place once the race has points. */
+  const renderPodium = (rows: RaceRow[], started: boolean, crownLabel: string) => (
+    <div className="relative grid grid-cols-3 items-end gap-2" style={{ padding: `8px 8px ${PODIUM_FLOOR_RISE}px` }}>
+      <PodiumFloor inset={8} />
+      {podiumSlots(rows.length).map((slot) => {
+        const e = rows[slot.index];
+        return (
+          <Link
+            key={e.id}
+            href={e.me ? '/profile' : `/profile/${e.id}`}
+            className="relative grid justify-items-center min-w-0"
+            style={{ gridColumn: slot.column, gridRow: 1, gap: 3, isolation: 'isolate' }}
+          >
+            <PodiumGlow tone={podiumTone(slot.place)} figureHeight={slot.avatar} top={(slot.place === 1 && started ? 18 : 0) + slot.avatar / 2} />
+            {slot.place === 1 && started && (
+              <Icon3D name="crown" size={24} className="relative" style={{ marginBottom: -6, zIndex: 2 }} label={crownLabel} />
+            )}
+            <FriendAvatar
+              // Your own entry is labeled "You" but its tile shows your real initials + accent (§20).
+              name={e.me && profile ? profile.username : e.username}
+              userId={e.id}
+              url={e.avatar_url}
+              config={e.avatar_config}
+              castId={e.avatar_cast_id}
+              frame={e.avatar_frame}
+              pro={e.is_pro}
+              accent={e.me ? (profile as { accent_color?: string | null } | null)?.accent_color ?? null : null}
+              size={slot.avatar}
+            />
+            {/* The ink is a --fr-* variable: it turns light under a dark season card (Halloween night). */}
+            <span className="text-[12px] font-black truncate max-w-full" style={{ color: FR_LOOK.ink }}>{e.username}</span>
+            <SoftNum size={12}>{e.pts.toLocaleString()}</SoftNum>
+            {/* Today's highlight, gold under the points: both parts stack on two lines (FLAWLESS / 89-DAY STREAK). */}
+            {raceBadgeLines(e.badge).map((line) => (
+              <span key={line} className="block text-[9.5px] font-black text-center leading-[1.1] max-w-full" style={{ color: GOLD_BADGE, letterSpacing: 0.4, marginTop: -1 }}>{line}</span>
+            ))}
+            <span className="w-full" aria-label={`${ordinal(slot.place)} place`}>
+              <PodiumPedestal place={slot.place} height={slot.step} />
+            </span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+
+  /** Rows 4th onward: the top 5, then the "All friends · N more" fold. */
+  const renderRankRows = (rows: RaceRow[], showAll: boolean, toggle: () => void, accent: string, ink: string) => {
+    if (rows.length <= 3) return null;
+    const shown = rows.slice(3, showAll ? rows.length : 5);
+    return (
+      <>
+        <div className="overflow-hidden" style={{ borderRadius: 12, border: `1.5px solid ${softMix(accent, 0.3)}` }}>
+          {shown.map((e, i) => (
+            <Link
+              key={e.id}
+              href={e.me ? '/profile' : `/profile/${e.id}`}
+              className="flex items-center gap-2 px-3 py-1.5"
+              style={{ background: rowStripe(i + 1), borderTop: i === 0 ? undefined : `1px solid ${softMix(accent, 0.2)}` }}
+            >
+              <SoftNum size={12} className="w-8 shrink-0 text-right">{ordinal(i + 4)}</SoftNum>
+              <span className="flex-1 min-w-0 flex flex-col">
+                <span className="text-[11.5px] font-extrabold truncate" style={{ color: e.me ? FR.ink : FR_LOOK.ink }}>{e.username}</span>
+                {raceBadgeLines(e.badge).map((line) => (
+                  <span key={line} className="block text-[8.5px] font-black leading-[1.15] truncate" style={{ color: GOLD_BADGE, letterSpacing: 0.4 }}>{line}</span>
+                ))}
+              </span>
+              <SoftNum size={12} className="shrink-0">{e.pts.toLocaleString()}</SoftNum>
+            </Link>
+          ))}
+        </div>
+        {rows.length > 5 && (
+          <button data-squish
+            type="button"
+            onClick={toggle}
+            aria-expanded={showAll}
+            className="flex items-center justify-center gap-1 w-full py-1.5 text-[11px] font-black"
+            style={{ color: ink }}
+          >
+            {showAll ? 'Show top 5' : `All friends · ${rows.length - 5} more`}
+            <ChevronDown className="w-3 h-3 transition-transform" style={{ transform: showAll ? 'rotate(180deg)' : 'none' }} aria-hidden="true" />
+          </button>
+        )}
+      </>
+    );
+  };
 
   const shareRace = async () => {
     if (sharingRace) return;
@@ -448,7 +556,16 @@ export function FriendsPanel() {
       <FrCard accent={FR_LOOK.gold} bar={FR_LOOK.goldBar}>
         <div className="flex flex-col gap-1.5" style={{ padding: '10px 12px' }}>
           <div className="flex items-center justify-between gap-2">
-            <h2 className="m-0 text-[11px] font-black uppercase" style={{ letterSpacing: 1.3, color: FR_LOOK.goldInk }}>This week&apos;s race</h2>
+            <button data-squish
+              type="button"
+              onClick={() => setShowWeek((v) => !v)}
+              aria-expanded={showWeek}
+              aria-label={showWeek ? "Hide this week's race" : "Show this week's race"}
+              className="flex items-center gap-1.5 border-0 bg-transparent p-0 cursor-pointer"
+            >
+              <h2 className="m-0 text-[11px] font-black uppercase" style={{ letterSpacing: 1.3, color: FR_LOOK.goldInk }}>This week&apos;s race</h2>
+              <ChevronDown className="w-3 h-3 transition-transform" style={{ color: FR_LOOK.goldInk, transform: showWeek ? 'rotate(180deg)' : 'none' }} aria-hidden="true" />
+            </button>
             <span className="flex items-center gap-1 text-[10px] font-black uppercase" style={{ color: FR_LOOK.goldInk, letterSpacing: 0.6 }}>
               <span>{weekEndsLabel}</span>
               {raceStarted && (
@@ -464,6 +581,7 @@ export function FriendsPanel() {
               )}
             </span>
           </div>
+          {showWeek && (<>
           {(() => {
             const r = getLastWeekResult();
             if (!r) return null;
@@ -503,63 +621,37 @@ export function FriendsPanel() {
           ))}
           {/* The podium (the Leaderboard's): gold / silver / bronze steps, letter-tile
               avatars, the crown on first place once the race has points. */}
-          <div className="relative grid grid-cols-3 items-end gap-2" style={{ padding: `8px 8px ${PODIUM_FLOOR_RISE}px` }}>
-            <PodiumFloor inset={8} />
-            {podiumSlots(podium.length).map((slot) => {
-              const e = podium[slot.index];
-              return (
-                <Link
-                  key={e.id}
-                  href={e.me ? '/profile' : `/profile/${e.id}`}
-                  className="relative grid justify-items-center min-w-0"
-                  style={{ gridColumn: slot.column, gridRow: 1, gap: 3, isolation: 'isolate' }}
-                >
-                  <PodiumGlow tone={podiumTone(slot.place)} figureHeight={slot.avatar} top={(slot.place === 1 && raceStarted ? 18 : 0) + slot.avatar / 2} />
-                  {slot.place === 1 && raceStarted && (
-                    <Icon3D name="crown" size={24} className="relative" style={{ marginBottom: -6, zIndex: 2 }} label="Leads the week" />
-                  )}
-                  <FriendAvatar
-                    // Your own entry is labeled "You" but its tile shows your real initials + accent (§20).
-                    name={e.me && profile ? profile.username : e.username}
-                    userId={e.id}
-                    url={e.avatar_url}
-                    config={e.avatar_config}
-                    castId={e.avatar_cast_id}
-                    frame={e.avatar_frame}
-                    pro={e.is_pro}
-                    accent={e.me ? (profile as { accent_color?: string | null } | null)?.accent_color ?? null : null}
-                    size={slot.avatar}
-                  />
-                  <span className="text-[12px] font-black truncate max-w-full" style={{ color: FR_LOOK.ink }}>{e.username}</span>
-                  <SoftNum size={12}>{e.pts.toLocaleString()}</SoftNum>
-                  <span className="w-full" aria-label={`${ordinal(slot.place)} place`}>
-                    <PodiumPedestal place={slot.place} height={slot.step} />
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-          {standings.length > 3 && (
-            <div className="overflow-hidden" style={{ borderRadius: 12, border: `1.5px solid ${softMix(FR_LOOK.gold, 0.3)}` }}>
-              {standings.slice(3).map((e, i) => (
-                <Link
-                  key={e.id}
-                  href={e.me ? '/profile' : `/profile/${e.id}`}
-                  className="flex items-center gap-2 px-3 py-1.5"
-                  style={{ background: rowStripe(i + 1), borderTop: i === 0 ? undefined : `1px solid ${softMix(FR_LOOK.gold, 0.2)}` }}
-                >
-                  <SoftNum size={12} className="w-8 shrink-0 text-right">{ordinal(i + 4)}</SoftNum>
-                  <span className="text-[11.5px] font-extrabold truncate flex-1 min-w-0" style={{ color: e.me ? FR.ink : FR_LOOK.ink }}>{e.username}</span>
-                  <SoftNum size={12} className="shrink-0">{e.pts.toLocaleString()}</SoftNum>
-                </Link>
-              ))}
-            </div>
-          )}
+          {renderPodium(podium, raceStarted, 'Leads the week')}
+          {renderRankRows(standings, showAllWeek, () => setShowAllWeek((v) => !v), FR_LOOK.gold, FR_LOOK.goldInk)}
           {!raceStarted && (
             <p className="text-center text-[10.5px] font-bold" style={{ color: FR_LOOK.goldInk }}>Race resets Mondays — first daily takes the lead.</p>
           )}
+          </>)}
         </div>
       </FrCard>
+  ) : null;
+
+  // Founder 10-09: TODAY'S RACE leads the page (pink card): the shared podium with today's points, 4th-5th as rows, the rest
+  // under "All friends · N more", "ENDS IN" the local-midnight countdown. The old pill strip / banner is gone.
+  const todayRaceCard = todayStandings.length > 0 ? (
+    <FrCard accent={FR_LOOK.pink} bar={FR_LOOK.bannerBar}>
+      <div className="flex flex-col gap-1.5" style={{ padding: '10px 12px' }}>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="m-0 text-[11px] font-black uppercase" style={{ letterSpacing: 1.3, color: FR_LOOK.bannerClock }}>Today&apos;s race</h2>
+          <span className="text-[10px] font-black uppercase tabular-nums" style={{ color: FR_LOOK.bannerClock, letterSpacing: 0.6 }}>
+            ENDS IN {midnightClock(new Date(now))}
+          </span>
+        </div>
+        {renderPodium(todayStandings.slice(0, 3), todayStarted, 'Leads today')}
+        {renderRankRows(todayStandings, showAllToday, () => setShowAllToday((v) => !v), FR_LOOK.pink, FR_LOOK.bannerClock)}
+        {!todayStarted && (
+          <p className="text-center text-[10.5px] font-bold" style={{ color: FR_LOOK.bannerClock }}>First daily of the day takes the lead.</p>
+        )}
+      </div>
+    </FrCard>
+  ) : null;
+  const raceCards = todayRaceCard || weeklyRaceCard ? (
+    <div className="space-y-3">{todayRaceCard}{weeklyRaceCard}</div>
   ) : null;
 
   const [addW, addH] = ART_SIZE[ADD_POSE];
@@ -578,26 +670,7 @@ export function FriendsPanel() {
 
       {/* 1b. THIS WEEK'S RACE leads the page (2.8 TestFlight, founder), right under the cast header. Below 1200 px it is
           here; on the desktop grid the same card heads the left column instead (.fr-weekly-top / .fr-weekly-desk). */}
-      {weeklyRaceCard && <div className="page-col fr-weekly-top">{weeklyRaceCard}</div>}
-
-      {/* 2. Friends banner (FINISH_SPEC AG: the 560 column on desktop web) */}
-      <div className="page-col">
-      {pending ? (
-        <div className="animate-pulse" style={{ ...frSurface(FR_LOOK.pink), height: 196 }} aria-hidden />
-      ) : (
-        <FriendsBanner
-          input={bannerInput}
-          clock={midnightClock(new Date(now))}
-          online={online}
-          nobodyLine={nobodyOnLine(friends, now)}
-          chips={raceChips(todayRows)}
-          streak={bestFriendStreak(friends)}
-          onFace={(f) => openPlay(f)}
-          onRace={() => setSheet({ type: 'race' })}
-          onAddFriend={jumpToAdd}
-        />
-      )}
-      </div>
+      {raceCards && <div className="page-col fr-weekly-top">{raceCards}</div>}
 
       {/* FINISH_SPEC AG (desktop web ≥ 900 px; nothing changes below): two
           columns — your turn, play with friends and the race on the left; your
@@ -605,7 +678,7 @@ export function FriendsPanel() {
       <div className="page-grid-2 space-y-3">
       <div className="space-y-3">
       {/* The desktop grid (≥ 1200 px) leads its left column with THIS WEEK'S RACE; below that it sits under the headline. */}
-      {weeklyRaceCard && <div className="fr-weekly-desk">{weeklyRaceCard}</div>}
+      {raceCards && <div className="fr-weekly-desk">{raceCards}</div>}
       {/* 3b. INVITES row (hides itself when branded_invites is off). "Have a code?" is the small quiet pill in ADD A FRIEND. */}
       <InvitesRow userId={profile?.id} screen="pink" />
 

@@ -34,7 +34,7 @@ function TileGrid({ count, className = '', children, ...rest }: { count: number;
   );
 }
 
-/** One game tile: the game's glossy icon on its soft tint, one word under it. */
+/** One game tile: the game's glossy icon on its soft tint, the game's name, then what waits in plain words. */
 function Tile({ tile, quiet, bare, onOpen }: { tile: GameTile; quiet?: boolean; bare?: boolean; onOpen: () => void }) {
   const color = KIND_COLOR[tile.kind];
   return (
@@ -42,24 +42,33 @@ function Tile({ tile, quiet, bare, onOpen }: { tile: GameTile; quiet?: boolean; 
       type="button"
       onClick={onOpen}
       aria-label={`${FRIENDLY_TITLES[tile.kind]}, ${tile.word}`}
-      className="min-w-0 flex flex-col items-center gap-1 active:scale-95 transition-transform"
+      className="min-w-0 flex flex-col items-center gap-[3px] active:scale-95 transition-transform"
       style={{ opacity: quiet ? 0.62 : 1 }}
     >
       <span
         className="flex items-center justify-center"
         style={{
-          width: 48, height: 48, borderRadius: 14,
+          width: 44, height: 44, borderRadius: 13,
           background: softMix(color, tile.yourTurn ? 0.2 : 0.1),
           // A glow, not an outline: it is your move.
           boxShadow: tile.yourTurn ? `0 0 14px 1px ${softMix(color, 0.45)}` : undefined,
         }}
       >
-        <GameGlyph kind={tile.kind} size={28} color={color} />
+        <GameGlyph kind={tile.kind} size={26} color={color} />
       </span>
       {!bare && (
-        <span className="w-full text-center text-[10.5px] font-black leading-[1.1] break-words" style={{ color: tile.yourTurn ? FR_LOOK.ink : FR_LOOK.rowSub }}>
-          {tile.word}
-        </span>
+        <>
+          {/* Founder 10-09: the game's NAME, then what waits in plain words (up to two lines), never a cryptic two-word state. */}
+          <span className="w-full text-center text-[12px] font-black leading-[1.1] truncate" style={{ color: tile.yourTurn ? FR_LOOK.ink : FR_LOOK.rowSub }}>
+            {FRIENDLY_TITLES[tile.kind]}
+          </span>
+          <span
+            className="w-full text-center text-[10.5px] font-bold leading-[1.15] break-words"
+            style={{ color: tile.yourTurn ? FR_LOOK.ink : FR_LOOK.rowSub, opacity: tile.yourTurn ? 0.85 : 1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+          >
+            {tile.word}
+          </span>
+        </>
       )}
     </button>
   );

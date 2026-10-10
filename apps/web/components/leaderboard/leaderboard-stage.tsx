@@ -8,6 +8,7 @@ import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { useAuth } from '@/lib/auth-context';
 import { artSrc, type ArtName } from '@/lib/art';
 import { alphaHex } from '@/lib/soft-surface';
+import { CastButton } from '@/components/ui/cast-button';
 import type { PodiumPlace } from '@/components/leaderboard/podium';
 
 // FRIDAY-QUEUE items 11 + 11b: the Leaderboard is ONE living stage. These are its pieces; the page
@@ -16,6 +17,7 @@ import type { PodiumPlace } from '@/components/leaderboard/podium';
 // floor glow under it — all one layer, so a game switch sweeps the tint through title, strip and podium
 // together. Shared constants (host table, tint alphas, ledge step positions) live in core leaderboard-stage.ts.
 
+const LB_CLOUD_FADE = 'linear-gradient(to bottom, #000 0%, #000 62%, transparent 92%)';
 const WHITE_FALLBACK = { ...castPreset('w'), display: 'mascot' as const };
 
 /** The one stage container + its continuous backdrop. Children stack above it. */
@@ -34,7 +36,9 @@ export function LeaderboardStage({ accent, children, className = '' }: { accent:
         {/* clouds drifting across the very top */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={artSrc(STAGE_ART.clouds as ArtName)} alt="" width={420} height={149} decoding="async" draggable={false}
-          className="absolute select-none" style={{ top: -6, left: 0, width: '100%', height: 'auto', opacity: 0.75 }} />
+          className="absolute select-none"
+          // The cloud bank ends ABOVE the WORDOCIOUS row (founder 10-09): lifted, and its lower edge fades out instead of stopping under the text.
+          style={{ top: -26, left: 0, width: '100%', height: 'auto', opacity: 0.75, WebkitMaskImage: LB_CLOUD_FADE, maskImage: LB_CLOUD_FADE }} />
         {/* the sunburst: white light fanning from behind the podium's first place */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={artSrc(STAGE_ART.sunburst as ArtName)} alt="" width={1200} height={600} decoding="async" draggable={false}
@@ -110,20 +114,12 @@ export function OwnMascot({ size, wizardHat = false, lean = 0, onTap, hopKey = 0
   );
 }
 
-/** The compact "Your board" pill (`art-lb-btn-yourboard`, label drawn live) = today's VIEW BOARD. */
+/** The compact "Your board" button = today's VIEW BOARD: the family gold cast button, small (founder 10-09: the art pill read as ugly). */
 export function YourBoardButton({ onClick, label = 'Your board' }: { onClick: () => void; label?: string }) {
   return (
-    <button data-squish
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      className="relative shrink-0 border-0 bg-transparent p-0 cursor-pointer active:scale-95 transition-transform"
-      style={{ width: 112, height: 36, backgroundImage: `url(${artSrc(STAGE_ART.yourBoard as ArtName)})`, backgroundSize: '100% 100%', color: '#4c1d95' }}
-    >
-      <span className="absolute font-black uppercase" style={{ left: 40, right: 10, top: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11.5, letterSpacing: 0.3, lineHeight: 1 }}>
-        {label}
-      </span>
-    </button>
+    <CastButton color="gold" size="sm" onClick={onClick} aria-label={label} className="shrink-0">
+      {label}
+    </CastButton>
   );
 }
 

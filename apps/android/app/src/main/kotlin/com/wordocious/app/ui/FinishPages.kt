@@ -385,6 +385,8 @@ data class PodiumSpot(
     val accentHex: String? = null,
     val emoji: String? = null,
     val onClick: (() -> Unit)? = null,
+    /** Founder 10-09: today's highlight on the daily race podium ("FLAWLESS · 89-DAY STREAK", "SWEEP"), gold under the points. */
+    val badge: String? = null,
 )
 
 /** The three medal steps: gold / silver / bronze gradients (the mockups' `.s1` `.s2` `.s3`). */
@@ -440,6 +442,13 @@ fun MedalPodium(spots: List<PodiumSpot>, modifier: Modifier = Modifier, stepScal
                         maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                     )
                     SoftNumber(s.points, 13.sp)
+                    // Both parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
+                    com.wordocious.core.FriendCards.raceBadgeLines(s.badge).forEach { line ->
+                        Text(
+                            line, fontSize = 9.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = RACE_BADGE_GOLD,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, lineHeight = 11.sp,
+                        )
+                    }
                 }
                 val h = when (place) { 1 -> 74.dp; 2 -> 54.dp; else -> 40.dp } * stepScale
                 PodiumPedestal(place, h)
@@ -448,6 +457,9 @@ fun MedalPodium(spots: List<PodiumSpot>, modifier: Modifier = Modifier, stepScal
     }
     }
 }
+
+/** The daily-race highlight gold (#F5B82E), same on the podium plaque and the rank rows. */
+internal val RACE_BADGE_GOLD = Color(0xFFF5B82E)
 
 private fun podiumOrdinal(place: Int) = when (place) { 1 -> "First"; 2 -> "Second"; 3 -> "Third"; else -> "#$place" }
 

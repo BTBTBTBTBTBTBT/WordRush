@@ -135,6 +135,22 @@ public enum FriendCards {
     /// The label on the collapsed list: "All friends · 12".
     public static func allFriendsLabel(_ count: Int) -> String { "All friends · \(count)" }
 
+    /// Today's highlight on the daily race: "FLAWLESS" / "SWEEP" (all 8 played) plus "N-DAY STREAK" past 1, joined with " · ".
+    /// Nil when there is nothing to show (core friend-cards.ts raceBadge).
+    public static func raceBadge(played: Int?, flawlessRun: Int?, streak: Int?) -> String? {
+        let all = (played ?? 0) >= 8
+        let day: String? = all ? ((flawlessRun ?? 0) > 0 ? "FLAWLESS" : "SWEEP") : nil
+        let run: String? = (streak ?? 0) > 1 ? "\(streak ?? 0)-DAY STREAK" : nil
+        let parts = [day, run].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// The badge's parts for display: two parts stack on two lines.
+    public static func raceBadgeLines(_ badge: String?) -> [String] {
+        guard let b = badge, !b.isEmpty else { return [] }
+        return b.components(separatedBy: " · ")
+    }
+
     /// Whether any card has a game waiting on you.
     public static func hasYourTurn(_ layout: FriendsLayout) -> Bool {
         layout.cards.contains { $0.waiting > 0 }
