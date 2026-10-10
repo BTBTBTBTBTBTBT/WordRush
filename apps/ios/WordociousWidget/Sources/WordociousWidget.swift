@@ -878,13 +878,19 @@ struct SmallView: View {
                     }
                 }
                 Spacer(minLength: vGap)
+                // Founder 10-10: today's total points join the bottom line, between the streak and the countdown.
                 HStack(spacing: 4) {
                     StreakPair(snap: snap, size: bottom)
+                    Spacer(minLength: 2)
+                    (Text(WidgetStats.pointsText(snap.dayStats(at: date).points)).foregroundColor(WInk.number(dark))
+                        + Text(" PTS").foregroundColor(WInk.label(dark).opacity(0.75)))
+                        .font(WType.black(WType.caps)).tracking(0.5).monospacedDigit()
+                        .lineLimit(1).minimumScaleFactor(0.6)
                     Spacer(minLength: 2)
                     // The gold clock sprite (night art 10-03) leads the live countdown.
                     Image("art-badge-icon-clock-sprite").resizable().interpolation(.high)
                         .frame(width: 11, height: 11).accessibilityHidden(true)
-                    CapsTimer(date: date, color: WInk.number(dark), width: 52)
+                    CapsTimer(date: date, color: WInk.number(dark), width: 48)
                 }
                 .frame(height: bottom)
             }
