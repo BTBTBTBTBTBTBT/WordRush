@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WordociousCore
 
 /// One pocket game with a friend (Friends overhaul, founder 2026-10-01; spec
@@ -52,6 +53,12 @@ struct FriendlyGameScreen: View {
 
     private var kind: FriendlyKind? { game?.kind }
     private var themName: String { game?.opponent.username ?? "Friend" }
+    /// Pocket typography (founder 10-10): the game's accent and each player's name color for the bubble lettering.
+    private var gameAccent: Color { FriendsKit.tileAccent(kind ?? .rps) }
+    private var myColor: Color {
+        PlayerTint.nameColor(userId: AuthService.shared.profile?.id, username: AuthService.shared.profile?.username ?? "You")
+    }
+    private var themColor: Color { PlayerTint.nameColor(userId: game?.opponent.id, username: themName) }
     private var themOnline: Bool { game.flatMap { FriendsKit.friend($0.opponent.id) }?.isOnline() ?? false }
 
     var body: some View {
@@ -68,7 +75,7 @@ struct FriendlyGameScreen: View {
                             scoreWindow(g)
                             if g.isActive && g.yourTurn { PocketYourTurnFlag() }
                             // Item 22: their turn = a slim lobby strip above the board (board stays visible).
-                            if g.isActive && !g.yourTurn { PocketWaitStrip(name: themName, since: g.updatedAt) }
+                            if g.isActive && !g.yourTurn { PocketWaitStrip(name: themName, since: g.updatedAt, nameColor: themColor, accent: gameAccent) }
                             board(g)
                                 .modifier(ShakeEffect(animatableData: shakeCount))
                                 .scaleEffect(arrived ? 1.014 : 1)
@@ -126,8 +133,7 @@ struct FriendlyGameScreen: View {
                 .accessibilityHidden(true)
             VStack(spacing: 12) {
                 if let kind, let art = kind.pocketArt { GameArtImage(asset: art, size: 64) }
-                Text("Your game waits for you").font(Brand.font(19, .black)).foregroundStyle(FriendsInk.heading)
-                    .multilineTextAlignment(.center)
+                BubbleTextView(text: "YOUR GAME WAITS FOR YOU", palette: .accent(gameAccent), maxSize: 26, minSize: 16, animated: false)
                 Text("Pick it up any time. \(themName) gets a ping.").font(Brand.font(12, .bold))
                     .foregroundStyle(FriendsInk.muted).multilineTextAlignment(.center)
                 Button { confirmClose = false; dismiss() } label: {
@@ -309,20 +315,25 @@ struct FriendlyGameScreen: View {
         }
     }
 
+    /// A heading-style label in bubble lettering (the game's accent; names in their player's color).
+    private func heading(_ t: String, size: CGFloat = 15, names: [String] = [], nameColor: Color? = nil) -> some View {
+        PocketBubble(text: t, color: gameAccent, size: size, names: names, nameColor: nameColor, minScale: 0.5)
+            .accessibilityAddTraits(.isHeader)
+    }
+
     // MARK: Top bar
 
     private var topBar: some View {
         ZStack {
             HStack(spacing: 6) {
                 // ART_SPEC §9: the pocket game's 3D icon beside its title.
-                if let kind, kind.pocketArt != nil { FriendlyGameIcon(kind: kind, size: 26, glow: false) }
-                Text((game?.title ?? "").uppercased())
-                    .font(Brand.font(19, .black)).tracking(0.4)
-                    .foregroundStyle(LinearGradient(colors: kind.map(FriendsKit.gradient) ?? FriendsKit.titleGradient,
-                                                    startPoint: .leading, endPoint: .trailing))
-                    .lineLimit(1).minimumScaleFactor(0.7)
+                if let kind, kind.pocketArt != nil { FriendlyGameIcon(kind: kind, size: 28, glow: false) }
+                // Founder 10-10: the title is BIG custom lettering in the game's own accent (one line, shrinks between the X and the ?).
+                BubbleTextView(text: (game?.title ?? "").uppercased(), palette: .accent(gameAccent),
+                               maxSize: 32, minSize: 18, animated: true)
+                    .frame(height: 44)
             }
-            .padding(.horizontal, 48)
+            .padding(.horizontal, 52)
             HStack {
                 HeaderCircleButton(.symbol("xmark"), label: "Close") {
                     if game?.isActive == true { confirmClose = true } else { dismiss() }
@@ -352,19 +363,18 @@ struct FriendlyGameScreen: View {
             LinearGradient(colors: [accent, accent.mixed(over: .white, 0.6)], startPoint: .leading, endPoint: .trailing)
                 .frame(height: 6)
             VStack(alignment: .leading, spacing: 4) {
-                Text(headline(g))
-                    .font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(FriendsInk.bannerHead)
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                Text(subLine(g)).font(Brand.font(10.5, .heavy)).tracking(0.4).foregroundStyle(FriendsInk.bannerLabel)
-                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                PocketBubble(text: headline(g), color: accent, size: 21, names: [themName], nameColor: themColor,
+                             minScale: 0.5, alignment: .leading, hug: false)
+                BubbleTextView(text: subLine(g), palette: .accent(FriendsInk.dark ? FriendsInk.bannerLabel : Color(hex: 0xB0306F)),
+                               names: [themName], maxSize: 11.5, minSize: 10, animated: false, alignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12).padding(.vertical, 10)
             .background(FriendsInk.pink.vsWash(0.08))
             HStack(spacing: 0) {
-                half(label: "YOU", url: profile?.avatarUrl, name: profile?.username ?? "You", emoji: profile?.avatarEmoji,
+                half(label: "YOU", labelColor: myColor, url: profile?.avatarUrl, name: profile?.username ?? "You", emoji: profile?.avatarEmoji,
                      score: score?[g.me], online: false, leading: true, toPlay: toPlay(g, g.me))
-                half(label: "@\(themName.uppercased())", url: g.opponent.avatarUrl, name: themName, emoji: g.opponent.avatarEmoji,
+                half(label: themName.uppercased(), labelColor: themColor, url: g.opponent.avatarUrl, name: themName, emoji: g.opponent.avatarEmoji,
                      score: score?[g.me.other], online: livePresence(g) != nil ? live.peerPresent : (themOnline && g.isActive),
                      leading: false, toPlay: toPlay(g, g.me.other), status: presenceChip(g))
             }
@@ -477,36 +487,35 @@ struct FriendlyGameScreen: View {
         return FriendlyGames.whoseTurn(g.state)?.rawValue == side.rawValue
     }
 
-    private func half(label: String, url: String?, name: String, emoji: String?, score: Int?, online: Bool, leading: Bool, toPlay: Bool,
+    private func half(label: String, labelColor: Color, url: String?, name: String, emoji: String?, score: Int?, online: Bool, leading: Bool, toPlay: Bool,
                       status: (text: String, tone: Color)? = nil) -> some View {
         HStack(spacing: 10) {
             if !leading { Spacer(minLength: 0) }
             if leading { FriendsPresenceAvatar(url: url, username: name, emoji: emoji, size: 40, online: online) }
             VStack(alignment: leading ? .leading : .trailing, spacing: 0) {
-                Text(label).font(Brand.font(10, .black)).tracking(0.8)
-                    .foregroundStyle(leading ? (FriendsInk.dark ? FriendsInk.lavender : FriendsKit.purple)
-                                                 : (FriendsInk.dark ? FriendsInk.gold : Color(hex: 0xB45309))).lineLimit(1).minimumScaleFactor(0.7)
+                // Founder 10-10: the name is bubble lettering in the player's own name color (a long name shrinks to fit).
+                PocketBubble(text: label, color: labelColor, size: 15, minScale: 0.4, alignment: leading ? .leading : .trailing, hug: false)
+                    .frame(maxWidth: 120, alignment: leading ? .leading : .trailing)
                 if let status {
-                    // 9b presence: THINKING… / HERE NOW / LEFT THE GAME takes the TO PLAY chip's slot.
-                    Text(status.text).font(Brand.font(8.5, .black)).tracking(0.6).foregroundStyle(.white)
-                        .padding(.horizontal, 6).frame(height: 15)
+                    // 9b presence: THINKING... / HERE NOW / LEFT THE GAME takes the TO PLAY chip's slot.
+                    PocketBubble(text: status.text, color: .white, size: 10.5, palette: PlayerTint.platePalette(lightInk: true), minScale: 0.5)
+                        .padding(.horizontal, 7).frame(height: 19)
                         .background(Capsule().fill(status.tone))
                         .padding(.top, 2)
                 } else if toPlay {
                     HStack(spacing: 3) {
                         // Wave 3 (9d): the turn marker beside whose move it is.
                         if !leading { PocketMarker(art: PocketArt.turnMarker, size: 15) }
-                        Text("TO PLAY").font(Brand.font(8.5, .black)).tracking(0.6).foregroundStyle(.white)
-                            .padding(.horizontal, 6).frame(height: 15)
+                        PocketBubble(text: "TO PLAY", color: .white, size: 10.5, palette: PlayerTint.platePalette(lightInk: true))
+                            .padding(.horizontal, 7).frame(height: 19)
                             .background(Capsule().fill(leading ? FriendsKit.purple : FriendsKit.amber))
                         if leading { PocketMarker(art: PocketArt.turnMarker, size: 15) }
                     }
                     .padding(.top, 2)
                 }
                 if let score {
-                    // §A2: the score as a soft number.
-                    Text("\(score)").softNumber(34, color: leading ? VsLobbyKit.numberInk : (FriendsInk.dark ? Color(hex: 0xFCD34D) : Color(hex: 0x78350F)))
-                        .contentTransition(.numericText())
+                    // §A2: the score in the bubble numerals.
+                    PocketBubble(text: "\(score)", color: leading ? FriendsKit.purple : Color(hex: 0xB45309), size: 36)
                 }
             }
             if !leading { FriendsPresenceAvatar(url: url, username: name, emoji: emoji, size: 40, online: online) }
@@ -620,7 +629,8 @@ struct FriendlyGameScreen: View {
         VStack(spacing: 14) {
             if let last = r.rounds.last {
                 RpsReveal(round: r.rounds.count, mine: last[me], theirs: last[me.other],
-                          winner: last.winner.map { $0 == me ? 1 : 2 } ?? 0, them: themName)
+                          winner: last.winner.map { $0 == me ? 1 : 2 } ?? 0, them: themName,
+                          accent: gameAccent, myColor: myColor, themColor: themColor)
                     .id(r.rounds.count)
                     .frame(maxWidth: .infinity)
                     .gameTray(accent: FriendsKit.tileAccent(.rps), state: g.isActive ? .normal : trayState(g))
@@ -639,20 +649,24 @@ struct FriendlyGameScreen: View {
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                                     .strokeBorder(Color.white.opacity(0.7), style: StrokeStyle(lineWidth: 2, dash: [5, 4]))
                                     .padding(8)
-                                Text("?").font(Brand.font(44, .black)).foregroundStyle(.white)
+                                PocketBubble(text: "?", color: .white, size: 44, palette: PlayerTint.platePalette(lightInk: true))
                             }
                         }
                     }
                     .frame(width: 92, height: 112)
                     .shadow(color: FriendsKit.ink.opacity(0.12), radius: 6, y: 3)
                     if theirs != nil {
-                        Text("✓ \(themName.uppercased()) PICKED").font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(FriendsKit.green)
+                        HStack(spacing: 5) {
+                            Image(systemName: "checkmark.circle.fill").font(.system(size: 14, weight: .black)).foregroundStyle(FriendsKit.green)
+                                .accessibilityHidden(true)
+                            PocketBubble(text: "\(themName) picked", color: FriendsKit.green, size: 14, names: [themName], nameColor: themColor)
+                        }
                     } else {
-                        Text("\(themName.uppercased()) IS PICKING…").font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(FriendsInk.muted)
+                        PocketBubble(text: "\(themName) is picking...", color: FriendsInk.muted, size: 14, names: [themName], nameColor: themColor)
                     }
                 }
                 VStack(spacing: 8) {
-                    FriendsLabel("Your pick", color: FriendsInk.section)
+                    heading("Your pick")
                     HStack(spacing: 10) {
                         ForEach(RpsPick.allCases, id: \.self) { p in
                             let selected = mine == p
@@ -661,8 +675,8 @@ struct FriendlyGameScreen: View {
                                 VStack(spacing: 4) {
                                     Image(art(p)).resizable().interpolation(.high).scaledToFit().frame(width: 70, height: 70)
                                         .accessibilityHidden(true)   // §AB: the word below names it
-                                    Text(p.rawValue.uppercased()).font(Brand.font(11, .black)).tracking(0.6)
-                                        .foregroundStyle(selected ? .white : FriendsInk.heading)
+                                    PocketBubble(text: p.rawValue, color: rps, size: 14,
+                                                 palette: selected ? PlayerTint.platePalette(lightInk: true) : nil, minScale: 0.5)
                                 }
                                 .frame(maxWidth: .infinity).frame(height: 114)
                                 // §A1: tinted pick cards (selected = filled purple).
@@ -682,8 +696,8 @@ struct FriendlyGameScreen: View {
                         }
                     }
                     .gameTray(accent: FriendsKit.tileAccent(.rps), state: trayState(g))
-                    Text(mine != nil ? "Locked in. Both picks flip at once." : "Both picks flip at once.")
-                        .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                    PocketBubble(text: mine != nil ? "Locked in. Both picks flip at once." : "Both picks flip at once.",
+                                 color: FriendsInk.muted, size: 13, minScale: 0.4)
                 }
             }
         }
@@ -719,8 +733,8 @@ struct FriendlyGameScreen: View {
             // §L: the board sits on the shared tray (no grid lines).
             .gameTray(accent: accent, state: trayState(g))
             HStack(spacing: 16) {
-                pieceLegend("YOU · X", piece: PocketArt.ttt(mine: true) ?? "art-piece-ttt-x", fallback: FriendsKit.purple)
-                pieceLegend("\(themName.uppercased()) · O", piece: PocketArt.ttt(mine: false) ?? "art-piece-ttt-o", fallback: FriendsInk.pink)
+                pieceLegend("YOU · X", piece: PocketArt.ttt(mine: true) ?? "art-piece-ttt-x", fallback: FriendsKit.purple, ink: myColor)
+                pieceLegend("\(themName.uppercased()) · O", piece: PocketArt.ttt(mine: false) ?? "art-piece-ttt-o", fallback: FriendsInk.pink, ink: themColor)
             }
         }
     }
@@ -762,7 +776,7 @@ struct FriendlyGameScreen: View {
         }
     }
 
-    private func pieceLegend(_ text: String, piece: String, fallback: Color) -> some View {
+    private func pieceLegend(_ text: String, piece: String, fallback: Color, ink: Color) -> some View {
         HStack(spacing: 5) {
             if ArtAsset.exists(piece) {
                 Image(piece).resizable().interpolation(.high).scaledToFit().frame(width: 16, height: 16)
@@ -770,14 +784,14 @@ struct FriendlyGameScreen: View {
             } else {
                 RoundedRectangle(cornerRadius: 4).fill(fallback).frame(width: 12, height: 12)
             }
-            Text(text).font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(FriendsInk.muted).lineLimit(1)
+            PocketBubble(text: text, color: ink, size: 13, minScale: 0.4)
         }
     }
 
-    private func legend(_ text: String, _ c: Color) -> some View {
+    private func legend(_ text: String, _ c: Color, ink: Color) -> some View {
         HStack(spacing: 5) {
             RoundedRectangle(cornerRadius: 4).fill(c).frame(width: 12, height: 12)
-            Text(text).font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(FriendsInk.muted).lineLimit(1)
+            PocketBubble(text: text, color: ink, size: 13, minScale: 0.4)
         }
     }
 
@@ -788,8 +802,11 @@ struct FriendlyGameScreen: View {
         VStack(spacing: 14) {
             // §L: the coin sits on the shared tray.
             VStack(spacing: 8) {
-                let caption = c.rounds.last.map { last in
-                    "\(last.caller == g.me ? "You" : themName) called \(last.call.rawValue) · it landed \(last.flip.rawValue)"
+                let caption: AnyView? = c.rounds.last.map { last in
+                    let who = last.caller == g.me ? "You" : themName
+                    return AnyView(PocketBubble(text: "\(who) called \(last.call.rawValue) · it landed \(last.flip.rawValue)",
+                                                color: FriendsInk.muted, size: 13,
+                                                names: [who], nameColor: last.caller == g.me ? myColor : themColor, minScale: 0.4))
                 }
                 // The result line rides with the coin and appears only once it has landed (no spoiler mid-flip).
                 SpinningCoin(face: c.rounds.last?.flip ?? .heads, spinKey: c.rounds.count, caption: caption)
@@ -798,18 +815,18 @@ struct FriendlyGameScreen: View {
             .gameTray(accent: FriendsKit.tileAccent(.coin), state: trayState(g))
             if g.isActive {
                 if myCall {
-                    FriendsLabel("Your call", color: FriendsInk.section)
+                    heading("Your call")
                     HStack(spacing: 10) {
                         callButton("HEADS", solid: true) { send(.coin(.heads)) }
                         callButton("TAILS", solid: false) { send(.coin(.tails)) }
                     }
                 } else {
-                    Text("\(themName.uppercased()) CALLS").font(Brand.font(13, .black)).tracking(0.6).foregroundStyle(FriendsInk.bannerLabel)
+                    heading("\(themName) calls", names: [themName], nameColor: themColor)
                 }
             }
             VStack(spacing: 6) {
-                FriendsLabel("What's on the line", color: FriendsInk.section)
-                Text(c.stake).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.chip)
+                heading("What's on the line")
+                PocketBubble(text: c.stake, color: FriendsKit.purple, size: 14, palette: PlayerTint.platePalette(lightInk: FriendsInk.dark))
                     .padding(.horizontal, 14).frame(minHeight: 30)
                     .friendsChip(FriendsKit.solid, strong: true)
             }
@@ -865,12 +882,16 @@ struct FriendlyGameScreen: View {
         // §L: the board sits on the shared tray.
         .gameTray(accent: FriendsKit.tileAccent(.pass), state: trayState(g))
         if !g.isActive, let answer = g.answer {
-            Text("THE WORD WAS \(answer.uppercased())").font(Brand.font(13, .black)).tracking(0.8)
-                .foregroundStyle(FriendsInk.heading).padding(.top, 4)
+            HStack(spacing: 7) {
+                PocketBubble(text: "The word was", color: gameAccent, size: 16)
+                PocketBubble(text: answer, color: Color(hex: 0xF59E0B), size: 20)
+            }
+            .padding(.top, 4)
         } else if g.isActive && !g.yourTurn {
             HStack(spacing: 6) {
                 PocketMarker(art: PocketArt.puzzlePiece, size: 22)
-                Text("\(themName)'s guess — you'll see it land here.").font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                PocketBubble(text: "\(themName)'s guess - you'll see it land here.", color: FriendsInk.muted, size: 13,
+                             names: [themName], nameColor: themColor, minScale: 0.4)
             }
             .padding(.top, 2)
         }
@@ -951,8 +972,8 @@ struct FriendlyGameScreen: View {
                     .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
             if g.isActive {
-                FriendsLabel(s.fragment.isEmpty ? (myLetter ? "Start the word" : "\(themName) starts") : "The letters so far",
-                             color: FriendsInk.section)
+                heading(s.fragment.isEmpty ? (myLetter ? "Start the word" : "\(themName) starts") : "The letters so far",
+                        names: [themName], nameColor: themColor)
                 HStack(spacing: 6) {
                     ForEach(letters.indices, id: \.self) { i in
                         let by = i < s.letters.count ? s.letters[i] : me.other
@@ -972,15 +993,16 @@ struct FriendlyGameScreen: View {
                 if !myLetter {
                     HStack(spacing: 6) {
                         PocketMarker(art: PocketArt.ghostMarker, size: 22)
-                        Text("\(themName) is adding a letter…").font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                        PocketBubble(text: "\(themName) is adding a letter...", color: FriendsInk.muted, size: 13,
+                                     names: [themName], nameColor: themColor, minScale: 0.4)
                     }
                 }
                 Text("Spell a word and you lose the round. Leave a dead end and you lose it too.")
                     .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 16) {
-                    legend("YOU", TilePalette.correct.base)
-                    legend(themName.uppercased(), TilePalette.present.base)
+                    legend("YOU", TilePalette.correct.base, ink: myColor)
+                    legend(themName.uppercased(), TilePalette.present.base, ink: themColor)
                 }
             }
         }
@@ -1009,11 +1031,11 @@ struct FriendlyGameScreen: View {
         let loser = r.loser == me ? "you" : themName
         let winner = r.loser == me ? themName.uppercased() : "YOU"
         let text = r.reason == .word ? "\(r.fragment) — \(loser) spelled a word" : "\(r.fragment) — no word starts with that"
-        return VStack(spacing: 4) {
-            Text("ROUND \(round) · \(winner) TAKE\(r.loser == me ? "S" : "") IT")
-                .font(Brand.font(10, .black)).tracking(1).foregroundStyle(FriendsInk.bannerLabel)
-            Text(text).font(Brand.font(14, .black)).foregroundStyle(FriendsInk.heading)
-                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+        return VStack(spacing: 5) {
+            PocketBubble(text: "Round \(round) · \(winner) take\(r.loser == me ? "s" : "") it", color: FriendsKit.tileAccent(.ghost), size: 14,
+                         names: [winner], nameColor: r.loser == me ? themColor : myColor, minScale: 0.4)
+            BubbleTextView(text: PocketType.clean(text), palette: .accent(FriendsKit.tileAccent(.ghost)), names: [loser],
+                           maxSize: 16, minSize: 11, animated: false)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 14).padding(.vertical, 12)
@@ -1072,8 +1094,8 @@ struct FriendlyGameScreen: View {
         let me = g.me
         VStack(spacing: 8) {
             if c.words.isEmpty {
-                Text(g.isActive && g.yourTurn ? "Open the chain with any 5- to 7-letter word." : "\(themName) opens the chain.")
-                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                PocketBubble(text: g.isActive && g.yourTurn ? "Open the chain with any 5- to 7-letter word." : "\(themName) opens the chain.",
+                             color: FriendsInk.muted, size: 13, names: [themName], nameColor: themColor, minScale: 0.4)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
             }
@@ -1092,8 +1114,8 @@ struct FriendlyGameScreen: View {
         .gameTray(accent: FriendsKit.tileAccent(.chain), state: trayState(g))
         .animation(Theme.reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: c.words.count)
         HStack(spacing: 16) {
-            legend("YOU", TilePalette.correct.base)
-            legend(themName.uppercased(), TilePalette.present.base)
+            legend("YOU", TilePalette.correct.base, ink: myColor)
+            legend(themName.uppercased(), TilePalette.present.base, ink: themColor)
         }
     }
 
@@ -1116,11 +1138,8 @@ struct FriendlyGameScreen: View {
                     .scaleEffect(glow ? 1.08 : 1)
             }
             Spacer(minLength: 6)
-            HStack(spacing: 0) {
-                Text("+").font(Brand.font(12, .black)).foregroundStyle(VsLobbyKit.numberInk)
-                Text("\(w.points)").softNumber(14, color: VsLobbyKit.numberInk)
-            }
-            .padding(.horizontal, 9).frame(minHeight: 26)
+            PocketBubble(text: "+\(w.points)", color: side, size: 15, palette: PlayerTint.platePalette(lightInk: FriendsInk.dark), fixed: true)
+                .padding(.horizontal, 9).frame(minHeight: 26)
             .friendsChip(side)
         }
         .padding(.horizontal, 10).padding(.vertical, 8)
@@ -1146,8 +1165,8 @@ struct FriendlyGameScreen: View {
                 }
                 .padding(.horizontal, 16)
             } else {
-                Text("\(themName)'s word — it lands in the chain here.")
-                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                PocketBubble(text: "\(themName)'s word - it lands in the chain here.", color: FriendsInk.muted, size: 13,
+                             names: [themName], nameColor: themColor, minScale: 0.4)
             }
             errorSlot.padding(.horizontal, 16)
             LetterKeyboard(
@@ -1254,13 +1273,16 @@ private struct RpsReveal: View {
     /// 0 = tie, 1 = you, 2 = them.
     let winner: Int
     let them: String
+    let accent: Color
+    let myColor: Color
+    let themColor: Color
     @State private var flipped = Theme.reduceMotion
 
     var body: some View {
         VStack(spacing: 6) {
-            Text("ROUND \(round)").font(Brand.font(10, .black)).tracking(1).foregroundStyle(FriendsInk.muted)
+            PocketBubble(text: "Round \(round)", color: accent, size: 15)
             HStack(spacing: 18) {
-                card(mine, label: "YOU", win: winner == 1, tint: FriendsKit.purple)
+                card(mine, label: "YOU", win: winner == 1, tint: FriendsKit.purple, ink: myColor)
                 ZStack {
                     // Wave 3: the clash burst pops between the hands as they flip over.
                     if let burst = PocketArt.clashBurst {
@@ -1270,10 +1292,10 @@ private struct RpsReveal: View {
                             .opacity(flipped ? 1 : 0)
                             .accessibilityHidden(true)
                     }
-                    Text(winner == 0 ? "TIE" : "VS").font(Brand.font(12, .black)).foregroundStyle(FriendsInk.muted)
+                    PocketBubble(text: winner == 0 ? "TIE" : "VS", color: accent, size: 15, minScale: 0.5)
                 }
                 .frame(width: 40)
-                card(theirs, label: them.uppercased(), win: winner == 2, tint: FriendsKit.amber)
+                card(theirs, label: them.uppercased(), win: winner == 2, tint: FriendsKit.amber, ink: themColor)
             }
             // Wave 3 (9d): the hands flip over onto the shared arena plate.
             .background(alignment: .bottom) {
@@ -1292,11 +1314,13 @@ private struct RpsReveal: View {
         }
     }
 
-    private func card(_ p: RpsPick, label: String, win: Bool, tint: Color) -> some View {
+    private func card(_ p: RpsPick, label: String, win: Bool, tint: Color, ink: Color) -> some View {
         VStack(spacing: 3) {
             Image(PocketArt.rps(p)).resizable().interpolation(.high).scaledToFit().frame(width: 58, height: 58)
                 .accessibilityLabel(p.rawValue.capitalized)   // §AB: the pick, not the asset name
-            Text(label).font(Brand.font(9.5, .black)).tracking(0.5).foregroundStyle(win ? (FriendsInk.dark ? tint.mixed(over: .white, 0.5) : tint) : FriendsInk.muted).lineLimit(1)
+            PocketBubble(text: label, color: ink, size: 12, minScale: 0.4, hug: false)
+                .frame(width: 74)
+                .opacity(win ? 1 : 0.75)
         }
         .frame(width: 84, height: 92)
         // §A1: tinted in the player's color, never plain white.
@@ -1316,7 +1340,7 @@ private struct SpinningCoin: View {
     let face: CoinFace
     let spinKey: Int
     /// The result line, shown only once the coin has settled (never before it lands).
-    var caption: String? = nil
+    var caption: AnyView? = nil
     @State private var angle: Double = 0
     @State private var hop: CGFloat = 0
     @State private var squash: CGFloat = 1
@@ -1356,8 +1380,7 @@ private struct SpinningCoin: View {
             }
             .frame(width: 150, height: 160)
             if let caption {
-                Text(caption)
-                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                caption
                     .opacity(settled ? 1 : 0)
                     .animation(.easeOut(duration: 0.25), value: settled)
             }
@@ -1478,5 +1501,66 @@ private struct LiveFloat: View {
             .offset(y: up ? -130 : -4)
             .opacity(up ? 0 : 1)
             .onAppear { withAnimation(.easeOut(duration: Double(FriendlyLive.reactLifetimeMs) / 1000)) { up = true } }
+    }
+}
+
+// MARK: Pocket typography (founder 10-10: "no plain text anywhere")
+
+enum PocketType {
+    /// The atlas has no @, ellipsis, dashes or check; spell them in glyphs it has (a name is never otherwise touched).
+    static func clean(_ s: String) -> String {
+        var out = ""
+        for ch in s.uppercased() {
+            switch ch {
+            case "\u{2026}": out += "..."
+            case "\u{2014}", "\u{2013}": out += "-"
+            case "\u{2019}": out += "'"
+            case "@", "\u{2713}": continue
+            default: out.append(ch)
+            }
+        }
+        return out.split(separator: " ", omittingEmptySubsequences: true).joined(separator: " ")
+    }
+}
+
+/// One line of bubble lettering for the pocket games' labels, names, chips and numbers: never wraps, never clips
+/// (shrinks to fit), takes only the width it needs (`hug`), static (no per-letter pop). `nameColor` tints any of
+/// `names` found in the line in that player's own color.
+struct PocketBubble: View {
+    let text: String
+    var color: Color
+    var size: CGFloat = 13
+    var palette: HeadlinePalette? = nil
+    var names: [String] = []
+    var nameColor: Color? = nil
+    var minScale: CGFloat = 0.45
+    var alignment: Alignment = .center
+    var hug = true
+    /// A fixed natural width (inside a horizontal scroll view, where no width is offered).
+    var fixed = false
+
+    private var pal: HeadlinePalette {
+        var p = palette ?? HeadlinePalette.accent(color)
+        if let nameColor {
+            p.nameTop = Color.white.mixed(over: nameColor, 0.3)
+            p.nameBottom = nameColor
+        }
+        return p
+    }
+
+    var body: some View {
+        let shown = PocketType.clean(text)
+        let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
+        let natural = CGFloat(BubbleText.widthEm(shown)) * size * dyn
+        GeometryReader { g in
+            let s = natural > 0 ? max(minScale, min(1, g.size.width / natural)) : 1
+            BubbleLineView(text: shown, palette: pal, size: size * s, names: names.map(PocketType.clean), animated: false)
+                .fixedSize()
+                .frame(width: g.size.width, height: g.size.height, alignment: alignment)
+        }
+        .frame(minWidth: fixed ? natural + 1 : nil, maxWidth: (hug || fixed) ? natural + 1 : .infinity)
+        .frame(height: size * 1.3)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
     }
 }

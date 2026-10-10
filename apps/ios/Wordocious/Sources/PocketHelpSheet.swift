@@ -99,7 +99,7 @@ struct PocketHelpSheet: View {
 
     private func stepRow(_ n: Int, _ step: PocketHelpStep) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Text("\(n)").font(Brand.font(14, .black)).foregroundStyle(.white)
+            PocketBubble(text: "\(n)", color: .white, size: 15, palette: PlayerTint.platePalette(lightInk: true), fixed: true)
                 .frame(width: 26, height: 26)
                 .background(Circle().fill(LinearGradient(colors: [accent.mixed(over: .white, 0.35), accent],
                                                          startPoint: .top, endPoint: .bottom)))
@@ -119,7 +119,7 @@ struct PocketHelpSheet: View {
         HStack(spacing: 6) {
             ForEach(Array(pic.art.enumerated()), id: \.offset) { i, name in
                 if i > 0, i - 1 < pic.joiners.count {
-                    Text(pic.joiners[i - 1]).font(Brand.font(11, .black)).foregroundStyle(FriendsInk.muted)
+                    PocketBubble(text: pic.joiners[i - 1], color: accent, size: 13, fixed: true)
                 }
                 if ArtAsset.exists(name) {
                     Image(name).resizable().interpolation(.high).scaledToFit()

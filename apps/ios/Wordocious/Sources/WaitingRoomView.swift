@@ -198,6 +198,9 @@ struct PocketWaitStrip: View {
     let name: String
     /// ISO time of the move that passed the turn (FriendlyGameView.updatedAt).
     let since: String
+    /// Pocket typography (founder 10-10): the friend's name color and the game's accent for the bubble lettering.
+    var nameColor: Color = FriendsKit.amber
+    var accent: Color = FriendsKit.purple
 
     @State private var open = false
     @State private var fallbackStart = Date()
@@ -220,12 +223,11 @@ struct PocketWaitStrip: View {
                     LobbyFigure(size: 40)
                         .frame(width: 56, height: 56)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(line)
-                            .font(Brand.font(15, .black)).foregroundStyle(FriendsInk.heading)
-                            .lineLimit(1).minimumScaleFactor(0.7)
+                        PocketBubble(text: line, color: accent, size: 18, names: [name], nameColor: nameColor,
+                                     minScale: 0.45, alignment: .leading, hug: false)
                         TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                            Text(WaitingRoom.waitClock(Double(WaitingRoom.waitedSeconds(since: start, now: ctx.date))))
-                                .font(Brand.font(12, .heavy)).monospacedDigit().foregroundStyle(FriendsInk.muted)
+                            PocketBubble(text: WaitingRoom.waitClock(Double(WaitingRoom.waitedSeconds(since: start, now: ctx.date))),
+                                         color: accent, size: 15, alignment: .leading, hug: false)
                         }
                     }
                     Spacer(minLength: 0)
