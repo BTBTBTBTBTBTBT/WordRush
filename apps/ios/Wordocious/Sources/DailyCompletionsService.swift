@@ -152,7 +152,12 @@ final class DailyCompletionsStore: ObservableObject {
                 var ledger = CompletionLedger(day: self.dataDay, byMode: self.byMode, isWin: { $0.completed })
                 let dayRolled = self.dataDay != today
                 let changed = ledger.apply(mode: c.gameMode, result: c, today: today)
-                if dayRolled { self.optimistic = [:]; self.dataDay = today; self.byMode = ledger.byMode }
+                if dayRolled {
+                    self.optimistic = [:]; self.dataDay = today; self.byMode = ledger.byMode
+                    // Founder 10-10 check: the widget's cached set must roll over too, or a reorder right after midnight
+                    // (GameOrderStore.save → WidgetBridge.refresh) re-wrote yesterday's W/L into the widget.
+                    WidgetBridge.update(completions: ledger.byMode)
+                }
                 guard changed else { return }
                 self.byMode = ledger.byMode
                 // A guest's finish (no session): its own day-keyed store, never the
