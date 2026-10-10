@@ -13,25 +13,19 @@ struct StatsSectionBanner: View {
     static let allTimeColors = [Color(hex: 0xD97706), Color(hex: 0xDB2777)]
 
     var body: some View {
-        let gradient = LinearGradient(colors: today ? Self.todayColors : Self.allTimeColors,
-                                      startPoint: .leading, endPoint: .trailing)
         HStack(alignment: .bottom, spacing: 12) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(today ? "TODAY" : "ALL-TIME")
-                    .font(Brand.font(24, .black)).tracking(1.6)
-                    .foregroundStyle(gradient)
-                    .lineLimit(1)
-                Capsule().fill(gradient).frame(width: 44, height: 4)
-            }
+            // Founder 10-09: the section title in the Wordocious bubble lettering (blue Today, amber All-time).
+            BubbleOneLine(text: today ? "TODAY" : "ALL-TIME",
+                          palette: .accent(today ? Color(hex: 0x3B82F6) : Color(hex: 0xF59E0B)),
+                          size: 30, alignment: .leading)
+                .frame(width: 190)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(today ? "Today" : "All-time")
             .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 0)
             if let note {
-                Text(note.uppercased())
-                    .font(Brand.font(11, .heavy)).tracking(0.9)
-                    .foregroundStyle(FinishInk.secondary)
-                    .lineLimit(1).minimumScaleFactor(0.8)
+                BubbleOneLine(text: note.uppercased(), palette: .accent(Color(hex: 0xA78BFA)), size: 14, alignment: .trailing)
+                    .frame(width: 130)
                     .padding(.bottom, 4)
             }
         }

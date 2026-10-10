@@ -283,16 +283,20 @@ struct GamePickerCard<Header: View>: View {
             VStack(alignment: .leading, spacing: compact ? 5 : 8) {
                 FinishLabel("Wordocious", color: ink)
                 // 2.8 item 8: both rows share ONE tile size (sized for the longer row) and one gap, like Home's banner rows.
-                let slots = max(words.count + (showSweep ? 1 : 0), puzzles.count)
-                PickerTileRow(gap: compact ? 5 : 6, maxSide: compact ? 34 : 44, slots: slots) {
+                // Founder 10-09: exactly Home's banner rows — one tile size (max 40) for both rows, each row spread edge
+                // to edge with even gaps (BannerSpreadRow), on Stats and the Leaderboard alike.
+                let slots = max(10, words.count + (showSweep ? 1 : 0), puzzles.count)
+                BannerSpreadRow(slots: slots, maxTile: 40, minGap: 4) {
                     ForEach(words) { m in tile(m) }
                     if showSweep { sweepTile }
                 }
+                .frame(maxWidth: .infinity)
                 if !puzzles.isEmpty {
                     FinishLabel("Puzzles", color: ink).padding(.top, compact ? 1 : 4)
-                    PickerTileRow(gap: compact ? 5 : 6, maxSide: compact ? 34 : 44, slots: slots) {
+                    BannerSpreadRow(slots: slots, maxTile: 40, minGap: 4) {
                         ForEach(puzzles) { m in tile(m) }
                     }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .padding(.horizontal, 12).padding(.top, bare ? 4 : (compact ? 8 : 12)).padding(.bottom, bare ? 6 : (compact ? 9 : 14))
