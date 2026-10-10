@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   CHAIN_TARGET, PASS_MAX_GUESSES, WORD_MAX, WORD_MIN, tttLine, whoseTurn,
   type ChainState, type CoinFace, type CoinState, type FriendlyMove, type GhostState, type PassState, type RpsPick, type RpsState,
@@ -17,6 +17,8 @@ import { CandyButton } from '@/components/ui/candy-button';
 import { CastButton } from '@/components/ui/cast-button';
 import { ART_SIZE, artSrc, pieceSrc, type ArtName } from '@/lib/art';
 import { prefersReducedMotion } from '@/lib/motion';
+import { haptic } from '@/lib/haptics';
+import { BubbleOneLine } from '@/components/ui/bubble-text';
 import type { TrayState } from '@/lib/game-tray';
 import { softMix } from '@/lib/soft-surface';
 
@@ -100,30 +102,105 @@ function ArtTile({ tone, size, fontSize, radius = 8, pop = false, style, childre
   );
 }
 
+const COIN_ART: Record<CoinFace, ArtName> = { heads: 'art-pocket-coin-heads-w', tails: 'art-pocket-coin-tails-crest' };
+/** The flip's timeline (ms, founder 10-10, iOS SpinningCoin): crouch, launch, the turns slowing as it falls, landing squash + bounce + teeter. */
+const COIN_T = { crouch: 140, rise: 713, fall: 837, land: 80, bounce: 140, settle: 140, teeterA: 160, teeterB: 160, teeterC: 120 } as const;
+/** The spin's haptic ticks slow with the turns: the gaps (ms) after launch. */
+const COIN_TICKS = [120, 130, 150, 180, 220, 270, 340] as const;
+
 /**
- * The Call It coin (2.8 item 9d): heads is the canonical W coin, tails the crest. A fresh flip plays the
- * set's frames — face, tilt, edge, tilt, the landed face — with a lift and a soft shadow (transform/opacity
- * only, about 0.9 s). Reduce Motion: the landed face, nothing else.
+ * The Call It coin (2.8 item 9d; founder 10-10 "smoother and a bit more suspenseful"): heads is the canonical W coin, tails the
+ * crest. A fresh flip crouches, launches, turns end over end in real 3D (five turns, fast at first and slowing as it falls,
+ * ~1.55 s), lands with a squash, a small bounce and a teeter, THEN the gold glow, a success buzz and the result line (`caption`).
+ * Web Animations on transform / opacity only (compositor). Reduce Motion: the landed face, the caption at once.
  */
-function CoinFlip({ face, flipKey }: { face: CoinFace; flipKey: number }) {
-  const landed: ArtName = face === 'heads' ? 'art-pocket-coin-heads-w' : 'art-pocket-coin-tails-crest';
-  const [frame, setFrame] = useState<ArtName>(landed);
-  const [lift, setLift] = useState(false);
+function CoinFlip({ face, flipKey, caption }: { face: CoinFace; flipKey: number; caption?: string | null }) {
+  const [landed, setLanded] = useState<CoinFace>(face);
+  const [settled, setSettled] = useState(true);
+  const shown = useRef<CoinFace>(face);
+  const liftRef = useRef<HTMLDivElement>(null);
+  const turnRef = useRef<HTMLDivElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!flipKey || prefersReducedMotion()) { setFrame(landed); return; }
-    const seq: Array<[ArtName, number]> = [['art-pocket-coin-tilt', 0], ['art-pocket-coin-edge', 150], ['art-pocket-coin-tilt', 300], ['art-pocket-coin-edge', 420], ['art-pocket-coin-tilt', 540], [landed, 680]];
-    setLift(true);
-    const ids = seq.map(([f, at]) => window.setTimeout(() => setFrame(f), at));
-    const end = window.setTimeout(() => setLift(false), 700);
-    return () => { ids.forEach(clearTimeout); clearTimeout(end); };
-  }, [flipKey, landed]);
+    if (!flipKey || prefersReducedMotion()) { shown.current = face; setLanded(face); setSettled(true); return; }
+    const lift = liftRef.current; const turn = turnRef.current; const glow = glowRef.current;
+    if (!lift || !turn || !glow || typeof lift.animate !== 'function') { shown.current = face; setLanded(face); setSettled(true); return; }
+    // Start from the face showing now; end on the result after five whole turns (+ a half if it changes).
+    const start = shown.current === face ? 0 : 180;
+    shown.current = face;
+    setLanded(face);
+    setSettled(false);
+    const T = COIN_T;
+    const tUp = T.crouch + T.rise;
+    const tDown = tUp + T.fall;
+    const tLand = tDown + T.land;
+    const tBounce = tLand + T.bounce;
+    const tSettle = tBounce + T.settle;
+    const tA = tSettle + T.teeterA;
+    const tB = tA + T.teeterB;
+    const total = tB + T.teeterC;
+    const kf = (t: number, ty: number, sx: number, sy: number, rot: number, easing: string) =>
+      ({ offset: t / total, transform: `translateY(${ty}px) scale(${sx}, ${sy}) rotate(${rot}deg)`, easing });
+    const anims: Animation[] = [
+      lift.animate([
+        kf(0, 0, 1, 1, 0, 'ease-out'),
+        kf(T.crouch, 0, 1.14, 0.86, 0, 'ease-out'),
+        kf(tUp, -120, 0.94, 1.06, 0, 'ease-in'),
+        kf(tDown, 0, 1, 1, 0, 'ease-out'),
+        kf(tLand, 0, 1.12, 0.88, 0, 'ease-out'),
+        kf(tBounce, -12, 1, 1, 0, 'ease-in'),
+        kf(tSettle, 0, 1, 1, 0, 'ease-in-out'),
+        kf(tA, 0, 1, 1, 7, 'ease-in-out'),
+        kf(tB, 0, 1, 1, -5, 'ease-out'),
+        kf(total, 0, 1, 1, 0, 'linear'),
+      ], { duration: total, fill: 'both' }),
+      turn.animate([
+        { transform: `rotateX(${start}deg)` },
+        { transform: 'rotateX(1800deg)' },
+      ], { duration: T.rise + T.fall, delay: T.crouch, easing: 'cubic-bezier(0.12, 0.55, 0.2, 1)', fill: 'both' }),
+      // the reveal glow: blooms as the coin settles, holds, fades
+      glow.animate([
+        { opacity: 0, transform: 'scale(0.6)', offset: 0 },
+        { opacity: 1, transform: 'scale(1)', offset: 0.18 },
+        { opacity: 1, transform: 'scale(1)', offset: 0.6 },
+        { opacity: 0, transform: 'scale(1)', offset: 1 },
+      ], { duration: 1700, delay: total, fill: 'both' }),
+    ];
+    const ids: number[] = [];
+    ids.push(window.setTimeout(() => haptic('medium'), T.crouch));
+    let at = T.crouch;
+    for (const gap of COIN_TICKS) { at += gap; ids.push(window.setTimeout(() => haptic('selection'), at)); }
+    ids.push(window.setTimeout(() => haptic('heavy'), tLand));
+    ids.push(window.setTimeout(() => { haptic('success'); setSettled(true); }, total));
+    return () => { ids.forEach(clearTimeout); anims.forEach((a) => a.cancel()); };
+  }, [flipKey, face]);
+  const other: CoinFace = landed === 'heads' ? 'tails' : 'heads';
+  const [cw, ch] = ART_SIZE[COIN_ART.heads];
+  const H = 118;
+  const W = Math.round((H * cw) / ch);
+  const faceStyle: React.CSSProperties = { position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' };
   return (
     // The Call It table (art-pocket-board-call-it-table): the coin hovers over its cushion and lands on it.
-    <div className="relative" style={{ width: 210, height: 214 }}>
-      <PocketPiece name="art-pocket-board-call-it-table" height={138} className="absolute" style={{ left: '50%', bottom: 0, marginLeft: -105, width: 210 }} />
-      <div className="absolute left-0 right-0 flex items-center justify-center" style={{ top: 0, height: 130, transform: lift ? 'translateY(-26px)' : 'translateY(8px)', transition: 'transform 340ms cubic-bezier(.2,.7,.3,1)', willChange: 'transform' }}>
-        <PocketPiece name={frame} height={frame === 'art-pocket-coin-edge' ? 36 : 118} />
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative" style={{ width: 210, height: 214 }} role="img" aria-label={settled ? `Coin, ${face}` : 'Coin flipping'}>
+        <PocketPiece name="art-pocket-board-call-it-table" height={138} className="absolute" style={{ left: '50%', bottom: 0, marginLeft: -105, width: 210 }} />
+        <div ref={glowRef} aria-hidden="true" className="absolute pointer-events-none"
+          style={{ left: '50%', top: 0, width: 220, height: 220, marginLeft: -110, opacity: 0, background: 'radial-gradient(circle, rgba(253,230,138,0.7), rgba(253,230,138,0) 70%)' }} />
+        <div className="absolute left-0 right-0 flex items-center justify-center" style={{ top: 8, height: 130 }}>
+          <div ref={liftRef} style={{ transformOrigin: '50% 100%', willChange: 'transform' }}>
+            <div style={{ perspective: 700 }}>
+              <div ref={turnRef} style={{ position: 'relative', width: W, height: H, transformStyle: 'preserve-3d' }}>
+                <div style={faceStyle}><PocketPiece name={COIN_ART[landed]} height={H} /></div>
+                <div style={{ ...faceStyle, transform: 'rotateX(180deg)' }}><PocketPiece name={COIN_ART[other]} height={H} /></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+      {caption !== undefined && (
+        // The result line appears only once the coin has landed (no spoiler mid-flip); its space is held.
+        <p className="text-[12px] font-black uppercase text-center" style={{ color: FR.ink, letterSpacing: 0.6, opacity: settled ? 1 : 0, transition: 'opacity 250ms ease-out' }}>{caption}</p>
+      )}
     </div>
   );
 }
@@ -136,13 +213,31 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
   const myPick = state.picks[me];
   const [pending, setPending] = useState<RpsPick | null>(null);
   const last = state.rounds[state.rounds.length - 1];
-  // A fresh round result flips over for a moment; once the match is over it stays.
+  // A fresh round result plays the suspense beat (founder 10-10): ROCK... PAPER... SCISSORS... SHOOT! with both fists pumping three
+  // times, then both cards turn over together; once the match is over the result simply stays.
   const [revealing, setRevealing] = useState(false);
+  const [beat, setBeat] = useState(-1);          // -1 not started, 0-2 the pumps, 3 SHOOT!
+  const [turning, setTurning] = useState(false); // the cards are turning over
+  const [flipped, setFlipped] = useState(false); // the turn has landed: the glow, the burst, the labels
+  const iWon = !!last && last.winner === me;
   useEffect(() => {
     if (!revealKey) return;
     setRevealing(true);
-    const t = setTimeout(() => setRevealing(false), 2600);
-    return () => clearTimeout(t);
+    if (prefersReducedMotion()) { setBeat(-1); setTurning(false); setFlipped(true); const t = setTimeout(() => setRevealing(false), 2600); return () => clearTimeout(t); }
+    setBeat(0); setTurning(false); setFlipped(false);
+    haptic('light');
+    const ids = [
+      // each pump is 0.4 s (up, down, a beat); a light tick lands at the end of each
+      window.setTimeout(() => { setBeat(1); haptic('light'); }, 400),
+      window.setTimeout(() => { setBeat(2); haptic('light'); }, 800),
+      window.setTimeout(() => { setBeat(3); haptic('light'); haptic('medium'); }, 1200),
+      window.setTimeout(() => setTurning(true), 1420),
+      window.setTimeout(() => { setFlipped(true); haptic('heavy'); }, 1600),
+      window.setTimeout(() => { if (iWon) haptic('success'); }, 1800),
+      window.setTimeout(() => setRevealing(false), 3600),
+    ];
+    return () => ids.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealKey]);
   // My pick landed (or the round resolved and reset the picks): drop the optimistic one.
   useEffect(() => { setPending(null); }, [myPick, state.rounds.length]);
@@ -167,16 +262,30 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
     position: 'absolute', left: `${leftPct * 100}%`, top: '43%', width: 84, height: 84, marginLeft: -42, marginTop: -42,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   });
+  // Both hands pump together while the words count, then turn over around the vertical axis (the art only: labels never mirror).
+  const countdown = revealing && !calm && !flipped;
   const hand = (side: Side, leftPct: number) => {
     const p = last![side];
-    const won = last!.winner === side;
+    const won = flipped && last!.winner === side;
+    const settledHand = !countdown && !turning;
     return (
-      <div key={`${revealKey}-${side}`} style={{ ...wellStyle(leftPct), animation: revealing && !calm ? 'friends-flip 0.45s ease-out both' : undefined, filter: won ? `drop-shadow(0 0 10px ${side === me ? TILE.you : TILE.them})` : undefined }}>
-        <Art name={p} size={80} />
+      <div key={`${revealKey}-${side}`} style={{ ...wellStyle(leftPct), animation: countdown && !turning ? 'rps-pump 0.4s ease-in-out 3' : undefined, filter: won ? `drop-shadow(0 0 10px ${side === me ? TILE.you : TILE.them})` : undefined, perspective: 600 }}>
+        <div
+          style={{
+            position: 'relative', width: 80, height: 80, transformStyle: 'preserve-3d',
+            transform: countdown && !turning ? 'rotateY(180deg)' : undefined,
+            animation: turning && !calm && !settledHand ? 'rps-turn 0.55s cubic-bezier(.2,.8,.3,1.1) both' : undefined,
+          }}
+        >
+          <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}><Art name={p} size={80} /></div>
+          <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }} aria-hidden="true"><Art name="rock" size={80} /></div>
+        </div>
       </div>
     );
   };
   const reveal = showReveal && !!last;
+  // The winner's color and WON tag wait for the turn to land (a settled / finished board shows them at once).
+  const flippedOrStatic = !revealing || calm || flipped;
   const lastLine = last
     ? last.winner === null ? 'Tie' : last.winner === me ? 'You won the round' : `${them.name} won the round`
     : null;
@@ -191,9 +300,15 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
             <>
               {hand(me, 0.30)}
               {hand(theirSide, 0.74)}
-              {revealing && !calm && (
+              {revealing && !calm && flipped && (
                 <PocketPiece name="art-pocket-clash-burst" height={70} className="absolute pointer-events-none"
                   style={{ left: '52%', top: '43%', marginLeft: -35, marginTop: -35, animation: 'friends-flip 0.35s ease-out both', opacity: 0.95 }} />
+              )}
+              {countdown && beat >= 0 && (
+                // The words pop in the middle slot; SHOOT! is gold and bigger.
+                <div key={beat} className="absolute pointer-events-none rps-word" style={{ left: '52%', top: '43%', width: 92, marginLeft: -46, marginTop: -14 }} aria-hidden="true">
+                  <BubbleOneLine text={['ROCK...', 'PAPER...', 'SCISSORS...', 'SHOOT!'][Math.min(beat, 3)]} palette={beat === 3 ? 'leaderboard' : 'friends'} size={beat === 3 ? 20 : 15} minScale={0.5} />
+                </div>
               )}
             </>
           ) : (
@@ -206,8 +321,8 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
           )}
         </div>
         <div className="w-full flex justify-between px-6 text-[10px] font-black uppercase" style={{ letterSpacing: 0.8, color: FR.label }}>
-          <span style={{ color: reveal && last!.winner === me ? TILE.you : undefined }}>YOU{reveal && last!.winner === me ? ' · WON' : ''}</span>
-          <span className="truncate" style={{ maxWidth: 120, color: reveal && last!.winner === theirSide ? TILE.them : undefined }}>{them.name}{reveal && last!.winner === theirSide ? ' · WON' : ''}</span>
+          <span style={{ color: reveal && flippedOrStatic && last!.winner === me ? TILE.you : undefined }}>YOU{reveal && flippedOrStatic && last!.winner === me ? ' · WON' : ''}</span>
+          <span className="truncate" style={{ maxWidth: 120, color: reveal && flippedOrStatic && last!.winner === theirSide ? TILE.them : undefined }}>{them.name}{reveal && flippedOrStatic && last!.winner === theirSide ? ' · WON' : ''}</span>
         </div>
         {!reveal && active && (theirPick
           ? <span className="text-[11px] font-black" style={{ color: FR.online, letterSpacing: 0.6 }}>✓ {THEM} PICKED</span>
@@ -397,12 +512,11 @@ export function CoinBoard({ state, me, them, active, busy, revealKey, onMove, ac
   return (
     <div className="flex flex-col items-center gap-3">
       <GameTray accent={accent} state={tray} className="w-full flex flex-col items-center gap-2">
-        <CoinFlip face={face} flipKey={revealKey} />
-        <p className="text-[12px] font-black uppercase text-center" style={{ color: FR.ink, letterSpacing: 0.6 }}>
-          {last
-            ? `${last.flip} · ${last.caller === me ? 'you' : them.name} called ${last.call}`
-            : 'No flips yet'}
-        </p>
+        <CoinFlip
+          face={face}
+          flipKey={revealKey}
+          caption={last ? `${last.flip} · ${last.caller === me ? 'you' : them.name} called ${last.call}` : 'No flips yet'}
+        />
       </GameTray>
 
       {active && (

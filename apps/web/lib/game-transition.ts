@@ -77,6 +77,15 @@ function toBox(r: DOMRect): Box {
   return { left: r.left, top: r.top, width: r.width, height: r.height };
 }
 
+/** The season's night card color while a dark-toned season shows (html[data-season-tone="dark"] + the surfaces' --color-surface), else null. */
+function darkSeasonCard(): string | null {
+  if (typeof document === 'undefined') return null;
+  const root = document.documentElement;
+  if (root.getAttribute('data-season-tone') !== 'dark') return null;
+  const c = getComputedStyle(root).getPropertyValue('--color-surface').trim();
+  return c || null;
+}
+
 /** A solid full-viewport shell (the cheap thing that moves). */
 function makeShell(color: string, named: boolean): HTMLDivElement {
   const d = document.createElement('div');
@@ -118,16 +127,18 @@ function lift(el: HTMLElement): Promise<void> {
 export function openGame(router: Router, href: string, el: HTMLElement | null, opts: { key?: string; color: string; radius?: number }): void {
   feedback('open');   // Sound Lab pick "Page Breeze", once per open (closing never plays it)
   if (running) { router.push(href); return; }
+  // Founder 10-10: in a dark season the shell under the page is the season's night card (never a pale slab).
+  const shellColor = darkSeasonCard() ?? opts.color;
   const radius = opts.radius ?? 16;
   const frame = el ? usableSource(toBox(el.getBoundingClientRect()), screenBox()) : null;
   const kind = openKind(!!frame, reduceMotion());
-  current = { key: frame ? opts.key ?? null : null, color: opts.color, radius };
+  current = { key: frame ? opts.key ?? null : null, color: shellColor, radius };
   const doc = document as VTDocument;
 
   if (kind === 'crossFade') {
     if (!doc.startViewTransition) { router.push(href); return; }
     running = true;
-    setVars(opts.color, radius, 'fade');
+    setVars(shellColor, radius, 'fade');
     const t = doc.startViewTransition(async () => { router.push(href); await waitForRoute(href, IN_VT); });
     t.finished.finally(() => { clearVars(); running = false; });
     return;
@@ -137,14 +148,14 @@ export function openGame(router: Router, href: string, el: HTMLElement | null, o
   const start = async () => {
     if (doc.startViewTransition) {
       if (el && frame) el.style.setProperty('view-transition-name', 'game-shell');
-      setVars(opts.color, radius, frame ? 'open' : 'rise');
+      setVars(shellColor, radius, frame ? 'open' : 'rise');
       let shell: HTMLDivElement | null = null;
       const t = doc.startViewTransition(async () => {
         if (el) el.style.removeProperty('view-transition-name');
         router.push(href);
         await waitForRoute(href, IN_VT);
         // The game is rendered (built) under the transition; the shell is its new image.
-        shell = makeShell(opts.color, true);
+        shell = makeShell(shellColor, true);
       });
       t.finished.finally(() => {
         shell?.remove();
@@ -156,7 +167,7 @@ export function openGame(router: Router, href: string, el: HTMLElement | null, o
     }
     // Fallback: one shell div, one WAAPI timeline.
     const screen = screenBox();
-    const shell = makeShell(opts.color, false);
+    const shell = makeShell(shellColor, false);
     const from = frame ? liftedFrame(frame) : riseStartFrame(screen);
     const grow = shell.animate(
       [

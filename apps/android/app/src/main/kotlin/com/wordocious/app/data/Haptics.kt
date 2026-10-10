@@ -58,6 +58,7 @@ object Haptics {
         Haptic.SUCCESS, Haptic.SUCCESS_HEAVY ->
             if (sdk >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.CONTEXT_CLICK
         Haptic.MEDIUM -> HapticFeedbackConstants.CONTEXT_CLICK
+        Haptic.HEAVY -> HapticFeedbackConstants.LONG_PRESS
     }
 
     /** Play [h] on [view] (or the resumed activity). No-op when Haptics is off. */
@@ -83,4 +84,5 @@ object Haptics {
     fun success(view: View? = null) = perform(Haptic.SUCCESS, view)
     fun successHeavy(view: View? = null) = perform(Haptic.SUCCESS_HEAVY, view)
     fun medium(view: View? = null) = perform(Haptic.MEDIUM, view)
+    fun heavy(view: View? = null) = perform(Haptic.HEAVY, view)
 }
