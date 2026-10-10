@@ -677,7 +677,7 @@ private fun HtpHeading(n: Int, title: String, accent: Color, palette: HeadlinePa
             Modifier.size(40.dp).clip(CircleShape).background(field(accent, 0.16f, 0.32f)).clearAndSetSemantics { },
             contentAlignment = Alignment.Center,
         ) { SoftNumber("$n", 26.sp, color = if (WTheme.isDark) Wash.mix(accent, 0.7f) else accent) }
-        BubbleText(title.uppercase(), palette, Modifier.weight(1f), maxSize = 24, minSize = 16, align = TextAlign.Start)
+        BubbleText(title.uppercase(), palette, Modifier.weight(1f), maxSize = 24, minSize = 16, align = TextAlign.Start, animated = false)
     }
 }
 
@@ -719,7 +719,12 @@ private fun HtpGameEntry(g: HowToPlayService.Game, accent: Color, onSheet: (HtpS
 
 @Composable
 private fun HtpSection(n: Int, s: HowToPlayService.Section, accent: Color, palette: HeadlinePalette, tile: @Composable (HowToPlayService.Letter) -> Unit, onSheet: (HtpSheet) -> Unit) {
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    // Founder 10-10 ("hard to read with our theme"): every section sits on its own card (night glass in a dark season), so body
+    // text never lies on the wallpaper's scenery.
+    TintedCard(
+        accent, Modifier.fillMaxWidth(), bar = null, tint = accentWash(accent, 0.08f), line = accentLine(accent, 0.22f),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         HtpHeading(n, s.title, accent, palette)
         s.intro?.let { TakeawayField(it, accent) }
         s.bullets?.let { bullets ->

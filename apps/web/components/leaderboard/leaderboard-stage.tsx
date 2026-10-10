@@ -8,9 +8,8 @@ import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { useAuth } from '@/lib/auth-context';
 import { artSrc, type ArtName } from '@/lib/art';
 import { alphaHex } from '@/lib/soft-surface';
-import { gameHueShift } from '@/lib/cast-accent';
+import { CandyThumbPill } from '@/components/ui/candy-thumb-pill';
 import { idleLifeStyle } from '@/lib/idle-life';
-import { CANDY_INK, threeSlice } from '@/lib/candy-toggle';
 import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
 
 // FRIDAY-QUEUE items 11 + 11b: the Leaderboard is ONE living stage. These are its pieces; the page
@@ -134,25 +133,14 @@ export function YourBoardButton({ onClick, label = 'View board', accent, glyph =
   // Founder 10-10: View board and Play are the SAME glossy candy thumb as the selected half of the Everyone | Friends switch
   // above them (26 px, white Nunito Black 11 caps, a small glyph leading), hue-turned to the board's game color (animated).
   return (
-    <button
-      data-squish
-      type="button"
+    <CandyThumbPill
+      label={label}
       onClick={onClick}
-      aria-label={label}
-      className="relative inline-flex shrink-0 items-center border-0 cursor-pointer font-black uppercase"
-      style={{
-        height: 26, padding: '0 13px', gap: 5, fontSize: 11, letterSpacing: 0.3, whiteSpace: 'nowrap', color: CANDY_INK.on,
-        textShadow: '0 1px 0 rgba(76, 29, 149, 0.45)', background: 'transparent',
-      }}
-    >
-      {/* the glossy thumb sprite behind, hue-turned to the game (the label stays white) */}
-      <span aria-hidden="true" className="absolute inset-0 pointer-events-none"
-        style={{ ...threeSlice('thumb-on', 26, '--candy-thumb'), filter: accent ? `hue-rotate(${gameHueShift(accent)}deg)` : undefined, transition: 'filter 300ms ease-in-out' }} />
-      {glyph === 'play'
-        ? <Play className="relative shrink-0" width={10} height={10} fill="currentColor" strokeWidth={0} aria-hidden="true" />
-        : <ListOrdered className="relative shrink-0" width={11} height={11} strokeWidth={3} aria-hidden="true" />}
-      <span className="relative">{label}</span>
-    </button>
+      accent={accent}
+      icon={glyph === 'play'
+        ? <Play width={10} height={10} fill="currentColor" strokeWidth={0} />
+        : <ListOrdered width={11} height={11} strokeWidth={3} />}
+    />
   );
 }
 

@@ -6,6 +6,7 @@ import { InfoPageLayout } from '@/components/ui/info-page';
 import { GuideBody, GuideHeroCard, GuideTakeaway } from '@/components/strategy/guide-family';
 import { HtpGameEntry, HtpSectionHead } from '@/components/help/htp-parts';
 import { howToPlayAccent } from '@/lib/strategy-games';
+import { softCard } from '@/lib/soft-surface';
 
 export const metadata: Metadata = {
   title: 'How to Play Wordocious — Rules, Tips & Game Mode Guide',
@@ -39,7 +40,7 @@ export default function HowToPlayPage() {
         {HOW_TO_PLAY.map((s, i) => {
           const accent = howToPlayAccent(i);
           return (
-            <section key={i} className="flex flex-col gap-3">
+            <section key={i} className="flex flex-col gap-3" style={{ padding: 14, ...softCard(accent, { radius: 18 }) }}>
               <HtpSectionHead n={i + 1} accent={accent} title={s.title} />
 
               {s.intro && <GuideTakeaway accent={accent}>{s.intro}</GuideTakeaway>}

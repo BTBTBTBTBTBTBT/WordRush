@@ -32,9 +32,13 @@
         <TextView
             android:id="@+id/w_ring_label"
             style="@style/WidgetCaps"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="1dp"
+            android:gravity="center"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="5sp"
+            android:autoSizeMaxTextSize="10sp"
             android:text="DAILIES" />
     </LinearLayout>
 </FrameLayout>

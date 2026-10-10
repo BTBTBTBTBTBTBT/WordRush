@@ -80,6 +80,7 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/widget_ink"
                     android:id="@+id/w_streak_caps"
+                android:maxLines="2"
                 android:text="DAY STREAK" />
                 <LinearLayout
                     android:layout_width="wrap_content"

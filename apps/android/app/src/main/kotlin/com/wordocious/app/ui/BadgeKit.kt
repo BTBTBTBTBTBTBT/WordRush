@@ -339,6 +339,8 @@ object BadgeMoments {
 
     /** BF2: bumped by "See all" — MainScreen opens Stats on its achievements. */
     var seeAllRequests by androidx.compose.runtime.mutableIntStateOf(0)
+    /** The last request the Stats achievements fold has acted on (so a later recomposition never re-opens it). */
+    var seeAllConsumed = 0
 
     /**
      * Queue the unlock popup for [keys] (oldest first). A client-side unlock ([fromDiff] false)

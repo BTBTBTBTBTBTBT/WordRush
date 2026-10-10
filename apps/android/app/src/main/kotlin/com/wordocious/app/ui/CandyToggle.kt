@@ -200,3 +200,39 @@ fun CandySwitch(checked: Boolean, modifier: Modifier = Modifier) {
         )
     }
 }
+
+/**
+ * Founder 10-10: the toggle's glossy candy thumb as a stand-alone pill (26 dp, white Nunito Black 11 caps, a small glyph leading):
+ * the Stats Achievements SHOW ALL / HIDE fold. [chevronUp] draws the open state's chevron.
+ */
+@Composable
+fun CandyThumbPill(label: String, chevronUp: Boolean, contentDescription: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val thumb = candyBitmap(CandySprite.THUMB_ON)
+    Row(
+        modifier.height(26.dp)
+            .squishClickable(contentDescription, onClick = onClick)
+            .candyPill(thumb)
+            .padding(horizontal = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        androidx.compose.foundation.Canvas(Modifier.size(10.dp)) {
+            val w = size.width; val h = size.height
+            val path = androidx.compose.ui.graphics.Path().apply {
+                if (chevronUp) { moveTo(w * 0.1f, h * 0.7f); lineTo(w * 0.5f, h * 0.3f); lineTo(w * 0.9f, h * 0.7f) }
+                else { moveTo(w * 0.1f, h * 0.3f); lineTo(w * 0.5f, h * 0.7f); lineTo(w * 0.9f, h * 0.3f) }
+            }
+            drawPath(
+                path, Color.White,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = 2.2.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                ),
+            )
+        }
+        androidx.compose.material3.Text(
+            label.uppercase(java.util.Locale.US), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.3.sp,
+            color = CandyInk.ON, maxLines = 1, softWrap = false,
+            style = androidx.compose.ui.text.TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color(0x734C1D95), androidx.compose.ui.geometry.Offset(0f, 1f), 0f)),
+        )
+    }
+}
