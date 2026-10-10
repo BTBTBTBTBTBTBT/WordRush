@@ -332,10 +332,12 @@ struct LivingCastHeader: View {
         return max(28, (UIScreen.main.bounds.width - inset * 2) / units)
     }
 
-    /// The header's height: the top margin, the figures, the stagger and (Pro) the crown's room.
+    /// The header's height: the top margin, the figures, the stagger and the crown's room. Founder 10-09: the crown's
+    /// room is ALWAYS reserved — Pro resolves a beat after launch, and growing the header then shoved the whole Home
+    /// page down ~8 pt on every cold start. (`pro` is kept for callers.)
     static func height(pro: Bool) -> CGFloat {
         let s = figure
-        return topMargin + s + stagger + (pro ? s * 0.22 : 2)
+        return topMargin + s + stagger + s * 0.22
     }
 
     private var still: Bool { Mascots.reduceMotion(envReduceMotion) }

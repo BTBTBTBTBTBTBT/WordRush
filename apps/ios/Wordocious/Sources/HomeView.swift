@@ -312,17 +312,32 @@ struct HomeView: View {
     /// sweep / flawless runs; Puzzles: dayStreaks over the visible More Games dailies.
     private func loadStreaks(word: Bool = true, puzzles: Bool = true) async {
         guard auth.isAuthenticated else {
+            // Founder 10-09: while the session is still restoring at launch, keep the cached streaks (zeroing them
+            // flipped the headline "FLAWLESS 3-PEAT!" to the plain line and back, nudging the banner).
+            guard !auth.isLoading else { return }
             wordStreaks = GroupStreaks(sweep: 0, flawless: 0); puzzleStreaks = GroupStreaks(sweep: 0, flawless: 0); return
+        }
+        // Founder 10-09 (the banner nudged at launch): a fetch that says "no streak" while today's row is already swept
+        // contradicts itself (a swept day IS a run of at least one) — it's an early / partial read, so the cached run
+        // stays and the headline never flips to the plain line and back.
+        func plausible(_ g: GroupStreaks, _ modes: [HomeMode]) -> Bool {
+            HomeBanner.groupTier(progress(modes)) == .none || g.sweep > 0 || g.flawless > 0
         }
         if word {
             let sweep = await MatchStatsService.dailySweepStats()
-            wordStreaks = GroupStreaks(sweep: sweep.currentSweepStreak, flawless: sweep.currentFlawlessStreak,
-                                       bestSweep: 0, bestFlawless: sweep.bestFlawlessStreak)
-            HomeStreaksService.storeStreaks(wordStreaks, .word)
+            let fresh = GroupStreaks(sweep: sweep.currentSweepStreak, flawless: sweep.currentFlawlessStreak,
+                                     bestSweep: 0, bestFlawless: sweep.bestFlawlessStreak)
+            if plausible(fresh, wordModes) {
+                if fresh != wordStreaks { wordStreaks = fresh }
+                HomeStreaksService.storeStreaks(fresh, .word)
+            }
         }
         if puzzles {
-            puzzleStreaks = await HomeStreaksService.puzzleStreaks(dbKeys: puzzleModes.compactMap(\.dbKey))
-            HomeStreaksService.storeStreaks(puzzleStreaks, .puzzles)
+            let fresh = await HomeStreaksService.puzzleStreaks(dbKeys: puzzleModes.compactMap(\.dbKey))
+            if plausible(fresh, puzzleModes) {
+                if fresh != puzzleStreaks { puzzleStreaks = fresh }
+                HomeStreaksService.storeStreaks(fresh, .puzzles)
+            }
         }
         // The widget shows the row streaks too (read from that cache).
         WidgetBridge.update(completions: completions.byMode)
