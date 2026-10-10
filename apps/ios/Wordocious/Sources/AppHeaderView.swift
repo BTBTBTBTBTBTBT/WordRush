@@ -897,6 +897,14 @@ struct MusicNoteGlyph: View {
 /// Android read (WordociousCore `CastRig`, CastRigTests). `bundle` is nil (→ the static
 /// hero images) if anything is missing, or with the QA / perf A-B switch
 /// `-debug-no-puppets YES`.
+/// The `cast-rigs` bundle decoded once, thread-safe (LaunchWarm decodes it off main at launch).
+enum CastRigDecode {
+    static let bundle: CastRigBundle? = {
+        guard let data = NSDataAsset(name: "cast-rigs")?.data else { return nil }
+        return try? CastRigBundle.decode(data)
+    }()
+}
+
 @MainActor
 final class CastPuppets {
     static let shared = CastPuppets()
@@ -912,8 +920,7 @@ final class CastPuppets {
         if PerfTour.flag("noPuppets") { bundle = nil; return }
         #endif
         guard !UserDefaults.standard.bool(forKey: "debug-no-puppets"),
-              let data = NSDataAsset(name: "cast-rigs")?.data,
-              let b = try? CastRigBundle.decode(data) else { bundle = nil; return }
+              let b = CastRigDecode.bundle else { bundle = nil; return }
         var rigs: [MascotID: CastRig] = [:]
         for m in Mascots.cast {
             guard let r = b.rigs[m.rawValue],

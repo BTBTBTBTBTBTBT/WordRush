@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import WordociousCore
 
 /// Shared URLSessions (founder, 2026-09-29): URLSession.shared waits 60 s
@@ -22,6 +23,49 @@ enum Net {
     }
 }
 
+/// Founder 10-10 (smoothness, launch): everything the FIRST frame (Home under the cold-start intro) and the intro itself read
+/// is decoded on background threads from the very first line of `WordociousApp.init`, so the main thread's first build finds
+/// the JSON stores, the cast rig and the first screen's art already waiting (it used to decode them inline, ~200 ms of the
+/// pre-roll, and the intro images only began decoding once the intro view's task ran).
+enum LaunchWarm {
+    private static let lock = NSLock()
+    private static var figures: Task<[(MascotID, UIImage)], Never>?
+
+    static func start() {
+        _ = figuresTask()
+        DispatchQueue.global(qos: .userInitiated).async {
+            _ = MascotParts.fit            // avatar-parts.json (the fit manifest)
+            _ = AvatarPosesData.bundled    // avatar-poses.json
+            _ = CastRigDecode.bundle       // cast-rigs (the header puppets)
+            _ = HolidayTable.bundled
+            _ = SeasonKit.registry
+            ThemeKit.warm()
+        }
+        // The first frame's art (already designed to decode on a utility thread; here they start at launch, not after the intro).
+        MascotArtCache.prewarm()
+        HomeHostMascot.prewarm()
+        CastArt.prewarm()
+        FamilyArt.prewarm()
+    }
+
+    /// The ten intro figures, decoded for display off main (started once; `IntroArt.prepare` awaits it).
+    static func figuresTask() -> Task<[(MascotID, UIImage)], Never> {
+        lock.lock(); defer { lock.unlock() }
+        if let figures { return figures }
+        let names = Mascots.cast.map { ($0, CastSkin.introAssetName(for: $0)) }
+        let t = Task.detached(priority: .userInitiated) { () -> [(MascotID, UIImage)] in
+            var out: [(MascotID, UIImage)] = []
+            for (m, n) in names {
+                guard let ui = UIImage(named: n) else { continue }
+                out.append((m, ui.preparingForDisplay() ?? ui))
+            }
+            return out
+        }
+        figures = t
+        return t
+    }
+}
+
 /// Launch-time background work, all on a utility thread so the main thread
 /// never pays for it (founder, 2026-09-29).
 enum AppWarmup {
@@ -33,12 +77,9 @@ enum AppWarmup {
     static func start() {
         // FINISH_SPEC BJ2: the win / lose card's art, decoded off main ahead of time.
         FinishArt.prewarm()
-        // Avatar parts + the podium pedestals, decoded off main before Home / the Leaderboard paint them.
-        MascotArtCache.prewarm()
+        // Avatar parts (MascotArtCache), cast button skins + labels (CastArt), the family pills + 3D icons (FamilyArt) and the
+        // Good Morning host (HomeHostMascot) now start in LaunchWarm.start, at launch. The podium pedestals stay here.
         PodiumView.prewarm()
-        CastArt.prewarm()          // BJ15: cast button skins + art labels, decoded + pre-scaled off main
-        FamilyArt.prewarm()        // button family: helper / quiet light maps (pre-scaled per height) + 3D icons
-        HomeHostMascot.prewarm()   // BJ6: the Good Morning host's pose, before Home paints
         Task { @MainActor in DressUp.prewarm() }   // 10-05: the Stage set, tab icons + your stage mascot frames
         HeadingArt.prewarm()       // BJ16: popup / sheet heading lettering at display size, off main
         Task { @MainActor in LeaderboardArt.prewarm() }   // 10-05: the big day title + game card titles, no pop-in

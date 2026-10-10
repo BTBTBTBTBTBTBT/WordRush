@@ -86,21 +86,14 @@ enum IntroArt {
     }
 
     static func prepare(timeout: Double) async {
-        let names = Mascots.cast.map { ($0, CastSkin.introAssetName(for: $0)) }
         let wallName = Self.wallName
         // Founder 10-10 (smoothness): the wall decodes here, off the main thread, before the first intro frame.
         let wallDecode = Task.detached(priority: .userInitiated) { () -> UIImage? in
             guard let wallName, let ui = UIImage(named: wallName) else { return nil }
             return ui.preparingForDisplay() ?? ui
         }
-        let decode = Task.detached(priority: .userInitiated) { () -> [(MascotID, UIImage)] in
-            var out: [(MascotID, UIImage)] = []
-            for (m, n) in names {
-                guard let ui = UIImage(named: n) else { continue }
-                out.append((m, ui.preparingForDisplay() ?? ui))
-            }
-            return out
-        }
+        // Founder 10-10 (smoothness, launch): the figures began decoding at launch (LaunchWarm.start), not here.
+        let decode = LaunchWarm.figuresTask()
         let timer = Task { try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000)) }
         // Whichever finishes first: the decode, or the launch-color cap.
         let done = await withTaskGroup(of: [(MascotID, UIImage)]?.self) { g -> [(MascotID, UIImage)]? in

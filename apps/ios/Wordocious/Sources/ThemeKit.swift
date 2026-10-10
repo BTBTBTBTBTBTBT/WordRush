@@ -66,6 +66,9 @@ enum ThemeKit {
         return try? JSONDecoder().decode(File.self, from: data)
     }()
 
+    /// Decodes the registry (LaunchWarm calls this off main at launch).
+    static func warm() { _ = file }
+
     static var entries: [Entry] { file?.themes ?? [] }
 
     static func entry(_ id: String) -> Entry? { entries.first { $0.id == id } ?? entries.first }
