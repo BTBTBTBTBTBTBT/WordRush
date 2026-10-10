@@ -15,22 +15,33 @@ struct LeaderboardStageCard<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        // Founder 10-09: only the sky wash is clipped to the card; the cloud bank sits ABOVE the wash but behind the
-        // content, unclipped (never cut by the corners), rising a little above the card with its top dissolving into the
-        // cast row so the stage doesn't read as a separate box.
+        // Founder 10-09: no card edge at all — the stage's wash runs edge to edge (past the page gutters), fading in at
+        // the top and out at the bottom, and the cloud bank spans the full screen width, drifting slowly.
         VStack(spacing: 0) { content() }
-            .background(alignment: .top) {
-                Image("art-lb-clouds").resizable().scaledToFit()
-                    .padding(.horizontal, -18)
-                    .opacity(0.85)
-                    .offset(y: -6)
-                    .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.22),
-                                                 .init(color: .black, location: 0.6), .init(color: .clear, location: 0.92)],
-                                         startPoint: .top, endPoint: .bottom).offset(y: -6))
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
-            .background { LeaderboardStageBackdrop(accent: accent).clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous)) }
+            .background(alignment: .top) { StageDriftingClouds().padding(.horizontal, -16) }
+            .background { LeaderboardStageBackdrop(accent: accent).padding(.horizontal, -16) }
+    }
+}
+
+/// The cloud bank, wider than the screen, drifting side to side very slowly (one Core Animation loop; still under Reduce
+/// Motion). Its top dissolves into the cast row and its lower edge fades out above the game rows.
+struct StageDriftingClouds: View {
+    @Environment(\.accessibilityReduceMotion) private var envReduce
+    @State private var drift = false
+
+    var body: some View {
+        let still = envReduce || Theme.reduceMotion
+        Image("art-lb-clouds").resizable().scaledToFit()
+            .padding(.horizontal, -36)
+            .offset(x: still ? 0 : (drift ? 26 : -26), y: -6)
+            .animation(still ? nil : .easeInOut(duration: 22).repeatForever(autoreverses: true), value: drift)
+            .opacity(0.85)
+            .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.22),
+                                         .init(color: .black, location: 0.6), .init(color: .clear, location: 0.92)],
+                                 startPoint: .top, endPoint: .bottom).offset(y: -6))
+            .onAppear { if !still { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { drift = true } } }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 }
 
@@ -50,6 +61,7 @@ struct LeaderboardStageBackdrop: View {
             .mask(VStack(spacing: 0) {
                 LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 60)
                 Color.black
+                LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 90)
             })
             VStack { Spacer(minLength: 0)
                 Image("art-lb-sunburst").resizable().scaledToFit()

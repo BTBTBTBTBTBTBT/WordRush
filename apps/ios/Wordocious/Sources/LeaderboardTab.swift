@@ -212,57 +212,86 @@ struct LeaderboardTab: View {
         let accent = ModeStyle.accent(mode)
         let titleArt = GameTitleArt.forMode(mode)
         let played = completions.byMode[mode.rawValue] != nil || userRank != nil
-        return HStack(spacing: 8) {
-            if titleArt == nil, let m { ModeIconView(icon: m.icon, accent: m.accent, box: 28) }
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 8) {
-                    if let titleArt {
-                        let shown = SeasonKit.title(titleArt.asset)
-                        let size = LeaderboardArt.cardTitleSize(shown)
-                        ArtThumbs.image(shown, points: LeaderboardArt.cardTitlePoints)
-                            .resizable().interpolation(.high).scaledToFit()
-                            .frame(maxWidth: size.width, maxHeight: size.height)
-                            .accessibilityLabel(titleArt.label)
-                            .accessibilityAddTraits(.isHeader)
+        // Founder 10-09: two rows, each with its control on the right — [game · N today] [Everyone | Friends · share],
+        // then [your rank line] [View board] — one compact cluster, so the podium below gets the stage.
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                if titleArt == nil, let m { ModeIconView(icon: m.icon, accent: m.accent, box: 28) }
+                if let titleArt {
+                    let shown = SeasonKit.title(titleArt.asset)
+                    let size = LeaderboardArt.cardTitleSize(shown)
+                    ArtThumbs.image(shown, points: LeaderboardArt.cardTitlePoints)
+                        .resizable().interpolation(.high).scaledToFit()
+                        .frame(maxWidth: size.width, maxHeight: size.height)
+                        .accessibilityLabel(titleArt.label)
+                        .accessibilityAddTraits(.isHeader)
+                } else {
+                    Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                }
+                HStack(spacing: 4) {
+                    Image(systemName: "person.2.fill").font(.system(size: 10, weight: .bold))
+                    // No count yet (nothing cached for this mode) → a redacted bar, not "0 players".
+                    if loading && playerCount == 0 {
+                        Text("000 today").font(Brand.font(11, .heavy)).redacted(reason: .placeholder)
                     } else {
-                        Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
-                            .lineLimit(1).minimumScaleFactor(0.7)
+                        Text("\(playerCount) today").font(Brand.font(11, .heavy))
                     }
-                    HStack(spacing: 4) {
-                        Image(systemName: "person.2.fill").font(.system(size: 10, weight: .bold))
-                        // No count yet (nothing cached for this mode) → a redacted bar, not "0 players".
-                        if loading && playerCount == 0 {
-                            Text("000 today").font(Brand.font(11, .heavy)).redacted(reason: .placeholder)
-                        } else {
-                            Text("\(playerCount) today").font(Brand.font(11, .heavy))
-                        }
+                }
+                .foregroundStyle(FinishInk.secondary)
+                .lineLimit(1).fixedSize().layoutPriority(1)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(playerCount) player\(playerCount == 1 ? "" : "s") today")
+                Spacer(minLength: 4)
+                HStack(spacing: 4) {
+                    if auth.isAuthenticated {
+                        SoftSegmented(options: [(key: false, label: "Everyone"), (key: true, label: "Friends")],
+                                      selection: friendsBinding, accent: LbStyle.gold,
+                                      accessibilityLabel: "Everyone or Friends", small: true)
                     }
-                    .foregroundStyle(FinishInk.secondary)
-                    .lineLimit(1).fixedSize().layoutPriority(1)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(playerCount) player\(playerCount == 1 ? "" : "s") today")
+                    modeShareButton
                 }
-                HStack(spacing: 6) {
-                    Text(modeRankLine)
-                        .font(Brand.font(11.5, .black))
-                        .foregroundStyle(Theme.isDark ? Theme.textSecondary : LbStyle.goldInk)
-                        .lineLimit(1).minimumScaleFactor(0.65)
-                    if let r = userRank { rankDelta(r, friends: friendsOnly) }
-                }
+                .layoutPriority(2)
             }
-            Spacer(minLength: 4)
-            if played {
-                YourBoardPill(accent: stageAccent) { openMyBoard(played: true) }
-            } else {
-                Button { openMyBoard(played: false) } label: { CandyLabel(title: "Play", symbol: "play.fill") }
-                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
-                    .layoutPriority(2)
+            HStack(spacing: 6) {
+                Text(modeRankLine)
+                    .font(Brand.font(11.5, .black))
+                    .foregroundStyle(Theme.isDark ? Theme.textSecondary : LbStyle.goldInk)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                if let r = userRank { rankDelta(r, friends: friendsOnly) }
+                Spacer(minLength: 4)
+                if played {
+                    YourBoardPill(accent: stageAccent) { openMyBoard(played: true) }
+                } else {
+                    Button { openMyBoard(played: false) } label: { CandyLabel(title: "Play", symbol: "play.fill") }
+                        .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                        .layoutPriority(2)
+                }
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 4)
+        .padding(.horizontal, 10).padding(.vertical, 4)
         // One fixed height for every game, so switching games never nudges the podium below.
         .frame(minHeight: max(LeaderboardArt.cardHeight, 46))
         .gameLaunchSource("lb:play", color: accent.wash(0.10), radius: 16)
+    }
+
+    /// The board's share (space kept while there is nothing to share, so the cluster never shifts).
+    private var modeShareButton: some View {
+        let ready = !loading && !entries.isEmpty
+        return shareIcon(busy: sharingLb, label: "Share leaderboard") {
+            guard ready, !sharingLb else { return }
+            sharingLb = true
+            Task {
+                await LeaderboardShareFlow.shareDaily(
+                    mode: mode, playType: "solo",
+                    entries: entries, rankWindow: rankWindow,
+                    userId: auth.profile?.id, userRank: userRank,
+                    friends: friendsOnly)
+                sharingLb = false
+            }
+        }
+        .opacity(ready ? 1 : 0)
+        .allowsHitTesting(ready)
     }
 
     /// The Sweep board's strip in the same family: the glossy broom, the name + its explainer, your sweep rank.
@@ -283,6 +312,18 @@ struct LeaderboardTab: View {
                     .lineLimit(1).minimumScaleFactor(0.65)
             }
             Spacer(minLength: 0)
+            // Founder 10-09: share sits in the strip (no row of its own above the podium).
+            let ready = !sweepLoading && !sweepEntries.isEmpty
+            shareIcon(busy: sharingLb, label: "Share sweep leaderboard") {
+                guard ready, !sharingLb else { return }
+                sharingLb = true
+                LeaderboardShareFlow.shareSweep(
+                    podium: false, entries: sweepEntries,
+                    userId: auth.profile?.id, userRank: sweepRank)
+                sharingLb = false
+            }
+            .opacity(ready ? 1 : 0)
+            .allowsHitTesting(ready)
         }
         .padding(.horizontal, 14).padding(.vertical, 4)
         .frame(minHeight: 46)
@@ -390,21 +431,6 @@ struct LeaderboardTab: View {
     @ViewBuilder private var sweepStageBody: some View {
         sweepStrip
 
-        // The podium's header line: share (the Sweep has no Everyone/Friends split).
-        HStack {
-            Spacer(minLength: 0)
-            if !sweepLoading && !sweepEntries.isEmpty {
-                shareIcon(busy: sharingLb, label: "Share sweep leaderboard") {
-                    guard !sharingLb else { return }
-                    sharingLb = true
-                    LeaderboardShareFlow.shareSweep(
-                        podium: false, entries: sweepEntries,
-                        userId: auth.profile?.id, userRank: sweepRank)
-                    sharingLb = false
-                }
-            }
-        }
-        .padding(.horizontal, 12).frame(minHeight: 30)
 
         if sweepLoading {
             LeaderboardSkeleton().padding(.horizontal, 12).padding(.bottom, 8)
@@ -542,31 +568,6 @@ struct LeaderboardTab: View {
     @ViewBuilder private var modeStageBody: some View {
         modeStrip
 
-        // The podium's header line: Everyone | Friends (§207) on the left, share on the right.
-        // Founder 10-09: a smaller switch, sitting quietly on the right beside share.
-        HStack(alignment: .center, spacing: 8) {
-            Spacer(minLength: 4)
-            if auth.isAuthenticated {
-                SoftSegmented(options: [(key: false, label: "Everyone"), (key: true, label: "Friends")],
-                              selection: friendsBinding, accent: LbStyle.gold,
-                              accessibilityLabel: "Everyone or Friends", small: true)
-            }
-            if !loading && !entries.isEmpty {
-                shareIcon(busy: sharingLb, label: "Share leaderboard") {
-                    guard !sharingLb else { return }
-                    sharingLb = true
-                    Task {
-                        await LeaderboardShareFlow.shareDaily(
-                            mode: mode, playType: "solo",
-                            entries: entries, rankWindow: rankWindow,
-                            userId: auth.profile?.id, userRank: userRank,
-                            friends: friendsOnly)
-                        sharingLb = false
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 12).frame(minHeight: 34)
 
         if loading {
             LeaderboardSkeleton().padding(.horizontal, 12).padding(.bottom, 8)   // animate-pulse rows, not a spinner
