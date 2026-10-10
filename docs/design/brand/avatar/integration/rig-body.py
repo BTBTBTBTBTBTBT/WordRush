@@ -22,6 +22,10 @@ What it does, from the body's art + its landmarks (landmarks.py, PR #41) only:
             body pixels, target < 2/255, like the cast rigs) → rigs/<body>/diff.png.
   6. sheet  every pose in packages/core/src/avatar-poses.json, white + tinted → rigs/<body>/sheet.jpg.
 
+  7. limbs  (10-09) run integration/limb-extend.py <rigs dir> <bodies> --ship AFTER this script: it grows each arm layer with a
+            shoulder-to-hand limb cut from the body's own art, so a raised mitten stays joined to the body. After any
+            pose / limb change: tsx packages/core/scripts/dump-pose-layouts.ts, rig-body.py --guards, gen-parity-fixtures.ts,
+            copy avatar-poses.json to the iOS / Android copies; integration/pose-sheet.py draws the contact sheet.
 The body art is WHITE and tinted at runtime (multiply), so the layers are cut from the white art: tint still works.
 Poses are shared data (avatar-poses.json): a new body gets every pose for free. Output (body units, like
 avatar-parts.json) goes to rigs/rigs.json, merged into avatar-poses.json `rigs` by --ship.

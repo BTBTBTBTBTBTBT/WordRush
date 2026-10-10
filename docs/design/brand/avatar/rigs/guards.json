@@ -1425,124 +1425,538 @@
  },
  "hips": {
   "classic": {
+   "acc:baseball-bat": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (12%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (18%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (27%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (16%)"
+   ],
    "acc:candypail": [
-    "swings over the face / letter (10%)"
+    "swings over the face / letter (31%)"
    ]
   },
   "tall": {
-   "acc:book": [
+   "acc:mug": [
     "swings over the face / letter (2%)"
    ],
+   "acc:book": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (17%)"
+   ],
    "acc:trophy": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (11%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (38%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (16%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (23%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (11%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:spatula": [
     "swings over the face / letter (3%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:wand-star": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (14%)"
+   ]
+  },
+  "wide": {
+   "acc:baseball-bat": [
+    "swings over the face / letter (4%)"
    ],
    "acc:baseball-glove": [
     "swings over the face / letter (2%)"
    ],
-   "acc:football-football": [
-    "swings over the face / letter (19%)"
-   ],
    "acc:goth-lace-umbrella": [
-    "swings over the face / letter (13%)"
+    "swings over the face / letter (8%)"
    ],
    "acc:goth-purple-lantern": [
-    "swings over the face / letter (2%)"
+    "swings over the face / letter (9%)"
    ],
    "acc:candypail": [
-    "swings over the face / letter (6%)"
-   ]
-  },
-  "wide": {
-   "acc:candypail": [
-    "swings over the face / letter (2%)"
+    "swings over the face / letter (23%)"
    ]
   },
   "blob": {
+   "acc:baseball-bat": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (18%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (25%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (26%)"
+   ]
+  },
+  "bean": {
+   "acc:mug": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:book": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (43%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (20%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (34%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (12%)"
+   ],
+   "acc:magnifier": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (30%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (18%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:wand-star": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (27%)"
+   ]
+  },
+  "star": {
+   "acc:candypail": [
+    "swings over the face / letter (4%)"
+   ]
+  },
+  "drop": {
+   "acc:medal": [
+    "hides a moved arm (23%)"
+   ],
    "acc:candypail": [
     "swings over the face / letter (8%)"
    ]
   },
-  "bean": {
-   "acc:pencil-big": [
-    "swings over the face / letter (2%)"
-   ],
+  "pear": {
    "acc:baseball-glove": [
-    "swings over the face / letter (7%)"
+    "swings over the face / letter (9%)"
    ],
    "acc:football-football": [
-    "swings over the face / letter (16%)"
+    "swings over the face / letter (8%)"
    ],
    "acc:goth-lace-umbrella": [
-    "swings over the face / letter (10%)"
+    "swings over the face / letter (12%)"
    ],
    "acc:goth-purple-lantern": [
-    "swings over the face / letter (4%)"
+    "swings over the face / letter (5%)"
    ],
    "acc:candypail": [
     "swings over the face / letter (14%)"
    ]
   },
   "cloud": {
-   "acc:candypail": [
+   "acc:baseball-glove": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:soccer-corner-flag": [
     "swings over the face / letter (3%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (15%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (17%)"
    ]
   },
   "chunky": {
+   "acc:baseball-bat": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (14%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (20%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (7%)"
+   ],
    "acc:goth-lace-umbrella": [
-    "swings over the face / letter (3%)"
+    "swings over the face / letter (27%)"
    ],
    "acc:goth-purple-lantern": [
-    "swings over the face / letter (2%)"
+    "swings over the face / letter (16%)"
    ],
    "acc:candypail": [
-    "swings over the face / letter (10%)"
+    "swings over the face / letter (29%)"
    ]
   },
   "mini": {
-   "acc:book": [
+   "acc:mug": [
     "swings over the face / letter (2%)"
+   ],
+   "acc:book": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (15%)"
    ],
    "acc:trophy": [
-    "swings over the face / letter (2%)"
+    "swings over the face / letter (6%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (4%)"
    ],
    "acc:baseball-glove": [
-    "swings over the face / letter (13%)"
+    "swings over the face / letter (21%)"
    ],
    "acc:football-football": [
-    "swings over the face / letter (19%)"
+    "swings over the face / letter (34%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (11%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (3%)"
    ],
    "acc:goth-lace-umbrella": [
-    "swings over the face / letter (16%)"
+    "swings over the face / letter (26%)"
    ],
    "acc:goth-purple-lantern": [
+    "swings over the face / letter (11%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:mic": [
     "swings over the face / letter (2%)"
    ],
    "acc:candypail": [
-    "swings over the face / letter (6%)"
+    "swings over the face / letter (13%)"
    ]
   },
   "hex": {
+   "acc:baseball-bat": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (8%)"
+   ],
    "acc:candypail": [
-    "swings over the face / letter (2%)"
+    "swings over the face / letter (19%)"
+   ]
+  },
+  "heart": {
+   "acc:candypail": [
+    "swings over the face / letter (7%)"
    ]
   },
   "moon": {
+   "acc:medal": [
+    "hides a moved arm (22%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (3%)"
+   ],
    "acc:candypail": [
-    "swings over the face / letter (2%)"
+    "swings over the face / letter (19%)"
    ]
   },
   "egg": {
+   "acc:baseball-bat": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (15%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (23%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (15%)"
+   ],
    "acc:candypail": [
-    "swings over the face / letter (9%)"
+    "swings over the face / letter (28%)"
    ]
   },
   "bell": {
+   "acc:mug": [
+    "swings over the face / letter (7%)"
+   ],
    "acc:book": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (23%)"
+   ],
+   "acc:trophy": [
     "swings over the face / letter (3%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (16%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (25%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (34%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (21%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (18%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (50%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (38%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (46%)"
+   ]
+  },
+  "triangle": {
+   "acc:book": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (16%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (20%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (25%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (14%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (24%)"
+   ]
+  },
+  "diamond": {
+   "acc:candypail": [
+    "swings over the face / letter (3%)"
+   ]
+  },
+  "shield": {
+   "acc:baseball-bat": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (17%)"
+   ]
+  },
+  "burst": {
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (16%)"
+   ]
+  },
+  "flower": {
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (18%)"
+   ]
+  },
+  "gumdrop": {
+   "acc:book": [
+    "swings over the face / letter (2%)"
    ],
    "acc:trophy": [
     "swings over the face / letter (2%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (17%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (25%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (27%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (14%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (24%)"
+   ]
+  },
+  "can": {
+   "acc:mug": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:book": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (15%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (32%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (14%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (31%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (16%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (26%)"
+   ]
+  },
+  "potato": {
    "acc:baseball-bat": [
     "swings over the face / letter (9%)"
    ],
@@ -1556,206 +1970,350 @@
     "swings over the face / letter (9%)"
    ],
    "acc:goth-lace-umbrella": [
-    "swings over the face / letter (30%)"
+    "swings over the face / letter (29%)"
    ],
    "acc:goth-purple-lantern": [
-    "swings over the face / letter (17%)"
+    "swings over the face / letter (21%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (30%)"
+   ]
+  },
+  "catear": {
+   "acc:baseball-bat": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (14%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (24%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (15%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (29%)"
+   ]
+  },
+  "bunnyear": {
+   "acc:book": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (16%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (23%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (28%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (16%)"
    ],
    "acc:candypail": [
     "swings over the face / letter (28%)"
    ]
   },
-  "triangle": {
-   "acc:baseball-glove": [
+  "pumpkin": {
+   "acc:baseball-bat": [
     "swings over the face / letter (2%)"
    ],
-   "acc:football-football": [
-    "swings over the face / letter (3%)"
-   ],
-   "acc:goth-lace-umbrella": [
-    "swings over the face / letter (7%)"
-   ],
-   "acc:goth-purple-lantern": [
-    "swings over the face / letter (3%)"
-   ],
-   "acc:candypail": [
-    "swings over the face / letter (10%)"
-   ]
-  },
-  "gumdrop": {
-   "acc:baseball-glove": [
-    "swings over the face / letter (5%)"
-   ],
-   "acc:football-football": [
-    "swings over the face / letter (4%)"
-   ],
-   "acc:goth-lace-umbrella": [
-    "swings over the face / letter (8%)"
-   ],
-   "acc:goth-purple-lantern": [
-    "swings over the face / letter (3%)"
-   ],
-   "acc:candypail": [
-    "swings over the face / letter (10%)"
-   ]
-  },
-  "can": {
-   "acc:football-football": [
-    "swings over the face / letter (11%)"
-   ],
-   "acc:goth-lace-umbrella": [
-    "swings over the face / letter (13%)"
-   ],
-   "acc:goth-purple-lantern": [
-    "swings over the face / letter (4%)"
-   ],
-   "acc:candypail": [
-    "swings over the face / letter (11%)"
-   ]
-  },
-  "potato": {
-   "acc:goth-lace-umbrella": [
-    "swings over the face / letter (4%)"
-   ],
-   "acc:goth-purple-lantern": [
-    "swings over the face / letter (3%)"
-   ],
-   "acc:candypail": [
-    "swings over the face / letter (10%)"
-   ]
-  },
-  "catear": {
-   "acc:candypail": [
-    "swings over the face / letter (9%)"
-   ]
-  },
-  "bunnyear": {
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (2%)"
    ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (4%)"
+   ],
    "acc:candypail": [
-    "swings over the face / letter (9%)"
+    "swings over the face / letter (18%)"
    ]
   },
   "ghost": {
-   "acc:baseball-glove": [
-    "swings over the face / letter (9%)"
+   "acc:mug": [
+    "swings over the face / letter (3%)"
    ],
-   "acc:football-football": [
-    "swings over the face / letter (10%)"
+   "acc:book": [
+    "swings over the face / letter (4%)"
    ],
-   "acc:goth-lace-umbrella": [
-    "swings over the face / letter (14%)"
-   ],
-   "acc:goth-purple-lantern": [
+   "acc:pencil-big": [
     "swings over the face / letter (5%)"
    ],
+   "acc:trophy": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (23%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (32%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (16%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (34%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (22%)"
+   ],
    "acc:candypail": [
-    "swings over the face / letter (13%)"
+    "swings over the face / letter (30%)"
    ]
   },
   "cone": {
-   "acc:baseball-bat": [
+   "acc:mug": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:book": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:trophy": [
     "swings over the face / letter (2%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (14%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (30%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (18%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (39%)"
+   ],
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (22%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (37%)"
+   ]
+  },
+  "bat": {
+   "acc:goth-purple-lantern": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (12%)"
+   ]
+  }
+ },
+ "wave": {
+  "classic": {
+   "acc:candypail": [
+    "swings over the face / letter (4%)"
+   ]
+  },
+  "tall": {
+   "acc:football-football": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (11%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (9%)"
+   ]
+  },
+  "blob": {
+   "acc:candypail": [
+    "swings over the face / letter (2%)"
+   ]
+  },
+  "bean": {
+   "acc:football-football": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (15%)"
+   ]
+  },
+  "chunky": {
+   "acc:candypail": [
+    "swings over the face / letter (5%)"
+   ]
+  },
+  "mini": {
+   "acc:football-football": [
+    "swings over the face / letter (12%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (10%)"
+   ]
+  },
+  "egg": {
+   "acc:candypail": [
+    "swings over the face / letter (3%)"
+   ]
+  },
+  "bell": {
+   "acc:baseball-bat": [
+    "swings over the face / letter (5%)"
    ],
    "acc:football-football": [
     "swings over the face / letter (11%)"
    ],
    "acc:soccer-corner-flag": [
-    "swings over the face / letter (3%)"
+    "swings over the face / letter (2%)"
    ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (16%)"
    ],
-   "acc:goth-purple-lantern": [
-    "swings over the face / letter (8%)"
+   "acc:candypail": [
+    "swings over the face / letter (26%)"
+   ]
+  },
+  "triangle": {
+   "acc:candypail": [
+    "swings over the face / letter (6%)"
+   ]
+  },
+  "gumdrop": {
+   "acc:candypail": [
+    "swings over the face / letter (7%)"
+   ]
+  },
+  "can": {
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (5%)"
    ],
    "acc:candypail": [
-    "swings over the face / letter (19%)"
+    "swings over the face / letter (10%)"
+   ]
+  },
+  "potato": {
+   "acc:candypail": [
+    "swings over the face / letter (6%)"
+   ]
+  },
+  "catear": {
+   "acc:candypail": [
+    "swings over the face / letter (3%)"
+   ]
+  },
+  "bunnyear": {
+   "acc:candypail": [
+    "swings over the face / letter (6%)"
+   ]
+  },
+  "ghost": {
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (12%)"
+   ]
+  },
+  "cone": {
+   "acc:football-football": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:goth-lace-umbrella": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (16%)"
    ]
   }
  },
  "cheer": {
   "tall": {
    "acc:book": [
-    "swings over the face / letter (5%)"
-   ],
-   "acc:pencil-big": [
-    "swings over the face / letter (6%)"
-   ],
-   "acc:trophy": [
-    "swings over the face / letter (8%)"
-   ],
-   "acc:flashlight": [
-    "swings over the face / letter (8%)"
-   ],
-   "acc:umbrella": [
     "swings over the face / letter (3%)"
    ],
+   "acc:trophy": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (4%)"
+   ],
    "acc:icecream": [
-    "swings over the face / letter (8%)"
+    "swings over the face / letter (5%)"
    ],
    "acc:mic": [
-    "swings over the face / letter (7%)"
+    "swings over the face / letter (3%)"
    ]
   }
  },
  "jump": {
   "tall": {
    "acc:book": [
-    "swings over the face / letter (5%)"
-   ],
-   "acc:pencil-big": [
-    "swings over the face / letter (3%)"
-   ],
-   "acc:trophy": [
-    "swings over the face / letter (9%)"
-   ],
-   "acc:magnifier": [
     "swings over the face / letter (2%)"
    ],
+   "acc:trophy": [
+    "swings over the face / letter (6%)"
+   ],
    "acc:flashlight": [
-    "swings over the face / letter (8%)"
+    "swings over the face / letter (4%)"
    ],
    "acc:umbrella": [
-    "swings over the face / letter (5%)"
+    "swings over the face / letter (3%)"
    ],
    "acc:icecream": [
-    "swings over the face / letter (7%)"
+    "swings over the face / letter (5%)"
    ],
    "acc:mic": [
-    "swings over the face / letter (10%)"
+    "swings over the face / letter (7%)"
    ]
   }
  },
  "sit": {
   "tall": {
    "acc:balloon": [
-    "swings over the face / letter (3%)"
+    "swings over the face / letter (4%)"
    ],
    "acc:trophy": [
     "swings over the face / letter (4%)"
    ],
    "acc:umbrella": [
-    "swings over the face / letter (3%)"
-   ],
-   "acc:icecream": [
-    "swings over the face / letter (2%)"
+    "swings over the face / letter (4%)"
    ]
   },
   "bean": {
    "acc:icecream": [
-    "swings over the face / letter (3%)"
+    "swings over the face / letter (4%)"
    ],
    "acc:mic": [
-    "swings over the face / letter (5%)"
+    "swings over the face / letter (6%)"
    ]
   }
  },
  "shrug": {
   "tall": {
    "acc:trophy": [
-    "swings over the face / letter (4%)"
+    "swings over the face / letter (3%)"
    ],
    "acc:icecream": [
     "swings over the face / letter (3%)"
@@ -1773,57 +2331,7 @@
  "flex": {
   "tall": {
    "acc:trophy": [
-    "swings over the face / letter (5%)"
-   ],
-   "acc:mic": [
     "swings over the face / letter (3%)"
-   ]
-  }
- },
- "wave": {
-  "tall": {
-   "acc:flashlight": [
-    "swings over the face / letter (2%)"
-   ],
-   "acc:goth-lace-umbrella": [
-    "swings over the face / letter (3%)"
-   ],
-   "acc:candypail": [
-    "swings over the face / letter (4%)"
-   ]
-  },
-  "bean": {
-   "acc:candypail": [
-    "swings over the face / letter (5%)"
-   ]
-  },
-  "mini": {
-   "acc:goth-lace-umbrella": [
-    "swings over the face / letter (4%)"
-   ],
-   "acc:candypail": [
-    "swings over the face / letter (4%)"
-   ]
-  },
-  "bell": {
-   "acc:football-football": [
-    "swings over the face / letter (2%)"
-   ],
-   "acc:goth-lace-umbrella": [
-    "swings over the face / letter (5%)"
-   ],
-   "acc:candypail": [
-    "swings over the face / letter (15%)"
-   ]
-  },
-  "ghost": {
-   "acc:candypail": [
-    "swings over the face / letter (2%)"
-   ]
-  },
-  "cone": {
-   "acc:candypail": [
-    "swings over the face / letter (6%)"
    ]
   }
  }

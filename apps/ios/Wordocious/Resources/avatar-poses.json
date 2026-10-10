@@ -6,14 +6,17 @@
    "label": "Wave",
    "arms": {
     "L": {
-     "rot": 118,
-     "dx": 0.04,
-     "dy": -0.01
+     "rot": 128,
+     "dx": 0.045,
+     "dy": -0.03
     },
-    "R": {}
+    "R": {
+     "rot": -8,
+     "dx": -0.01
+    }
    },
    "body": {
-    "rot": 2
+    "rot": 3
    },
    "live": {
     "wave": {
@@ -27,14 +30,14 @@
    "label": "Cheer",
    "arms": {
     "L": {
-     "rot": 135,
-     "dx": 0.035,
-     "dy": -0.02
+     "rot": 142,
+     "dx": 0.05,
+     "dy": -0.045
     },
     "R": {
-     "rot": 135,
-     "dx": 0.035,
-     "dy": -0.02
+     "rot": 142,
+     "dx": 0.05,
+     "dy": -0.045
     }
    },
    "body": {
@@ -52,55 +55,63 @@
    "label": "Hands on hips",
    "arms": {
     "L": {
-     "rot": -20,
-     "dx": 0.0,
-     "dy": 0.05
+     "rot": -28,
+     "dx": -0.04,
+     "dy": 0.03
     },
     "R": {
-     "rot": -20,
-     "dx": 0.0,
-     "dy": 0.05
+     "rot": -28,
+     "dx": -0.04,
+     "dy": 0.03
     }
    },
    "body": {
-    "sx": 1.01
+    "sx": 1.035
+   },
+   "feet": {
+    "sx": 1.14
    }
   },
   "shrug": {
    "label": "Shrug",
    "arms": {
     "L": {
-     "rot": 62,
-     "dy": -0.035
+     "rot": 38,
+     "dx": 0.0,
+     "dy": -0.07
     },
     "R": {
-     "rot": 62,
-     "dy": -0.035
+     "rot": 38,
+     "dx": 0.0,
+     "dy": -0.07
     }
    },
    "body": {
-    "rot": -4,
-    "sy": 0.985,
-    "sx": 1.01
+    "rot": -6,
+    "sy": 0.955,
+    "sx": 1.03
    }
   },
   "flex": {
    "label": "Flex",
    "arms": {
     "L": {
-     "rot": 92,
-     "dy": -0.05,
-     "dx": 0.01
+     "rot": 98,
+     "dx": 0.03,
+     "dy": -0.05
     },
     "R": {
-     "rot": 92,
-     "dy": -0.05,
-     "dx": 0.01
+     "rot": 98,
+     "dx": 0.03,
+     "dy": -0.05
     }
    },
    "body": {
-    "sx": 1.025,
+    "sx": 1.05,
     "sy": 0.99
+   },
+   "feet": {
+    "sx": 1.06
    }
   },
   "hug": {
@@ -126,39 +137,47 @@
    "label": "Sitting",
    "arms": {
     "L": {
-     "rot": 18,
-     "dy": 0.04
+     "rot": 24,
+     "dy": 0.05
     },
     "R": {
-     "rot": 18,
-     "dy": 0.04
+     "rot": 24,
+     "dy": 0.05
     }
    },
    "body": {
-    "sy": 0.95,
-    "sx": 1.02,
-    "dy": 0.035
+    "sy": 0.9,
+    "sx": 1.04,
+    "dy": 0.06
+   },
+   "feet": {
+    "sx": 1.12,
+    "sy": 0.8
    }
   },
   "jump": {
    "label": "Jump",
    "arms": {
     "L": {
-     "rot": 110,
+     "rot": 112,
+     "dx": 0.03,
      "dy": -0.02
     },
     "R": {
-     "rot": 110,
+     "rot": 112,
+     "dx": 0.03,
      "dy": -0.02
     }
    },
    "body": {
-    "dy": -0.085,
-    "sy": 1.03,
-    "sx": 0.98
+    "dy": -0.11,
+    "sy": 1.04,
+    "sx": 0.975
    },
    "feet": {
-    "dy": 0.012
+    "dy": 0.012,
+    "sx": 0.9,
+    "sy": 0.85
    }
   }
  },
@@ -577,7 +596,7 @@
     ],
     "box": [
      0.1047,
-     0.4984,
+     0.4953,
      0.3047,
      0.7312
     ]
@@ -597,7 +616,7 @@
     ],
     "box": [
      0.6984,
-     0.4984,
+     0.4953,
      0.8953,
      0.7297
     ]
@@ -933,7 +952,7 @@
     ],
     "box": [
      0.6969,
-     0.4344,
+     0.4328,
      0.9047,
      0.6797
     ]
@@ -969,7 +988,7 @@
     ],
     "box": [
      0.1391,
-     0.45,
+     0.4469,
      0.3406,
      0.6656
     ]
@@ -989,7 +1008,7 @@
     ],
     "box": [
      0.6594,
-     0.4484,
+     0.4437,
      0.8625,
      0.6625
     ]
@@ -1025,7 +1044,7 @@
     ],
     "box": [
      0.0625,
-     0.4766,
+     0.475,
      0.2953,
      0.7344
     ]
@@ -1045,7 +1064,7 @@
     ],
     "box": [
      0.7031,
-     0.4766,
+     0.475,
      0.9359,
      0.7344
     ]
@@ -1325,7 +1344,7 @@
     ],
     "box": [
      0.7063,
-     0.4391,
+     0.4375,
      0.9391,
      0.7047
     ]
@@ -1437,7 +1456,7 @@
     ],
     "box": [
      0.6781,
-     0.4656,
+     0.4641,
      0.8656,
      0.6984
     ]
@@ -1549,7 +1568,7 @@
     ],
     "box": [
      0.6891,
-     0.5344,
+     0.5328,
      0.8641,
      0.7453
     ]
@@ -1605,7 +1624,7 @@
     ],
     "box": [
      0.7594,
-     0.4922,
+     0.4906,
      0.9391,
      0.7063
     ]
@@ -1641,7 +1660,7 @@
     ],
     "box": [
      0.1156,
-     0.4594,
+     0.4578,
      0.2969,
      0.6813
     ]
@@ -1661,7 +1680,7 @@
     ],
     "box": [
      0.6891,
-     0.4594,
+     0.4562,
      0.8844,
      0.6828
     ]
@@ -1697,7 +1716,7 @@
     ],
     "box": [
      0.1766,
-     0.5016,
+     0.4953,
      0.3953,
      0.7094
     ]
@@ -1717,7 +1736,7 @@
     ],
     "box": [
      0.625,
-     0.5,
+     0.4953,
      0.8266,
      0.7078
     ]
@@ -1857,27 +1876,176 @@
     "acc:flashlight",
     "acc:icecream",
     "acc:mic",
-    "acc:pencil-big",
-    "acc:trophy",
-    "acc:umbrella"
+    "acc:trophy"
    ]
   },
   "flex": {
    "tall": [
-    "acc:mic",
     "acc:trophy"
    ]
   },
   "hips": {
+   "bat": [
+    "acc:candypail",
+    "acc:goth-purple-lantern"
+   ],
    "bean": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:icecream",
+    "acc:magnifier",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:soccer-corner-flag",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:wand-star"
+   ],
+   "bell": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:icecream",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:soccer-corner-flag",
+    "acc:spatula",
+    "acc:trophy"
+   ],
+   "blob": [
+    "acc:baseball-bat",
     "acc:baseball-glove",
     "acc:candypail",
     "acc:football-football",
     "acc:goth-lace-umbrella",
     "acc:goth-purple-lantern",
-    "acc:pencil-big"
+    "acc:soccer-corner-flag"
    ],
-   "bell": [
+   "bunnyear": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:book",
+    "acc:candypail",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:soccer-corner-flag"
+   ],
+   "burst": [
+    "acc:candypail",
+    "acc:goth-purple-lantern"
+   ],
+   "can": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:soccer-corner-flag",
+    "acc:trophy"
+   ],
+   "catear": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:candypail",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:soccer-corner-flag"
+   ],
+   "chunky": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:candypail",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:soccer-corner-flag"
+   ],
+   "classic": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:candypail",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:soccer-corner-flag"
+   ],
+   "cloud": [
+    "acc:baseball-glove",
+    "acc:candypail",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:soccer-corner-flag"
+   ],
+   "cone": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:soccer-corner-flag",
+    "acc:trophy"
+   ],
+   "diamond": [
+    "acc:candypail"
+   ],
+   "drop": [
+    "acc:candypail",
+    "acc:medal"
+   ],
+   "egg": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:candypail",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:soccer-corner-flag"
+   ],
+   "flower": [
+    "acc:candypail",
+    "acc:goth-purple-lantern"
+   ],
+   "ghost": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:soccer-corner-flag",
+    "acc:trophy"
+   ],
+   "gumdrop": [
     "acc:baseball-bat",
     "acc:baseball-glove",
     "acc:book",
@@ -1888,96 +2056,108 @@
     "acc:soccer-corner-flag",
     "acc:trophy"
    ],
-   "blob": [
+   "heart": [
     "acc:candypail"
    ],
-   "bunnyear": [
-    "acc:candypail",
-    "acc:goth-lace-umbrella"
-   ],
-   "can": [
+   "hex": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
     "acc:candypail",
     "acc:football-football",
     "acc:goth-lace-umbrella",
     "acc:goth-purple-lantern"
    ],
-   "catear": [
-    "acc:candypail"
-   ],
-   "chunky": [
+   "mini": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:book",
     "acc:candypail",
+    "acc:flashlight",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:icecream",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:soccer-corner-flag",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella"
+   ],
+   "moon": [
+    "acc:baseball-bat",
+    "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:medal"
+   ],
+   "pear": [
+    "acc:baseball-glove",
+    "acc:candypail",
+    "acc:football-football",
     "acc:goth-lace-umbrella",
     "acc:goth-purple-lantern"
    ],
-   "classic": [
-    "acc:candypail"
-   ],
-   "cloud": [
-    "acc:candypail"
-   ],
-   "cone": [
+   "potato": [
     "acc:baseball-bat",
+    "acc:baseball-glove",
     "acc:candypail",
     "acc:football-football",
     "acc:goth-lace-umbrella",
     "acc:goth-purple-lantern",
     "acc:soccer-corner-flag"
    ],
-   "egg": [
-    "acc:candypail"
-   ],
-   "ghost": [
-    "acc:baseball-glove",
-    "acc:candypail",
-    "acc:football-football",
-    "acc:goth-lace-umbrella",
-    "acc:goth-purple-lantern"
-   ],
-   "gumdrop": [
-    "acc:baseball-glove",
-    "acc:candypail",
-    "acc:football-football",
-    "acc:goth-lace-umbrella",
-    "acc:goth-purple-lantern"
-   ],
-   "hex": [
-    "acc:candypail"
-   ],
-   "mini": [
-    "acc:baseball-glove",
-    "acc:book",
-    "acc:candypail",
-    "acc:football-football",
-    "acc:goth-lace-umbrella",
-    "acc:goth-purple-lantern",
-    "acc:trophy"
-   ],
-   "moon": [
-    "acc:candypail"
-   ],
-   "potato": [
+   "pumpkin": [
+    "acc:baseball-bat",
     "acc:candypail",
     "acc:goth-lace-umbrella",
     "acc:goth-purple-lantern"
+   ],
+   "shield": [
+    "acc:baseball-bat",
+    "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern"
+   ],
+   "star": [
+    "acc:candypail"
    ],
    "tall": [
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
+    "acc:icecream",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:soccer-corner-flag",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella",
+    "acc:wand-star"
+   ],
+   "triangle": [
+    "acc:baseball-bat",
     "acc:baseball-glove",
     "acc:book",
     "acc:candypail",
     "acc:football-football",
     "acc:goth-lace-umbrella",
     "acc:goth-purple-lantern",
-    "acc:trophy"
-   ],
-   "triangle": [
-    "acc:baseball-glove",
-    "acc:candypail",
-    "acc:football-football",
-    "acc:goth-lace-umbrella",
-    "acc:goth-purple-lantern"
+    "acc:soccer-corner-flag"
    ],
    "wide": [
-    "acc:candypail"
+    "acc:baseball-bat",
+    "acc:baseball-glove",
+    "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern"
    ]
   },
   "hug": {
@@ -2501,9 +2681,7 @@
     "acc:book",
     "acc:flashlight",
     "acc:icecream",
-    "acc:magnifier",
     "acc:mic",
-    "acc:pencil-big",
     "acc:trophy",
     "acc:umbrella"
    ]
@@ -2525,34 +2703,71 @@
    ],
    "tall": [
     "acc:balloon",
-    "acc:icecream",
     "acc:trophy",
     "acc:umbrella"
    ]
   },
   "wave": {
    "bean": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:football-football"
    ],
    "bell": [
+    "acc:baseball-bat",
+    "acc:candypail",
+    "acc:football-football",
+    "acc:goth-lace-umbrella",
+    "acc:soccer-corner-flag"
+   ],
+   "blob": [
+    "acc:candypail"
+   ],
+   "bunnyear": [
+    "acc:candypail"
+   ],
+   "can": [
+    "acc:candypail",
+    "acc:goth-lace-umbrella"
+   ],
+   "catear": [
+    "acc:candypail"
+   ],
+   "chunky": [
+    "acc:candypail"
+   ],
+   "classic": [
+    "acc:candypail"
+   ],
+   "cone": [
     "acc:candypail",
     "acc:football-football",
     "acc:goth-lace-umbrella"
    ],
-   "cone": [
+   "egg": [
     "acc:candypail"
    ],
    "ghost": [
+    "acc:candypail",
+    "acc:goth-lace-umbrella"
+   ],
+   "gumdrop": [
     "acc:candypail"
    ],
    "mini": [
     "acc:candypail",
+    "acc:football-football",
     "acc:goth-lace-umbrella"
+   ],
+   "potato": [
+    "acc:candypail"
    ],
    "tall": [
     "acc:candypail",
-    "acc:flashlight",
+    "acc:football-football",
     "acc:goth-lace-umbrella"
+   ],
+   "triangle": [
+    "acc:candypail"
    ]
   }
  }
