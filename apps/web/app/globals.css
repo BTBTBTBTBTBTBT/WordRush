@@ -1661,6 +1661,10 @@ html[data-reduced-motion="true"] .castrow[data-musical] .cm > .cm-note { animati
 /* 2.8 item 13 · the podium: the winner's confetti burst opens once on load; the plaque is a soft wash (no border). */
 .podium-burst { animation: podium-burst 1100ms cubic-bezier(0.2, 0.9, 0.3, 1) 150ms both; }
 @keyframes podium-burst { 0% { transform: scale(0.4) rotate(-6deg); opacity: 0; } 35% { opacity: 1; } 100% { transform: scale(1.08) rotate(0); opacity: 0; } }
+.podium-twinkle { opacity: 0.85; animation: podium-twinkle 2.6s ease-in-out infinite; }
+@keyframes podium-twinkle { 0%, 100% { opacity: 0.35; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1.1); } }
+@media (prefers-reduced-motion: reduce) { .podium-twinkle { animation: none; } }
+[data-reduced-motion="true"] .podium-twinkle { animation: none !important; }
 .podium-plaque { border-radius: 12px; background: color-mix(in srgb, var(--color-surface) 82%, transparent); }
 @media (prefers-reduced-motion: reduce) { .podium-burst { animation: none; opacity: 0; } }
 

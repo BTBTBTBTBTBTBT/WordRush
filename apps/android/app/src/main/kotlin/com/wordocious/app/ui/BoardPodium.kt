@@ -15,6 +15,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
@@ -272,7 +276,11 @@ fun BoardPodium(
                 if (s != null) {
                     // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step (2x, no tile, posed by place).
                     if (stands) {
-                        Box(Modifier.padding(bottom = 0.dp).offset(y = PODIUM_FOOT_OVERLAP).zIndex(1f), contentAlignment = Alignment.TopCenter) {
+                        Box(
+                            Modifier.padding(bottom = 0.dp).offset(y = PODIUM_FOOT_OVERLAP).zIndex(1f)
+                                .podiumGlow(place, a * PODIUM_FIGURE_SCALE, (a * PODIUM_FIGURE_SCALE) / 2),
+                            contentAlignment = Alignment.TopCenter,
+                        ) {
                             // the winner's confetti burst opens once on load
                             if (place == 1 && com.wordocious.app.data.FlagsService.isLive("podium_burst")) PodiumBurst()
                             PlayerAvatar(
@@ -283,7 +291,10 @@ fun BoardPodium(
                             // the crown sits ON the first place's head
                             if (place == 1) Icon3D(Icon3DName.CROWN, 34.dp, Modifier.offset(y = -(a * PODIUM_FIGURE_SCALE * 0.05f)))
                         }
-                    } else Box(contentAlignment = Alignment.TopCenter) {
+                    } else Box(
+                        Modifier.podiumGlow(place, a, (if (place == 1) 18.dp else 0.dp) + a / 2),
+                        contentAlignment = Alignment.TopCenter,
+                    ) {
                         PlayerAvatar(
                             s.username ?: s.name, a, Modifier.padding(top = if (place == 1) 18.dp else 0.dp),
                             userId = s.userId, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
@@ -291,11 +302,11 @@ fun BoardPodium(
                         )
                         if (place == 1) Icon3D(Icon3DName.CROWN, 26.dp)
                     }
-                    // Name, points and detail ride on a soft plaque overlapping the step's top edge when the figure stands.
+                    // Name, points and detail ride on a soft plaque above the step when the figure stands.
                     Column(
                         (if (stands) {
+                            // sits fully ABOVE the step (it used to be laid out 12 dp short, so the step rose under it and the plaque covered its top face)
                             Modifier.zIndex(2f)
-                                .layout { m, c -> val pl = m.measure(c); layout(pl.width, pl.height - 12.dp.roundToPx()) { pl.place(0, 0) } }
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(if (dark) WTheme.surface.copy(alpha = 0.8f) else Color.White.copy(alpha = 0.72f))
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
@@ -353,6 +364,65 @@ fun BoardPodium(
 }
 
 
+
+/**
+ * Podium glow (2.8 TestFlight feedback: "a glow behind the characters so they stand out"): a soft radial light behind a
+ * standing figure, one clearly different hue per metal (1st warm gold with a few twinkling sparkles, 2nd cool silver, 3rd copper
+ * bronze). Drawn BEHIND the figure (drawBehind), transparent by its rim; the sparkles hold still under calm motion. [figure] is
+ * the figure's height and [centerY] its vertical center within the box. Mirrors web PODIUM_GLOW and iOS PodiumGlow hex-for-hex.
+ */
+@Composable
+private fun Modifier.podiumGlow(place: Int, figure: Dp, centerY: Dp): Modifier {
+    val calm = WTheme.calmMotion
+    val tone = place.coerceIn(1, 3)
+    val phase = if (calm || tone != 1) null else rememberInfiniteTransition(label = "podium-twinkle")
+        .animateFloat(0f, 1f, infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart), label = "p")
+    return this.drawBehind {
+        val (core, alpha, scale) = when (tone) {
+            1 -> Triple(Color(0xFFFFC93C), 0.8f, 1.55f)
+            2 -> Triple(Color(0xFFB4C8EE), 0.75f, 1.4f)
+            else -> Triple(Color(0xFFF28A3B), 0.7f, 1.4f)
+        }
+        val d = figure.toPx() * scale
+        val c = Offset(size.width / 2f, centerY.toPx())
+        drawCircle(
+            Brush.radialGradient(
+                0f to core.copy(alpha = alpha), 0.54f to core.copy(alpha = alpha * 0.45f), 1f to core.copy(alpha = 0f),
+                center = c, radius = d / 2f,
+            ),
+            radius = d / 2f, center = c,
+        )
+        if (tone == 1) {
+            val topLeft = Offset(c.x - d / 2f, c.y - d / 2f)
+            val t = phase?.value
+            PODIUM_SPARKLES.forEach { (fx, fy, px, delay) ->
+                val k = if (t == null) 1f else 0.7f + 0.4f * wave(t, delay)
+                val a = if (t == null) 0.85f else 0.35f + 0.65f * wave(t, delay)
+                val r = px.dp.toPx() * k / 2f
+                val ctr = Offset(topLeft.x + d * fx, topLeft.y + d * fy)
+                val star = Path().apply {
+                    moveTo(ctr.x, ctr.y - r)
+                    lineTo(ctr.x + r * 0.24f, ctr.y - r * 0.24f); lineTo(ctr.x + r, ctr.y)
+                    lineTo(ctr.x + r * 0.24f, ctr.y + r * 0.24f); lineTo(ctr.x, ctr.y + r)
+                    lineTo(ctr.x - r * 0.24f, ctr.y + r * 0.24f); lineTo(ctr.x - r, ctr.y)
+                    lineTo(ctr.x - r * 0.24f, ctr.y - r * 0.24f); close()
+                }
+                drawPath(star, Color(0xFFFFF1B8).copy(alpha = a))
+            }
+        }
+    }
+}
+
+/** 0..1..0 over a phase (0..1) shifted by [delaySec] of the 2.6 s cycle. */
+private fun wave(phase: Float, delaySec: Float): Float =
+    (0.5f - 0.5f * cos(2.0 * Math.PI * (phase + delaySec / 2.6f)).toFloat())
+
+/** The gold glow's sparkles: (x, y) as fractions of the glow, size dp, delay s. Same as web PODIUM_SPARKLES. */
+private val PODIUM_SPARKLES = listOf(
+    Sparkle(0.14f, 0.30f, 9f, 0f), Sparkle(0.86f, 0.24f, 7f, 0.7f), Sparkle(0.24f, 0.74f, 6f, 1.3f), Sparkle(0.80f, 0.68f, 8f, 0.35f),
+)
+
+private data class Sparkle(val fx: Float, val fy: Float, val px: Float, val delay: Float)
 
 /**
  * 2.8 item 13: the winner's confetti burst, once, as the podium opens (the celebration kit's party burst, the season's swap

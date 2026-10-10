@@ -273,13 +273,13 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         if (mode == selectedMode) return
         selectedMode = mode
         paintCachedBoard(mode)
-        if (showYesterday) paintCachedYesterday(mode)
+        paintCachedYesterday(mode)
     }
     fun selectFriendsOnly(f: Boolean) {
         if (f == friendsOnly) return
         friendsOnly = f
         paintCachedBoard(selectedMode)
-        if (showYesterday) paintCachedYesterday(selectedMode)
+        paintCachedYesterday(selectedMode)
     }
     // §214: consume a post-game deep link (View Leaderboard → this mode) — also while the tab
     // is alive, where the remember seed above has already run.
@@ -426,9 +426,10 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         rankWindow = win
         LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lb, count, rank, win))
     }
-    LaunchedEffect(selectedMode, showYesterday, friendsOnly, friendsVersion) {
+    // Yesterday's winners load as soon as the board is up (not only on open): the ledge shows them, or collapses to one calm line.
+    LaunchedEffect(selectedMode, friendsOnly, friendsVersion) {
         // Friends toggle carries into Yesterday's Winners: podium among friends.
-        yesterday = if (showYesterday && selectedMode != SWEEP_ID) {
+        yesterday = if (selectedMode != SWEEP_ID) {
             val ids = if (friendsOnly && userId != null)
                 (FriendsService.friendIds + userId.lowercase()).toList() else null
             if (ids != null) {
@@ -437,7 +438,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 ) ?: emptyList()
             } else LeaderboardService.fetchYesterdayWinners(selectedMode)
         } else emptyList()
-        yesterdaySweep = if (showYesterday && selectedMode == SWEEP_ID) {
+        yesterdaySweep = if (selectedMode == SWEEP_ID) {
             LeaderboardService.fetchDailySweepOrNull(day = com.wordocious.app.yesterdayLocalDate(), limit = 5) ?: emptyList()
         } else emptyList()
         // §223: yesterday's rows carry the same dot strip + g/h numbers. Fetched
@@ -454,7 +455,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         yesterdayPending = false
         // Yesterday is settled — keep the session copy that paints the next switch back instantly
         // (an empty result may be a failed fetch, so it is never kept).
-        if (showYesterday && (yesterday.isNotEmpty() || yesterdaySweep.isNotEmpty())) {
+        if (yesterday.isNotEmpty() || yesterdaySweep.isNotEmpty()) {
             YesterdayBoards.put(yesterdayKey(selectedMode), YesterdayBoards.Entry(yesterday, yesterdaySweep, ySweepDetails, yFlawlessStreaks))
         }
     }
@@ -696,7 +697,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         lbPodiumSpots(yesterday.take(yl.filled), userId, yLbScoreLabels, onOpenProfile, mode = selectedMode)
                     }
                     StageYesterdayLedge(
-                        minis = yMinis, open = showYesterday, loading = showYesterday && yesterdayPending,
+                        minis = yMinis, open = showYesterday, loading = yesterdayPending,
                         onToggle = {
                             showYesterday = !showYesterday
                             if (showYesterday) paintCachedYesterday(selectedMode)

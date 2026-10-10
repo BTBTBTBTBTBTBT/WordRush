@@ -156,22 +156,32 @@ export function YesterdayLedge({ places, open, onToggle, loading, share, childre
   const H = 160;
   const artW = W;
   const byPlace = new Map(places.map((p) => [p.rank <= 3 ? p.rank : 0, p] as const));
+  // Known and empty: no ledge (a blank podium reads unfinished), just one calm line in the header.
+  const empty = !loading && places.length === 0;
   return (
     <div style={{ padding: '0 12px 8px' }}>
       <div className="flex items-center justify-between" style={{ padding: '2px 4px' }}>
-        <button data-squish
-          type="button"
-          onClick={onToggle}
-          aria-expanded={open}
-          className="inline-flex items-center gap-1 border-0 bg-transparent cursor-pointer font-black lb-gold-ink"
-          style={{ fontSize: 11, letterSpacing: 1.2, padding: '4px 2px' }}
-        >
-          YESTERDAY
-          {open ? <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" /> : <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />}
-        </button>
-        {open && share}
+        {empty ? (
+          <div className="flex items-baseline gap-2 min-w-0" style={{ padding: '4px 2px' }}>
+            <span className="font-black lb-gold-ink" style={{ fontSize: 11, letterSpacing: 1.2 }}>YESTERDAY</span>
+            <span className="truncate font-bold" style={{ fontSize: 11.5, color: 'var(--color-text-secondary)' }}>No results from yesterday</span>
+          </div>
+        ) : (
+          <button data-squish
+            type="button"
+            onClick={onToggle}
+            aria-expanded={open}
+            className="inline-flex items-center gap-1 border-0 bg-transparent cursor-pointer font-black lb-gold-ink"
+            style={{ fontSize: 11, letterSpacing: 1.2, padding: '4px 2px' }}
+          >
+            YESTERDAY
+            {open ? <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" /> : <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />}
+          </button>
+        )}
+        {open && !empty && share}
       </div>
       {/* the ledge: the art, with the mini winners standing on its three steps */}
+      {!empty && (
       <button data-squish
         type="button"
         onClick={onToggle}
@@ -197,14 +207,9 @@ export function YesterdayLedge({ places, open, onToggle, loading, share, childre
             </span>
           );
         })}
-        {!loading && places.length === 0 && (
-          <span className="absolute inset-x-0 text-center font-extrabold" style={{ top: '28%', fontSize: 11.5, color: 'var(--color-text-secondary)' }}>
-            No results from yesterday
-          </span>
-        )}
       </button>
-      {open && <div className="mt-1">{children}</div>}
+      )}
+      {open && !empty && <div className="mt-1">{children}</div>}
     </div>
   );
 }
-

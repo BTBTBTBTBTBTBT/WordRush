@@ -524,7 +524,7 @@ struct PodiumView: View {
                         .padding(.horizontal, 10).padding(.vertical, 4)
                         .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .fill(Theme.isDark ? Theme.surface.opacity(0.8) : Color.white.opacity(0.72)))
-                        .padding(.bottom, -12)
+                        // sits fully ABOVE the step (it used to overlap the step's top by 12 pt and cover its top face)
                 } else {
                     plaque.padding(.top, 0)
                 }
@@ -871,6 +871,7 @@ struct PodiumFigure: View {
             LivingMascotView(config: posed, initial: initial, size: big, cutout: true, interactive: false, own: DressUp.isOwn(entry.id),
                              label: A11yLabels.mascot(own: DressUp.isOwn(entry.id), name: entry.name))
                 .frame(width: big, height: big)
+                .background { PodiumGlow(tone: tone, height: big) }
                 .overlay(alignment: .top) {
                     // the crown sits ON the first place's head
                     if place == 1 { Icon3D(.crown, size: compact ? 30 : 34).offset(y: -big * 0.05) }
@@ -880,7 +881,77 @@ struct PodiumFigure: View {
         } else {
             AvatarView(url: entry.avatarUrl, username: entry.username, size: size, accentHex: entry.accentHex, emoji: entry.emoji,
                        pro: entry.pro, userId: entry.id)
+                .background { PodiumGlow(tone: tone, height: size) }
         }
+    }
+}
+
+/// Podium glow (2.8 TestFlight feedback: "a glow behind the characters so they stand out"): a soft radial light behind a
+/// standing figure, one clearly different hue per metal (1st warm gold with a few twinkling sparkles, 2nd cool silver,
+/// 3rd copper bronze). Behind the figure only (a `.background`), no edge, transparent by its rim; the sparkles hold still
+/// under Reduce Motion / calm motion. Mirrors web PODIUM_GLOW / PodiumGlow and Android PodiumGlow hex-for-hex.
+struct PodiumGlow: View {
+    let tone: Int
+    /// The figure's height (pt): the glow is a multiple of it.
+    let height: CGFloat
+    @State private var twinkle = false
+
+    private var spec: (core: UInt, alpha: Double, scale: CGFloat) {
+        switch min(max(tone, 1), 3) {
+        case 1: return (0xFFC93C, 0.8, 1.55)
+        case 2: return (0xB4C8EE, 0.75, 1.4)
+        default: return (0xF28A3B, 0.7, 1.4)
+        }
+    }
+    private static let sparkles: [(x: CGFloat, y: CGFloat, size: CGFloat, delay: Double)] = [
+        (0.14, 0.30, 9, 0), (0.86, 0.24, 7, 0.7), (0.24, 0.74, 6, 1.3), (0.80, 0.68, 8, 0.35),
+    ]
+
+    var body: some View {
+        let g = spec
+        let d = (height * g.scale).rounded()
+        let core = Color(hex: g.core)
+        let calm = Theme.reduceMotion
+        ZStack {
+            Circle().fill(RadialGradient(
+                gradient: Gradient(stops: [
+                    .init(color: core.opacity(g.alpha), location: 0),
+                    .init(color: core.opacity(g.alpha * 0.45), location: 0.54),
+                    .init(color: core.opacity(0), location: 1),
+                ]),
+                center: .center, startRadius: 0, endRadius: d / 2))
+            if tone <= 1 {
+                ForEach(0..<Self.sparkles.count, id: \.self) { i in
+                    let s = Self.sparkles[i]
+                    PodiumSparkle()
+                        .fill(Color(hex: 0xFFF1B8))
+                        .frame(width: s.size, height: s.size)
+                        .scaleEffect(calm ? 1 : (twinkle ? 1.1 : 0.7))
+                        .opacity(calm ? 0.85 : (twinkle ? 1 : 0.35))
+                        .animation(calm ? nil : .easeInOut(duration: 1.3).repeatForever(autoreverses: true).delay(s.delay), value: twinkle)
+                        .position(x: d * s.x, y: d * s.y)
+                }
+            }
+        }
+        .frame(width: d, height: d)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onAppear { if !calm { twinkle = true } }
+    }
+}
+
+/// A four-point sparkle (the gold glow's twinkles).
+private struct PodiumSparkle: Shape {
+    func path(in r: CGRect) -> Path {
+        let w = r.width, h = r.height
+        let pts: [(CGFloat, CGFloat)] = [(0.5, 0), (0.62, 0.38), (1, 0.5), (0.62, 0.62), (0.5, 1), (0.38, 0.62), (0, 0.5), (0.38, 0.38)]
+        var p = Path()
+        for (i, q) in pts.enumerated() {
+            let pt = CGPoint(x: r.minX + q.0 * w, y: r.minY + q.1 * h)
+            if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
+        }
+        p.closeSubpath()
+        return p
     }
 }
 

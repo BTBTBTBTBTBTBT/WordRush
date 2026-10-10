@@ -8,11 +8,11 @@ import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { type BoardAvatarData } from '@/components/leaderboard/board-rows';
 import { placeWord, podiumStageCardLabel } from '@wordle-duel/core';
-import { PodiumFigure } from '@/components/leaderboard/podium-figure';
+import { PodiumFigure, PODIUM_FIGURE_SCALE } from '@/components/leaderboard/podium-figure';
 import { PodiumStageCard } from '@/components/leaderboard/podium-stage-card';
 import { useFlags, useLivingMascotOn } from '@/hooks/use-flags';
 import { LevelBadge } from '@/components/badges/badge-art';
-import { PODIUM_STEP_HEIGHT, PODIUM_TONE_PLACE, podiumColumn, podiumPedestalArt, podiumSlots, podiumTone, type PodiumTone } from '@/lib/leaderboard-podium';
+import { PODIUM_GLOW, PODIUM_SPARKLES, PODIUM_STEP_HEIGHT, PODIUM_TONE_PLACE, podiumColumn, podiumPedestalArt, podiumSlots, podiumTone, type PodiumTone } from '@/lib/leaderboard-podium';
 import { alphaHex } from '@/lib/soft-surface';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { AVATAR_CAST_COLOR } from '@/lib/avatar-cast';
@@ -118,6 +118,33 @@ function Step({ tone, rank, dim = false }: { tone: PodiumTone; rank: number; dim
   return <PodiumPedestal place={PODIUM_TONE_PLACE[tone]} height={PODIUM_STEP_HEIGHT[tone]} label={rank} dim={dim} />;
 }
 
+/**
+ * The soft radial glow behind a standing figure (never over it: z-index -1 inside the grid's stacking context, under
+ * the figure and the plaque). Gold also carries a few gently twinkling sparkles; `.podium-twinkle` is still under
+ * Reduce Motion (OS or the in-app calm-motion toggle). `top` is the figure's vertical center in the column (px).
+ */
+export function PodiumGlow({ tone, figureHeight, top }: { tone: PodiumTone; figureHeight: number; top: number }) {
+  const g = PODIUM_GLOW[tone];
+  const d = Math.round(figureHeight * g.scale);
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute pointer-events-none"
+      style={{
+        left: '50%', top, width: d, height: d, marginLeft: -d / 2, marginTop: -d / 2, zIndex: -1, borderRadius: '50%',
+        background: `radial-gradient(circle at 50% 50%, ${alphaHex(g.core, g.alpha)} 0%, ${alphaHex(g.core, g.alpha * 0.45)} 38%, ${alphaHex(g.core, 0)} 70%)`,
+      }}
+    >
+      {tone === 'gold' && PODIUM_SPARKLES.map((s, i) => (
+        <svg key={i} className="podium-twinkle absolute" viewBox="0 0 10 10" width={s.size} height={s.size}
+          style={{ left: `${s.x}%`, top: `${s.y}%`, marginLeft: -s.size / 2, marginTop: -s.size / 2, animationDelay: `${s.delay}s` }}>
+          <path d="M5 0 L6.2 3.8 L10 5 L6.2 6.2 L5 10 L3.8 6.2 L0 5 L3.8 3.8 Z" fill="#FFF1B8" />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
 function Column({ place, index }: { place: PodiumPlace; index: number }) {
   const tone = podiumTone(place.rank);
   const first = tone === 'gold';
@@ -128,6 +155,10 @@ function Column({ place, index }: { place: PodiumPlace; index: number }) {
   const cardOn = livingOn && isLive('podium_stage_card');
   const burstOn = livingOn && isLive('podium_burst');
   const [stageOpen, setStageOpen] = React.useState(false);
+  // the figure's box in the column (for the glow behind it): the standing mascot is 2x the tile; the framed tile has the crown above it
+  const tile = first ? 54 : 44;
+  const figH = livingOn ? tile * PODIUM_FIGURE_SCALE : tile;
+  const figTop = livingOn ? figH / 2 : (first ? 18 : 0) + figH / 2;
   const info = (
     <>
       <Link
@@ -150,6 +181,7 @@ function Column({ place, index }: { place: PodiumPlace; index: number }) {
   return (
     <div className="relative flex flex-col items-center min-w-0" style={{ gap: 4, gridColumn: podiumColumn(index), gridRow: 1 }}>
       <span className="sr-only">{placeWord(place.rank)} place</span>
+      <PodiumGlow tone={tone} figureHeight={figH} top={figTop} />
       {burstOn && first && (
         // eslint-disable-next-line @next/next/no-img-element
         <img aria-hidden="true" alt="" src="/art/celebrate-burst-party.webp" width={150} draggable={false}
@@ -168,7 +200,7 @@ function Column({ place, index }: { place: PodiumPlace; index: number }) {
         </Link>
       )}
       {livingOn ? (
-        <div className="podium-plaque relative flex flex-col items-center max-w-full" style={{ gap: 2, padding: '4px 10px', marginBottom: -12, zIndex: 2 }}>{info}</div>
+        <div className="podium-plaque relative flex flex-col items-center max-w-full" style={{ gap: 2, padding: '4px 10px', zIndex: 2 }}>{info}</div>
       ) : info}
       <Step tone={tone} rank={place.rank} />
       {cardOn && !place.isMe && <PodiumStageCard place={place} tone={PODIUM_TONE_PLACE[tone]} open={stageOpen} onOpenChange={setStageOpen} />}
