@@ -863,12 +863,12 @@
   from { transform: translateY(0) scale(1.04, 0.95); }
   to { transform: translateY(-9%) scale(0.97, 1.03); }
 }
-@keyframes trio-sway { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+@keyframes trio-sway { from { transform: rotate(calc(var(--trio-sway, 4deg) * -1)); } to { transform: rotate(var(--trio-sway, 4deg)); } }
 @keyframes trio-sparkle { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1.15); } }
 /* Founder 10-09: every move is a repeating keyframe animation (compositor), started a beat after first layout (.trio-on); the
    bunting hangs still. 0.42 s hop each way, 0.95 s sway each way, per-figure delays in the markup. */
 .trio-bounce { transform: translateY(0) scale(1.04, 0.95); transform-origin: 50% 100%; animation-timing-function: ease-in-out; animation-direction: alternate; animation-iteration-count: infinite; animation-fill-mode: both; animation-duration: 0.42s; }
-.trio-sway { transform: rotate(-4deg); transform-origin: 50% 100%; animation-timing-function: ease-in-out; animation-direction: alternate; animation-iteration-count: infinite; animation-fill-mode: both; animation-duration: 0.95s; }
+.trio-sway { transform: rotate(calc(var(--trio-sway, 4deg) * -1)); transform-origin: 50% 100%; animation-timing-function: ease-in-out; animation-direction: alternate; animation-iteration-count: infinite; animation-fill-mode: both; animation-duration: 0.95s; }
 .trio-sparkle { opacity: 0.3; animation-timing-function: ease-in-out; animation-direction: alternate; animation-iteration-count: infinite; animation-fill-mode: both; }
 .trio-on .trio-bounce { animation-name: trio-bounce; }
 .trio-on .trio-sway { animation-name: trio-sway; }
@@ -1836,7 +1836,7 @@ html[data-reduced-motion="true"] .castrow[data-musical] .cm > .cm-note { animati
 [data-theme="dark"] .lb-gold-ink { color: #fcd34d; }
 /* Founder 10-09: the Leaderboard date / reset line under the title (the cloud fades out above it): warm dark ink on light themes, warm light ink on dark. */
 .lb-date-ink { color: #8a4a12; }
-[data-theme="dark"] .lb-date-ink { color: rgba(253, 230, 138, 0.92); }
+/* Founder 10-10: the line sits directly on the cloud now, so the warm dark ink holds on every theme. */
 /* FINISH_SPEC BJ4: the podium stage (components/leaderboard/podium.tsx) — same layers, lower alphas in dark. */
 [data-theme="dark"] .podium-stage { opacity: 0.6; }
 
@@ -2705,3 +2705,14 @@ html[data-season-tone="dark"] { --ink-lift: 65%; }
 @keyframes lb-hop { 0% { transform: translateY(0) scale(1, 1); } 30% { transform: translateY(-14px) scale(0.96, 1.06); } 60% { transform: translateY(0) scale(1.06, 0.94); } 100% { transform: translateY(0) scale(1, 1); } }
 @media (prefers-reduced-motion: reduce) { .lb-prop, .lb-lean, .lb-hop, .lb-cloud-drift { animation: none !important; } }
 [data-reduced-motion="true"] .lb-prop, [data-reduced-motion="true"] .lb-lean, [data-reduced-motion="true"] .lb-hop, [data-reduced-motion="true"] .lb-cloud-drift { animation: none !important; }
+
+/* Founder 10-10 (iOS IdleLife): a still mascot comes alive, a gentle hop + breathe and a slower sway as two compositor loops
+   on the individual translate / scale / rotate properties (so they never fight over `transform`). Knobs come from
+   lib/idle-life.ts (--il-hop px, --il-sway deg, --il-hopdur, --il-swaydur, --il-delay). Still under Reduce Motion. */
+.idle-life { transform-origin: 50% 100%; translate: 0 0; scale: 1.01 0.985; rotate: calc(var(--il-sway, 1.5deg) * -1);
+  animation: idle-hop var(--il-hopdur, 1.1s) ease-in-out var(--il-delay, 0.25s) infinite alternate both,
+             idle-sway var(--il-swaydur, 1.65s) ease-in-out var(--il-delay, 0.25s) infinite alternate both; }
+@keyframes idle-hop { from { translate: 0 0; scale: 1.01 0.985; } to { translate: 0 calc(var(--il-hop, 3px) * -1); scale: 0.99 1.015; } }
+@keyframes idle-sway { from { rotate: calc(var(--il-sway, 1.5deg) * -1); } to { rotate: var(--il-sway, 1.5deg); } }
+@media (prefers-reduced-motion: reduce) { .idle-life { animation: none !important; translate: none; scale: none; rotate: none; } }
+[data-reduced-motion="true"] .idle-life { animation: none !important; translate: none; scale: none; rotate: none; }

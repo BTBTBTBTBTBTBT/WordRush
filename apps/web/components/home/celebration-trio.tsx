@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ART_SIZE, artSrc } from '@/lib/art';
+import { ART_SIZE, artSrc, type ArtName } from '@/lib/art';
 
 // Founder 10-09 (iOS CelebrationTrio): the Flawless banner's celebrating cast, alive. Three cheer poses (D, O, I) on one floor
 // under a small bunting that hangs still; each figure hops (stretched at the top, squashed on the landing) with a slower sway on
@@ -7,12 +7,19 @@ import { ART_SIZE, artSrc } from '@/lib/art';
 // React, started a beat after the first layout (the .trio-on class); Reduce Motion (OS or the in-app toggle) holds the same
 // scene still. The box is a size container, so everything scales with the slot it fills.
 
-const CAST = ['d', 'o2', 'i'] as const;
+/** The Flawless trio: D, O, I cheering (the default figures). */
+const CAST: readonly ArtName[] = ['art-pose-d-cheer', 'art-pose-o2-cheer', 'art-pose-i-cheer'];
 /** The figure's side: 66% of the slot's height, and never so wide that the three overlap the slot's edges. */
 const FIG = 'min(66cqh, calc(100cqw / 3.6))';
 const SPARKLES: ReadonlyArray<readonly [number, number]> = [[0.22, 0.30], [0.78, 0.26], [0.35, 0.12], [0.66, 0.10]];
 
-export function CelebrationTrio({ className = '', style }: { className?: string; style?: React.CSSProperties }) {
+/**
+ * Founder 10-10 (iOS CelebrationTrio): every banner state is alive. `images` = the three figures left to right (default the Flawless
+ * D, O, I); `bunting` / `sparkles` toggle the extras; `tempo` = seconds per hop (the Halloween idle trio is slower, 0.7), `swayDegrees` its sway.
+ */
+export function CelebrationTrio({ className = '', style, images = CAST, bunting = true, sparkles = true, tempo = 0.42, swayDegrees = 4 }: {
+  className?: string; style?: React.CSSProperties; images?: readonly ArtName[]; bunting?: boolean; sparkles?: boolean; tempo?: number; swayDegrees?: number;
+}) {
   // Start the loops a beat AFTER the first layout, so the figures hop in place instead of swimming while the size settles.
   const [on, setOn] = useState(false);
   useEffect(() => {
@@ -20,14 +27,16 @@ export function CelebrationTrio({ className = '', style }: { className?: string;
     return () => clearTimeout(t);
   }, []);
   return (
-    <div aria-hidden="true" className={`trio relative ${on ? 'trio-on' : ''} ${className}`} style={{ containerType: 'size', ...style }}>
+    <div aria-hidden="true" className={`trio relative ${on ? 'trio-on' : ''} ${className}`} style={{ containerType: 'size', ['--trio-sway' as string]: `${swayDegrees}deg`, ...style }}>
       {/* the bunting hangs still (only the cast celebrates), centered at 9% of the height */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/age-check/bunting.webp" alt="" width={209} height={116} draggable={false}
-        className="trio-bunting absolute select-none pointer-events-none"
-        style={{ width: 'min(36cqw, 136px)', height: '20cqh', objectFit: 'contain', left: '50%', top: '-1cqh', marginLeft: 'calc(min(36cqw, 136px) / -2)' }}
-      />
+      {bunting && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src="/age-check/bunting.webp" alt="" width={209} height={116} draggable={false}
+          className="trio-bunting absolute select-none pointer-events-none"
+          style={{ width: 'min(36cqw, 136px)', height: '20cqh', objectFit: 'contain', left: '50%', top: '-1cqh', marginLeft: 'calc(min(36cqw, 136px) / -2)' }}
+        />
+      )}
       {/* one shared floor shadow */}
       <span
         className="absolute"
@@ -36,16 +45,15 @@ export function CelebrationTrio({ className = '', style }: { className?: string;
           background: 'radial-gradient(ellipse at center, rgba(46, 16, 101, 0.28), rgba(46, 16, 101, 0) 70%)',
         }}
       />
-      {CAST.map((id, i) => {
-        const name = `art-pose-${id}-cheer` as const;
+      {images.map((name, i) => {
         return (
           <span
-            key={id}
+            key={name}
             className="absolute"
             style={{ width: FIG, height: FIG, bottom: 16, left: '50%', marginLeft: `calc(${FIG} * ${(i - 1) * 0.95 - 0.5})` }}
           >
-            <span className="trio-bounce block" style={{ width: '100%', height: '100%', animationDelay: `${i * 0.18}s` }}>
-              <span className="trio-sway block" style={{ width: '100%', height: '100%', animationDelay: `${i * 0.36}s` }}>
+            <span className="trio-bounce block" style={{ width: '100%', height: '100%', animationDelay: `${i * 0.18}s`, animationDuration: `${tempo}s` }}>
+              <span className="trio-sway block" style={{ width: '100%', height: '100%', animationDelay: `${i * 0.36}s`, animationDuration: `${(tempo * 2.26).toFixed(3)}s` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={artSrc(name)} alt="" width={ART_SIZE[name][0]} height={ART_SIZE[name][1]} draggable={false}
@@ -56,7 +64,7 @@ export function CelebrationTrio({ className = '', style }: { className?: string;
           </span>
         );
       })}
-      {SPARKLES.map(([x, y], k) => (
+      {(sparkles ? SPARKLES : []).map(([x, y], k) => (
         <svg
           key={k} viewBox="0 0 20 20" width={9} height={9} className="trio-sparkle absolute"
           style={{ left: `calc(${x * 100}% - 4.5px)`, top: `calc(${y * 100}% - 4.5px)`, animationDelay: `${k * 0.25}s`, animationDuration: `${0.8 + k * 0.17}s` }}

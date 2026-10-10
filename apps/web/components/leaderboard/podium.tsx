@@ -233,7 +233,7 @@ function Column({ place, index, compact = false }: { place: PodiumPlace; index: 
   const burstOn = livingOn && isLive('podium_burst');
   const [stageOpen, setStageOpen] = React.useState(false);
   // the figure's box in the column (for the glow behind it): the standing mascot is 2x the tile; the framed tile has the crown above it
-  const tile = compact ? (first ? 48 : 40) : (first ? 54 : 44);
+  const tile = compact ? (first ? 48 : 40) : (first ? 60 : 51);
   const figH = livingOn ? tile * PODIUM_FIGURE_SCALE : tile;
   const figTop = livingOn ? figH / 2 : (first ? 18 : 0) + figH / 2;
   return (
@@ -245,7 +245,7 @@ function Column({ place, index, compact = false }: { place: PodiumPlace; index: 
         <img aria-hidden="true" alt="" src="/art/celebrate-burst-party.webp" width={150} draggable={false}
           className="podium-burst absolute pointer-events-none" style={{ left: '50%', top: 0, marginLeft: -75, zIndex: 0 }} />
       )}
-      <PodiumNameAbove place={place} size={compact ? 14 : (first ? 19 : 16)} pull={livingOn ? (first ? 4 : 18) : 2} />
+      <PodiumNameAbove place={place} size={compact ? 14 : (first ? 19 : 16)} pull={livingOn ? (first ? 10 : 18) : 2} />
       {place.isMe || cardOn ? (
         // Founder 10-05 (door 1): your own place opens your Stage; with the living mascot on, anyone else's opens their mini Stage card.
         <button type="button" onClick={() => (place.isMe ? openDressUp() : setStageOpen(true))}

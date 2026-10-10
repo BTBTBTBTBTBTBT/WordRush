@@ -1,15 +1,16 @@
 'use client';
 
 import type { CSSProperties, ReactNode } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, ListOrdered, Play } from 'lucide-react';
 import { castPreset, STAGE_ART, STAGE_TINT, WIZARD_HAT_PART } from '@wordle-duel/core';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { useAuth } from '@/lib/auth-context';
 import { artSrc, type ArtName } from '@/lib/art';
 import { alphaHex } from '@/lib/soft-surface';
-import { CastButton } from '@/components/ui/cast-button';
-import { castColorForAccent } from '@/lib/cast-accent';
+import { gameHueShift } from '@/lib/cast-accent';
+import { idleLifeStyle } from '@/lib/idle-life';
+import { CANDY_INK, threeSlice } from '@/lib/candy-toggle';
 import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
 
 // FRIDAY-QUEUE items 11 + 11b: the Leaderboard is ONE living stage. These are its pieces; the page
@@ -62,8 +63,9 @@ export function LeaderboardStage({ accent, children, className = '' }: { accent:
 }
 
 /** A cast host standing at the title's edge (`art-pose-<id>-<pose>`, 320 px square art). */
-export function Host({ castId, pose, size, flip = false }: { castId: string; pose: string; size: number; flip?: boolean }) {
+export function Host({ castId, pose, size, idle = false }: { castId: string; pose: string; size: number; idle?: boolean }) {
   return (
+    // Never mirrored (founder 10-10): a mirrored cast member wears its letter backwards. The day's host idles (hop + sway) when `idle`.
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={artSrc(`art-pose-${castId}-${pose}` as ArtName)}
@@ -73,8 +75,8 @@ export function Host({ castId, pose, size, flip = false }: { castId: string; pos
       height={size}
       decoding="async"
       draggable={false}
-      className="select-none pointer-events-none shrink-0"
-      style={{ width: size, height: size, objectFit: 'contain', transform: flip ? 'scaleX(-1)' : undefined, filter: 'drop-shadow(0 4px 5px rgba(60,20,120,0.22))' }}
+      className={`select-none pointer-events-none shrink-0${idle ? ' idle-life' : ''}`}
+      style={{ width: size, height: size, objectFit: 'contain', filter: 'drop-shadow(0 4px 5px rgba(60,20,120,0.22))', ...(idle ? idleLifeStyle({ hop: 4, sway: 3, period: 1.6, delay: 0.3 }) : null) }}
     />
   );
 }
@@ -128,15 +130,29 @@ export function OwnMascot({ size, wizardHat = false, lean = 0, onTap, hopKey = 0
  * The compact "Your board" button = today's VIEW BOARD: the family cast button, small, in the board's game color
  * (founder 10-09: the art pill read as ugly; the button wears the game's own color). Default gold.
  */
-export function YourBoardButton({ onClick, label = 'View board', accent }: { onClick: () => void; label?: string; accent?: string }) {
-  // Founder 10-09: reads "View board" and sits smaller (the small cast pill at 80%, like iOS / Android).
+export function YourBoardButton({ onClick, label = 'View board', accent, glyph = 'list' }: { onClick: () => void; label?: string; accent?: string; glyph?: 'list' | 'play' }) {
+  // Founder 10-10: View board and Play are the SAME glossy candy thumb as the selected half of the Everyone | Friends switch
+  // above them (26 px, white Nunito Black 11 caps, a small glyph leading), hue-turned to the board's game color (animated).
   return (
-    <span className="inline-flex shrink-0" style={{ width: 84, height: 26, alignItems: 'center', justifyContent: 'center' }}>
-      <CastButton color={accent ? castColorForAccent(accent) : 'gold'} size="sm" onClick={onClick} aria-label={label}
-        className="shrink-0" style={{ width: 104, transform: 'scale(0.8)', flex: 'none' }}>
-        {label}
-      </CastButton>
-    </span>
+    <button
+      data-squish
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="relative inline-flex shrink-0 items-center border-0 cursor-pointer font-black uppercase"
+      style={{
+        height: 26, padding: '0 13px', gap: 5, fontSize: 11, letterSpacing: 0.3, whiteSpace: 'nowrap', color: CANDY_INK.on,
+        textShadow: '0 1px 0 rgba(76, 29, 149, 0.45)', background: 'transparent',
+      }}
+    >
+      {/* the glossy thumb sprite behind, hue-turned to the game (the label stays white) */}
+      <span aria-hidden="true" className="absolute inset-0 pointer-events-none"
+        style={{ ...threeSlice('thumb-on', 26, '--candy-thumb'), filter: accent ? `hue-rotate(${gameHueShift(accent)}deg)` : undefined, transition: 'filter 300ms ease-in-out' }} />
+      {glyph === 'play'
+        ? <Play className="relative shrink-0" width={10} height={10} fill="currentColor" strokeWidth={0} aria-hidden="true" />
+        : <ListOrdered className="relative shrink-0" width={11} height={11} strokeWidth={3} aria-hidden="true" />}
+      <span className="relative">{label}</span>
+    </button>
   );
 }
 

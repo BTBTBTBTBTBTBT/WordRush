@@ -27,6 +27,7 @@ import type { HomeCard } from './mode-chrome';
 import { useHomeHost } from '@/components/avatar/player-avatar';
 import { HomeHost } from '@/components/home/home-host';
 import { CelebrationTrio } from '@/components/home/celebration-trio';
+import { idleLifeStyle } from '@/lib/idle-life';
 import { homeHostHidden } from '@/lib/home-host';
 import { homeHostInviteAllowed } from '@/lib/home-host-cache';
 import { BANNER_SLOT, MODE_SWITCH, homeBannerContent, homeBannerSlots } from '@/lib/stationary-layout';
@@ -64,6 +65,9 @@ const SEASON_ART_H = 104;
 /** Unlimited on a swept / flawless day keeps the art frame (Z), in Unlimited's colors with U's loop. */
 const UNLIMITED_BAR = `linear-gradient(90deg, #fdba74, ${UNLIMITED_PEACH} 55%, #ec4899)`;
 const LOOP_ART = 'art-scene-unlimited-loop' as const;
+/** Founder 10-10: the swept day's live cast (O cheering, S flexing, W waving) and the Halloween idle scene's costumed O, W, R. */
+const SWEEP_TRIO = ['art-pose-o1-cheer', 'art-pose-s-flex', 'art-pose-w-wave'] as const;
+const HALLOWEEN_TRIO = ['art-halloween-o1', 'art-halloween-w', 'art-halloween-r'] as const;
 
 
 /** The thumb's inset inside the candy track's rim. */
@@ -260,6 +264,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   // Season preview: the registry's Home banner for the active season (lib/season-kit.ts).
   const seasonBannerArt = seasonBanner(season);
   const seasonSlot = !!seasonBannerArt && !tierArt;
+  const halloweenIdle = seasonBannerArt === 'art-scene-banner-halloween';
   const seasonArt = seasonSlot && seasonArtOk;
 
 
@@ -402,24 +407,14 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         // Z: one art box in both modes — today's celebration art sizes it; in
         // Unlimited U's loop crossfades in over the same box.
         <div className="relative shrink-0" style={{ width: Math.round((TIER_ART_H * ART_SIZE[tierArt.art][0]) / ART_SIZE[tierArt.art][1]), maxWidth: '46%', height: slots.artHeight }}>
-          {tierArt.art === 'art-scene-banner-flawless' ? (
-            // Founder 10-09: on a Flawless day the celebrating trio is ALIVE (bounces, sways, squashes under a swaying bunting,
-            // sparkles twinkling) instead of one flat picture. Still under Reduce Motion.
-            <CelebrationTrio className="absolute inset-0" style={{ opacity: content.art === 'tier' ? 1 : 0, transition: 'opacity 160ms ease-out' }} />
-          ) : (
-          <Image
-            src={artSrc(tierArt.art)}
-            alt=""
-            aria-hidden="true"
-            width={ART_SIZE[tierArt.art][0]}
-            height={ART_SIZE[tierArt.art][1]}
-            priority
-            draggable={false}
-            sizes={`${Math.round((TIER_ART_H * ART_SIZE[tierArt.art][0]) / ART_SIZE[tierArt.art][1])}px`}
-            className="relative select-none pointer-events-none art-pop"
-            style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(76, 29, 149, 0.18))', opacity: content.art === 'tier' ? 1 : 0, transition: 'opacity 160ms ease-out' }}
+          {/* Founder 10-09/10: a celebrating day is ALIVE: the trio bounces, sways and squashes on its own beats (Flawless D, O, I
+              under a still bunting; a Sweep O cheering, S flexing, W waving), sparkles twinkling. Still under Reduce Motion. */}
+          <CelebrationTrio
+            className="absolute inset-0"
+            images={tierArt.art === 'art-scene-banner-flawless' ? undefined : SWEEP_TRIO}
+            bunting={tierArt.art === 'art-scene-banner-flawless'}
+            style={{ opacity: content.art === 'tier' ? 1 : 0, transition: 'opacity 160ms ease-out' }}
           />
-          )}
           <Image
             src={artSrc(LOOP_ART)}
             alt=""
@@ -428,8 +423,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
             height={ART_SIZE[LOOP_ART][1]}
             draggable={false}
             sizes={`${Math.round((TIER_ART_H * ART_SIZE[LOOP_ART][0]) / ART_SIZE[LOOP_ART][1])}px`}
-            className="absolute inset-0 select-none pointer-events-none"
-            style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(194, 65, 12, 0.22))', opacity: content.art === 'loop' ? 1 : 0, transition: 'opacity 160ms ease-out' }}
+            className="absolute inset-0 select-none pointer-events-none idle-life"
+            style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(194, 65, 12, 0.22))', opacity: content.art === 'loop' ? 1 : 0, transition: 'opacity 160ms ease-out', ...idleLifeStyle({ hop: 4, sway: 2.5, period: 1.8 }) }}
           />
         </div>
       )}
@@ -476,9 +471,13 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           <SeasonArt
             src={`/art/${seasonBannerArt}.webp`}
             onReady={(ok) => { setSeasonArtOk(ok); if (!ok) setMissingSeasonArt(seasonBannerArt); }}
-            className="relative art-pop"
-            style={{ height: SEASON_ART_H, width: 'auto', maxWidth: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(76, 29, 149, 0.18))' }}
+            className={`relative ${halloweenIdle ? '' : 'idle-life'}`}
+            style={{ height: SEASON_ART_H, width: 'auto', maxWidth: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(76, 29, 149, 0.18))', ...(halloweenIdle ? { display: 'none' } : idleLifeStyle()) }}
           />
+          {halloweenIdle && seasonArtOk && (
+            // Founder 10-10: the idle Halloween scene is alive: the costumed O, W, R sway slow and spooky (no sparkles, 0.7 s tempo, +-3 deg).
+            <CelebrationTrio images={HALLOWEEN_TRIO} bunting={false} sparkles={false} tempo={0.7} swayDegrees={3} style={{ width: '100%', maxWidth: 420, height: SEASON_ART_H }} />
+          )}
         </div>
       )}
       {/* BJ6 round 3 flair: the two progress rows sit in one soft lavender band — the card reads as two zones. */}
