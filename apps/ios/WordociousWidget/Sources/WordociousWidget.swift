@@ -878,35 +878,45 @@ struct MediumView: View {
     var body: some View {
         let hall = halloweenOn(snap, date)
         let dark = hall || (snap.theme?.dark ?? (scheme == .dark))
-        VStack(spacing: 6) {
-            // Item 28: the lettering image, left-aligned over the whole widget (taps open Home).
-            Link(destination: homeURL) {
-                HStack {
-                    WordmarkImage(size: .medium, halloween: hall, dark: dark, height: 14)
-                    Spacer(minLength: 0)
-                }
-            }
-            GeometryReader { g in
-                let left = min(g.size.width * 0.33, 108)
-                let ring = min(left, g.size.height - 36)
-                HStack(spacing: 14) {
-                    VStack(spacing: 4) {
-                        Link(destination: homeURL) {
+        // Founder 10-10: three bands. Top: WORDOCIOUS over a bigger ring (left) beside the 8 dailies, which span from the
+        // lettering's top to the ring's bottom. Middle: all 10 Puzzles in one row. Bottom: the streak pair in line with
+        // next / countdown / points.
+        GeometryReader { g in
+            let hasPuzzles = !snap.puzzleModes.isEmpty
+            let gap: CGFloat = 6
+            let bottomH: CGFloat = 22
+            let puzzleN = CGFloat(max(snap.puzzleModes.count, 1))
+            let puzzleChip = hasPuzzles ? min(34, (g.size.width - 5 * (puzzleN - 1)) / puzzleN) : 0
+            let topH = max(40, g.size.height - bottomH - (hasPuzzles ? puzzleChip + gap : 0) - gap)
+            let mark: CGFloat = 13
+            let ring = max(30, min(topH - mark - 4, g.size.width * 0.32))
+            VStack(alignment: .leading, spacing: gap) {
+                HStack(alignment: .top, spacing: 12) {
+                    Link(destination: homeURL) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            WordmarkImage(size: .medium, halloween: hall, dark: dark, height: mark)
                             DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
                                 .frame(width: ring, height: ring)
-                        }
-                        Spacer(minLength: 0)
-                        HStack(spacing: 4) {
-                            StreakPair(snap: snap, size: 30)
-                            StreakLabel(stacked: snap.flawlessRun >= 2, color: WInk.number(dark))
+                                .frame(maxWidth: .infinity)
                         }
                     }
-                    .frame(width: left)
-                    ChipGrid(modes: snap.modes, columns: 4, dark: dark, peek: (snap.peekArt(at: date, own: OwnLook.load(), photoOK: false), 3))
+                    .frame(width: max(ring, min(g.size.width * 0.36, 120)))
+                    ChipGrid(modes: snap.modes, columns: 4, dark: dark)
+                        .frame(height: topH)
                 }
-            }
-            Link(destination: homeURL) {
-                StatLine(items: statTexts(snap, date, dark, nextFirst: true), dark: dark)
+                .frame(height: topH)
+                if hasPuzzles {
+                    // Every Puzzles chip links to its own daily (ChipGrid is linked by default).
+                    ChipGrid(modes: snap.puzzleModes, columns: snap.puzzleModes.count, dark: dark, maxChip: puzzleChip)
+                        .frame(height: puzzleChip)
+                }
+                Link(destination: homeURL) {
+                    HStack(spacing: 8) {
+                        StreakPair(snap: snap, size: 21)
+                        StatLine(items: statTexts(snap, date, dark, nextFirst: true), dark: dark)
+                    }
+                    .frame(height: bottomH)
+                }
             }
         }
         .accessibilityElement(children: .contain)
