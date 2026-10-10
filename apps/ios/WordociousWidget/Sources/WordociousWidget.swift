@@ -1,6 +1,7 @@
 import WidgetKit
 import SwiftUI
 import UIKit
+import ImageIO
 
 // Home-screen widget: today's eight Wordocious dailies (and the ten Puzzles on the
 // large size) plus the play streak. Renders purely from the JSON snapshot the app
@@ -147,12 +148,19 @@ private func emptySnapshot() -> WSnapshot {
                                                      iconKind: $0.kind, iconAsset: $0.asset, iconText: nil) })
 }
 
-private func localDay(_ date: Date = Date()) -> String {
+// Founder 10-10 (the Large widget can't be added on device — memory): ONE formatter. `localDay` runs a dozen times per
+// entry render (peek pose, mascot skin, season checks); building a DateFormatter each time churned ~100 KB of ICU
+// state per call across the 6 entries of a timeline.
+private let localDayFormatter: DateFormatter = {
     let f = DateFormatter()
     f.locale = Locale(identifier: "en_US_POSIX")
     f.calendar = Calendar(identifier: .gregorian)
     f.dateFormat = "yyyy-MM-dd"
-    return f.string(from: date)
+    return f
+}()
+
+private func localDay(_ date: Date = Date()) -> String {
+    localDayFormatter.string(from: date)
 }
 
 /// Read the app-written snapshot; a snapshot from a previous day keeps the
@@ -373,10 +381,16 @@ private struct TileMark: Shape {
 
 /// The 3D game icon for a daily (`game-<catalog id>`; the catalog ids are the DB keys
 /// lowercased except Classic / Six / Seven).
+// Founder 10-10 (the Large widget can't be added on device — memory): the name check is a static set, never
+// `UIImage(named:)` (which decodes and caches the whole bitmap just to see that it exists, ~20x per render).
+private let gameIconNames: Set<String> = [
+    "practice", "quordle", "octordle", "sequence", "rescue", "six", "seven", "gauntlet",
+    "propernoundle", "sudoku", "scramble", "hub", "crossword", "groups", "ladder", "cryptogram", "wordsearch", "regions",
+]
 private func gameIconAsset(_ key: String) -> String? {
     let ids = ["DUEL": "practice", "DUEL_6": "six", "DUEL_7": "seven"]
-    let name = "game-\(ids[key] ?? key.lowercased())"
-    return UIImage(named: name) != nil ? name : nil
+    let id = ids[key] ?? key.lowercased()
+    return gameIconNames.contains(id) ? "game-\(id)" : nil
 }
 
 private func dailyURL(_ m: WSnapshot.Mode) -> URL? { URL(string: "wordocious://daily/\(m.key)") }
@@ -683,8 +697,8 @@ private struct MascotW: View {
     let date: Date
     var seasonOn = true
     var body: some View {
-        let skin = WidgetCast.asset("w", day: localDay(date), seasonOn: seasonOn)
-        Image(UIImage(named: skin) != nil ? skin : "mascot-w")
+        // art-halloween-w and mascot-w are both in the widget catalog (no UIImage(named:) existence probe).
+        Image(WidgetCast.asset("w", day: localDay(date), seasonOn: seasonOn))
             .resizable().interpolation(.high).scaledToFit()
             .accessibilityHidden(true)
     }
@@ -702,7 +716,8 @@ private struct CastPeek: View {
     var body: some View {
         Group {
             switch art {
-            case .asset(let asset): Image(UIImage(named: asset) != nil ? asset : "mascot-r").resizable().interpolation(.high)
+            // Every WidgetCast.peekAsset name (art-pose-* / art-halloween-*) is in the widget catalog.
+            case .asset(let asset): Image(asset).resizable().interpolation(.high)
             case .own(let img): Image(uiImage: img).resizable().interpolation(.high)
             }
         }
@@ -720,11 +735,23 @@ enum OwnLook {
     static func at(_ date: Date) -> Look? {
         guard let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) else { return nil }
         let pose = WidgetAvatar.poseFile(WidgetAvatar.pose(hour: Calendar.current.component(.hour, from: date)))
-        if let img = UIImage(contentsOfFile: dir.appendingPathComponent(pose).path) { return Look(image: img, photo: false) }
+        if let img = thumbnail(dir.appendingPathComponent(pose).path) { return Look(image: img, photo: false) }
         for (name, photo) in [(WidgetAvatar.mascotFile, false), (WidgetAvatar.photoFile, true)] {
-            if let img = UIImage(contentsOfFile: dir.appendingPathComponent(name).path) { return Look(image: img, photo: photo) }
+            if let img = thumbnail(dir.appendingPathComponent(name).path) { return Look(image: img, photo: photo) }
         }
         return nil
+    }
+
+    /// Founder 10-10 (the Large widget can't be added on device — memory): the app's 256 px stills are drawn at <= 60 pt, so
+    /// decode them at 192 px (ImageIO thumbnail) instead of full size — 144 KB resident instead of 256 KB, per look, per entry.
+    private static func thumbnail(_ path: String, maxPixel: Int = 192) -> UIImage? {
+        guard let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil) else { return nil }
+        let opts: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                                     kCGImageSourceCreateThumbnailWithTransform: true,
+                                     kCGImageSourceShouldCacheImmediately: true,
+                                     kCGImageSourceThumbnailMaxPixelSize: maxPixel]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else { return nil }
+        return UIImage(cgImage: cg)
     }
 }
 

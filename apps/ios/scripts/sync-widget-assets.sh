@@ -18,7 +18,7 @@ cat > "$DST/Contents.json" <<'JSON'
 JSON
 copied=0
 # FINISH_SPEC §AV: the cast's Halloween skins (the day host + peeking heads in season).
-for pattern in 'mascot-*' 'game-*' 'icon3d-*' 'art-bg-tiles' 'art-badge-icon-*' \
+for pattern in 'mascot-*' 'game-*' 'icon3d-*' 'art-badge-icon-*' \
                'art-halloween-w' 'art-halloween-o1' 'art-halloween-r' 'art-halloween-d' 'art-halloween-o2' \
                'art-halloween-c' 'art-halloween-i' 'art-halloween-o3' 'art-halloween-u' 'art-halloween-s' \
                'wordle-grid' 'swords' 'trending-up' 'shield' 'six-hand' 'seven-hand' 'skull' 'crown'; do
@@ -53,3 +53,6 @@ copied=$((copied + 1))
 echo "widget catalog: $copied image sets, $(du -sh $DST | cut -f1)"
 # 2.8 (items 28/48/24): wordmarks, trophies, flawless ring + Halloween motifs come from docs/design/brand/2.8.
 python3 "$(dirname "$0")/sync-widget-art-28.py"
+
+# Founder 10-10: shrink every bitmap to its drawn size x 3 (the extension decodes at source size; memory ceiling).
+zsh "$(dirname "$0")/downsize-widget-assets.sh"
