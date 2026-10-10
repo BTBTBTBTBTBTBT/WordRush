@@ -1277,6 +1277,12 @@ private struct RpsReveal: View {
     let myColor: Color
     let themColor: Color
     @State private var flipped = Theme.reduceMotion
+    /// Founder 10-10 (suspense): the "ROCK, PAPER, SCISSORS, SHOOT!" beat before the reveal — both fists pump three
+    /// times as the words pop in, then both cards turn over at once. -1 = not started, 0-2 = the pumps, 3 = SHOOT.
+    @State private var beat = -1
+    @State private var bob: CGFloat = 0
+    @State private var turn: Double = Theme.reduceMotion ? 0 : 180
+    private static let words = ["ROCK...", "PAPER...", "SCISSORS...", "SHOOT!"]
 
     var body: some View {
         VStack(spacing: 6) {
@@ -1292,7 +1298,14 @@ private struct RpsReveal: View {
                             .opacity(flipped ? 1 : 0)
                             .accessibilityHidden(true)
                     }
-                    PocketBubble(text: winner == 0 ? "TIE" : "VS", color: accent, size: 15, minScale: 0.5)
+                    if flipped {
+                        PocketBubble(text: winner == 0 ? "TIE" : "VS", color: accent, size: 15, minScale: 0.5)
+                    } else if beat >= 0 {
+                        PocketBubble(text: Self.words[min(beat, 3)], color: beat == 3 ? Color(hex: 0xF5B82E) : accent,
+                                     size: beat == 3 ? 17 : 13, minScale: 0.35)
+                            .id(beat)
+                            .transition(.scale(scale: 0.5).combined(with: .opacity))
+                    }
                 }
                 .frame(width: 40)
                 card(theirs, label: them.uppercased(), win: winner == 2, tint: FriendsKit.amber, ink: themColor)
@@ -1309,15 +1322,40 @@ private struct RpsReveal: View {
         }
         .onAppear {
             guard !flipped else { return }
-            if Theme.reduceMotion { flipped = true; return }
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.7).delay(0.05)) { flipped = true }
+            if Theme.reduceMotion { flipped = true; turn = 0; return }
+            Task { @MainActor in await countdown() }
         }
+    }
+
+    private func wait(_ s: Double) async { try? await Task.sleep(nanoseconds: UInt64(s * 1_000_000_000)) }
+
+    /// Three pumps (ROCK / PAPER / SCISSORS), SHOOT!, then both cards turn over together.
+    @MainActor private func countdown() async {
+        for i in 0..<3 {
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.7)) { beat = i }
+            withAnimation(.easeOut(duration: 0.15)) { bob = -18 }
+            await wait(0.15)
+            withAnimation(.easeIn(duration: 0.13)) { bob = 0 }
+            await wait(0.13)
+            Haptics.light()
+            await wait(0.12)
+        }
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.6)) { beat = 3 }
+        Haptics.medium()
+        await wait(0.22)
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) { turn = 0; flipped = true }
+        await wait(0.18)
+        Haptics.heavy()
+        if winner == 1 { await wait(0.2); Haptics.success() }
     }
 
     private func card(_ p: RpsPick, label: String, win: Bool, tint: Color, ink: Color) -> some View {
         VStack(spacing: 3) {
-            Image(PocketArt.rps(p)).resizable().interpolation(.high).scaledToFit().frame(width: 58, height: 58)
-                .accessibilityLabel(p.rawValue.capitalized)   // §AB: the pick, not the asset name
+            // The pick turns over from the pumping fist (only the art turns — the label never mirrors).
+            RpsTurnArt(angle: turn, front: PocketArt.rps(p), back: PocketArt.rps(.rock))
+                .frame(width: 58, height: 58)
+                .offset(y: flipped ? 0 : bob)
+                .accessibilityLabel(flipped ? p.rawValue.capitalized : "Hidden pick")   // §AB: the pick, not the asset name
             PocketBubble(text: label, color: ink, size: 12, minScale: 0.4, hug: false)
                 .frame(width: 74)
                 .opacity(win ? 1 : 0.75)
@@ -1325,10 +1363,27 @@ private struct RpsReveal: View {
         .frame(width: 84, height: 92)
         // §A1: tinted in the player's color, never plain white.
         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(tint.vsWash(win ? 0.18 : 0.10))
-            .shadow(color: win ? tint.opacity(0.6) : Color(hex: 0x4C1D95).opacity(0.08), radius: win ? 10 : 4, y: 2))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(win ? tint : tint.vsWash(0.32), lineWidth: win ? 2 : 1.5))
-        .rotation3DEffect(.degrees(flipped ? 0 : 90), axis: (x: 0, y: 1, z: 0))
-        .opacity(flipped ? 1 : 0)
+            .shadow(color: win && flipped ? tint.opacity(0.6) : Color(hex: 0x4C1D95).opacity(0.08), radius: win && flipped ? 10 : 4, y: 2))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .stroke(win && flipped ? tint : tint.vsWash(0.32), lineWidth: win && flipped ? 2 : 1.5))
+    }
+}
+
+/// An RPS hand turning over around its vertical axis: the fist (back) until the turn passes 90°, then the pick (front);
+/// it narrows to its edge mid-turn. Never mirrored (a scale magnitude, not a flip).
+private struct RpsTurnArt: View, Animatable {
+    var angle: Double
+    let front: String
+    let back: String
+    var animatableData: Double {
+        get { angle }
+        set { angle = newValue }
+    }
+
+    var body: some View {
+        let c = cos(angle * .pi / 180)
+        Image(c >= 0 ? front : back).resizable().interpolation(.high).scaledToFit()
+            .scaleEffect(x: max(0.06, abs(c)), y: 1)
     }
 }
 
