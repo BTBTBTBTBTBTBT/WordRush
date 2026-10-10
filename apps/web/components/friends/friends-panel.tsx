@@ -18,6 +18,7 @@ import { Users, X, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { PageHeadline } from '@/components/ui/page-headline';
 import { CandyButton, CandyIcon, candyClass } from '@/components/ui/candy-button';
 import { CastButton } from '@/components/ui/cast-button';
+import { playerNameColor } from '@/lib/player-tint';
 import { SoftNum } from '@/components/ui/soft-number';
 import { CandyBadge } from '@/components/ui/candy-badge';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -62,6 +63,28 @@ import { HeadingArt } from '@/components/ui/heading-art';
 const ADD_POSE = poseArt('i', 'reach');
 
 /** A danger candy (Unfriend): the candy look recolored red. */
+/** Founder 10-09: the All friends row action (Play / Challenge / Nudge / Nudge all): one width, one letter height (iOS actionPillWidth / castCapScale 0.78). */
+const ACTION_PILL_WIDTH = 96;
+const ACTION_CAP = 0.78;
+function ActionPill({ color, onClick, disabled, label, children }: { color: 'pink' | 'gold'; onClick: () => void; disabled?: boolean; label: string; children: React.ReactNode }) {
+  return (
+    <CastButton
+      screen="pink"
+      size="sm"
+      color={color}
+      capScale={ACTION_CAP}
+      block
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      disabled={disabled}
+      aria-label={label}
+      className="shrink-0"
+      style={{ width: ACTION_PILL_WIDTH }}
+    >
+      {children}
+    </CastButton>
+  );
+}
+
 const DANGER = { ['--candy-1' as string]: '#fb7185', ['--candy-2' as string]: '#dc2626', ['--candy-lip' as string]: '#8f1919' } as React.CSSProperties;
 
 /** Accepted within the last 24h — wears the NEW chip (Tier 2, Aug 11). */
@@ -134,8 +157,6 @@ export function FriendsPanel() {
   const [sheet, setSheet] = useState<SheetState>(null);
   /** 2.8 item 9: the All friends dropdown (open by default only when no card shows). */
   const [allOpen, setAllOpen] = useState<boolean | null>(null);
-  /** 2.8 item 9: a game to resign (from the friend's ⋯ menu; never inside the game). */
-  const [resignTarget, setResignTarget] = useState<GameView | null>(null);
   const [challenging, setChallenging] = useState<string | null>(null);
   /** T1: the request just sent ("@name"), shown on the invite-sent card until Done. */
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -699,6 +720,12 @@ export function FriendsPanel() {
             onStart={(friendId, kind) => { const f = friendById.get(friendId); if (f) openPlay(f, kind); }}
             onMenu={(friendId) => setMenuFor(friendId)}
             onProfile={(friendId) => router.push(`/profile/${friendId}`)}
+            // Founder 10-09: Resign lives on each game tile (a small flag, the confirm on the tile), not in the ⋯ menu.
+            onResign={async (gameId) => {
+              const done = await resignGame(gameId);
+              if (!done) setNote('Could not resign. Try again.');
+              void loadGames(true);
+            }}
           />
         </>
       )}
@@ -782,24 +809,29 @@ export function FriendsPanel() {
                         <span className="truncate">@{f.username}</span>
                         {f.level ? <LevelBadge level={f.level} size={16} numberSize={11} numberClassName="" /> : null}
                         {f.id === crownId && <Icon3D name="crown" size={14} label="Leads the week" className="shrink-0" />}
+                      </span>
+                      {/* Founder 10-09: the NEW / friendversary chips ride the second line (they squeezed the name and wrapped
+                          "30 DAYS" into a circle); they never wrap. */}
+                      <span className="flex items-center gap-1.5 mt-1 min-w-0">
+                        <span className="text-[11px] font-bold truncate min-w-0" style={{ color: line.online ? '#047857' : FR_LOOK.rowSub }}>{line.text}</span>
                         {isNewFriend(f) && (
-                          <span className="text-[8.5px] font-black px-1 py-0.5 rounded shrink-0" style={{ background: FR.soft, color: FR.solid }}>NEW</span>
+                          <span className="text-[8.5px] font-black px-1 py-0.5 rounded shrink-0 whitespace-nowrap" style={{ background: FR.soft, color: FR.solid }}>NEW</span>
                         )}
                         {friendversary(f) !== null && (
-                          <span className="text-[8.5px] font-black px-1 py-0.5 rounded shrink-0" style={{ background: FR.soft, color: FR.solid }}>{friendversary(f)} DAYS</span>
+                          <span className="text-[8.5px] font-black px-1 py-0.5 rounded shrink-0 whitespace-nowrap" style={{ background: FR.soft, color: FR.solid }}>{friendversary(f)} DAYS</span>
                         )}
                       </span>
-                      <span className="block text-[11px] font-bold truncate mt-1" style={{ color: line.online ? '#047857' : FR_LOOK.rowSub }}>{line.text}</span>
                     </span>
                   </Link>
                   <FlameCount days={f.friendStreak ?? 0} />
-                  {action === 'play' && <Pill color="purple" icon="play" onClick={() => openPlay(f)} label={`Play with ${f.username}`}>Play</Pill>}
+                  {/* Founder 10-09: Play / Challenge / Nudge are ONE width with ONE letter height down the list. */}
+                  {action === 'play' && <ActionPill color="pink" onClick={() => openPlay(f)} label={`Play with ${f.username}`}>Play</ActionPill>}
                   {action === 'challenge' && (
-                    <Pill color="pink" onClick={() => challenge(f)} disabled={challenging !== null} label={`Challenge ${f.username} to a VS Battle`}>
+                    <ActionPill color="pink" onClick={() => challenge(f)} disabled={challenging !== null} label={`Challenge ${f.username} to a VS Battle`}>
                       {challenging === f.id ? 'Sending…' : 'Challenge'}
-                    </Pill>
+                    </ActionPill>
                   )}
-                  {action === 'nudge' && <Pill color="amber" onClick={() => setTauntTarget(f)} label={`Nudge ${f.username}`}>Nudge</Pill>}
+                  {action === 'nudge' && <ActionPill color="gold" onClick={() => setTauntTarget(f)} label={`Nudge ${f.username}`}>Nudge</ActionPill>}
                   <span className="relative shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); setMenuFor(f.id); }}
@@ -823,11 +855,13 @@ export function FriendsPanel() {
                 </span>
                 <CastButton screen="pink"
                   size="sm"
-                  color="amber"
+                  color="gold"
                   icon={<Icon3D name="bell" size={16} />}
+                  capScale={ACTION_CAP}
                   onClick={nudgeAll}
                   aria-label="Nudge all friends who haven't played today"
                   className="shrink-0"
+                  style={{ width: ACTION_PILL_WIDTH }}
                 >
                   Nudge all
                 </CastButton>
@@ -1054,11 +1088,7 @@ export function FriendsPanel() {
             if ('error' in r) setNote(r.error);
             else setShieldNote(`Shield sent to ${f.username} · ${r.shieldsLeft} left`);
           } } as FamilyMenuAction] : []),
-          // 2.8 item 9: Resign lives here, never inside a game (one row per running game with this friend).
-          ...sortedGames.filter((g) => g.opponent.id === f.id && g.status === 'active').map((g): FamilyMenuAction => ({
-            id: `resign-${g.id}`, title: `Resign ${FRIENDLY_TITLES[g.kind]}`, icon: 'xmark', danger: true,
-            label: `Resign ${FRIENDLY_TITLES[g.kind]} against ${f.username}`, run: () => setResignTarget(g),
-          })),
+          // Founder 10-09: Resign lives on each game tile now (a small flag), not as rows here.
           { id: 'unfriend', title: 'Unfriend', icon: 'xmark', danger: true, label: `Unfriend ${f.username}`, run: () => setUnfriendTarget(f) },
         ];
         return (
@@ -1067,6 +1097,8 @@ export function FriendsPanel() {
             subtitle={friendLine(f, Date.now(), SWEEP_MODES.length).text}
             avatar={<FriendAvatar name={f.username} userId={f.id} url={f.avatar_url} config={f.avatar_config} castId={f.avatar_cast_id} frame={f.avatar_frame} pro={f.is_pro} size={44} />}
             label={`More options for ${f.username}`}
+            // Founder 10-09: the name in the bubble lettering, in their own color (their backdrop).
+            titleColor={playerNameColor({ username: f.username, avatarUrl: f.avatar_url, config: f.avatar_config, castId: f.avatar_cast_id, frame: f.avatar_frame })}
             actions={rows}
             onClose={() => setMenuFor(null)}
           />
@@ -1129,45 +1161,6 @@ export function FriendsPanel() {
           onSeeFriends={() => setNewFriend(null)}
           onClose={() => setNewFriend(null)}
         />
-      )}
-
-      {resignTarget && (
-        <div
-          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
-          style={{ background: 'rgba(42,22,80,0.45)' }}
-          onClick={() => setResignTarget(null)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Resign ${FRIENDLY_TITLES[resignTarget.kind]}`}
-            className="w-full max-w-sm overflow-hidden"
-            style={frSurface(FR_LOOK.lavender, { share: 0.08 })}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div aria-hidden="true" style={frBar(FR_LOOK.lavenderBar)} />
-            <p className="px-4 pt-4 pb-3 text-sm font-extrabold" style={{ color: FR_LOOK.ink }}>
-              Resign {FRIENDLY_TITLES[resignTarget.kind]}? {resignTarget.opponent.username} wins this one.
-            </p>
-            <div className="flex gap-2.5 px-4 pb-4">
-              <CandyButton size="md" color="peach" block onClick={() => setResignTarget(null)}>Keep playing</CandyButton>
-              <CastButton screen="pink"
-                size="md"
-                block
-                style={DANGER}
-                onClick={async () => {
-                  const g = resignTarget;
-                  setResignTarget(null);
-                  const done = await resignGame(g.id);
-                  if (!done) setNote('Could not resign. Try again.');
-                  void loadGames(true);
-                }}
-              >
-                Resign
-              </CastButton>
-            </div>
-          </div>
-        </div>
       )}
 
       {unfriendTarget && (
