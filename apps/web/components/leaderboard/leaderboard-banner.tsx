@@ -1,9 +1,9 @@
 'use client';
 
-import { BubbleText } from '@/components/ui/bubble-text';
+import { BubbleOneLine } from '@/components/ui/bubble-text';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { dayHost, dayProp, holidayKeyForDay, leaderboardTitle, MASCOT_LEAN_DEGREES, wearsWizardHat } from '@wordle-duel/core';
+import { dayHost, holidayKeyForDay, leaderboardTitle, MASCOT_LEAN_DEGREES, wearsWizardHat } from '@wordle-duel/core';
 import { useCountdown } from '@/hooks/use-countdown';
 import { getSecondsUntilMidnightLocal } from '@/lib/daily-service';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
@@ -108,14 +108,17 @@ function dayArtH(art: ArtName): number {
 }
 
 /**
- * Row 1 of the stage: [your mascot] · the day's title in bubble lettering · [the day's cast host].
- * Fills the width (no small centered image); the date + reset clock is ONE small line under it.
+ * Row 1 of the stage. Founder 10-09: the day's name fills the cloud on two big bubble lines (FRIDAY'S over FINEST, split at
+ * the LAST space); your mascot and the day's host stand larger at either side of the second line (bottom-aligned), the mascot
+ * row pulled up 25 px under line 1; the floating weekday prop is gone. The date + reset clock is ONE small line under it.
  */
 export function StageTitle({ today }: { today: string | null }) {
   const host = today ? dayHost(today) : null;
-  const prop = today ? dayProp(today) : null;
   const hat = today ? wearsWizardHat(today) : false;
   const title = today ? dayTitle(today) : '';
+  const cut = title.lastIndexOf(' ');
+  const line1 = cut > 0 ? title.slice(0, cut) : title;
+  const line2 = cut > 0 ? title.slice(cut + 1) : '';
   const date = today
     ? new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
     : null;
@@ -124,27 +127,21 @@ export function StageTitle({ today }: { today: string | null }) {
   return (
     // Founder 10-09: the title's cloud bank glows from behind (a warm gold light), so it reads as lit, not pasted.
     <div style={{ padding: '10px 10px 0', backgroundImage: 'radial-gradient(ellipse 62% 58% at 50% 55%, rgba(255,217,120,0.62), rgba(255,176,74,0.22) 55%, rgba(255,176,74,0) 78%)' }}>
-      <h1 className="relative m-0 flex items-end justify-between gap-1" style={{ minHeight: 76 }} aria-label={title || 'Leaderboard'}>
-        {/* the weekday's prop floats beside the title with its own little motion */}
-        {prop && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={artSrc(prop.art as ArtName)}
-            alt=""
-            aria-hidden="true"
-            draggable={false}
-            className={`lb-prop lb-prop-${prop.motion} absolute pointer-events-none select-none`}
-            style={{ right: 70, top: -4, width: 40, height: 40, objectFit: 'contain' }}
-          />
-        )}
-        {/* your mascot leans toward the title; tap it and the letters bounce */}
-        <OwnMascot size={62} wizardHat={hat} lean={MASCOT_LEAN_DEGREES} onTap={() => setTaps((n) => n + 1)} hopKey={taps} />
-        <span className="flex-1 min-w-0 self-center" key={`t${taps}`}>
-          <BubbleText text={title || ' '} palette="leaderboard" maxSize={30} minSize={20} level={2} />
-        </span>
-        {host ? <Host castId={host.castId} pose={host.pose} size={66} flip /> : <span style={{ width: 66 }} />}
+      <h1 className="relative m-0" aria-label={title || 'Leaderboard'}>
+        <div key={`a${taps}`} style={{ padding: '0 4px' }} aria-hidden="true">
+          <BubbleOneLine text={line1 || ' '} palette="leaderboard" size={42} />
+        </div>
+        <div className="flex items-end justify-between" style={{ gap: 2, minHeight: 70, marginTop: -25 }}>
+          {/* your mascot leans toward the title; tap it and the letters bounce */}
+          <OwnMascot size={70} wizardHat={hat} lean={MASCOT_LEAN_DEGREES} onTap={() => setTaps((n) => n + 1)} hopKey={taps} />
+          <span className="flex-1 min-w-0" key={`b${taps}`} style={{ paddingBottom: 14 }} aria-hidden="true">
+            <BubbleOneLine text={line2 || ' '} palette="leaderboard" size={42} />
+          </span>
+          {host ? <Host castId={host.castId} pose={host.pose} size={72} flip /> : <span style={{ width: 72 }} />}
+        </div>
       </h1>
-      <div className="text-center font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.6, marginTop: 1, color: '#8A4A12' /* on the pale clouds in every theme */ }}>
+      {/* the cloud fades out above this line, so on a dark theme it takes a warm light ink (globals.css .lb-date-ink) */}
+      <div className="lb-date-ink text-center font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.6, marginTop: 1 }}>
         <ResetLine lead={date} />
       </div>
     </div>

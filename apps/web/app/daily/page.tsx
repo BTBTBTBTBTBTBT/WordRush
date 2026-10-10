@@ -765,7 +765,7 @@ export default function DailyPage() {
           YESTERDAY'S WINNERS. Desktop website (≥ 1024 px, lib/desktop-layout.ts):
           three columns — the day headline + picker (kept in view), TODAY'S BOARD,
           then the play card, your board and YESTERDAY'S WINNERS (globals.css .lb-desk). */}
-      <div className="lb-desk max-w-lg page-wide mx-auto px-4">
+      <div className="lb-desk max-w-lg page-wide mx-auto px-4" style={{ overflowX: 'clip' /* the stage clouds reach 18 px past the card: never a horizontal scroll */ }}>
         {/* 11 + 11b (founder 10-07): the Leaderboard top is ONE living stage — the day's bubble title with
             your mascot + the day's host, the game picker in the same card, the selected-game strip (art ·
             N today · your rank + stats · compact Your board), Everyone/Friends + share on the podium's
@@ -776,14 +776,17 @@ export default function DailyPage() {
           <LeaderboardStage accent={color}>
             <LeaderboardBanner today={today} selectedMode={selectedMode} onSelect={setSelectedMode} />
 
-            <div className="flex items-center gap-2.5" style={{ padding: '2px 14px 4px', minHeight: 46 }}>
-              <GameArt
-                id={isSweep ? 'sweep' : mode.id}
-                size={34}
-                fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="text-[12.5px] font-extrabold leading-[15px] truncate" style={{ color: 'var(--color-text-secondary)' }}>
+            {/* Founder 10-09: the game strip is two rows, each with its control on the right: [game art · title · N today] [Everyone | Friends · share],
+                then [your rank line, one line] [View board / Play]. The separate switch + share row above the podium is gone; the share keeps its
+                space (invisible) while there is nothing to share, so the cluster never shifts. */}
+            <div className="flex flex-col" style={{ padding: '4px 10px', gap: 6, minHeight: 46 }}>
+              <div className="flex items-center gap-2">
+                <GameArt
+                  id={isSweep ? 'sweep' : mode.id}
+                  size={34}
+                  fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
+                />
+                <div className="min-w-0 text-[12.5px] font-extrabold leading-[15px] truncate" style={{ color: 'var(--color-text-secondary)' }}>
                   <span className="font-black" style={{ color: 'var(--color-text)' }}>{isSweep ? 'Daily Sweep' : mode.title}</span>
                   <span aria-hidden="true">{' · '}</span>
                   <span className="whitespace-nowrap">
@@ -792,8 +795,37 @@ export default function DailyPage() {
                   </span>
                   {isSweep ? ' swept' : ' today'}
                 </div>
-                {/* your rank + stats, one line ("#2 of 5 · 2,005 PTS · 4 guesses · 48s") */}
-                <div className="flex items-center gap-1.5 text-[11.5px] font-black leading-[15px] min-w-0" style={{ color: 'var(--color-text-secondary)' }}>
+                <div className="flex-1" />
+                <div className="flex items-center gap-1 shrink-0">
+                  {!isSweep && user && (
+                    <SegmentedPill
+                      label="Everyone or Friends"
+                      accent={color}
+                      value={friendsOnly}
+                      onChange={setFriendsOnly}
+                      options={[[false, 'Everyone'], [true, 'Friends']] as const}
+                      small
+                    />
+                  )}
+                  {(() => {
+                    const shareReady = !boardLoading && (isSweep ? sweepLeaderboard.length > 0 : leaderboard.length > 0);
+                    return (
+                      <HeaderGlyph
+                        icon="share"
+                        size={20}
+                        label="Share leaderboard"
+                        onClick={handleShareLeaderboard}
+                        disabled={sharingLb || !shareReady}
+                        style={{ minWidth: 40, opacity: shareReady ? (sharingLb ? 0.4 : 1) : 0, pointerEvents: shareReady ? undefined : 'none' }}
+                        aria-hidden={shareReady ? undefined : true}
+                      />
+                    );
+                  })()}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* your rank + stats, one line ("#2 of 5 · 2,005 PTS · 4 guesses · 48s"), shrinking to fit */}
+                <div className="flex items-center gap-1.5 text-[11.5px] font-black leading-[15px] min-w-0 flex-1" style={{ color: 'var(--color-text-secondary)' }}>
                   {showResult ? (
                     <>
                       <span className="truncate">{compactRankLine({
@@ -820,37 +852,12 @@ export default function DailyPage() {
                     <span className="truncate">{isSweep ? 'Ranked by points' : 'Not played yet'}</span>
                   )}
                 </div>
+                {/* Sweep isn't a playable puzzle — no button. After today's daily: the compact Your board
+                    pill (= the old VIEW BOARD); before: PLAY. */}
+                {!isSweep && (playedSelected
+                  ? <YourBoardButton onClick={handlePlayDaily} accent={color} />
+                  : <CandyButton size="sm" color="purple" icon="play" onClick={handlePlayDaily} className="shrink-0">Play</CandyButton>)}
               </div>
-              {/* Sweep isn't a playable puzzle — no button. After today's daily: the compact Your board
-                  pill (= the old VIEW BOARD); before: PLAY. */}
-              {!isSweep && (playedSelected
-                ? <YourBoardButton onClick={handlePlayDaily} accent={color} />
-                : <CandyButton size="sm" color="purple" icon="play" onClick={handlePlayDaily} className="shrink-0">Play</CandyButton>)}
-            </div>
-
-            {/* the podium's header line: Everyone | Friends and share */}
-            {/* Founder 10-09: a smaller Everyone | Friends switch, on the RIGHT beside share. */}
-            <div className="flex items-center justify-end gap-2 px-3" style={{ minHeight: 34 }}>
-              {!isSweep && user && (
-                <SegmentedPill
-                  label="Everyone or Friends"
-                  accent={color}
-                  value={friendsOnly}
-                  onChange={setFriendsOnly}
-                  options={[[false, 'Everyone'], [true, 'Friends']] as const}
-                  small
-                />
-              )}
-              {!boardLoading && (isSweep ? sweepLeaderboard.length > 0 : leaderboard.length > 0) && (
-                <HeaderGlyph
-                  icon="share"
-                  size={20}
-                  label="Share leaderboard"
-                  onClick={handleShareLeaderboard}
-                  disabled={sharingLb}
-                  style={{ minWidth: 40, opacity: sharingLb ? 0.4 : 1 }}
-                />
-              )}
             </div>
 
             {/* The podium (or its empty state) — right under the strip, all three visible on a standard phone. */}
