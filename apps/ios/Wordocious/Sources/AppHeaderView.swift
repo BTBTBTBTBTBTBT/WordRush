@@ -366,7 +366,7 @@ struct LivingCastHeader: View {
     var body: some View {
         let s = Self.figure
         let busy = puppetBusy(Date())
-        TimelineView(.animation(minimumInterval: puppetsOn && !busy && handoff.flourishStart == nil ? 1 / 15 : 1 / 60, paused: timelinePaused)) { ctx in
+        TimelineView(.animation(minimumInterval: puppetsOn && !busy && handoff.flourishStart == nil ? 1 / 30 : 1 / 60, paused: timelinePaused)) { ctx in
             row(s, now: ctx.date)
                 // Perf audit: ONE soft shadow pass for the row (was one offscreen pass per figure).
                 .compositingGroup()

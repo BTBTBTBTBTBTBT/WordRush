@@ -489,9 +489,7 @@ private struct TitleArtMotion: ViewModifier {
     @State private var opacity: Double
     @State private var settled: Bool
     @State private var start = Date()
-    /// §AQ2: the idle float pauses while a page scrolls / off screen.
-    @ObservedObject private var scroll = ScrollMotion.shared
-    @State private var onScreen = true
+    @State private var floating = false
 
     init(float: Bool) {
         self.float = float
@@ -509,10 +507,12 @@ private struct TitleArtMotion: ViewModifier {
         if still {
             content
         } else if settled && float && !Motion.calm(envReduceMotion) {   // §AD: no idle float in Low Power Mode
-            TimelineView(.animation(minimumInterval: 1 / 20, paused: scroll.scrolling || !onScreen)) { ctx in
-                content.offset(y: Self.floatOffset(ctx.date.timeIntervalSince(start)))
-            }
-            .tracksScrollVisibility($onScreen)
+            // Founder 10-09 (smooth, not choppy): the float is one repeating Core Animation at the display's rate (it was
+            // a 20 fps redraw); 0 → −2 → 0 over 4 s.
+            content
+                .offset(y: floating ? -2 : 0)
+                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: floating)
+                .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { floating = true } }
         } else {
             content
                 .scaleEffect(scale)

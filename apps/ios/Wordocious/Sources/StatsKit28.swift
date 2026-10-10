@@ -209,7 +209,9 @@ struct HeadToHeadSection: View {
                                        frame: r.friend.avatar_frame, userId: r.friend.id)
                             VStack(alignment: .leading, spacing: 3) {
                                 HStack(alignment: .firstTextBaseline) {
-                                    Text(r.friend.username).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading).lineLimit(1)
+                                    BubbleOneLine(text: r.friend.username.uppercased(),
+                                                  palette: .accent(PlayerTint.nameColor(userId: r.friend.id, username: r.friend.username)),
+                                                  size: 16, alignment: .leading)
                                     Spacer(minLength: 4)
                                     Text("\(r.wins)–\(r.losses)").softNumber(16)
                                 }

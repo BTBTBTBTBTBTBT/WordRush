@@ -29,7 +29,8 @@ struct BubbleLineView: View {
         if BubbleText.atlasCovers(text) && FlagsService.shared.isLive("bubble_atlas") {
             // The fit measured the line at `size * Dynamic Type`; draw the atlas at that same size.
             let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
-            BubbleAtlasLine(text: text, size: size * dyn, palette: palette, names: names, alignment: alignment, interactive: interactive)
+            BubbleAtlasLine(text: text, size: size * dyn, palette: palette, names: names, alignment: alignment, interactive: interactive,
+                            pops: animated)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(A11yLabels.headline([text]))
                 .accessibilityAddTraits(.isHeader)
@@ -51,13 +52,16 @@ private struct BubbleAtlasLine: View {
     let names: [String]
     let alignment: TextAlignment
     var interactive: Bool = false
+    /// Founder 10-09 ("comes in choppy"): only headlines pop letter by letter; labels, names and numbers (animated:
+    /// false) appear whole with one soft fade, so a screen full of them opens smoothly.
+    var pops: Bool = true
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
 
     var body: some View {
         let layout = BubbleText.atlasLayout(text)
         let cap = size * CGFloat(BubbleText.capEm)
         let kinds = Self.kinds(text, names)
-        let still = Motion.calm(envReduceMotion)
+        let still = Motion.calm(envReduceMotion) || !pops
         ZStack(alignment: .topLeading) {
             ForEach(Array(layout.places.enumerated()), id: \.offset) { i, g in
                 let kind = g.ci < kinds.count ? kinds[g.ci] : .text
@@ -180,7 +184,9 @@ private struct BubbleGlyphPop: ViewModifier {
             .opacity(shown || still ? 1 : 0)
             .onAppear {
                 guard !still else { return }
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.55).delay(Double(index) * 0.025)) { shown = true }
+                // Founder 10-09 ("comes in choppy"): the wave starts a beat after the page's first layout (the screen is
+                // busiest in that frame) and rides a softer spring (less overshoot wobble), each letter 30 ms after the last.
+                withAnimation(.spring(response: 0.42, dampingFraction: 0.74).delay(0.12 + Double(min(index, 24)) * 0.03)) { shown = true }
             }
     }
 }
@@ -191,32 +197,24 @@ struct BubbleOneLine: View {
     let text: String
     var palette: HeadlinePalette = .home
     var size: CGFloat
-    var minScale: CGFloat = 0.45
-
-    @State private var natural: CGFloat = 0
+    /// Low enough that the longest username (20 characters) always fits a podium column: nothing ever clips.
+    var minScale: CGFloat = 0.3
+    var alignment: Alignment = .center
 
     var body: some View {
+        // The natural width comes straight from the core metrics (the same table the fit uses), so the line is drawn
+        // ONCE at its final size: no hidden measuring copy, no jump a frame later.
+        let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
+        let natural = CGFloat(BubbleText.widthEm(text)) * size * dyn
         GeometryReader { g in
             let s = natural > 0 ? max(minScale, min(1, g.size.width / natural)) : 1
             BubbleLineView(text: text, palette: palette, size: size * s, animated: false)
                 .fixedSize()
-                .frame(width: g.size.width, height: g.size.height)
+                .frame(width: g.size.width, height: g.size.height, alignment: alignment)
         }
         .frame(height: size * 1.3)
-        .background {
-            // The natural width at full size, measured once off screen.
-            BubbleLineView(text: text, palette: palette, size: size, animated: false)
-                .fixedSize()
-                .hidden()
-                .background(GeometryReader { p in Color.clear.preference(key: BubbleOneLineWidthKey.self, value: p.size.width) })
-        }
-        .onPreferenceChange(BubbleOneLineWidthKey.self) { natural = $0 }
+        .transition(.opacity)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
     }
-}
-
-private struct BubbleOneLineWidthKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }

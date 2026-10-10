@@ -266,11 +266,25 @@ struct HomeView: View {
 
     private var bannerName: String { auth.isAuthenticated ? (auth.profile?.username ?? "") : "" }
 
+    /// DEBUG only: `defaults write com.wordocious.app debugBanner ff` fakes the banner's day (first letter = WORDOCIOUS,
+    /// second = PUZZLES; f flawless, s sweep, - real) to check every celebration combination.
+    private func bannerProgress(_ modes: [HomeMode], slot: Int) -> GroupProgress {
+        let real = progress(modes)
+        #if DEBUG
+        if let d = UserDefaults.standard.string(forKey: "debugBanner"), d.count == 2 {
+            let c = Array(d)[slot]
+            if c == "f" { return GroupProgress(played: real.total, won: real.total, total: real.total) }
+            if c == "s" { return GroupProgress(played: real.total, won: max(0, real.total - 1), total: real.total) }
+        }
+        #endif
+        return real
+    }
+
     private var homeBanner: some View {
         let w = wordModes, p = puzzleModes
         return HomeBannerView(
-            word: .init(modes: w, progress: progress(w), streaks: wordStreaks, unlimitedPlayed: unlimitedPlayed(w)),
-            puzzles: .init(modes: p, progress: progress(p), streaks: puzzleStreaks, unlimitedPlayed: unlimitedPlayed(p)),
+            word: .init(modes: w, progress: bannerProgress(w, slot: 0), streaks: wordStreaks, unlimitedPlayed: unlimitedPlayed(w)),
+            puzzles: .init(modes: p, progress: bannerProgress(p, slot: 1), streaks: puzzleStreaks, unlimitedPlayed: unlimitedPlayed(p)),
             byMode: completions.byMode, playMode: effectiveMode, isPro: auth.isProActive,
             onModeChange: { m in withAnimation(Theme.animation(.easeInOut(duration: 0.15))) { playMode = m } },
             name: bannerName,

@@ -989,9 +989,10 @@ struct ProfileTab: View {
                 StatsAvatarSlot(profile: p, pro: auth.isProActive)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text(p.username).font(Brand.font(20, .black))
-                            .foregroundStyle(ProfileAccent.isCustom(p.accentColor) ? ProfileAccent.color(p.accentColor) : FinishInk.heading)
-                            .lineLimit(1).minimumScaleFactor(0.7)
+                        // Founder 10-09: your name in the bubble lettering, in your own color (your backdrop).
+                        BubbleOneLine(text: p.username.uppercased(),
+                                      palette: .accent(PlayerTint.nameColor(userId: p.id, username: p.username)),
+                                      size: 24, alignment: .leading)
                         // §V3 / §AA4: Pro members wear the level-pro mark (no PRO pill).
                         if auth.isProActive { ProMark(size: 22) }
                     }

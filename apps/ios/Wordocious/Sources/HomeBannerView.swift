@@ -43,8 +43,11 @@ struct HomeBannerView: View {
     private var wTier: BannerTier { unlimited ? .none : HomeBanner.groupTier(word.progress) }
     private var pTier: BannerTier { unlimited ? .none : HomeBanner.groupTier(puzzles.progress) }
     private var double: Bool { wTier == .flawless && pTier == .flawless }
-    private var headInk: Color { double ? Color(hex: 0x78350F) : (SeasonKit.surfaces?.text ?? Color(hex: 0x4C1D95)) }
-    private var subInk: Color { double ? Color(hex: 0x92400E) : (SeasonKit.surfaces?.textSecondary ?? Color(hex: 0x6D28D9)) }
+    /// The double's deep amber inks belong to the daytime gold card; on a dark season's night card they'd vanish, so the
+    /// double there reads in warm gold instead.
+    private var nightCard: Bool { SeasonKit.surfaces?.dark == true }
+    private var headInk: Color { double ? (nightCard ? Color(hex: 0xFDE68A) : Color(hex: 0x78350F)) : (SeasonKit.surfaces?.text ?? Color(hex: 0x4C1D95)) }
+    private var subInk: Color { double ? (nightCard ? Color(hex: 0xFCD34D) : Color(hex: 0x92400E)) : (SeasonKit.surfaces?.textSecondary ?? Color(hex: 0x6D28D9)) }
     /// Season surfaces (SeasonKit): the hero card's windows (nil = the normal look).
     private var look: SeasonKit.Look? { SeasonKit.surfaces }
     private var anyPlayed: Bool { word.progress.played + puzzles.progress.played > 0 }
@@ -844,45 +847,52 @@ struct CelebrationTrio: View {
     let cast: [String]
     @Environment(\.accessibilityReduceMotion) private var envReduce
     private var still: Bool { envReduce || Theme.reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled }
+    /// Founder 10-09 ("make sure the animations run smooth"): every move is a repeating Core Animation (it runs on the
+    /// render server at the display's full rate, 120 Hz on ProMotion), not a 30 fps redraw of the whole view.
+    @State private var on = false
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: still)) { ctx in
-            let t = still ? 0 : ctx.date.timeIntervalSinceReferenceDate
-            GeometryReader { g in
-                let h = g.size.height, w = g.size.width
-                let fig = min(h * 0.74, w / 3.6)
-                ZStack {
-                    // the bunting, swaying a touch from its center
-                    Image("age-bunting").resizable().scaledToFit()
-                        .frame(width: min(w * 0.40, 150), height: h * 0.30)
-                        .rotationEffect(.degrees(sin(t * 1.3) * 1.6), anchor: .top)
-                        .position(x: w / 2, y: h * 0.17)
-                    // one shared floor shadow
-                    Ellipse().fill(RadialGradient(colors: [Color(hex: 0x2E1065).opacity(0.28), .clear], center: .center,
-                                                  startRadius: 0, endRadius: fig * 1.6))
-                        .frame(width: fig * 3.2, height: 14)
-                        .position(x: w / 2, y: h - 6)
-                    ForEach(Array(cast.enumerated()), id: \.offset) { i, id in
-                        let phase = Double(i) * 0.9
-                        let beat = (t * 2.2 + phase).truncatingRemainder(dividingBy: .pi * 2)
-                        let up = max(0, sin(beat))                       // 0…1 hop
-                        let squash = 1 - 0.06 * max(0, -sin(beat))        // squash on the landing
-                        Image("art-pose-\(id)-cheer").resizable().interpolation(.high).scaledToFit()
-                            .frame(width: fig, height: fig)
-                            .scaleEffect(x: 2 - squash, y: squash, anchor: .bottom)
-                            .rotationEffect(.degrees(sin(t * 1.7 + phase) * 4), anchor: .bottom)
-                            .offset(y: -up * fig * 0.08)
-                            .position(x: w / 2 + CGFloat(i - 1) * fig * 0.95, y: h - fig / 2 - 4)
-                    }
-                    ForEach(0..<4, id: \.self) { k in
-                        let xs: [CGFloat] = [0.22, 0.78, 0.35, 0.66], ys: [CGFloat] = [0.30, 0.26, 0.12, 0.10]
-                        GoldSparkle(size: 9)
-                            .opacity(still ? 0.8 : 0.35 + 0.65 * abs(sin(t * 1.9 + Double(k))))
-                            .position(x: w * xs[k], y: h * ys[k])
-                    }
+        GeometryReader { g in
+            let h = g.size.height, w = g.size.width
+            let fig = min(h * 0.66, w / 3.6)
+            ZStack {
+                // the bunting hangs still (founder 10-09: only the cast celebrates)
+                Image("age-bunting").resizable().scaledToFit()
+                    .frame(width: min(w * 0.36, 136), height: h * 0.20)
+                    .position(x: w / 2, y: h * 0.09)
+                // one shared floor shadow
+                Ellipse().fill(RadialGradient(colors: [Color(hex: 0x2E1065).opacity(0.28), .clear], center: .center,
+                                              startRadius: 0, endRadius: fig * 1.6))
+                    .frame(width: fig * 3.2, height: 14)
+                    .position(x: w / 2, y: h - 18)
+                ForEach(Array(cast.enumerated()), id: \.offset) { i, id in
+                    let delay = Double(i) * 0.18
+                    Image("art-pose-\(id)-cheer").resizable().interpolation(.high).scaledToFit()
+                        .frame(width: fig, height: fig)
+                        // hop: stretched at the top, squashed on the landing
+                        .scaleEffect(x: on ? 0.97 : 1.04, y: on ? 1.03 : 0.95, anchor: .bottom)
+                        .offset(y: on ? -fig * 0.09 : 0)
+                        .animation(.easeInOut(duration: 0.42).repeatForever(autoreverses: true).delay(delay), value: on)
+                        // a slower side-to-side sway on top of the hop
+                        .rotationEffect(.degrees(on ? 4 : -4), anchor: .bottom)
+                        .animation(.easeInOut(duration: 0.95).repeatForever(autoreverses: true).delay(delay * 2), value: on)
+                        .position(x: w / 2 + CGFloat(i - 1) * fig * 0.95, y: h - fig / 2 - 16)
+                }
+                ForEach(0..<4, id: \.self) { k in
+                    let xs: [CGFloat] = [0.22, 0.78, 0.35, 0.66], ys: [CGFloat] = [0.30, 0.26, 0.12, 0.10]
+                    GoldSparkle(size: 9)
+                        .opacity(still ? 0.8 : (on ? 1 : 0.3))
+                        .scaleEffect(on ? 1.15 : 0.8)
+                        .animation(.easeInOut(duration: 0.8 + Double(k) * 0.17).repeatForever(autoreverses: true)
+                                    .delay(Double(k) * 0.25), value: on)
+                        .position(x: w * xs[k], y: h * ys[k])
                 }
             }
         }
+        // Start the loops a beat AFTER the first layout: flipping `on` in the same pass as the geometry settling would
+        // make the repeating animation loop the figures' sizes too (they'd swim around instead of hopping in place).
+        .onAppear { if !still { DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { on = true } } }
+        .onChange(of: still) { s in on = !s }
         .accessibilityHidden(true)
     }
 }
