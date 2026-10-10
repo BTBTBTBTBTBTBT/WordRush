@@ -36,6 +36,7 @@ export * from './friendly-live';
 export * from './branded-invite';
 export * from './leaderboard-title';
 export * from './podium-layout';
+export * from './player-tint';
 export * from './headline-tokens';
 export * from './bubble-text';
 export * from './streak-headline';

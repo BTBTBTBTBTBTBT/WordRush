@@ -102,7 +102,7 @@ private data class HomeHostFace(val pick: HomeHostPick, val username: String?, v
  * (and the bubble, at the caller) away until the look is known.
  */
 @Composable
-internal fun HomeHostSwap(decision: HomeHostDecision, size: Dp = HOME_HOST_BOX, modifier: Modifier = Modifier) {
+internal fun HomeHostSwap(decision: HomeHostDecision, size: Dp = HOME_HOST_BOX, modifier: Modifier = Modifier, celebrates: Boolean = false) {
     val invite = if (decision.inviteAllowed && decision.pick == HomeHostPick.W) rememberHostInvite() else null
     val face = HomeHostFace(decision.pick, decision.username, invite)
     val still = WTheme.reducedMotion || WTheme.calmMotion
@@ -111,7 +111,7 @@ internal fun HomeHostSwap(decision: HomeHostDecision, size: Dp = HOME_HOST_BOX, 
         modifier = modifier,
         animationSpec = tween(if (still) 0 else HomeHostLookRules.CROSSFADE_MS),
         label = "home-host",
-    ) { f -> HomeHost(f.pick, size, username = f.username, invite = f.invite) }
+    ) { f -> HomeHost(f.pick, size, username = f.username, invite = f.invite, celebrates = celebrates) }
 }
 
 /**
@@ -138,6 +138,51 @@ internal fun homeShareVisible(unlimited: Boolean, playedToday: Int): Boolean = !
  */
 internal fun homeHostMascotKey(config: com.wordocious.core.AvatarConfig, initial: String, px: Int, dark: Boolean): MascotKey =
     MascotKey.of(config.copy(frame = "none"), initial, HOME_HOST_BOX.value, px, dark, cutout = true)
+
+/**
+ * Founder 10-09 (iOS HomeHostMascot.trick): crouch (squash .86), launch, the move in the air, land with a squash (.88), spring back.
+ * [kind] 0 = backflip (-360 degrees), 1 = twirl around Y (360), 2 = a happy bounce (a wag and a second little hop). The turn is
+ * wound back to 0 unseen (360 = 0) so the next trick starts clean.
+ */
+internal suspend fun homeHostTrick(
+    kind: Int, boxDp: Float,
+    hop: Animatable<Float, androidx.compose.animation.core.AnimationVector1D>, wag: Animatable<Float, androidx.compose.animation.core.AnimationVector1D>,
+    flip: Animatable<Float, androidx.compose.animation.core.AnimationVector1D>, twirl: Animatable<Float, androidx.compose.animation.core.AnimationVector1D>,
+    squash: Animatable<Float, androidx.compose.animation.core.AnimationVector1D>,
+) {
+    val air = if (kind == 2) 260 else 500
+    val rise = if (kind == 2) -14f else -boxDp * 0.34f
+    coroutineScope {
+        // crouch
+        squash.animateTo(0.86f, tween(120, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+        // launch + the move in the air
+        launch { hop.animateTo(rise, tween(air / 2, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
+        launch { squash.animateTo(1.06f, tween(air / 2, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
+        when (kind) {
+            0 -> launch { flip.animateTo(-360f, tween(air, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
+            1 -> launch { twirl.animateTo(360f, tween(air, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
+            else -> launch { wag.animateTo(9f, tween(air / 2)) }
+        }
+        delay((air / 2).toLong())
+        // fall
+        launch { hop.animateTo(0f, tween(air / 2, easing = androidx.compose.animation.core.FastOutLinearInEasing)) }
+        launch { squash.animateTo(1f, tween(air / 2, easing = androidx.compose.animation.core.FastOutLinearInEasing)) }
+        if (kind == 2) launch { wag.animateTo(-9f, tween(air / 2, easing = androidx.compose.animation.core.FastOutLinearInEasing)) }
+        delay((air / 2).toLong())
+        // land with a squash, spring back
+        squash.animateTo(0.88f, tween(100, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+        launch { squash.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 300f)) }
+        launch { wag.animateTo(0f, spring(dampingRatio = 0.55f, stiffness = 300f)) }
+        // wind the turn back to 0 unseen
+        flip.snapTo(0f)
+        twirl.snapTo(0f)
+        if (kind == 2) {
+            delay(180)
+            hop.animateTo(-9f, tween(130, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+            hop.animateTo(0f, spring(dampingRatio = 0.6f, stiffness = 300f))
+        }
+    }
+}
 
 /** BJ6: the host waves once per app launch (process-level). */
 internal object HomeHostWave {
@@ -166,11 +211,34 @@ internal fun HomeHost(
     username: String? = AuthService.profile.collectAsState().value?.username,
     /** The plain seeded mascot while the "Make me yours!" invite is open (W pick only). */
     invite: com.wordocious.core.AvatarConfig? = rememberHostInvite(),
+    /** Founder 10-09: on a Flawless / Sweep day the host shows off (a backflip, a twirl, a bounce, in turn, every ~4.5 s). */
+    celebrates: Boolean = false,
 ) {
     val still = WTheme.reducedMotion || WTheme.calmMotion
     val ownIsAlive = pick is HomeHostPick.Mascot && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT
     val hop = remember { Animatable(0f) }
     val wag = remember { Animatable(0f) }
+    val flip = remember { Animatable(0f) }
+    val twirl = remember { Animatable(0f) }
+    val squash = remember { Animatable(1f) }
+    // The celebration loop: one trick every ~4.5 s while [celebrates] (transform only; off under reduce / calm motion).
+    LaunchedEffect(celebrates, still) {
+        if (!celebrates || still) return@LaunchedEffect
+        try {
+            delay(1600)
+            var n = 0
+            while (true) {
+                homeHostTrick(n % 3, size.value, hop, wag, flip, twirl, squash)
+                n += 1
+                delay(4500)
+            }
+        } finally {
+            // leaving a celebration day (or the screen) mid-trick: back to standing
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                hop.snapTo(0f); wag.snapTo(0f); flip.snapTo(0f); twirl.snapTo(0f); squash.snapTo(1f)
+            }
+        }
+    }
     LaunchedEffect(Unit) {
         if (HomeHostWave.played || still) return@LaunchedEffect
         HomeHostWave.played = true
@@ -209,10 +277,21 @@ internal fun HomeHost(
             },
         contentAlignment = Alignment.BottomCenter,
     ) {
+        // Layers, outermost first (iOS order): the hop + wave wag (about the feet), then the trick's turn (a backflip about the
+        // body's center, a twirl around its vertical axis), then the crouch / land squash (about the feet).
         val motion = Modifier.graphicsLayer {
             transformOrigin = TransformOrigin(0.5f, 1f)
             translationY = hop.value * density
             rotationZ = wag.value
+        }.graphicsLayer {
+            transformOrigin = TransformOrigin(0.5f, 0.5f)
+            rotationZ = flip.value
+            rotationY = twirl.value
+            cameraDistance = 12f * density
+        }.graphicsLayer {
+            transformOrigin = TransformOrigin(0.5f, 1f)
+            scaleX = 2f - squash.value
+            scaleY = squash.value
         }
         when (pick) {
             is HomeHostPick.Portrait -> PhotoAvatar(

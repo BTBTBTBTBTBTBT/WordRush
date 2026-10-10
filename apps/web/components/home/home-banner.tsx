@@ -26,6 +26,7 @@ import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
 import { useHomeHost } from '@/components/avatar/player-avatar';
 import { HomeHost } from '@/components/home/home-host';
+import { CelebrationTrio } from '@/components/home/celebration-trio';
 import { homeHostHidden } from '@/lib/home-host';
 import { homeHostInviteAllowed } from '@/lib/home-host-cache';
 import { BANNER_SLOT, MODE_SWITCH, homeBannerContent, homeBannerSlots } from '@/lib/stationary-layout';
@@ -401,6 +402,11 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         // Z: one art box in both modes — today's celebration art sizes it; in
         // Unlimited U's loop crossfades in over the same box.
         <div className="relative shrink-0" style={{ width: Math.round((TIER_ART_H * ART_SIZE[tierArt.art][0]) / ART_SIZE[tierArt.art][1]), maxWidth: '46%', height: slots.artHeight }}>
+          {tierArt.art === 'art-scene-banner-flawless' ? (
+            // Founder 10-09: on a Flawless day the celebrating trio is ALIVE (bounces, sways, squashes under a swaying bunting,
+            // sparkles twinkling) instead of one flat picture. Still under Reduce Motion.
+            <CelebrationTrio className="absolute inset-0" style={{ opacity: content.art === 'tier' ? 1 : 0, transition: 'opacity 160ms ease-out' }} />
+          ) : (
           <Image
             src={artSrc(tierArt.art)}
             alt=""
@@ -413,6 +419,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
             className="relative select-none pointer-events-none art-pop"
             style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(76, 29, 149, 0.18))', opacity: content.art === 'tier' ? 1 : 0, transition: 'opacity 160ms ease-out' }}
           />
+          )}
           <Image
             src={artSrc(LOOP_ART)}
             alt=""
@@ -505,6 +512,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           // The celebration art carries the cast: W steps out (keeps his slot); your own host stays.
           // 2.7.1: a session is expected but its look isn't known yet → invisible (slot kept), never W.
           hidden={host.phase === 'unknown' || (!invite && homeHostHidden(host.choice, !!(tierArt || seasonArt)))}
+          // Founder 10-09: on a Flawless / Sweep day the host shows off over the headline (backflip, twirl, bounce, in turn).
+          celebrates={!!tierArt && !unlimited}
         />
         {inviteLive && host.userId && (
           <>

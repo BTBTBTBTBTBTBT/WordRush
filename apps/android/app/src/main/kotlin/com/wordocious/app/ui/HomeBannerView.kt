@@ -319,7 +319,9 @@ fun HomeBannerView(
         }
         // BJ6: the host, centered on the card's top edge (drawn over the card). On a swept day the
         // celebration art carries the cast: a W host then hides (alpha 0, keeps its place).
-        if (hostShows) HomeHostSwap(host, HOME_HOST_BOX, Modifier.align(Alignment.TopCenter).offset(y = -HOME_HOST_RISE))
+        if (hostShows) HomeHostSwap(host, HOME_HOST_BOX, Modifier.align(Alignment.TopCenter).offset(y = -HOME_HOST_RISE),
+            // Founder 10-09: on a Flawless / Sweep day the host shows off over the headline (backflip, twirl, bounce, in turn).
+            celebrates = bandTier != BannerTier.NONE && !unlimited)
         // Door 2 (founder 10-05): "Make me yours!" beside the plain host (× ends it for good) —
         // only once the look is known (never a bubble flash to a customized player at launch).
         if (hostShows && host.inviteAllowed && hostPick == com.wordocious.app.data.HomeHostPick.W && rememberHostInvite() != null)
@@ -376,7 +378,11 @@ private fun BannerSceneSlot(tier: BannerTier, accent: Color, unlimitedFade: Floa
                     Modifier.fillMaxWidth().background(accentWash(accent, 0.16f)).then(glow).padding(top = 6.dp, bottom = 2.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    androidx.compose.foundation.Image(
+                    if (tier == BannerTier.FLAWLESS) {
+                        // Founder 10-09: on a Flawless day the celebrating trio is ALIVE (each bounces, sways and squashes on its own
+                        // beat under a swaying bunting, sparkles twinkling) instead of one flat picture. Still under calm motion.
+                        CelebrationTrio(h, Modifier.fillMaxWidth().height(h))
+                    } else androidx.compose.foundation.Image(
                         androidx.compose.ui.res.painterResource(res), contentDescription = null,
                         contentScale = androidx.compose.ui.layout.ContentScale.Fit,
                         modifier = Modifier.fillMaxWidth().height(h),

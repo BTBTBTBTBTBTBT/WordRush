@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { renderSeedFixtures, renderPrefillFixtures, renderBankFixtures, renderSudokuFixtures, renderRegionsFixtures, renderLadderFixtures, renderWordsearchFixtures, renderHubFixtures, renderCryptogramFixtures, renderGroupsFixtures, renderCrosswordFixtures, renderScrambleFixtures, renderHomeBannerFixtures, renderVsLobbyFixtures, renderFriendlyFixtures, renderLeaderboardTitleFixtures, renderShareCaptionFixtures, renderLevelSeasonFixtures, renderPushCopyFixtures, renderAvatarConfigFixtures, renderHeadlineTokenFixtures, renderBubbleTextFixtures, renderAchievementRuleFixtures, renderAvatarResolveFixtures, renderPodiumLayoutFixtures, renderAvatarLayoutFixtures, renderAvatarPoseFixtures, renderAvatarAccessFixtures, renderMusicalCastFixtures, renderFriendCardFixtures, renderPocketHelpFixtures, renderWaitingRoomFixtures, renderAdCopyFixtures } from '../scripts/gen-parity-fixtures';
+import { renderSeedFixtures, renderPrefillFixtures, renderBankFixtures, renderSudokuFixtures, renderRegionsFixtures, renderLadderFixtures, renderWordsearchFixtures, renderHubFixtures, renderCryptogramFixtures, renderGroupsFixtures, renderCrosswordFixtures, renderScrambleFixtures, renderHomeBannerFixtures, renderVsLobbyFixtures, renderFriendlyFixtures, renderLeaderboardTitleFixtures, renderShareCaptionFixtures, renderLevelSeasonFixtures, renderPushCopyFixtures, renderAvatarConfigFixtures, renderHeadlineTokenFixtures, renderBubbleTextFixtures, renderAchievementRuleFixtures, renderAvatarResolveFixtures, renderPodiumLayoutFixtures, renderAvatarLayoutFixtures, renderAvatarPoseFixtures, renderAvatarAccessFixtures, renderMusicalCastFixtures, renderFriendCardFixtures, renderPocketHelpFixtures, renderWaitingRoomFixtures, renderAdCopyFixtures, renderPlayerTintFixtures } from '../scripts/gen-parity-fixtures';
 
 // Freshness guard for the cross-platform engine-parity fixtures. The Swift and
 // Kotlin ports assert against the committed JSON; this test asserts the
@@ -51,6 +51,7 @@ describe('engine parity fixtures are fresh and synced', () => {
     ['pocket-help-fixtures.json', JSON.stringify(renderPocketHelpFixtures(), null, 2) + '\n'],
     ['waiting-room-fixtures.json', JSON.stringify(renderWaitingRoomFixtures(), null, 2) + '\n'],
     ['ad-copy-fixtures.json', JSON.stringify(renderAdCopyFixtures(), null, 2) + '\n'],
+    ['player-tint-fixtures.json', JSON.stringify(renderPlayerTintFixtures(), null, 2) + '\n'],
   ];
 
   for (const [name, expected] of rendered) {

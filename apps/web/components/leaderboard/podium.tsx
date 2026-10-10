@@ -7,8 +7,9 @@ import type { ReactNode } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { type BoardAvatarData } from '@/components/leaderboard/board-rows';
-import { placeWord, podiumStageCardLabel } from '@wordle-duel/core';
+import { placeWord, plateForConfig, plateInk, podiumStageCardLabel } from '@wordle-duel/core';
 import { PodiumFigure, PODIUM_FIGURE_SCALE } from '@/components/leaderboard/podium-figure';
+import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { PodiumStageCard } from '@/components/leaderboard/podium-stage-card';
 import { useFlags, useLivingMascotOn } from '@/hooks/use-flags';
 import { LevelBadge } from '@/components/badges/badge-art';
@@ -145,6 +146,51 @@ export function PodiumGlow({ tone, figureHeight, top }: { tone: PodiumTone; figu
   );
 }
 
+/**
+ * Founder 10-09: the name / points / badge / detail plaque under a podium player wears THEIR mascot-maker backdrop (the fill,
+ * a top-left to bottom-right gradient) and frame (the border gradient), 12px radius, soft shadow. The ink follows the fill's
+ * brightness so the stats read on any backdrop. Colors: core plateHexes (pinned to Swift + Kotlin by player-tint-fixtures.json);
+ * the config comes through the same resolver as the avatar above it.
+ */
+export function PodiumPlaque({ place, compact = false, first = false }: { place: PodiumPlace; compact?: boolean; first?: boolean }) {
+  const look = usePlayerAvatar({
+    name: place.username, userId: place.userId, url: place.avatarUrl, accent: place.avatar?.accent,
+    config: place.avatar?.config, castId: place.avatar?.castId, frame: place.avatar?.frame, level: place.level, pro: place.avatar?.pro,
+  });
+  const plate = React.useMemo(() => plateForConfig(look.config), [look.config]);
+  const ink = plateInk(plate.lightInk);
+  const fill = plate.fill.length > 1 ? plate.fill : [plate.fill[0], plate.fill[0]];
+  const edge = plate.border.length > 1 ? plate.border : [plate.border[0], plate.border[0]];
+  return (
+    <div
+      className="podium-plaque relative flex flex-col items-center max-w-full"
+      style={{
+        gap: 2, padding: '4px 10px', zIndex: 2, borderRadius: 12, boxShadow: '0 2px 3px rgba(0,0,0,0.18)', border: `${plate.borderWidth}px solid transparent`,
+        // the fill paints under the padding box, the border gradient under the border box (the usual two-layer gradient border)
+        background: `linear-gradient(135deg, ${fill.join(', ')}) padding-box, linear-gradient(to bottom, ${edge.join(', ')}) border-box`,
+        // the badge and extra nodes inherit the ink
+        color: ink.heading,
+      }}
+    >
+      <Link
+        href={`/profile/${place.userId}`}
+        className={`max-w-full truncate ${compact ? 'text-[12px]' : 'text-[13px]'} font-black leading-tight hover:opacity-80 transition-opacity`}
+        style={{ color: ink.heading }}
+      >
+        {place.username}
+        {place.level ? <LevelBadge level={place.level} size={16} numberSize={11} className="ml-1 align-middle" /> : null}
+        {place.nameSuffix}
+      </Link>
+      <div className="flex items-center justify-center gap-1 max-w-full">
+        <SoftNum size={compact ? 11 + (first ? 1.5 : 0) : 13} style={{ color: ink.muted, textShadow: plate.lightInk ? 'none' : undefined }}>{place.points}</SoftNum>
+        {place.badge}
+      </div>
+      {place.extra && <div style={{ color: ink.badge }}>{place.extra}</div>}
+      {place.action}
+    </div>
+  );
+}
+
 function Column({ place, index, compact = false }: { place: PodiumPlace; index: number; compact?: boolean }) {
   const tone = podiumTone(place.rank);
   const first = tone === 'gold';
@@ -159,25 +205,6 @@ function Column({ place, index, compact = false }: { place: PodiumPlace; index: 
   const tile = compact ? (first ? 48 : 40) : (first ? 54 : 44);
   const figH = livingOn ? tile * PODIUM_FIGURE_SCALE : tile;
   const figTop = livingOn ? figH / 2 : (first ? 18 : 0) + figH / 2;
-  const info = (
-    <>
-      <Link
-        href={`/profile/${place.userId}`}
-        className={`max-w-full truncate ${compact ? 'text-[12px]' : 'text-[13px]'} font-black leading-tight hover:opacity-80 transition-opacity`}
-        style={{ color: place.isMe ? '#d97706' : 'var(--color-text)' }}
-      >
-        {place.username}
-        {place.level ? <LevelBadge level={place.level} size={16} numberSize={11} className="ml-1 align-middle" /> : null}
-        {place.nameSuffix}
-      </Link>
-      <div className="flex items-center justify-center gap-1 max-w-full">
-        <SoftNum size={compact ? 11 + (first ? 1.5 : 0) : 13}>{place.points}</SoftNum>
-        {place.badge}
-      </div>
-      {place.extra}
-      {place.action}
-    </>
-  );
   return (
     <div className="relative flex flex-col items-center min-w-0" style={{ gap: 4, gridColumn: podiumColumn(index), gridRow: 1 }}>
       <span className="sr-only">{placeWord(place.rank)} place</span>
@@ -199,9 +226,7 @@ function Column({ place, index, compact = false }: { place: PodiumPlace; index: 
           <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={tile} />
         </Link>
       )}
-      {livingOn ? (
-        <div className="podium-plaque relative flex flex-col items-center max-w-full" style={{ gap: 2, padding: '4px 10px', zIndex: 2 }}>{info}</div>
-      ) : info}
+      <PodiumPlaque place={place} compact={compact} first={first} />
       <Step tone={tone} rank={place.rank} compact={compact} />
       {cardOn && !place.isMe && <PodiumStageCard place={place} tone={PODIUM_TONE_PLACE[tone]} open={stageOpen} onOpenChange={setStageOpen} />}
     </div>

@@ -44,8 +44,9 @@ import { leaderboardTitle } from '../src/leaderboard-title';
 import { headlineTokens, headlineLayout, headlineWidthEm, headlineFontSize, HEADLINE_SIZING_LINE } from '../src/headline-tokens';
 import { bubbleFit, bubbleWidthEm, bubbleGlyphName, bubbleAtlasLayout, homeHeadlineFit, BUBBLE_GLYPHS } from '../src/bubble-text';
 import { NEW_ACHIEVEMENTS, HIDDEN_ACHIEVEMENT_KEYS, puzzleCountAchievements, puzzleResultAchievements, pangramCount, puzzleDayAchievements, botAchievements, friendAchievements, wonFriendsRace, pocketAchievements, avatarAchievements, momentAchievements } from '../src/achievement-rules';
-import { AVATAR_BACKDROPS, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvatarPro, isCustomPhotoUrl, nearestAvatarColor, resolveAvatar, validateAvatar } from '../src/avatar-config';
+import { AVATAR_BACKDROPS, AVATAR_COLORS, avatarColorHex, castPreset, defaultAvatar, enforceAvatarPro, isCustomPhotoUrl, nearestAvatarColor, resolveAvatar, validateAvatar } from '../src/avatar-config';
 import { podiumLayout, podiumOpenSpot } from '../src/podium-layout';
+import { nameHex, plateHexes } from '../src/player-tint';
 import { AVATAR_MANIFEST, applyAvatarPick, avatarLayout, avatarPatternShapes, avatarPickConflict } from '../src/avatar-layout';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
 import { SEASON_WINDOWS, currentSeason, levelTier, levelTierLabel } from '../src/level-season';
@@ -1332,7 +1333,34 @@ export function renderAdCopyFixtures() {
   };
 }
 
+/** A player's own colors (player-tint.ts): the podium plate (fill / border / ink) and the vivid name color. */
+export function renderPlayerTintFixtures() {
+  const cases: Array<{ bg: string; frame: string; color: string }> = [
+    { bg: 'auto', frame: 'none', color: 'purple' },
+    { bg: 'auto', frame: 'gold', color: 'sky' },
+    { bg: 'lemon', frame: 'bronze', color: 'red' },
+    { bg: 'night', frame: 'diamond', color: 'amber' },
+    { bg: 'sunset', frame: 'silver', color: 'blue' },
+    { bg: 'ocean', frame: 'platinum', color: 'green' },
+    { bg: 'aurora', frame: 'pro', color: 'pink' },
+    { bg: 'galaxy', frame: 'none', color: 'teal' },
+    { bg: 'polka', frame: 'gold', color: 'orange' },
+    { bg: 'confetti', frame: 'none', color: 'violet' },
+    { bg: 'cloud', frame: 'silver', color: 'white' },
+    { bg: 'mystery', frame: 'bogus', color: 'nope' },
+    { bg: 'auto', frame: 'none', color: 'charcoal' },
+    { bg: 'mint', frame: 'bronze', color: 'slate' },
+  ];
+  return {
+    cases: cases.map((c) => {
+      const bodyHex = avatarColorHex(c.color);
+      return { ...c, bodyHex, plate: plateHexes(c.bg, c.frame, bodyHex), nameHex: nameHex(c.bg, bodyHex) };
+    }),
+  };
+}
+
 const FILES: Array<[string, unknown]> = [
+  ['player-tint-fixtures.json', renderPlayerTintFixtures()],
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
   ['bank-fixtures.json', renderBankFixtures()],

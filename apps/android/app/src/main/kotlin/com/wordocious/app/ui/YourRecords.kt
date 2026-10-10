@@ -1,5 +1,10 @@
 package com.wordocious.app.ui
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -279,7 +284,7 @@ fun SweepRecordsCard(
     CardShell(Brush.horizontalGradient(listOf(SWEEP_ACCENT, SWEEP_ACCENT.copy(alpha = 0.53f))), accent = SWEEP_ACCENT) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ModeIconBox(SWEEP_ID, SWEEP_ACCENT)
-            Text("Daily Sweeps", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            RecordCardTitle("Daily Sweeps", SWEEP_ACCENT)
         }
         Spacer(Modifier.height(2.dp))
         if (sweep.hasData) {
@@ -351,7 +356,7 @@ fun PuzzleSweepsCard(records: com.wordocious.app.data.HomeStreaksService.PuzzleR
                 Modifier.size(30.dp).miniGameCard(PUZZLES_ACCENT, 8.dp),
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Filled.GridView, null, tint = PUZZLES_ACCENT, modifier = Modifier.size(16.dp).padding(top = 2.dp)) }
-            Text("Puzzles Sweeps", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            RecordCardTitle("Puzzles Sweeps", PUZZLES_ACCENT)
         }
         Spacer(Modifier.height(2.dp))
         if (t != null && records.hasData) {
@@ -387,7 +392,7 @@ fun WordOfTheDayRecordCard(record: com.wordocious.app.data.HomeStreaksService.Qu
                 Modifier.size(30.dp).miniGameCard(accent, 8.dp),
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Filled.MenuBook, null, tint = accent, modifier = Modifier.size(16.dp).padding(top = 2.dp)) }
-            Text("Word of the Day", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            RecordCardTitle("Word of the Day", accent)
         }
         Spacer(Modifier.height(2.dp))
         Row(Modifier.fillMaxWidth()) {
@@ -415,8 +420,7 @@ fun GameRecordsCard(
     val chase = chases.firstOrNull { it.gameMode == dbKey }
     CardShell(Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.53f))), accent = accent) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Your Records", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            Spacer(Modifier.weight(1f))
+            RecordCardTitle("Your Records", accent, Modifier.weight(1f))
             if (held.isNotEmpty()) {
                 Row(
                     Modifier.clip(RoundedCornerShape(50)).background(accentWash(GOLD, 0.16f))
@@ -463,6 +467,27 @@ fun GameRecordsCard(
     }
 }
 
+/**
+ * Founder 10-09: a card's title in the Wordocious bubble lettering (Word of the Day, Medals, Your trophy shelf ...), never plain
+ * text. Small, leading, tinted in the card's color. iOS CardTitle, web CardTitle.
+ */
+@Composable
+fun RecordCardTitle(text: String, color: Color, modifier: Modifier = Modifier, maxSize: Int = 19) {
+    BubbleText(text.uppercase(), ThemeKit.accentPalette(color), modifier, maxSize = maxSize, minSize = 12, sound = false, align = TextAlign.Start)
+}
+
+/** One medal: the glossy art (28) stacked over its count in the bubble numbers. */
+@Composable
+private fun MedalTally(@androidx.annotation.DrawableRes art: Int, label: String, tint: Color, count: Int, modifier: Modifier = Modifier) {
+    Column(
+        modifier.semantics(mergeDescendants = true) { contentDescription = "$count $label" },
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Image(painterResource(art), contentDescription = null, modifier = Modifier.size(28.dp))
+        BubbleText("$count", ThemeKit.accentPalette(tint), Modifier.width(44.dp).clearAndSetSemantics { }, maxSize = 20, minSize = 12, sound = false)
+    }
+}
+
 /** Medals tally + count of global records held, side by side; the records tile opens the Hall of Fame. */
 @Composable
 fun RecordsHeldRow(recordsHeld: List<LeaderboardService.AllTimeRecord>, onOpenRecords: () -> Unit = {}) {
@@ -473,12 +498,13 @@ fun RecordsHeldRow(recordsHeld: List<LeaderboardService.AllTimeRecord>, onOpenRe
             GOLD, Modifier.weight(1f), corner = 16.dp, bar = null,
             contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp), verticalArrangement = Arrangement.Top,
         ) {
-            Text("MEDALS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
+            RecordCardTitle("Medals", Color(0xFFF59E0B), maxSize = 17)
             Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                MedalCount(Icon3DName.CROWN, GOLD, profile?.goldMedals ?: 0)
-                MedalCount(Icons.Filled.MilitaryTech, Color(0xFF9CA3AF), profile?.silverMedals ?: 0)
-                MedalCount(Icons.Filled.MilitaryTech, Color(0xFFB45309), profile?.bronzeMedals ?: 0)
+            // Founder 10-09: the medal art (28) over its count in the bubble numbers, three across.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                MedalTally(R.drawable.art_medal_gold, "gold", GOLD, profile?.goldMedals ?: 0, Modifier.weight(1f))
+                MedalTally(R.drawable.art_medal_silver, "silver", Color(0xFF9CA3AF), profile?.silverMedals ?: 0, Modifier.weight(1f))
+                MedalTally(R.drawable.art_medal_bronze, "bronze", Color(0xFFB45309), profile?.bronzeMedals ?: 0, Modifier.weight(1f))
             }
             Spacer(Modifier.height(4.dp))
             Text("Daily top-3 finishes", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -489,7 +515,7 @@ fun RecordsHeldRow(recordsHeld: List<LeaderboardService.AllTimeRecord>, onOpenRe
             corner = 16.dp, bar = null,
             contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp), verticalArrangement = Arrangement.Top,
         ) {
-            Text("GLOBAL RECORDS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
+            RecordCardTitle("Global records", Color(0xFF7C3AED), maxSize = 17)
             Spacer(Modifier.height(2.dp))
             // Star icon + 13sp count (iOS Label(…, systemImage: "star.fill")),
             // so this card doesn't outweigh the MEDALS card beside it.
@@ -532,8 +558,7 @@ fun TrophyShelf(recordsHeld: List<LeaderboardService.AllTimeRecord>) {
     var sharingShelf by remember { mutableStateOf(false) }
     CardShell(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), GOLD)), accent = GOLD) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("YOUR TROPHY SHELF", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
-            Spacer(Modifier.weight(1f))
+            RecordCardTitle("Your trophy shelf", Color(0xFFF59E0B), Modifier.weight(1f), maxSize = 17)
             // A3: the bare 3D share icon with the squish.
             SoftControl(
                 Icon3DName.SHARE, "Share trophy shelf",

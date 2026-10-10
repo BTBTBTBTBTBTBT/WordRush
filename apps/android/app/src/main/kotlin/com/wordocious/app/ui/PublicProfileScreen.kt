@@ -509,7 +509,10 @@ fun PublicProfileScreen(
                     )
                 }
             }
-            ProfileIdentityBlock(p.username ?: "Player", p.accentColor, viewerIsFriend, friendsSince)
+            ProfileIdentityBlock(
+                p.username ?: "Player", p.accentColor, viewerIsFriend, friendsSince,
+                userId = p.id, avatarUrl = p.avatarUrl?.takeIf { it.isNotBlank() }, config = p.avatarConfig, castId = p.avatarCastId, frame = p.avatarFrame,
+            )
             // PRIVATE PROFILES: the owner (and admins) still see the full page
             // — this muted pill is the reminder that everyone else doesn't.
             if (p.isPrivate) {

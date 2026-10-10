@@ -856,6 +856,24 @@
   100% { transform: translateY(0) rotate(0deg); }
 }
 .home-host-wave { animation: home-host-wave 880ms ease-in-out 350ms 1 both; transform-origin: 50% 100%; }
+/* Founder 10-09: the Flawless banner's celebrating trio (components/home/celebration-trio.tsx), iOS CelebrationTrio parity:
+   a 2.86 s bounce + landing squash and a 3.7 s sway per figure (offset beats), the bunting's 4.8 s sway, the sparkles' twinkle.
+   Transform + opacity only; held still by Reduce Motion (OS or the in-app toggle). */
+@keyframes trio-bounce {
+  0%, 50%, 100% { transform: translateY(0) scale(1, 1); }
+  25% { transform: translateY(-8%) scale(1, 1); }
+  75% { transform: translateY(0) scale(1.06, 0.94); }
+}
+@keyframes trio-sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+@keyframes trio-bunting { 0%, 100% { transform: rotate(-1.6deg); } 50% { transform: rotate(1.6deg); } }
+@keyframes trio-sparkle { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+.trio-bounce { animation: trio-bounce 2.856s ease-in-out infinite; transform-origin: 50% 100%; }
+.trio-sway { animation: trio-sway 3.696s ease-in-out infinite; transform-origin: 50% 100%; }
+.trio-bunting { animation: trio-bunting 4.833s ease-in-out infinite; transform-origin: 50% 0; }
+.trio-sparkle { animation: trio-sparkle 1.653s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .trio-bounce, .trio-sway, .trio-bunting, .trio-sparkle { animation: none; } .trio-sparkle { opacity: 0.8; } }
+[data-reduced-motion="true"] .trio-bounce, [data-reduced-motion="true"] .trio-sway, [data-reduced-motion="true"] .trio-bunting, [data-reduced-motion="true"] .trio-sparkle { animation: none !important; }
+[data-reduced-motion="true"] .trio-sparkle { opacity: 0.8; }
 /* 2.7.1: the live host look replacing a different cached one crossfades (components/home/home-host.tsx). */
 @keyframes home-host-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes home-host-fade-out { from { opacity: 1; } to { opacity: 0; } }

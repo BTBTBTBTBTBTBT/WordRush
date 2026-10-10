@@ -9,6 +9,7 @@ import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { decodeImage } from '@/lib/predecode';
 import { useLivingMascotOn } from '@/hooks/use-flags';
+import { prefersReducedMotion } from '@/lib/motion';
 import { HOME_HOST_PORTRAIT, HOME_HOST_SIZE, takeHomeHostWave, type HomeHostChoice } from '@/lib/home-host';
 import { HOME_HOST_CROSSFADE_MS, homeHostChoiceKey, homeHostTransition } from '@/lib/home-host-cache';
 
@@ -20,6 +21,48 @@ if (typeof window !== 'undefined') void decodeImage(artSrc(W_POSE));
 const W_FALLBACK = { ...castPreset('w'), display: 'mascot' as const };
 
 /**
+ * Founder 10-09 (iOS HomeHostMascot.trick): crouch (squash .86), launch, the move in the air, land with a squash (.88), spring
+ * back. Kind 0 = backflip (-360 deg about the body), 1 = twirl around Y, 2 = a happy bounce (a wag and a second little hop).
+ * Web Animations, transform only; each one ends back at rest so the next starts clean.
+ */
+export function homeHostTrick(kind: number, size: number, outer: HTMLElement, inner: HTMLElement): void {
+  const sq = (y: number) => `scale(${(2 - y).toFixed(2)}, ${y})`;
+  const ease = 'ease-in-out';
+  if (kind === 2) {
+    const T = 1300;
+    outer.animate([
+      { offset: 0, transform: `translateY(0) rotate(0deg) ${sq(1)}` },
+      { offset: 120 / T, transform: `translateY(0) rotate(0deg) ${sq(0.86)}` },
+      { offset: 250 / T, transform: `translateY(-14px) rotate(9deg) ${sq(1.06)}` },
+      { offset: 380 / T, transform: `translateY(0) rotate(-9deg) ${sq(1)}` },
+      { offset: 480 / T, transform: `translateY(0) rotate(-9deg) ${sq(0.88)}` },
+      { offset: 700 / T, transform: `translateY(0) rotate(0deg) ${sq(1)}` },
+      { offset: 880 / T, transform: `translateY(0) rotate(0deg) ${sq(1)}` },
+      { offset: 1010 / T, transform: `translateY(-9px) rotate(0deg) ${sq(1)}` },
+      { offset: 1, transform: `translateY(0) rotate(0deg) ${sq(1)}` },
+    ], { duration: T, easing: ease });
+    return;
+  }
+  const T = 1100;
+  outer.animate([
+    { offset: 0, transform: `translateY(0) ${sq(1)}` },
+    { offset: 120 / T, transform: `translateY(0) ${sq(0.86)}` },
+    { offset: 370 / T, transform: `translateY(${-Math.round(size * 0.34)}px) ${sq(1.06)}` },
+    { offset: 620 / T, transform: `translateY(0) ${sq(1)}` },
+    { offset: 720 / T, transform: `translateY(0) ${sq(0.88)}` },
+    { offset: 1, transform: `translateY(0) ${sq(1)}` },
+  ], { duration: T, easing: ease });
+  const turn = kind === 0 ? 'rotate(-360deg)' : `perspective(${size * 3}px) rotateY(360deg)`;
+  const rest = kind === 0 ? 'rotate(0deg)' : `perspective(${size * 3}px) rotateY(0deg)`;
+  inner.animate([
+    { offset: 0, transform: rest },
+    { offset: 120 / T, transform: rest },
+    { offset: 620 / T, transform: turn },
+    { offset: 1, transform: turn },
+  ], { duration: T, easing: ease });
+}
+
+/**
  * FINISH_SPEC BJ6 (plan A): the Home card's host standing on a soft floor
  * shadow — the player's photo whole as a framed portrait, their full mascot,
  * or W waving (lib/home-host.ts picks). It waves ONCE per launch when Home
@@ -27,14 +70,33 @@ const W_FALLBACK = { ...castPreset('w'), display: 'mascot' as const };
  * Reduce Motion), then rests — no idle bob. `hidden` = opacity 0, the slot kept.
  * Standalone, so option B (the end of the cast row) is a placement change only.
  */
-export function HomeHost({ choice, initial, level, pro, hidden = false, size = HOME_HOST_SIZE }: {
+export function HomeHost({ choice, initial, level, pro, hidden = false, size = HOME_HOST_SIZE, celebrates = false }: {
   choice: HomeHostChoice;
   initial: string;
   level?: number | null;
   pro?: boolean | null;
   hidden?: boolean;
   size?: number;
+  /** Founder 10-09: on a Flawless / Sweep day the host shows off (a backflip, a twirl, a bounce, in turn, every ~4.5 s). */
+  celebrates?: boolean;
 }) {
+  const trickOuter = React.useRef<HTMLSpanElement>(null);
+  const trickInner = React.useRef<HTMLSpanElement>(null);
+  React.useEffect(() => {
+    if (!celebrates || prefersReducedMotion()) return;
+    let n = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const run = () => {
+      const o = trickOuter.current;
+      const i = trickInner.current;
+      const kind = n % 3;
+      if (o && i && !prefersReducedMotion()) homeHostTrick(kind, size, o, i);
+      n += 1;
+      timer = setTimeout(run, 4500 + (kind === 2 ? 1300 : 1100));
+    };
+    timer = setTimeout(run, 1600);
+    return () => clearTimeout(timer);
+  }, [celebrates, size]);
   // Once per launch (module flag), started after mount so the server render never differs.
   const [wave, setWave] = React.useState(false);
   React.useEffect(() => {
@@ -123,7 +185,12 @@ export function HomeHost({ choice, initial, level, pro, hidden = false, size = H
         }}
       />
       <span className={`mascot absolute inset-0 flex items-end justify-center${wave ? ' home-host-wave' : ''}`} style={{ lineHeight: 0 }}>
-        {figure}
+        {/* the trick layers (iOS order): the hop / wag / squash about the feet outside, the turn about the body's center inside */}
+        <span ref={trickOuter} className="absolute inset-0 flex items-end justify-center" style={{ transformOrigin: '50% 100%' }}>
+          <span ref={trickInner} className="absolute inset-0 flex items-end justify-center" style={{ transformOrigin: '50% 50%' }}>
+            {figure}
+          </span>
+        </span>
       </span>
     </span>
   );

@@ -81,8 +81,19 @@ fun FriendshipBadgeView(size: androidx.compose.ui.unit.Dp = 30.dp) {
 
 /** The identity block under the stage: the name in the bubble lettering (+ friendship badge) and "Friends since". */
 @Composable
-fun ProfileIdentityBlock(username: String, accentHex: String?, isFriend: Boolean, friendsSince: String?) {
-    val palette = if (ProfileAccent.isCustom(accentHex)) ThemeKit.accentPalette(ProfileAccent.color(accentHex)) else HeadlinePalette.HOME
+fun ProfileIdentityBlock(
+    username: String, accentHex: String?, isFriend: Boolean, friendsSince: String?,
+    userId: String? = null, avatarUrl: String? = null, config: JsonElement? = null, castId: String? = null, frame: String? = null,
+) {
+    // Founder 10-09: the name wears the player's mascot-maker backdrop color (lemon becomes a sunny gold), like their name on
+    // the friend menu; no backdrop picked gives the vivid color from their body, unless they chose a custom accent.
+    val row = remember(userId, username, avatarUrl, config, castId, frame, accentHex) {
+        AvatarFields(userId, username, avatarUrl, config, castId, frame, accentHex, complete = true)
+    }
+    val cfg = PlayerAvatars.resolve(row).config
+    val palette = if (com.wordocious.core.avatarBackdrop(cfg.bg) != null || !ProfileAccent.isCustom(accentHex)) {
+        ThemeKit.accentPalette(coreHexColor(com.wordocious.core.PlayerTint.nameHex(cfg)))
+    } else ThemeKit.accentPalette(ProfileAccent.color(accentHex))
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             BubbleText(username.uppercase(), palette, Modifier.widthIn(max = 320.dp), maxSize = 38, minSize = 20)
