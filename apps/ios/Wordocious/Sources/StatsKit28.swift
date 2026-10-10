@@ -298,12 +298,17 @@ struct TrophyShelfView: View {
                 medal("bronze", bronzeH, bronze, h)
             }
             .frame(width: width, height: h)
+            // Founder 10-10 ("the podium numbers are off"): the medals hang ABOVE the shelf art (gold by ~45 pt), so the
+            // shelf reserves that room instead of drawing over the card's title.
+            .padding(.top, medalOverflow(h))
             ZStack(alignment: .topLeading) {
                 count(silver, silverH, 17)
                 count(gold, goldH, 20)
                 count(bronze, bronzeH, 17)
             }
-            .frame(width: width, height: 28)
+            // Founder 10-10: the counts' ZStack is only one 56-pt label wide, so a centered frame pushed every count
+            // ~width/2 to the right. Pin it leading, like the medals (whose ZStack holds the full-width shelf art).
+            .frame(width: width, height: 28, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
@@ -319,6 +324,15 @@ struct TrophyShelfView: View {
             .saturation(n == 0 ? 0.4 : 1)
             .shadow(color: Color(hex: 0x3C146E).opacity(0.28), radius: 3, y: 3)
             .offset(x: spot.x * width - mw / 2, y: spot.y * h - discCenterY * mh)
+    }
+
+    /// How far the tallest medal rises above the shelf art's top edge.
+    private func medalOverflow(_ h: CGFloat) -> CGFloat {
+        let tops = [silverH, goldH, bronzeH].map { spot -> CGFloat in
+            let mh = spot.disc * width / discOfWidth * 351 / 256
+            return spot.y * h - discCenterY * mh
+        }
+        return max(0, -(tops.min() ?? 0))
     }
 
     private func count(_ n: Int, _ spot: Holder, _ size: CGFloat) -> some View {
@@ -359,7 +373,7 @@ struct ProScene: View {
             }
             .frame(width: pedW + sceneW * 0.7, height: height, alignment: .bottomLeading)
             if caption {
-                Text(StatsProfile.proBenefitCaption[benefit] ?? "").font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0xB45309))
+                Text(StatsProfile.proBenefitCaption[benefit] ?? "").font(Brand.font(12, .black)).foregroundStyle(SurfaceInk.ink(light: 0xB45309, night: 0xFCD34D))  // Founder 10-10 (season readability)
             }
         }
         .accessibilityElement(children: .ignore)

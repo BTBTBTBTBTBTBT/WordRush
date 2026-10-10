@@ -15,16 +15,22 @@ struct LivingWallpaper: View {
     @ObservedObject private var flags = FlagsService.shared
     /// Smoothness pass (10-10): the wall only animates while its page is showing (another tab, a pushed page or a game
     /// cover on top pauses it — it was redrawing at 30 fps underneath them).
-    @State private var onScreen = true
+    @State private var onScreen = false
+    @State private var appearGen = 0
+    /// Founder 10-10 (smoothness, measured: the wall was the largest single cost): a game cover on top never fires
+    /// onDisappear, so the wall also pauses while one is up; and it holds still while the page scrolls.
+    @ObservedObject private var chrome = ChromeVisibility.shared
+    @ObservedObject private var scroll = ScrollMotion.shared
 
     var body: some View {
         if flags.isLive("living_wallpapers") {
             let still = envReduce || Theme.reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled
                 || ProcessInfo.processInfo.thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue
             let trim = ProcessInfo.processInfo.thermalState == .fair ? 0.6 : 1.0
-            let paused = still || scenePhase != .active || !onScreen
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: paused)) { tl in
-                Canvas(rendersAsynchronously: false) { ctx, size in
+            let paused = still || scenePhase != .active || !onScreen || chrome.bottomNavHidden || scroll.scrolling
+            // Slow drift: 20 fps reads the same as 30.
+            TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: paused)) { tl in
+                Canvas(rendersAsynchronously: true) { ctx, size in
                     let t = still ? 0 : tl.date.timeIntervalSinceReferenceDate
                     if let s = ThemeKit.seasonal(season) {
                         drawSeasonal(&ctx, size, s.ambient, t, trim, still)
@@ -35,8 +41,14 @@ struct LivingWallpaper: View {
             }
             .allowsHitTesting(false)
             .accessibilityHidden(true)
-            .onAppear { onScreen = true }
-            .onDisappear { onScreen = false }
+            // Founder 10-10 (smoothness): the wall starts drifting ~0.5 s after its page opens, so it never competes with
+            // building the page (a tab switch, a cover closing); the first frame shows the same picture, still.
+            .onAppear {
+                appearGen += 1
+                let gen = appearGen
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { if gen == appearGen { onScreen = true } }
+            }
+            .onDisappear { appearGen += 1; onScreen = false }
         }
     }
 

@@ -28,8 +28,9 @@ struct VSBannerView: View {
         VsBannerInput(name: name, battle: battle, botOfDay: botOfDay, incomingFrom: incoming?.challenger.username, streak: streak)
     }
     private var sweep: Bool { VsLobby.vsSweep(battle: battle, botOfDay: botOfDay) }
-    private var headInk: Color { sweep ? Color(hex: 0x78350F) : VsLobbyKit.deep }
-    private var subInk: Color { sweep ? Color(hex: 0x92400E) : VsLobbyKit.ink }
+    // Founder 10-10 (season readability): the gold sweep banner's browns sit on the season's night glass in a dark season.
+    private var headInk: Color { sweep ? SurfaceInk.seasonInk(light: 0x78350F, night: 0xFDE68A) : VsLobbyKit.deep }
+    private var subInk: Color { sweep ? SurfaceInk.seasonInk(light: 0x92400E, night: 0xFCD34D) : VsLobbyKit.ink }
     private var anyWon: Bool { battle == .won || botOfDay == .won }
     private var anyPlayed: Bool { battle != .open || botOfDay != .open }
 

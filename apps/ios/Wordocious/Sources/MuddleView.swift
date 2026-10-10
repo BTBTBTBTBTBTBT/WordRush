@@ -16,7 +16,8 @@ private let muddleAccent = Color(hex: 0xF97316)
 private let mdPaper = Color(hex: 0xFDF8EC)
 /// The solved caption's punchline ink.
 private let mdPurple = Color(hex: 0x7C3AED)
-private let mdLilacText = Color(hex: 0x5B21B6)
+// Founder 10-10 (season readability): the solved punchline sits on the page wall, which goes night in a dark season.
+private var mdLilacText: Color { SurfaceInk.ink(light: 0x5B21B6, night: 0xC4B5FD) }
 private let mdCols = 6
 
 /// The bundled bank (Resources/scramble-puzzles.json — sha-guarded to match the web copy).

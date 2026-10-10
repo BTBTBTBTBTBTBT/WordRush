@@ -76,6 +76,11 @@ private struct BubbleAtlasLine: View {
             }
         }
         .frame(width: CGFloat(layout.width) * cap, height: CGFloat(layout.asc + layout.desc) * cap, alignment: .topLeading)
+        // Founder 10-10 (smoothness): one shadow pass for the whole line. A shadow per glyph cost an offscreen
+        // render per LETTER (a 15-letter title = 15 passes, every frame anything near it animated); the composited
+        // line casts the same soft drop.
+        .compositingGroup()
+        .shadow(color: Color(hex: 0x1E0A46).opacity(0.2), radius: 1.5, x: 0, y: 1.5)
         .frame(maxWidth: .infinity, alignment: alignment == .leading ? .leading : (alignment == .trailing ? .trailing : .center))
     }
 
@@ -104,8 +109,8 @@ private struct BubbleGlyphView: View {
 
     var body: some View {
         if let ui = BubbleGlyphTint.glyph(stem: stem, width: w, height: h, f0: f0, f1: f1, top: top, bottom: bottom) {
+            // The drop shadow is drawn ONCE for the whole line (BubbleAtlasLine), not per glyph.
             Image(uiImage: ui).resizable().interpolation(.high).frame(width: w, height: h)
-                .shadow(color: Color(hex: 0x1E0A46).opacity(0.2), radius: 1.5, x: 0, y: 1.5)
                 .scaleEffect(hopped ? 1.38 : 1, anchor: .bottom)
                 .contentShape(Rectangle())
                 .allowsHitTesting(interactive)
@@ -239,7 +244,8 @@ struct BubbleLabel: View {
 
     /// The same, tinted by one accent color (the common case).
     init(_ text: String, color: Color, size: CGFloat = 13, minScale: CGFloat = 0.35, alignment: Alignment = .leading) {
-        self.init(text, palette: .accent(color), size: size, minScale: minScale, alignment: alignment)
+        // Founder 10-10 (season readability): every label lifts its ink on dark surfaces (idempotent, see bubbleInk).
+        self.init(text, palette: .accent(color.bubbleInk), size: size, minScale: minScale, alignment: alignment)
     }
 
     var body: some View {
@@ -252,6 +258,25 @@ struct BubbleLabel: View {
 }
 
 extension Color {
-    /// A label ink for bubble lettering: itself on light surfaces, lifted toward white on the dark theme so the lettering never sinks.
-    var bubbleInk: Color { Theme.isDark ? Color.white.mixed(over: self, 0.4) : self }
+    /// A label ink for bubble lettering: itself on light surfaces; on a dark surface (the dark theme, which a dark season
+    /// such as Halloween also sets) lifted toward white until it reads. Founder 10-10 ("impossible to read"): the old fixed
+    /// 40% lift left small lettering a mid lavender that the glyph's own white rim washed out on the night cards.
+    /// Idempotent: an ink that is already light enough comes back unchanged, so BubbleLabel can apply it to every caller.
+    var bubbleInk: Color {
+        guard Theme.isDark else { return self }
+        if Self.luma(self) >= 0.62 { return self }
+        for k in stride(from: 0.45, through: 0.9, by: 0.05) {
+            let c = Color.white.mixed(over: self, k)
+            if Self.luma(c) >= 0.62 { return c }
+        }
+        return Color.white.mixed(over: self, 0.9)
+    }
+
+    /// WCAG relative luminance (0 black ... 1 white).
+    static func luma(_ c: Color) -> Double {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard UIColor(c).getRed(&r, green: &g, blue: &b, alpha: &a) else { return 0 }
+        func lin(_ v: CGFloat) -> Double { let x = Double(v); return x <= 0.04045 ? x / 12.92 : pow((x + 0.055) / 1.055, 2.4) }
+        return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+    }
 }

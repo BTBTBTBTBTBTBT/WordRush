@@ -8,9 +8,12 @@ import WordociousCore
 // Each tinted glyph is built once per (stem, size, tint) and cached, so a headline costs a few images.
 
 enum BubbleGlyphTint {
+    // Founder 10-10 (smoothness): 2.8 draws ~177 lettering sites at many sizes and tints, so a 200-image COUNT
+    // limit evicted glyphs between screens and re-tinted them pixel by pixel on the main thread on every visit.
+    // The cache is bounded by BYTES instead (a glyph costs w*h*4): 48 MB keeps every screen's letters resident.
     private static let cache: NSCache<NSString, UIImage> = {
         let c = NSCache<NSString, UIImage>()
-        c.countLimit = 200
+        c.totalCostLimit = 48 * 1024 * 1024
         return c
     }()
 
@@ -70,7 +73,7 @@ enum BubbleGlyphTint {
         }
         guard let out else { return nil }
         let img = UIImage(cgImage: out, scale: scale, orientation: .up)
-        cache.setObject(img, forKey: key)
+        cache.setObject(img, forKey: key, cost: w * h * 4)
         return img
     }
 }

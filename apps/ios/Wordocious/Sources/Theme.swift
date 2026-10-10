@@ -176,6 +176,13 @@ enum Brand {
         return ceil((text as NSString).size(withAttributes: [.font: ui]).width)
     }
 
+    /// The brand face at a FIXED size as a UIFont (for bitmaps drawn once and cached, e.g. the mascot letter).
+    static func fixedUIFont(_ size: CGFloat, _ weight: Font.Weight) -> UIFont {
+        _ = rawFont(size, weight)
+        let key = "\(size)-\(Int(numericWeight(weight)))-\(UIApplication.shared.preferredContentSizeCategory.rawValue)"
+        return fontCache[key] ?? .systemFont(ofSize: size, weight: .black)
+    }
+
     private static func rawFont(_ size: CGFloat, _ weight: Font.Weight) -> Font {
         let wght = numericWeight(weight)
         // The cache key must carry the size category: without it, the first

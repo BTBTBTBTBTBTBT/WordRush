@@ -677,7 +677,7 @@ struct MascotBuilderView: View {
                 ForEach(opts) { o in tile(o) }
             }
             if let note {
-                Text(note).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x6D28D9))
+                Text(note).font(Brand.font(11, .bold)).foregroundStyle(SurfaceInk.ink(light: 0x6D28D9, night: 0xC4B5FD))  // Founder 10-10 (season readability)
                     .frame(maxWidth: .infinity).transition(.opacity)
             }
         }

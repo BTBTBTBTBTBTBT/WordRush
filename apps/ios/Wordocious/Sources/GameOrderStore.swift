@@ -129,8 +129,11 @@ struct ReorderableTile: ViewModifier {
         let base = content
             .rotationEffect(.degrees(wiggle ? ((ids.firstIndex(of: id) ?? 0) % 2 == 0 ? 1.4 : -1.4) : 0))
             .animation(wiggle ? .easeInOut(duration: 0.14).repeatForever(autoreverses: true) : .default, value: wiggle)
-            .scaleEffect(dragging == id ? 1.06 : 1)
-            .opacity(dragging == id ? 0.55 : 1)
+            // Founder 10-10 ("Muddle is grey now"): a drop that lands OFF a tile never calls performDrop, so `dragging`
+            // stayed set and the tile kept the lifted fade forever. The lift shows only while editing (and Home clears
+            // the drag when editing ends).
+            .scaleEffect(isEditing && dragging == id ? 1.06 : 1)
+            .opacity(isEditing && dragging == id ? 0.55 : 1)
             // The drop target's glow: the family purple, soft, no outline box.
             .shadow(color: targeted == id && dragging != id ? Color(hex: 0xA78BFA).opacity(0.85) : .clear, radius: 14)
             .simultaneousGesture(

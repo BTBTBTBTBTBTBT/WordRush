@@ -189,12 +189,12 @@ struct VSBotsView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 5) {
                     BubbleLabel(p.name, color: VsLobbyKit.ink, size: 16, minScale: 0.5)
-                    if boss { Text("BOSS").font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Color(hex: 0x92400E))
+                    if boss { Text("BOSS").font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(SurfaceInk.seasonInk(light: 0x92400E, night: 0xFCD34D))  // Founder 10-10 (season readability)
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Capsule().fill(VsLobbyKit.gold.vsWash(0.3))) }
                 }
                 // "Easy going · Solves in 6" ("Matches your form" for Umi) · the rung's line.
-                (Text(p.tierLine).font(Brand.font(11, .heavy)).foregroundColor(color == VsLobbyKit.gold ? Color(hex: 0xB45309) : color)
+                (Text(p.tierLine).font(Brand.font(11, .heavy)).foregroundColor(color == VsLobbyKit.gold ? SurfaceInk.seasonInk(light: 0xB45309, night: 0xFCD34D) : color)  // Founder 10-10 (season readability)
                  + Text(" · \(r.line)").font(Brand.font(11, .bold)).foregroundColor(VsLobbyKit.mutedInk))
                     .lineLimit(1).minimumScaleFactor(0.7)
             }

@@ -275,6 +275,7 @@ struct LivingCastHeader: View {
     /// Item 4b: the app-wide musical state + melody buffer (MusicalCastStore), so every header — and a header that
     /// remounts on a tab switch or push — shows the same mode until a long-press flips it. Never persisted.
     @ObservedObject private var musicalStore = MusicalCastStore.shared
+    @ObservedObject private var scrollMotion = ScrollMotion.shared
     private var musical: Bool { musicalStore.musical }
     /// The last transform's start (nil once every pop has played) and the figure it rippled out from.
     @State private var musicalAt: Date?
@@ -356,6 +357,9 @@ struct LivingCastHeader: View {
         let now = Date()
         if puppetsOn {
             if !onScreen || handoff.introRunning { return true }
+            // Founder 10-10 (smoothness, profiled): the breathing row holds still while the page scrolls (a tap, a
+            // signature move or the flourish still play).
+            if scrollMotion.scrolling && !puppetBusy(now) && handoff.flourishStart == nil { return true }
             // Reduce Motion / Low Power: hold still; a tap still fades the laughing face.
             if still || Motion.lowPower { return !puppetBusy(now) && handoff.flourishStart == nil }
             return false

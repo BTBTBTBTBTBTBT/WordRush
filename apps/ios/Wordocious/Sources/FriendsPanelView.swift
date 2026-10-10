@@ -820,7 +820,7 @@ struct FriendsPanelView: View {
                 if let n = f.friendStreak, n > 0 {
                     HStack(spacing: 2) {
                         FlameMark(size: 12)
-                        Text("\(n)").softNumber(14, color: Color(hex: 0xC2410C))
+                        Text("\(n)").softNumber(14, color: SurfaceInk.seasonInk(light: 0xC2410C, night: 0xFDBA74))  // Founder 10-10 (season readability)
                     }
                     .frame(minHeight: 34)
                     .accessibilityElement(children: .ignore)

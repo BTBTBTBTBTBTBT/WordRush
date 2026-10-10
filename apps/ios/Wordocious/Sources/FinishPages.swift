@@ -119,7 +119,7 @@ struct FinishLabel: View {
     var body: some View {
         // Founder rule 10-10: no plain-text headings: the small card / section label is bubble lettering (hugs its text, shrinks
         // only when the row is tighter than it).
-        BubbleLabel(text, color: Theme.isDark ? Color.white.mixed(over: color, 0.4) : color, size: 13)
+        BubbleLabel(text, color: color.bubbleInk, size: 13)
             .accessibilityAddTraits(.isHeader)
     }
 }
@@ -138,7 +138,8 @@ struct CardTitle: View {
     }
 
     var body: some View {
-        BubbleTextView(text: text.uppercased(), palette: .accent(color), maxSize: maxSize, minSize: 12, animated: false,
+        // Founder 10-10 (season readability): the ink lifts on dark surfaces (idempotent bubbleInk).
+        BubbleTextView(text: text.uppercased(), palette: .accent(color.bubbleInk), maxSize: maxSize, minSize: 12, animated: false,
                        alignment: .leading)
             .accessibilityAddTraits(.isHeader)
     }

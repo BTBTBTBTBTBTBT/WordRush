@@ -356,7 +356,12 @@ struct HomeBannerView: View {
 
     /// One mode's headline: BH3 (founder 10-03) ONE line, auto-fit (shrinks, never wraps), centered.
     private func headlineSlot(_ headline: String, trophy: Bool) -> some View {
-        headlineRow(headline, oneLine: true, trophy: trophy)
+        var text = headline
+        #if DEBUG
+        // `defaults write com.wordocious.app debugHeadline "GOOD MORNING, BMT!"` forces the text (wrap checks).
+        if let o = UserDefaults.standard.string(forKey: "debugHeadline"), !o.isEmpty { text = o }
+        #endif
+        return headlineRow(text, oneLine: true, trophy: trophy)
     }
 
     /// The headline (+ the double-flawless trophy; FINISH_SPEC §Y: Unlimited has no
@@ -374,7 +379,11 @@ struct HomeBannerView: View {
             // FINISH_SPEC §AR: the live lettering (purple → magenta, gold numbers, the
             // player's name in the accent, "·" as the star); the double-flawless gold
             // day takes the celebration palette; a stacked name line is gold.
-            VStack(spacing: -fit.size * 0.42) {
+            // Founder 10-10 ("letters look too smashed"): -0.42 em was tuned for the live font's tall line
+            // box. The atlas box is tight (asc + desc ≈ 1.03 em, nearly all glyph), so -0.42 pulled line 2 a
+            // quarter-cap into line 1. Atlas lines overlap by -0.15 em instead, leaving a slim gap between
+            // line 1's baseline and line 2's caps. Android (natural Column) and web (core lineHeight) never overlapped.
+            VStack(spacing: -fit.size * (Self.atlasDrawn(fit.layout.lines) ? 0.15 : 0.42)) {
                 ForEach(Array(fit.layout.lines.enumerated()), id: \.offset) { i, line in
                     let hero = fit.layout.nameLines.contains(i)
                     BubbleLineView(text: line, palette: trophy ? .celebration : (look?.headlinePalette ?? (hero ? .leaderboard : .home)),
@@ -413,6 +422,11 @@ struct HomeBannerView: View {
         if fitCache.count > 64 { fitCache.removeAll() }
         fitCache[key] = out
         return out
+    }
+
+    /// Every line is drawn from the bubble atlas (the same test BubbleLineView makes).
+    static func atlasDrawn(_ lines: [String]) -> Bool {
+        FlagsService.shared.isLive("bubble_atlas") && lines.allSatisfy { BubbleText.atlasCovers($0) }
     }
 
     /// BJ6: the flanking sparkles sit on line 1's cap height.
@@ -878,9 +892,8 @@ struct CelebrationTrio: View {
     }
     @Environment(\.accessibilityReduceMotion) private var envReduce
     private var still: Bool { envReduce || Theme.reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled }
-    /// Founder 10-09 ("make sure the animations run smooth"): every move is a repeating Core Animation (it runs on the
-    /// render server at the display's full rate, 120 Hz on ProMotion), not a 30 fps redraw of the whole view.
-    @State private var on = false
+    /// Founder 10-09 ("make sure the animations run smooth") / 10-10: every move is a real Core Animation loop
+    /// (CALoop.swift), run by the render server at the display's full rate, never a main-thread redraw.
 
     var body: some View {
         GeometryReader { g in
@@ -899,57 +912,73 @@ struct CelebrationTrio: View {
                     .frame(width: fig * 3.2, height: 14)
                     .position(x: w / 2, y: h - 18)
                 ForEach(Array(images.enumerated()), id: \.offset) { i, name in
-                    let delay = Double(i) * 0.18
-                    Image(name).resizable().interpolation(.high).scaledToFit()
+                    // Founder 10-10 (smoothness): the hop (stretched at the top, squashed on the landing) and the slower
+                    // sway are Core Animation loops (CALoopImage): the render server runs them, the main thread never does.
+                    CALoopImage(image: CALoopArt.image(name),
+                                motion: .hop(hop: 0.09, stretch: CGSize(width: 0.97, height: 1.03), squash: CGSize(width: 1.04, height: 0.95),
+                                             sway: swayDegrees, tempo: tempo, swayTempo: tempo * 2.26),
+                                delay: 0.2 + Double(i) * 0.18, still: still)
                         .frame(width: fig, height: fig)
-                        // hop: stretched at the top, squashed on the landing
-                        .scaleEffect(x: on ? 0.97 : 1.04, y: on ? 1.03 : 0.95, anchor: .bottom)
-                        .offset(y: on ? -fig * 0.09 : 0)
-                        .animation(still ? nil : .easeInOut(duration: tempo).repeatForever(autoreverses: true).delay(delay), value: on)
-                        // a slower side-to-side sway on top of the hop
-                        .rotationEffect(.degrees(on ? swayDegrees : -swayDegrees), anchor: .bottom)
-                        .animation(still ? nil : .easeInOut(duration: tempo * 2.26).repeatForever(autoreverses: true).delay(delay * 2), value: on)
                         .position(x: w / 2 + CGFloat(i - 1) * fig * 0.95, y: h - fig / 2 - 16)
                 }
                 ForEach(0..<(sparkles ? 4 : 0), id: \.self) { k in
                     let xs: [CGFloat] = [0.22, 0.78, 0.35, 0.66], ys: [CGFloat] = [0.30, 0.26, 0.12, 0.10]
-                    GoldSparkle(size: 9)
-                        .opacity(still ? 0.8 : (on ? 1 : 0.3))
-                        .scaleEffect(on ? 1.15 : 0.8)
-                        .animation(still ? nil : .easeInOut(duration: 0.8 + Double(k) * 0.17).repeatForever(autoreverses: true)
-                                    .delay(Double(k) * 0.25), value: on)
+                    let spark = CALoopArt.render("gold-sparkle-9", GoldSparkle(size: 9))
+                    CALoopImage(image: spark, motion: .twinkle(low: 0.3, small: 0.8, big: 1.15, tempo: 0.8 + Double(k) * 0.17),
+                                delay: 0.2 + Double(k) * 0.25, still: still)
+                        .frame(width: spark?.size.width ?? 9, height: spark?.size.height ?? 9)
+                        .opacity(still ? 0.8 : 1)
                         .position(x: w * xs[k], y: h * ys[k])
                 }
             }
         }
-        // Start the loops a beat AFTER the first layout: flipping `on` in the same pass as the geometry settling would
-        // make the repeating animation loop the figures' sizes too (they'd swim around instead of hopping in place).
-        .onAppear { if !still { DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { on = true } } }
-        .onChange(of: still) { s in on = !s }
         .accessibilityHidden(true)
     }
 }
 
 
-/// Founder 10-10: a still mascot comes alive — a gentle hop + breathe and a slower sway, as Core Animation loops (display
-/// rate, no per-frame redraw), started a beat after layout. Still under Reduce Motion / Low Power.
+/// Founder 10-10: a still mascot comes alive — a gentle hop + breathe and a slower sway on a 24 fps clock (it wraps live
+/// SwiftUI content, so it can't be a layer loop), started a beat after the page opens. Still under Reduce Motion / Low Power.
 struct IdleLife: ViewModifier {
     var hop: CGFloat = 3
     var sway: Double = 1.5
     var period: Double = 2.2
     var delay: Double = 0
     @Environment(\.accessibilityReduceMotion) private var envReduce
-    @State private var on = false
+    @Environment(\.insideGameCover) private var insideGameCover
+    @ObservedObject private var scroll = ScrollMotion.shared
+    @ObservedObject private var chrome = ChromeVisibility.shared
+    @State private var start = Date()
+    @State private var live = false
+
+    /// 0...1...0 eased (cosine), `half` seconds each way; 0 before the start.
+    private static func wave(_ t: Double, _ half: Double) -> CGFloat {
+        guard t > 0, half > 0 else { return 0 }
+        let ph = (t / half).truncatingRemainder(dividingBy: 2)
+        let x = ph < 1 ? ph : 2 - ph
+        return CGFloat(0.5 - 0.5 * cos(Double.pi * x))
+    }
 
     func body(content: Content) -> some View {
         let still = envReduce || Theme.reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled
-        content
-            .scaleEffect(x: on ? 0.99 : 1.01, y: on ? 1.015 : 0.985, anchor: .bottom)
-            .offset(y: on ? -hop : 0)
-            .animation(still ? nil : .easeInOut(duration: period / 2).repeatForever(autoreverses: true).delay(delay), value: on)
-            .rotationEffect(.degrees(on ? sway : -sway), anchor: .bottom)
-            .animation(still ? nil : .easeInOut(duration: period * 0.75).repeatForever(autoreverses: true).delay(delay), value: on)
-            .onAppear { if !still { DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { on = true } } }
+        // Founder 10-10 (smoothness, profiled): the old SwiftUI `.repeatForever` pair was interpolated on the main thread at
+        // the display rate (60-120 fps) forever. The same hop + breathe + sway now comes from ONE 24 fps clock that also
+        // holds still while the page scrolls or a game covers it.
+        let paused = still || !live || scroll.scrolling || (chrome.bottomNavHidden && !insideGameCover)
+        TimelineView(.animation(minimumInterval: 1.0 / 24.0, paused: paused)) { ctx in
+            let t = ctx.date.timeIntervalSince(start) - delay
+            let p = still ? 0 : Self.wave(t, period / 2)
+            let q = still ? 0.5 : Self.wave(t, period * 0.75)
+            content
+                .scaleEffect(x: 1.01 - 0.02 * p, y: 0.985 + 0.03 * p, anchor: .bottom)
+                .offset(y: -hop * p)
+                .rotationEffect(.degrees(-sway + 2 * sway * Double(q)), anchor: .bottom)
+        }
+        .onAppear {
+            start = Date()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { live = true }
+        }
+        .onDisappear { live = false }
     }
 }
 

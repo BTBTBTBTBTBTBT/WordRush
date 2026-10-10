@@ -18,6 +18,34 @@ import UIKit
 // mascots holding an animation slot (AvatarLiveConfig.maxAnimated, the player's own first), never in lists. Reduce
 // Motion = the still frame (a tap only shows the laugh).
 
+/// Founder 10-10 (smoothness): true inside a game cover. Ambient animation BEHIND a game (the menu page's mascots and
+/// living wall under the cover) pauses while one is open; animation inside the game (the finish podium) keeps running.
+private struct InsideGameCoverKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+    var insideGameCover: Bool {
+        get { self[InsideGameCoverKey.self] }
+        set { self[InsideGameCoverKey.self] = newValue }
+    }
+}
+
+/// Founder 10-10 (smoothness): the live layout (the saved pose + room for every reaction) is pure in (config, small), so it
+/// is computed ONCE per mascot look, not on every body pass (a scroll start, a cover, a slot change re-ran it for every
+/// mascot on screen).
+@MainActor
+enum LiveLayoutMemo {
+    private struct Key: Hashable { let config: AvatarConfig; let small: Bool }
+    private static var memo: [Key: AvatarLayout] = [:]
+
+    static func layout(_ config: AvatarConfig, small: Bool, manifest: AvatarManifest) -> AvatarLayout {
+        let k = Key(config: config, small: small)
+        if let hit = memo[k] { return hit }
+        let l = AvatarFit.liveLayout(config, small: small, manifest: manifest)
+        if memo.count > 64 { memo.removeAll() }
+        memo[k] = l
+        return l
+    }
+}
+
 /// The animation budget: at most AvatarLiveConfig.maxAnimated living mascots tick at once; the player's own always do.
 @MainActor
 enum LivingMascotBudget {
@@ -62,6 +90,9 @@ struct LivingMascotView: View {
     private struct Reaction: Equatable { let kind: AvatarReaction; let at: Date }
 
     @Environment(\.accessibilityReduceMotion) private var envReduce
+    @Environment(\.insideGameCover) private var insideGameCover
+    @ObservedObject private var chrome = ChromeVisibility.shared
+    @ObservedObject private var scroll = ScrollMotion.shared
     @State private var start = Date()
     @State private var tapAt: Date?
     @State private var reaction: Reaction?
@@ -70,6 +101,7 @@ struct LivingMascotView: View {
     @State private var pressChanged = Date.distantPast
     @State private var look: CGPoint = .zero
     @State private var visible = false
+    @State private var appearGen = 0
     @State private var slot = false
     @State private var slotId = UUID()
 
@@ -82,15 +114,21 @@ struct LivingMascotView: View {
             return c
         }()
         let small = size <= MascotParts.smallSize
-        let layout: AvatarLayout? = MascotParts.fit.map { AvatarFit.liveLayout(shown, small: small, manifest: $0) }
-        TimelineView(.animation(minimumInterval: nil, paused: paused(still))) { tl in
+        let layout: AvatarLayout? = MascotParts.fit.map { LiveLayoutMemo.layout(shown, small: small, manifest: $0) }
+        // Founder 10-10 (smoothness, measured: the 2.8 menus ran the main thread 88% busy): 30 fps is plenty for a
+        // breathing idle (a tap's hop runs at full rate), and the Canvas rasterizes off the main thread.
+        TimelineView(.animation(minimumInterval: tapAt == nil && reaction == nil ? 1.0 / 24.0 : nil, paused: paused(still))) { tl in
             drawFrame(at: tl.date, config: shown, layout: layout, still: still, small: small)
         }
         .frame(width: size, height: size)
         .contentShape(Rectangle())
         .simultaneousGesture(press, including: interactive ? .all : .none)
         .onAppear {
-            visible = true
+            // Founder 10-10 (smoothness): start breathing ~0.5 s after the page opens (the still frame shows first), so
+            // the animation never competes with building the page.
+            appearGen += 1
+            let gen = appearGen
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { if gen == appearGen { visible = true } }
             slot = LivingMascotBudget.claim(slotId, own: own)
             #if canImport(UIKit)
             MascotArtCache.warm(shown)
@@ -98,6 +136,7 @@ struct LivingMascotView: View {
             #endif
         }
         .onDisappear {
+            appearGen += 1
             visible = false
             LivingMascotBudget.release(slotId)
             slot = false
@@ -119,6 +158,8 @@ struct LivingMascotView: View {
     /// Frames tick only while on screen; Reduce Motion only while a tap's laugh plays; otherwise only with a slot.
     private func paused(_ still: Bool) -> Bool {
         guard visible else { return true }
+        // Covered by a game (onDisappear never fires under a full-screen cover) or the page is scrolling: hold the frame.
+        if tapAt == nil && reaction == nil && ((chrome.bottomNavHidden && !insideGameCover) || scroll.scrolling) { return true }
         if still { return tapAt == nil }
         return !slot
     }
@@ -128,7 +169,7 @@ struct LivingMascotView: View {
         let live = transforms(at: date, layout: layout, still: still)
         if let fit = MascotParts.fit, let layout {
             if cutout {
-                Canvas { ctx, _ in
+                Canvas(rendersAsynchronously: true) { ctx, _ in
                     MascotArtPainter.paint(ctx, side: size, layout: layout, config: c, initial: initial, small: small, live: live)
                 }
                 .frame(width: size, height: size)
@@ -211,7 +252,7 @@ struct MascotPoseThumb: View {
         return Group {
             if let fit = MascotParts.fit, LivingMascotView.canAnimate(c) {
                 let layout = AvatarFit.layout(c, small: small, pose: .id(pose), manifest: fit)
-                Canvas { ctx, _ in
+                Canvas { ctx, _ in   // a still (also rendered offscreen for the widget snapshots): keep it synchronous
                     MascotArtPainter.paint(ctx, side: size, layout: layout, config: c, initial: initial, small: small)
                 }
             } else {

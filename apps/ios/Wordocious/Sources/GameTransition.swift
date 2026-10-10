@@ -536,7 +536,7 @@ private struct GameCoverItem<Item: Identifiable, Cover: View>: ViewModifier {
                 shown = v
                 if v == nil { item = nil }   // the cover closed itself (dismiss())
             }), onDismiss: onDismiss) { it in
-                cover(it).background(GameCoverHook())
+                cover(it).environment(\.insideGameCover, true).background(GameCoverHook())
                     .modifier(EdgeSwipeClose(enabled: swipeToClose) { item = nil })
             }
     }
@@ -582,7 +582,7 @@ private struct GameCoverFlag<Cover: View>: ViewModifier {
                 shown = v
                 if !v { isPresented = false }
             }), onDismiss: onDismiss) {
-                cover().background(GameCoverHook())
+                cover().environment(\.insideGameCover, true).background(GameCoverHook())
                     .modifier(EdgeSwipeClose(enabled: swipeToClose) { isPresented = false })
             }
     }

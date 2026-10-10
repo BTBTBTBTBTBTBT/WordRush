@@ -304,7 +304,8 @@ struct WordOfTheDayView: View {
     }
 
     private func resultPanel(_ a: HomeStreaksService.QuizAnswer, _ q: Quiz) -> some View {
-        let ink = a.correct ? Color(hex: 0x15803D) : Color(hex: 0xB91C1C)
+        // Founder 10-10 (season readability): the panel's fill goes a faint tint over the night card, so the ink lifts with it.
+        let ink = a.correct ? SurfaceInk.ink(light: 0x15803D, night: 0x86EFAC) : SurfaceInk.ink(light: 0xB91C1C, night: 0xFCA5A5)
         return HStack(spacing: 8) {
             // §G5 / §A7: a small pose (the card's host is I) — O1 cheers a right
             // answer, R sits with a wrong one.

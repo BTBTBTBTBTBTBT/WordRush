@@ -22,7 +22,8 @@ struct ProView: View {
     /// FINISH_SPEC §G1: the gold card family (tint, line, top bar).
     private static let goldTint = Color(hex: 0xF5A524)
     private static let goldBar = [Color(hex: 0xF5A524), Color(hex: 0xFFD166)]
-    private static let ink = Color(hex: 0x8A4A12)
+    // Founder 10-10 (season readability): the warm brown ink sits on gold tinted cards, which go night glass in a dark season.
+    private static var ink: Color { SurfaceInk.ink(light: 0x8A4A12, night: 0xFCD34D) }
 
     /// Fallback prices (PRO_PLANS in lib/payment/types.ts) shown only if the
     /// App Store products haven't loaded yet.

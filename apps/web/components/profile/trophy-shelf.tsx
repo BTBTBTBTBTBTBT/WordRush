@@ -24,8 +24,11 @@ const [MW, MH] = [256, 351];
 export function TrophyShelf({ gold, silver, bronze, width = 260 }: { gold: number; silver: number; bronze: number; width?: number }) {
   const h = (width * SHELF_H) / SHELF_W;
   const counts = { gold, silver, bronze } as const;
+  // Founder 10-10 (iOS parity): the medals hang above the shelf art (gold by ~45 px); reserve that room so they never
+  // draw over the card's title.
+  const overflow = Math.max(0, ...Object.values(HOLDERS).map((s) => DISC_CENTER_Y * (((s.disc * width) / DISC_OF_WIDTH) * MH) / MW - s.y * h));
   return (
-    <div className="mx-auto" style={{ width }} role="img" aria-label={`${gold} gold, ${silver} silver, ${bronze} bronze medals`}>
+    <div className="mx-auto" style={{ width, paddingTop: overflow }} role="img" aria-label={`${gold} gold, ${silver} silver, ${bronze} bronze medals`}>
       <div className="relative" style={{ width, height: h }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={artSrc('art-pf-trophy-shelf')} alt="" aria-hidden="true" draggable={false} decoding="async" width={SHELF_W} height={SHELF_H}

@@ -401,6 +401,13 @@ struct HomeView: View {
                                 }
                             }
                             .homeCardNames(wordModes.map(\.title))
+                            // Founder 10-10: a drag dropped OFF a tile never reaches performDrop. Leaving (or switching)
+                            // edit mode saves the live order and clears the stuck drag, so no tile keeps the lifted fade.
+                            .onChange(of: editingOrder) { _ in
+                                if draggingTile != nil { orderStore.commit() }
+                                draggingTile = nil
+                                targetedTile = nil
+                            }
                             // The More Games dailies as plain cards (the band and its sheet are gone).
                             if !puzzleModes.isEmpty {
                                 // ART_SPEC §2 / §19.2: the whole-cast PUZZLES art, centered.

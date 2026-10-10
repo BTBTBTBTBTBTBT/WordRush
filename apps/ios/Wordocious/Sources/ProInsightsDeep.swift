@@ -519,7 +519,7 @@ struct ProDeepModeCard: View {
                         ForEach(entries) { a in
                             VStack(spacing: 1) {
                                 Text(a.word).font(Brand.font(11, .black)).tracking(0.6)
-                                    .foregroundStyle(a.won ? Color(hex: 0x6D28D9) : Color(hex: 0xDC2626))
+                                    .foregroundStyle(a.won ? SurfaceInk.ink(light: 0x6D28D9, night: 0xC4B5FD) : SurfaceInk.ink(light: 0xDC2626, night: 0xF87171))  // Founder 10-10 (season readability)
                                     .lineLimit(1).minimumScaleFactor(0.7)
                                 Text(a.won ? "\(a.guesses)g" : "✗").font(Brand.font(8, .bold))
                                     .foregroundStyle(Theme.textMuted)

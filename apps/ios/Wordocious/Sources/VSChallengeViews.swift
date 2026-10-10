@@ -209,7 +209,7 @@ struct VSChallengeResultView: View {
             if let xp = xpGain, xp > 0 {
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text("+\(xp)").vsNumber(15)
-                    Text("XP").font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0x92400E))
+                    Text("XP").font(Brand.font(10, .black)).foregroundStyle(SurfaceInk.seasonInk(light: 0x92400E, night: 0xFCD34D))  // Founder 10-10 (season readability)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 4)
                 .background(Capsule().fill(VsLobbyKit.gold.vsWash(0.22)))

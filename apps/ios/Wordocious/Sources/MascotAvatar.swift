@@ -389,9 +389,43 @@ enum MascotArtPainter {
         let wide = glyph == "W" || glyph == "M"
         let fontSize = min(box.height * 1.08, box.width * (wide ? 0.95 : 1.15))
         let center = CGPoint(x: box.midX, y: box.midY)
+        let shadow = Color.black.mixed(over: base, 0.45).opacity(0.55)
+        let radius = max(0.5, box.height * 0.04), dy = max(0.5, box.height * 0.07)
+        // Founder 10-10 (smoothness, profiled: typesetting the letter was ~6% of the main thread on the Leaderboard):
+        // the letter + its drop is drawn ONCE per (glyph, size, ink) into a bitmap and reused every frame.
+        if let img = letterImage(glyph, fontSize: fontSize, shadow: shadow, radius: radius, dy: dy) {
+            ctx.draw(Image(uiImage: img), in: CGRect(x: center.x - img.size.width / 2, y: center.y - img.size.height / 2,
+                                                    width: img.size.width, height: img.size.height))
+            return
+        }
         var l = ctx
-        l.addFilter(.shadow(color: Color.black.mixed(over: base, 0.45).opacity(0.55), radius: max(0.5, box.height * 0.04), x: 0, y: max(0.5, box.height * 0.07)))
+        l.addFilter(.shadow(color: shadow, radius: radius, x: 0, y: dy))
         l.draw(Text(glyph).font(Brand.fixedFont(fontSize, .black)).foregroundColor(.white), at: center, anchor: .center)
+    }
+
+    private static let letterCache: NSCache<NSString, UIImage> = { let c = NSCache<NSString, UIImage>(); c.countLimit = 120; return c }()
+
+    /// The white letter with its soft drop, centered in a bitmap padded for the shadow (so drawing it centered on the
+    /// letter box lands exactly where the live Text did).
+    private static func letterImage(_ glyph: String, fontSize: CGFloat, shadow: Color, radius: CGFloat, dy: CGFloat) -> UIImage? {
+        let q = (fontSize * 4).rounded() / 4
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(shadow).getRed(&r, green: &g, blue: &b, alpha: &a)
+        let key = "\(glyph)|\(q)|\(Int(r * 255)),\(Int(g * 255)),\(Int(b * 255)),\(Int(a * 255))" as NSString
+        if let hit = letterCache.object(forKey: key) { return hit }
+        let font = Brand.fixedUIFont(q, .black)
+        let str = NSAttributedString(string: glyph, attributes: [.font: font, .foregroundColor: UIColor.white])
+        let ts = str.size()
+        guard ts.width > 0, ts.height > 0 else { return nil }
+        let pad = ceil(radius * 2 + dy)
+        let size = CGSize(width: ceil(ts.width) + pad * 2, height: ceil(ts.height) + pad * 2)
+        let img = UIGraphicsImageRenderer(size: size).image { c in
+            let cg = c.cgContext
+            cg.setShadow(offset: CGSize(width: 0, height: dy), blur: radius * 2, color: UIColor(shadow).cgColor)
+            str.draw(at: CGPoint(x: (size.width - ts.width) / 2, y: (size.height - ts.height) / 2))
+        }
+        letterCache.setObject(img, forKey: key)
+        return img
     }
 
     /// The shared pattern shapes (body-square units → `r`).

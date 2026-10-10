@@ -71,11 +71,13 @@ private struct LegacyChartCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 // 2.8 item 16: chart titles in the bubble lettering, tinted in the section's cast color.
-                BubbleTextView(text: title.uppercased(), palette: .accent(.cast(StatsProfile.sectionTitleColor(title))),
+                // Founder 10-10: never clipped ("SOLVE TIME — LAST 30 WINS" was cut at a 220-pt cap): the title takes the
+                // row and wraps if it must; the night season lifts its ink so it reads on the dark card.
+                BubbleTextView(text: title.uppercased(), palette: .accent(Color.cast(StatsProfile.sectionTitleColor(title)).bubbleInk),
                                maxSize: 20, minSize: 13, alignment: .leading)
-                    .frame(maxWidth: 220)
-                Spacer()
-                if let hint { Text(hint).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary) }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .layoutPriority(1)
+                if let hint { Text(hint).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary).fixedSize() }
             }
             content
         }

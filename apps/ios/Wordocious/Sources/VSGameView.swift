@@ -1085,14 +1085,14 @@ struct VSGameView: View {
                         MomentLettering(.streak, maxWidth: 200, maxHeight: 56) { EmptyView() }
                         HStack(spacing: 4) {
                             Text("\(m)").vsNumber(18)
-                            Text("-win bot streak").font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                            Text("-win bot streak").font(Brand.font(13, .black)).foregroundStyle(SurfaceInk.seasonInk(light: 0xC2410C, night: 0xFDBA74))  // Founder 10-10 (season readability)
                         }
                     }
                 } else {
                     HStack(spacing: 4) {
                         Icon3D(.flame, size: 18)
                         Text("\(m)").vsNumber(18)
-                        Text("-win bot streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xC2410C))
+                        Text("-win bot streak!").font(Brand.font(14, .black)).foregroundStyle(SurfaceInk.seasonInk(light: 0xC2410C, night: 0xFDBA74))  // Founder 10-10 (season readability)
                     }
                 }
             } else if vm.cpuStreak > 0 {

@@ -344,7 +344,13 @@ fun TrophyShelfView(gold: Int, silver: Int, bronze: Int, modifier: Modifier = Mo
         modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = "$gold gold, $silver silver, $bronze bronze medals" },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.width(width).height(h)) {
+        // Founder 10-10 (iOS parity): the medals hang above the shelf art (gold by ~45 dp); reserve that room so they never
+        // draw over the card's title.
+        val overflow = listOf(silverH, goldH, bronzeH).maxOf { spot ->
+            val mh = width * (spot.disc / discOfWidth) * (351f / 256f)
+            mh * discCenterY - h * spot.y
+        }.coerceAtLeast(0.dp)
+        Box(Modifier.padding(top = overflow).width(width).height(h)) {
             Image(androidx.compose.ui.res.painterResource(R.drawable.art_pf_trophy_shelf), null, Modifier.fillMaxSize(), contentScale = ContentScale.FillBounds)
             listOf(Triple(R.drawable.art_pf_medal_silver, silverH, silver), Triple(R.drawable.art_pf_medal_gold, goldH, gold), Triple(R.drawable.art_pf_medal_bronze, bronzeH, bronze)).forEach { (res, spot, n) ->
                 val mw = width * (spot.disc / discOfWidth)

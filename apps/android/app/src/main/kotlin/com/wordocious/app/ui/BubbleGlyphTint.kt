@@ -19,7 +19,11 @@ import kotlin.math.roundToInt
 
 internal object BubbleGlyphTint {
     private val sources = HashMap<String, Bitmap?>()
-    private val tinted = object : LruCache<String, ImageBitmap>(160) {}
+    // Founder 10-10 (smoothness, iOS parity): bounded by BYTES, not a 160-glyph count. 2.8 letters ~177 sites
+    // at many sizes / tints, so the count limit evicted glyphs between screens and re-tinted them on every visit.
+    private val tinted = object : LruCache<String, ImageBitmap>(48 * 1024 * 1024) {
+        override fun sizeOf(key: String, value: ImageBitmap): Int = value.width * value.height * 4
+    }
 
     private fun source(context: Context, stem: String): Bitmap? = sources.getOrPut(stem) {
         val res = context.resources.getIdentifier("bubble_$stem", "drawable", context.packageName)

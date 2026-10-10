@@ -139,7 +139,7 @@ struct LockedItemCard: View {
                     Button { onSaveWithout() } label: { CandyLabel(title: them ? "Save without them" : "Save without it") }
                         .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium, fullWidth: true))
                     Button { onClose() } label: {
-                        Text("Keep trying on").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0x6D28D9))
+                        Text("Keep trying on").font(Brand.font(14, .black)).foregroundStyle(SurfaceInk.ink(light: 0x6D28D9, night: 0xC4B5FD))  // Founder 10-10 (season readability)
                             .frame(maxWidth: .infinity).padding(.vertical, 8)
                     }
                     .buttonStyle(.squish)
