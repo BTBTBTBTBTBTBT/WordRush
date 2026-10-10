@@ -164,10 +164,12 @@ struct ProPlanInfo: Equatable {
 
 /// "Member since <month year>" from the profile's created_at.
 enum ProMemberSince {
+    private static let monthYear: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "MMMM yyyy"; f.locale = Locale(identifier: "en_US"); return f
+    }()
     static func text(_ p: Profile?) -> String? {
         guard let c = p?.createdAt, let d = parseTimestamp(c) else { return nil }
-        let f = DateFormatter(); f.dateFormat = "MMMM yyyy"; f.locale = Locale(identifier: "en_US")
-        return "Member since \(f.string(from: d))"
+        return "Member since \(monthYear.string(from: d))"
     }
 }
 

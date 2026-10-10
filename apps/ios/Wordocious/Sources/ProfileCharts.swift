@@ -396,8 +396,9 @@ private struct ActivityCalendarView: View {
     }()
 
     /// (short month name, week-column index) where each month first appears.
+    private static let monthFormatter: DateFormatter = { let f = DateFormatter(); f.dateFormat = "MMM"; return f }()
     private func monthLabels(weeks: [[MatchStatsService.DayActivity?]]) -> [(name: String, week: Int)] {
-        let f = DateFormatter(); f.dateFormat = "MMM"
+        let f = Self.monthFormatter
         var out: [(String, Int)] = []
         var last = ""
         for (wi, week) in weeks.enumerated() {
@@ -508,10 +509,10 @@ struct SevenDayActivityCard: View {
         }
     }
 
-    private func dow(_ d: Date) -> String {
-        let f = DateFormatter(); f.dateFormat = "EEEEE"; f.locale = Locale(identifier: "en_US")
-        return f.string(from: d)
-    }
+    private static let dowFormatter: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEEEE"; f.locale = Locale(identifier: "en_US"); return f
+    }()
+    private func dow(_ d: Date) -> String { Self.dowFormatter.string(from: d) }
 }
 
 // MARK: - Insights (web All-view INSIGHTS card)

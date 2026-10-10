@@ -544,13 +544,18 @@ struct TrophyShelf: View {
         }
     }
 
+    // Built once (they were rebuilt for every row on every render).
+    private static let isoFrac: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; return f
+    }()
+    private static let isoPlain = ISO8601DateFormatter()
+    private static let monthDay: DateFormatter = {
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US"); f.dateFormat = "MMM d"; return f
+    }()
     private func heldSince(_ iso: String?) -> String? {
         guard let iso else { return nil }
-        let withFrac = ISO8601DateFormatter(); withFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let plain = ISO8601DateFormatter()
-        guard let date = withFrac.date(from: iso) ?? plain.date(from: iso) else { return nil }
-        let f = DateFormatter(); f.locale = Locale(identifier: "en_US"); f.dateFormat = "MMM d"
-        return f.string(from: date)
+        guard let date = Self.isoFrac.date(from: iso) ?? Self.isoPlain.date(from: iso) else { return nil }
+        return Self.monthDay.string(from: date)
     }
 
     private func marqueeCard(_ r: AllTimeRecord) -> some View {

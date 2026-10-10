@@ -905,10 +905,10 @@ struct CelebrationTrio: View {
                         // hop: stretched at the top, squashed on the landing
                         .scaleEffect(x: on ? 0.97 : 1.04, y: on ? 1.03 : 0.95, anchor: .bottom)
                         .offset(y: on ? -fig * 0.09 : 0)
-                        .animation(.easeInOut(duration: tempo).repeatForever(autoreverses: true).delay(delay), value: on)
+                        .animation(still ? nil : .easeInOut(duration: tempo).repeatForever(autoreverses: true).delay(delay), value: on)
                         // a slower side-to-side sway on top of the hop
                         .rotationEffect(.degrees(on ? swayDegrees : -swayDegrees), anchor: .bottom)
-                        .animation(.easeInOut(duration: tempo * 2.26).repeatForever(autoreverses: true).delay(delay * 2), value: on)
+                        .animation(still ? nil : .easeInOut(duration: tempo * 2.26).repeatForever(autoreverses: true).delay(delay * 2), value: on)
                         .position(x: w / 2 + CGFloat(i - 1) * fig * 0.95, y: h - fig / 2 - 16)
                 }
                 ForEach(0..<(sparkles ? 4 : 0), id: \.self) { k in
@@ -916,7 +916,7 @@ struct CelebrationTrio: View {
                     GoldSparkle(size: 9)
                         .opacity(still ? 0.8 : (on ? 1 : 0.3))
                         .scaleEffect(on ? 1.15 : 0.8)
-                        .animation(.easeInOut(duration: 0.8 + Double(k) * 0.17).repeatForever(autoreverses: true)
+                        .animation(still ? nil : .easeInOut(duration: 0.8 + Double(k) * 0.17).repeatForever(autoreverses: true)
                                     .delay(Double(k) * 0.25), value: on)
                         .position(x: w * xs[k], y: h * ys[k])
                 }

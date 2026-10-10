@@ -13,13 +13,16 @@ struct LivingWallpaper: View {
     @Environment(\.accessibilityReduceMotion) private var envReduce
     @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var flags = FlagsService.shared
+    /// Smoothness pass (10-10): the wall only animates while its page is showing (another tab, a pushed page or a game
+    /// cover on top pauses it — it was redrawing at 30 fps underneath them).
+    @State private var onScreen = true
 
     var body: some View {
         if flags.isLive("living_wallpapers") {
             let still = envReduce || Theme.reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled
                 || ProcessInfo.processInfo.thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue
             let trim = ProcessInfo.processInfo.thermalState == .fair ? 0.6 : 1.0
-            let paused = still || scenePhase != .active
+            let paused = still || scenePhase != .active || !onScreen
             TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: paused)) { tl in
                 Canvas(rendersAsynchronously: false) { ctx, size in
                     let t = still ? 0 : tl.date.timeIntervalSinceReferenceDate
@@ -32,6 +35,8 @@ struct LivingWallpaper: View {
             }
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+            .onAppear { onScreen = true }
+            .onDisappear { onScreen = false }
         }
     }
 

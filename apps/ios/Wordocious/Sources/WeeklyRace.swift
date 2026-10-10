@@ -46,12 +46,16 @@ enum WeeklyRace {
 
     /// "Sep 15–Sep 21" — the local Mon–Sun range of a settled week (the
     /// web card's toLocaleDateString month/day pair).
+    private static let weekParse: DateFormatter = {
+        let p = DateFormatter(); p.dateFormat = "yyyy-MM-dd"; p.timeZone = .current; return p
+    }()
+    private static let weekShow: DateFormatter = {
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US"); f.dateFormat = "MMM d"; return f
+    }()
     static func weekLabel(_ weekStart: String) -> String {
-        let p = DateFormatter(); p.dateFormat = "yyyy-MM-dd"; p.timeZone = .current
-        guard let mon = p.date(from: weekStart),
+        guard let mon = weekParse.date(from: weekStart),
               let sun = Calendar.current.date(byAdding: .day, value: 6, to: mon) else { return weekStart }
-        let f = DateFormatter(); f.locale = Locale(identifier: "en_US"); f.dateFormat = "MMM d"
-        return "\(f.string(from: mon))–\(f.string(from: sun))"
+        return "\(weekShow.string(from: mon))–\(weekShow.string(from: sun))"
     }
 }
 
