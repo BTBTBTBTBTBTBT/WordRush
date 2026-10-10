@@ -244,37 +244,25 @@ struct SettingsView: View {
             // Google's form failed to present (offline / UMP unreachable).
             // Swallowing it silently would leave the user tapping a row that
             // does nothing — the dead end the row exists to remove.
-            .alert("Couldn't open ad privacy settings",
-                   isPresented: Binding(get: { consentError != nil },
-                                        set: { if !$0 { consentError = nil } })) {
-                Button("OK", role: .cancel) { consentError = nil }
-            } message: {
-                Text((consentError ?? "") + "\n\nCheck your connection and try again.")
-            }
-            .alert("Notifications are off", isPresented: $reminderDenied) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("Enable notifications for Wordocious in iOS Settings to get a daily reminder.")
-            }
+            .familyNotice("Couldn't open ad privacy settings",
+                          isPresented: Binding(get: { consentError != nil }, set: { if !$0 { consentError = nil } }),
+                          message: (consentError ?? "") + " Check your connection and try again.")
+            .familyNotice("Notifications are off", isPresented: $reminderDenied,
+                          message: "Enable notifications for Wordocious in iOS Settings to get a daily reminder.")
             .proManageHandoff($showManage)
-            .alert("Delete your account?", isPresented: $showDeleteConfirm) {
-                Button("Cancel", role: .cancel) {}
-                Button(deleting ? "Deleting…" : "Delete Forever", role: .destructive) {
-                    deleting = true
-                    Task {
-                        let ok = await auth.deleteAccount()
-                        deleting = false
-                        if ok { dismiss() } else { deleteError = true }
-                    }
-                }.disabled(deleting)
-            } message: {
-                Text("This will permanently delete your profile, stats, streak, medals, achievements, and all game data. This action cannot be undone.")
+            .familyConfirm("Delete your account?", isPresented: $showDeleteConfirm,
+                           message: "This permanently deletes your profile, stats, streak, medals, achievements and all game data. It can't be undone.",
+                           confirm: "Delete Forever", danger: true) {
+                guard !deleting else { return }
+                deleting = true
+                Task {
+                    let ok = await auth.deleteAccount()
+                    deleting = false
+                    if ok { dismiss() } else { deleteError = true }
+                }
             }
-            .alert("Couldn't delete account", isPresented: $deleteError) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("Please try again or contact support@wordocious.com.")
-            }
+            .familyNotice("Couldn't delete account", isPresented: $deleteError,
+                          message: "Please try again or contact support@wordocious.com.")
             .softSheet(item: $infoKind) { InfoPage($0).presentationDetents([.large]) }
             .fullScreenCover(isPresented: $showTour) {
                 OnboardingView(replay: true) { play in

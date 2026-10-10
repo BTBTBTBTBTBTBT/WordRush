@@ -109,19 +109,21 @@ struct PublicProfileView: View {
         #endif
         // Moderation dialogs live on the container (not inside the header) so
         // the private-profile teaser branch can open them too.
-        .confirmationDialog("Report this user?", isPresented: $showReportDialog, titleVisibility: .visible) {
-            Button("Inappropriate username", role: .destructive) { fileReport("Inappropriate username") }
-            Button("Inappropriate profile content", role: .destructive) { fileReport("Inappropriate profile content") }
-            Button("Cheating / fake scores", role: .destructive) { fileReport("Cheating / fake scores") }
-            Button("Other", role: .destructive) { fileReport("Other") }
-            Button("Cancel", role: .cancel) {}
-        } message: { Text("Reports are reviewed by the Wordocious team.") }
-        .confirmationDialog("Block this user?", isPresented: $showBlockConfirm, titleVisibility: .visible) {
-            Button("Block", role: .destructive) {
-                Task { await ModerationService.block(userId: userId); moderationToast = "User blocked" }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: { Text("You won't see this player on leaderboards or records.") }
+        // Founder 10-09: the reasons in the family menu (speech-bubble rows), not a system action sheet.
+        .familyActionMenu(item: Binding(get: { showReportDialog ? FamilyMenuToken(id: "report") : nil },
+                                        set: { if $0 == nil { showReportDialog = false } })) { _ in
+            FamilyActionMenuModel(
+                title: "Report this user?", subtitle: "Reports are reviewed by the Wordocious team.",
+                actions: ["Inappropriate username", "Inappropriate profile content", "Cheating / fake scores", "Something else"].map { r in
+                    FamilyMenuAction(id: r, title: r, icon: .clay("flag"), tint: FamilyMenuInk.pink) {
+                        fileReport(r == "Something else" ? "Other" : r)
+                    }
+                }, notes: true)
+        }
+        .familyConfirm("Block this user?", isPresented: $showBlockConfirm,
+                       message: "You won't see this player on leaderboards or records.", confirm: "Block", danger: true) {
+            Task { await ModerationService.block(userId: userId); moderationToast = "User blocked" }
+        }
     }
 
     private func loadAll() async {
@@ -335,7 +337,7 @@ struct PublicProfileView: View {
                 }
             }
         }
-        return FamilyActionMenuModel(title: "React", subtitle: "Send \(name) a quick note", actions: rows)
+        return FamilyActionMenuModel(title: "React", subtitle: "Send \(name) a quick note", actions: rows, notes: true)
     }
 
     private func friendAct(_ work: @escaping () async -> Void) {

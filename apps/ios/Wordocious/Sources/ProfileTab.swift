@@ -927,25 +927,17 @@ struct ProfileTab: View {
                 NotificationService.cancel()
             }
         }
-        .alert("Notifications are off", isPresented: $reminderDenied) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Enable notifications for Wordocious in iOS Settings to get a daily reminder.")
+        .familyNotice("Notifications are off", isPresented: $reminderDenied,
+                      message: "Enable notifications for Wordocious in iOS Settings to get a daily reminder.")
+        .familyConfirm("Delete your account?", isPresented: $showDeleteConfirm,
+                       message: "This permanently deletes your profile, stats, streak, medals, achievements and all game data. It can't be undone.",
+                       confirm: "Delete Forever", danger: true) {
+            guard !deleting else { return }
+            deleting = true
+            Task { let ok = await auth.deleteAccount(); deleting = false; if !ok { deleteError = true } }
         }
-        .alert("Delete your account?", isPresented: $showDeleteConfirm) {
-            Button("Cancel", role: .cancel) {}
-            Button(deleting ? "Deleting…" : "Delete Forever", role: .destructive) {
-                deleting = true
-                Task { let ok = await auth.deleteAccount(); deleting = false; if !ok { deleteError = true } }
-            }.disabled(deleting)
-        } message: {
-            Text("This will permanently delete your profile, stats, streak, medals, achievements, and all game data. This action cannot be undone.")
-        }
-        .alert("Couldn't delete account", isPresented: $deleteError) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Please try again or contact support@wordocious.com.")
-        }
+        .familyNotice("Couldn't delete account", isPresented: $deleteError,
+                      message: "Please try again or contact support@wordocious.com.")
     }
 
     /// Insight strings for the All view — ports the web `insights` IIFE

@@ -253,13 +253,11 @@ struct InvitePanelView: View {
             ActivityShareSheet(text: ShareCopy.invite(url: "").trimmingCharacters(in: .whitespaces), url: item.url)
                 .presentationDetents([.medium])
         }
-        .alert("Cancel invite \(cancelTarget?.code ?? "")?", isPresented: Binding(get: { cancelTarget != nil }, set: { if !$0 { cancelTarget = nil } })) {
-            Button("Keep it", role: .cancel) {}
-            Button("Cancel invite", role: .destructive) {
-                if let t = cancelTarget { cancel(t) }
-            }
-        } message: {
-            Text("The link stops working immediately and your invite slot frees up.")
+        .familyConfirm("Cancel invite \(cancelTarget?.code ?? "")?",
+                       isPresented: Binding(get: { cancelTarget != nil }, set: { if !$0 { cancelTarget = nil } }),
+                       message: "The link stops working immediately and your invite slot frees up.",
+                       confirm: "Cancel invite", danger: true, cancel: "Keep it") {
+            if let t = cancelTarget { cancel(t) }
         }
     }
 

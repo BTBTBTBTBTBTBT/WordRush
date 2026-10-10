@@ -304,6 +304,8 @@ struct DressStage<Overlay: View>: View {
     var follow = false
     /// 2.8 item 40: VoiceOver's name for the standing mascot (nil = "Your mascot").
     var mascotLabel: String? = nil
+    /// Founder 10-09: a soft halo behind the figure (the podium Stage card glows in the place's metal).
+    var glow: Color? = nil
     @ViewBuilder var overlay: () -> Overlay
 
     var body: some View {
@@ -334,6 +336,15 @@ struct DressStage<Overlay: View>: View {
             }
             ZStack(alignment: .bottom) {
                 StageArt("art-dress-podium", width: podiumW)
+                if let glow {
+                    Ellipse()
+                        .fill(RadialGradient(colors: [glow.opacity(0.75), glow.opacity(0.28), .clear], center: .center,
+                                             startRadius: 0, endRadius: mascotSize * 0.72))
+                        .frame(width: mascotSize * 1.5, height: mascotSize * 1.35)
+                        .blur(radius: 10)
+                        .padding(.bottom, podiumH * 0.42 + mascotSize * 0.05)
+                        .allowsHitTesting(false)
+                }
                 Group {
                     if let photo {
                         let portrait = AvatarView(url: photo.url, username: photo.username, size: mascotSize * 0.74, userId: photo.userId)

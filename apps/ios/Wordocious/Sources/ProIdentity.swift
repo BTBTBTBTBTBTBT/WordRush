@@ -237,9 +237,8 @@ struct ProManageHandoffSheet: View {
             .padding(.horizontal, 22)
         }
         .presentationDetents([.medium])
-        .alert("Restore issue", isPresented: Binding(get: { store.lastError != nil }, set: { if !$0 { store.lastError = nil } })) {
-            Button("OK", role: .cancel) {}
-        } message: { Text(store.lastError ?? "") }
+        .familyNotice("Restore issue", isPresented: Binding(get: { store.lastError != nil }, set: { if !$0 { store.lastError = nil } }),
+                      message: store.lastError ?? "")
     }
 }
 

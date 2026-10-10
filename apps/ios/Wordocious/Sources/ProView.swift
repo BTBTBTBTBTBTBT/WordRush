@@ -72,11 +72,8 @@ struct ProView: View {
                     HeaderCircleButton(.icon(.back), size: 44, label: "Close") { dismiss() }
                 }
             }
-            .alert("Purchase issue", isPresented: Binding(get: { store.lastError != nil }, set: { if !$0 { store.lastError = nil } })) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(store.lastError ?? "")
-            }
+            .familyNotice("Purchase issue", isPresented: Binding(get: { store.lastError != nil }, set: { if !$0 { store.lastError = nil } }),
+                          message: store.lastError ?? "")
             .softSheet(isPresented: $showAuth) { AuthView() }
             .proManageHandoff($showManage)
         }

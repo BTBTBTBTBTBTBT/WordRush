@@ -190,22 +190,12 @@ struct FriendsPanelView: View {
         // §225: Unfriend confirmation — the mutation was only reachable from a
         // profile page the rows couldn't open. remove() prunes the cache and
         // notifies, so the roster refreshes itself.
-        .confirmationDialog(
-            "Unfriend \(unfriendTarget?.username ?? "")?",
-            isPresented: Binding(
-                get: { unfriendTarget != nil },
-                set: { if !$0 { unfriendTarget = nil } }),
-            titleVisibility: .visible
-        ) {
-            Button("Unfriend", role: .destructive) {
-                if let f = unfriendTarget {
-                    Task { _ = await FriendsService.remove(friendId: f.id) }
-                }
-                unfriendTarget = nil
+        .familyConfirm("Unfriend \(unfriendTarget?.username ?? "")?",
+                       isPresented: Binding(get: { unfriendTarget != nil }, set: { if !$0 { unfriendTarget = nil } }),
+                       message: "You can re-add them anytime.", confirm: "Unfriend", danger: true) {
+            if let f = unfriendTarget {
+                Task { _ = await FriendsService.remove(friendId: f.id) }
             }
-            Button("Cancel", role: .cancel) { unfriendTarget = nil }
-        } message: {
-            Text("You can re-add them anytime.")
         }
         // §225: programmatic push for the context menu's View Profile — the
         // HomeView isPresented idiom (menu items can't be NavigationLinks).
@@ -686,23 +676,16 @@ struct FriendsPanelView: View {
             }
             allFriendsBlock(layout.rest, friends: friends, slackers: slackers, openByDefault: layout.cards.isEmpty)
         }
-        .confirmationDialog(
-            "Resign \(resignTarget?.title ?? "this game")?",
-            isPresented: Binding(get: { resignTarget != nil }, set: { if !$0 { resignTarget = nil } }),
-            titleVisibility: .visible
-        ) {
-            Button("Resign", role: .destructive) {
-                if let g = resignTarget {
-                    Task {
-                        _ = await FriendlyGamesService.resign(g.id)
-                        await FriendlyGamesService.load()
-                    }
+        .familyConfirm("Resign \(resignTarget?.title ?? "this game")?",
+                       isPresented: Binding(get: { resignTarget != nil }, set: { if !$0 { resignTarget = nil } }),
+                       message: "Resigning hands \(resignTarget?.opponent.username ?? "them") the win.",
+                       confirm: "Resign", danger: true, cancel: "Keep playing") {
+            if let g = resignTarget {
+                Task {
+                    _ = await FriendlyGamesService.resign(g.id)
+                    await FriendlyGamesService.load()
                 }
-                resignTarget = nil
             }
-            Button("Keep playing", role: .cancel) { resignTarget = nil }
-        } message: {
-            Text("Resigning hands \(resignTarget?.opponent.username ?? "them") the win.")
         }
     }
 

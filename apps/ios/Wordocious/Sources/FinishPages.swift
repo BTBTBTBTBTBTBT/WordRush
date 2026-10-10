@@ -1036,7 +1036,8 @@ struct PodiumStageCard: View {
         VStack(spacing: 0) {
             DressStage(config: posed, initial: AvatarCatalog.initial(entry.username),
                        photo: r.photoUrl != nil ? (r.photoUrl, entry.username, entry.id) : nil,
-                       height: 250, mascotSize: 160, mascotLabel: A11yLabels.mascot(own: false, name: entry.name)) {
+                       height: 250, mascotSize: 160, mascotLabel: A11yLabels.mascot(own: false, name: entry.name),
+                       glow: [Color(hex: 0xFCD34D), Color(hex: 0xE2E8F0), Color(hex: 0xFB923C)][min(max(place, 1), 3) - 1]) {
                 VStack {
                     HStack {
                         Spacer(minLength: 0)
@@ -1046,13 +1047,16 @@ struct PodiumStageCard: View {
                 }
                 .padding(8)
             }
-            VStack(spacing: 4) {
-                Text(entry.name).font(Brand.font(20, .black)).foregroundStyle(FinishInk.heading)
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                Text(entry.value).font(Brand.font(15, .heavy)).monospacedDigit().foregroundStyle(FinishInk.secondary)
+            // Founder 10-09 ("no more plain text anywhere"): the name and the points in the bubble lettering, the name in
+            // the player's own color (their backdrop), and View profile as the family candy button.
+            VStack(spacing: 6) {
+                BubbleTextView(text: entry.name.uppercased(), palette: .accent(PlayerTint.nameColor(userId: entry.id, username: entry.username)),
+                               maxSize: 30, minSize: 18, animated: false)
+                BubbleTextView(text: entry.value.uppercased(), palette: .accent(Color(hex: 0xF5B82E)), maxSize: 22, minSize: 14,
+                               animated: false)
                 if let onProfile {
-                    Button { Haptics.tap(); dismiss(); onProfile() } label: { Text("View profile") }
-                        .buttonStyle(QuietButtonStyle(size: .small))
+                    Button { Haptics.tap(); dismiss(); onProfile() } label: { CandyLabel(title: "View profile") }
+                        .buttonStyle(CastButtonStyle(color: .purple, size: .medium, fullWidth: false))
                         .padding(.top, 6)
                 }
             }

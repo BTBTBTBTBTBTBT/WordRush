@@ -46,13 +46,11 @@ struct LinkedSignInsSection: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .task { await load() }
-        .confirmationDialog(confirmUnlink.map { "Unlink \(displayName($0.provider))?" } ?? "",
-                            isPresented: Binding(get: { confirmUnlink != nil }, set: { if !$0 { confirmUnlink = nil } }),
-                            titleVisibility: .visible) {
-            Button("Unlink", role: .destructive) { if let id = confirmUnlink { unlink(id) } }
-            Button("Cancel", role: .cancel) { confirmUnlink = nil }
-        } message: {
-            Text("You won't be able to sign in with it anymore. Your other sign-ins keep working.")
+        .familyConfirm(confirmUnlink.map { "Unlink \(displayName($0.provider))?" } ?? "",
+                       isPresented: Binding(get: { confirmUnlink != nil }, set: { if !$0 { confirmUnlink = nil } }),
+                       message: "You won't be able to sign in with it anymore. Your other sign-ins keep working.",
+                       confirm: "Unlink", danger: true) {
+            if let id = confirmUnlink { unlink(id) }
         }
     }
 

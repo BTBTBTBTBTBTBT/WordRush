@@ -51,7 +51,7 @@ enum FamilyMenuInk {
 
     /// The sheet height for a header + this menu's tiles and danger lines (grabber, header, grid, bottom air).
     /// A menu whose choices are sentences (React's quick notes) lists them one per row as speech bubbles, whole.
-    static func isNotes(_ m: FamilyActionMenuModel) -> Bool { m.actions.contains { !$0.danger && $0.title.count > 18 } }
+    static func isNotes(_ m: FamilyActionMenuModel) -> Bool { m.notes }
     static let noteHeight: CGFloat = 54
 
     static func height(_ m: FamilyActionMenuModel) -> CGFloat {
@@ -77,6 +77,8 @@ struct FamilyActionMenuModel {
     let actions: [FamilyMenuAction]
     /// Founder 10-09: a person's menu draws their name in the bubble lettering, in their own color (their backdrop).
     var titleColor: Color? = nil
+    /// The choices are sentences (React's quick notes, Report reasons): one per row as speech bubbles, whole.
+    var notes: Bool = false
 }
 
 struct FamilyActionMenu: View {
@@ -93,13 +95,10 @@ struct FamilyActionMenu: View {
             HStack(spacing: 12) {
                 if let avatar = model.avatar { avatar }
                 VStack(alignment: .leading, spacing: 2) {
-                    if let tc = model.titleColor {
-                        BubbleTextView(text: model.title.uppercased(), palette: .accent(tc), maxSize: 26, minSize: 15,
-                                       animated: false, alignment: .leading)
-                    } else {
-                        Text(model.title).font(Brand.font(19, .black)).foregroundStyle(FamilyMenuInk.heading)
-                            .lineLimit(1).minimumScaleFactor(0.7)
-                    }
+                    // Founder 10-09 ("no more plain text anywhere"): every menu title in the bubble lettering — a person's
+                    // menu in their own color, the rest in the brand purple.
+                    BubbleTextView(text: model.title.uppercased(), palette: .accent(model.titleColor ?? Color(hex: 0x8B5CF6)),
+                                   maxSize: 26, minSize: 15, animated: false, alignment: .leading)
                     if let s = model.subtitle {
                         Text(s).font(Brand.font(12, .heavy)).foregroundStyle(FamilyMenuInk.sub).lineLimit(1)
                     }
@@ -300,5 +299,84 @@ private struct BubbleTail: Shape {
         p.addQuadCurve(to: CGPoint(x: r.minX + 1, y: r.maxY), control: CGPoint(x: r.midX + 1, y: r.midY))
         p.closeSubpath()
         return p
+    }
+}
+
+// MARK: - The family confirm (founder 10-09: "none should look like this" — no system alerts or action sheets)
+
+/// A short yes/no (or just OK) in the family look: the soft sheet, the question in the bubble lettering, the line under it,
+/// then the candy confirm beside a quiet cancel. Danger confirms (Unfriend, Delete Forever) take the pink candy.
+struct FamilyConfirm: View {
+    let title: String
+    let message: String
+    let confirm: String
+    let danger: Bool
+    /// nil = a notice with one button (the confirm).
+    let cancel: String?
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    static func height(message: String) -> CGFloat { 250 + (message.count > 90 ? 40 : 0) }
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Capsule().fill(FriendsInk.pink.wash(0.35)).frame(width: 40, height: 5).padding(.top, 8)
+                .accessibilityHidden(true)
+            BubbleTextView(text: title.uppercased(), palette: .accent(danger ? Color(hex: 0xEC4899) : Color(hex: 0x8B5CF6)),
+                           maxSize: 28, minSize: 16, animated: false)
+                .padding(.horizontal, 8)
+            Text(message).font(Brand.font(14.5, .bold)).foregroundStyle(FamilyMenuInk.sub)
+                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12)
+            HStack(spacing: 10) {
+                if let cancel {
+                    Button(action: onCancel) { CandyLabel(title: cancel) }
+                        .buttonStyle(QuietButtonStyle(size: .medium, fullWidth: true))
+                }
+                Button(action: onConfirm) { CandyLabel(title: confirm) }
+                    .buttonStyle(CastButtonStyle(color: danger ? .pink : .purple, size: .medium, fullWidth: true))
+            }
+            .padding(.top, 4)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 18)
+        .environment(\.colorScheme, FamilyMenuInk.night ? .dark : .light)
+    }
+}
+
+private struct FamilyConfirmModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    let title: String
+    let message: String
+    let confirm: String
+    let danger: Bool
+    let cancel: String?
+    let action: () -> Void
+
+    func body(content: Content) -> some View {
+        content.softSheet(isPresented: $isPresented) {
+            // The action runs at the tap (it reads its target before the binding clears it); follow-ups are async.
+            FamilyConfirm(title: title, message: message, confirm: confirm, danger: danger, cancel: cancel,
+                          onConfirm: { action(); isPresented = false },
+                          onCancel: { isPresented = false })
+                .background(FamilyMenuInk.sheet.ignoresSafeArea())
+                .presentationDetents([.height(FamilyConfirm.height(message: message))])
+                .presentationDragIndicator(.hidden)
+                .modifier(FamilyMenuSheetChrome())
+        }
+    }
+}
+
+extension View {
+    /// The family yes/no sheet (replaces `.alert` / `.confirmationDialog`). `cancel` nil = a one-button notice.
+    func familyConfirm(_ title: String, isPresented: Binding<Bool>, message: String, confirm: String = "OK",
+                       danger: Bool = false, cancel: String? = "Cancel", action: @escaping () -> Void = {}) -> some View {
+        modifier(FamilyConfirmModifier(isPresented: isPresented, title: title, message: message, confirm: confirm,
+                                       danger: danger, cancel: cancel, action: action))
+    }
+
+    /// A one-button notice ("Notifications are off", "Couldn't delete account").
+    func familyNotice(_ title: String, isPresented: Binding<Bool>, message: String) -> some View {
+        familyConfirm(title, isPresented: isPresented, message: message, confirm: "OK", cancel: nil)
     }
 }
