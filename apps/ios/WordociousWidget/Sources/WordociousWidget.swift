@@ -898,7 +898,9 @@ struct MediumView: View {
             let cols: CGFloat = hasPuzzles ? 9 : 4
             let byWidth: CGFloat = (W - (cols - (hasPuzzles ? 2 : 1)) * gap - (hasPuzzles ? middle : 0)) / cols
             let ring: CGFloat = 38
-            let byHeight: CGFloat = (H - ring - bottom - 2 * vGap - gap) / 2
+            // Founder 10-10: a white DAILIES / PUZZLES label over each group, a hairline between the groups.
+            let label: CGFloat = 10, labelGap: CGFloat = 3
+            let byHeight: CGFloat = (H - ring - bottom - 2 * vGap - gap - label - labelGap) / 2
             let c: CGFloat = max(16, min(44, min(byWidth, byHeight)))
             let gridH: CGFloat = 2 * c + gap
             VStack(spacing: 0) {
@@ -924,15 +926,25 @@ struct MediumView: View {
                 .frame(height: ring)
                 Spacer(minLength: vGap)
                 HStack(spacing: 0) {
-                    ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: c, spread: true)
-                        .frame(width: 4 * c + 3 * gap, height: gridH)
+                    VStack(alignment: .leading, spacing: labelGap) {
+                        Caps(text: "DAILIES", color: .white).frame(height: label)
+                        ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: c, spread: true)
+                            .frame(width: 4 * c + 3 * gap, height: gridH)
+                    }
                     if hasPuzzles {
-                        Spacer(minLength: middle)
-                        ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, maxChip: c, spread: true)
-                            .frame(width: 5 * c + 4 * gap, height: gridH)
+                        Spacer(minLength: 0)
+                        // The separation: a soft hairline between the two groups.
+                        Capsule().fill(Color.white.opacity(0.18))
+                            .frame(width: 1.5, height: gridH + label + labelGap - 6)
+                        Spacer(minLength: 0)
+                        VStack(alignment: .trailing, spacing: labelGap) {
+                            Caps(text: "PUZZLES", color: .white).frame(height: label)
+                            ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, maxChip: c, spread: true)
+                                .frame(width: 5 * c + 4 * gap, height: gridH)
+                        }
                     }
                 }
-                .frame(height: gridH)
+                .frame(height: gridH + label + labelGap)
                 Spacer(minLength: vGap)
                 Link(destination: homeURL) {
                     HStack(spacing: 8) {
