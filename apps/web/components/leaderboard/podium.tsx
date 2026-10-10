@@ -12,7 +12,7 @@ import { PodiumFigure, PODIUM_FIGURE_SCALE } from '@/components/leaderboard/podi
 import { PodiumStageCard } from '@/components/leaderboard/podium-stage-card';
 import { useFlags, useLivingMascotOn } from '@/hooks/use-flags';
 import { LevelBadge } from '@/components/badges/badge-art';
-import { PODIUM_GLOW, PODIUM_SPARKLES, PODIUM_STEP_HEIGHT, PODIUM_TONE_PLACE, podiumColumn, podiumPedestalArt, podiumSlots, podiumTone, type PodiumTone } from '@/lib/leaderboard-podium';
+import { PODIUM_GLOW, PODIUM_SPARKLES, PODIUM_STEP_HEIGHT, PODIUM_STEP_HEIGHT_COMPACT, PODIUM_TONE_PLACE, podiumColumn, podiumPedestalArt, podiumSlots, podiumTone, type PodiumTone } from '@/lib/leaderboard-podium';
 import { alphaHex } from '@/lib/soft-surface';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { AVATAR_CAST_COLOR } from '@/lib/avatar-cast';
@@ -114,8 +114,8 @@ export function PodiumFloor({ inset = 12 }: { inset?: number }) {
   );
 }
 
-function Step({ tone, rank, dim = false }: { tone: PodiumTone; rank: number; dim?: boolean }) {
-  return <PodiumPedestal place={PODIUM_TONE_PLACE[tone]} height={PODIUM_STEP_HEIGHT[tone]} label={rank} dim={dim} />;
+function Step({ tone, rank, dim = false, compact = false }: { tone: PodiumTone; rank: number; dim?: boolean; compact?: boolean }) {
+  return <PodiumPedestal place={PODIUM_TONE_PLACE[tone]} height={compact ? PODIUM_STEP_HEIGHT_COMPACT[tone] : PODIUM_STEP_HEIGHT[tone]} label={rank} dim={dim} />;
 }
 
 /**
@@ -145,7 +145,7 @@ export function PodiumGlow({ tone, figureHeight, top }: { tone: PodiumTone; figu
   );
 }
 
-function Column({ place, index }: { place: PodiumPlace; index: number }) {
+function Column({ place, index, compact = false }: { place: PodiumPlace; index: number; compact?: boolean }) {
   const tone = podiumTone(place.rank);
   const first = tone === 'gold';
   // 2.8 item 13 (behind the living mascot switch): the name + points ride on a soft plaque overlapping the step,
@@ -156,14 +156,14 @@ function Column({ place, index }: { place: PodiumPlace; index: number }) {
   const burstOn = livingOn && isLive('podium_burst');
   const [stageOpen, setStageOpen] = React.useState(false);
   // the figure's box in the column (for the glow behind it): the standing mascot is 2x the tile; the framed tile has the crown above it
-  const tile = first ? 54 : 44;
+  const tile = compact ? (first ? 48 : 40) : (first ? 54 : 44);
   const figH = livingOn ? tile * PODIUM_FIGURE_SCALE : tile;
   const figTop = livingOn ? figH / 2 : (first ? 18 : 0) + figH / 2;
   const info = (
     <>
       <Link
         href={`/profile/${place.userId}`}
-        className="max-w-full truncate text-[13px] font-black leading-tight hover:opacity-80 transition-opacity"
+        className={`max-w-full truncate ${compact ? 'text-[12px]' : 'text-[13px]'} font-black leading-tight hover:opacity-80 transition-opacity`}
         style={{ color: place.isMe ? '#d97706' : 'var(--color-text)' }}
       >
         {place.username}
@@ -171,7 +171,7 @@ function Column({ place, index }: { place: PodiumPlace; index: number }) {
         {place.nameSuffix}
       </Link>
       <div className="flex items-center justify-center gap-1 max-w-full">
-        <SoftNum size={13}>{place.points}</SoftNum>
+        <SoftNum size={compact ? 11 + (first ? 1.5 : 0) : 13}>{place.points}</SoftNum>
         {place.badge}
       </div>
       {place.extra}
@@ -192,17 +192,17 @@ function Column({ place, index }: { place: PodiumPlace; index: number }) {
         <button type="button" onClick={() => (place.isMe ? openDressUp() : setStageOpen(true))}
           aria-label={place.isMe ? 'Dress up your mascot' : podiumStageCardLabel(place.username, place.rank)}
           className="block border-0 bg-transparent p-0 cursor-pointer" style={{ lineHeight: 0 }}>
-          <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={first ? 54 : 44} ring={place.isMe ? '#f59e0b' : undefined} />
+          <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={tile} ring={place.isMe ? '#f59e0b' : undefined} />
         </button>
       ) : (
         <Link href={`/profile/${place.userId}`} tabIndex={-1} aria-hidden="true" className="block" style={{ lineHeight: 0 }}>
-          <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={first ? 54 : 44} />
+          <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={tile} />
         </Link>
       )}
       {livingOn ? (
         <div className="podium-plaque relative flex flex-col items-center max-w-full" style={{ gap: 2, padding: '4px 10px', zIndex: 2 }}>{info}</div>
       ) : info}
-      <Step tone={tone} rank={place.rank} />
+      <Step tone={tone} rank={place.rank} compact={compact} />
       {cardOn && !place.isMe && <PodiumStageCard place={place} tone={PODIUM_TONE_PLACE[tone]} open={stageOpen} onOpenChange={setStageOpen} />}
     </div>
   );
@@ -214,7 +214,7 @@ const OPEN_SPOT_H = 44;
 const OPEN_SPOT_W = Math.round((OPEN_SPOT_H * 373) / 302);
 
 /** BJ4: a free place — its step dimmed, the sleepy R where the avatar goes, "Open spot" · "Claim #N". Not tappable. */
-function OpenSpot({ place, column, title, line }: { place: number; column: 1 | 2 | 3; title: string; line: string }) {
+function OpenSpot({ place, column, title, line, compact = false }: { place: number; column: 1 | 2 | 3; title: string; line: string; compact?: boolean }) {
   return (
     <div className="relative flex flex-col items-center min-w-0" style={{ gap: 4, gridColumn: column, gridRow: 1 }}>
       <span className="sr-only">{title}, {line}</span>
@@ -233,7 +233,7 @@ function OpenSpot({ place, column, title, line }: { place: number; column: 1 | 2
       />
       <span aria-hidden="true" className="max-w-full truncate text-[13px] font-black leading-tight" style={{ color: 'var(--color-text-secondary)' }}>{title}</span>
       <span aria-hidden="true" className="text-[11px] font-extrabold leading-tight" style={{ color: 'var(--color-text-muted)' }}>{line}</span>
-      <Step tone={podiumTone(place)} rank={place} dim />
+      <Step tone={podiumTone(place)} rank={place} dim compact={compact} />
     </div>
   );
 }
@@ -287,7 +287,7 @@ function Stage({ accent }: { accent: string }) {
  * order), with an open spot for every free place (BJ4, core podiumLayout) on
  * the static stage in the board's `accent`.
  */
-export function Podium({ places, label = 'Top three', accent = STAGE_GOLD, bare = false }: { places: PodiumPlace[]; label?: string; accent?: string; bare?: boolean }) {
+export function Podium({ places, label = 'Top three', accent = STAGE_GOLD, bare = false, compact = false }: { places: PodiumPlace[]; label?: string; accent?: string; bare?: boolean; compact?: boolean }) {
   const shown = places.slice(0, 3);
   const slots = podiumSlots(shown.map((p) => p.rank));
   if (slots.length === 0) return null;
@@ -298,8 +298,8 @@ export function Podium({ places, label = 'Top three', accent = STAGE_GOLD, bare 
       <PodiumFloor />
       <div className="relative grid items-end" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, zIndex: 1, paddingBottom: PODIUM_FLOOR_RISE }}>
         {slots.map((s) => (s.kind === 'place'
-          ? <Column key={shown[s.index].key} place={shown[s.index]} index={s.index} />
-          : <OpenSpot key={`open-${s.place}`} place={s.place} column={s.column} title={s.title} line={s.line} />))}
+          ? <Column key={shown[s.index].key} place={shown[s.index]} index={s.index} compact={compact} />
+          : <OpenSpot key={`open-${s.place}`} place={s.place} column={s.column} title={s.title} line={s.line} compact={compact} />))}
       </div>
     </div>
   );

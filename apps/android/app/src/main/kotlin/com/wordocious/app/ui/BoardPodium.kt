@@ -236,6 +236,8 @@ fun BoardPodium(
     avatar: Dp = 44.dp,
     /** 11b: on the Leaderboard stage the shared backdrop already draws the light + glow — no stage of its own. */
     bare: Boolean = false,
+    /** Founder 10-09: the smaller copy (Yesterday): shorter steps, a smaller figure and type; same glows, points and detail lines. */
+    compact: Boolean = false,
 ) {
     val byPlace = spots.associateBy { it.place }
     val dark = WTheme.isDark
@@ -253,8 +255,13 @@ fun BoardPodium(
     ) {
         listOf(2, 1, 3).forEach { place ->
             val s = byPlace[place]
-            val a = if (place == 1) avatar * 1.22f else avatar
-            val stepH = when (place) { 1 -> 74.dp; 2 -> 54.dp; else -> 40.dp }
+            val base = if (compact) 40.dp else avatar
+            val a = if (place == 1) base * 1.22f else base
+            val stepH = when (place) {
+                1 -> if (compact) 62.dp else 74.dp
+                2 -> if (compact) 46.dp else 54.dp
+                else -> if (compact) 34.dp else 40.dp
+            }
             val stands = s != null && podiumStands(s.username ?: s.name, s.userId, s.avatarUrl, s.config, s.castId, s.frame, s.accentHex)
             val opensCard = stands && s != null && com.wordocious.app.data.FlagsService.isLive("podium_stage_card") && !com.wordocious.app.data.PlayerAvatars.isOwn(s.userId, s.username ?: s.name)
             Column(
@@ -289,7 +296,7 @@ fun BoardPodium(
                                 frame = s.frame, accentHex = s.accentHex, podiumPlace = place,
                             )
                             // the crown sits ON the first place's head
-                            if (place == 1) Icon3D(Icon3DName.CROWN, 34.dp, Modifier.offset(y = -(a * PODIUM_FIGURE_SCALE * 0.05f)))
+                            if (place == 1) Icon3D(Icon3DName.CROWN, if (compact) 28.dp else 34.dp, Modifier.offset(y = -(a * PODIUM_FIGURE_SCALE * 0.05f)))
                         }
                     } else Box(
                         Modifier.podiumGlow(place, a, (if (place == 1) 18.dp else 0.dp) + a / 2),
@@ -300,7 +307,7 @@ fun BoardPodium(
                             userId = s.userId, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
                             frame = s.frame, accentHex = s.accentHex,
                         )
-                        if (place == 1) Icon3D(Icon3DName.CROWN, 26.dp)
+                        if (place == 1) Icon3D(Icon3DName.CROWN, if (compact) 24.dp else 26.dp)
                     }
                     // Name, points and detail ride on a soft plaque above the step when the figure stands.
                     Column(
@@ -314,16 +321,16 @@ fun BoardPodium(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            s.name, fontSize = 13.sp, fontWeight = FontWeight.Black,
+                            s.name, fontSize = if (compact) 12.sp else 13.sp, fontWeight = FontWeight.Black,
                             color = if (dark) WTheme.text else FinishInk.heading,
                             maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                         )
                         // Points stay the headline (#1 a touch larger), then ONE muted detail line,
                         // shrink-to-fit, never wrapping into the pedestal.
-                        SoftNumber(s.points, if (place == 1) 14.5.sp else 13.sp)
+                        SoftNumber(s.points, if (compact) (if (place == 1) 12.5.sp else 11.sp) else (if (place == 1) 14.5.sp else 13.sp))
                         s.detail?.takeIf { it.isNotEmpty() }?.let { d ->
                             FitText(
-                                d, 10.sp, Modifier.fillMaxWidth().padding(top = 0.dp).offset(y = (-2).dp),
+                                d, if (compact) 9.sp else 10.sp, Modifier.fillMaxWidth().padding(top = 0.dp).offset(y = (-2).dp),
                                 color = (if (dark) WTheme.textMuted else LB_SUB_INK).copy(alpha = if (place == 1) 1f else 0.85f),
                                 fontWeight = if (place == 1) FontWeight.ExtraBold else FontWeight.Bold,
                                 textAlign = TextAlign.Center, minScale = 0.6f,

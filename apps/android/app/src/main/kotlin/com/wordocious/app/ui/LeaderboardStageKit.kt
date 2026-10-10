@@ -6,13 +6,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -225,28 +225,69 @@ private fun ResetLine() {
     )
 }
 
-/** The compact "Your board" button = today's VIEW BOARD: the family gold cast button, small (founder 10-09: the art pill read as ugly). */
+/**
+ * The compact "Your board" button = today's VIEW BOARD: the family cast button, small, in the board's game color
+ * (founder 10-09: the art pill read as ugly; the button wears the game's own color). [accent] null = gold.
+ */
 @Composable
-internal fun YourBoardPill(onClick: () -> Unit, label: String = "Your board") {
-    CastButton(text = label, onClick = onClick, color = CastColor.GOLD, size = CastSize.S)
+internal fun YourBoardPill(onClick: () -> Unit, label: String = "Your board", accent: Color? = null) {
+    CastButton(text = label, onClick = onClick, color = accent?.let { castColorForAccent(it.red, it.green, it.blue) } ?: CastColor.GOLD, size = CastSize.S)
 }
 
 /**
- * The stage's base: the "Yesterday" ledge art with yesterday's top three as small mascots on its steps; tap to expand
- * the full list in place ([expanded]). [minis] are the podium spots (any order; matched by place).
+ * The family cast color nearest a game accent's HUE (<18 / >=335 deg pink, <40 orange, <62 gold, <150 green, <190 teal,
+ * <245 blue, <300 purple; low saturation = slate). Mirrors iOS YourBoardPill.castColor and web castColorForAccent.
+ */
+internal fun castColorForAccent(r: Float, g: Float, b: Float): CastColor {
+    val max = maxOf(r, g, b)
+    val min = minOf(r, g, b)
+    val d = max - min
+    val sat = if (max == 0f) 0f else d / max
+    if (sat < 0.18f) return CastColor.SLATE
+    var deg = 0f
+    if (d > 0f) {
+        deg = when (max) {
+            r -> ((g - b) / d).mod(6f)
+            g -> (b - r) / d + 2f
+            else -> (r - g) / d + 4f
+        } * 60f
+    }
+    return when {
+        deg < 18f || deg >= 335f -> CastColor.PINK
+        deg < 40f -> CastColor.ORANGE
+        deg < 62f -> CastColor.GOLD
+        deg < 150f -> CastColor.GREEN
+        deg < 190f -> CastColor.TEAL
+        deg < 245f -> CastColor.BLUE
+        deg < 300f -> CastColor.PURPLE
+        else -> CastColor.PINK
+    }
+}
+
+/** The main stage podium's one fixed min height (founder 10-09; iOS stagePodiumHeight 300): no shift switching games. */
+internal val STAGE_PODIUM_HEIGHT = 300.dp
+
+/** Yesterday's small podium keeps one fixed height (founder 10-09) so the page never jumps while it loads. */
+internal val YESTERDAY_PODIUM_HEIGHT = 210.dp
+
+/**
+ * Yesterday (founder 10-09): it sits UNDER today's last player and the Completed Today line (not inside the stage), and
+ * collapsed it is a SMALLER COPY of the main podium (gold / silver / bronze steps, the top three's points + detail lines,
+ * the same glows) at a fixed height; tap to open everyone else ([expanded], rows only). [minis] are the podium spots.
  */
 @Composable
 internal fun StageYesterdayLedge(
     minis: List<BoardPodiumSpot>,
     open: Boolean,
     loading: Boolean,
+    accent: Color,
     onToggle: () -> Unit,
     share: @Composable () -> Unit,
     expanded: @Composable () -> Unit,
 ) {
-    // Known and empty: no ledge (a blank podium reads unfinished), just one calm line beside the header.
+    // Known and empty: no podium (a blank podium reads unfinished), just one calm line beside the header.
     val empty = !loading && minis.isEmpty()
-    Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 8.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, bottom = 8.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             if (empty) {
                 Row(
@@ -283,28 +324,19 @@ internal fun StageYesterdayLedge(
             if (open && !empty) share()
         }
         if (!empty) {
-            BoxWithConstraints(
-                Modifier.fillMaxWidth().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = onToggle),
-                contentAlignment = Alignment.TopCenter,
+            Box(
+                Modifier.fillMaxWidth().height(YESTERDAY_PODIUM_HEIGHT).clickable(
+                    interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button,
+                    onClickLabel = if (open) "Hide yesterday's full list" else "Show yesterday's full list", onClick = onToggle,
+                ),
+                contentAlignment = Alignment.BottomCenter,
             ) {
-                val w = if (maxWidth > 394.dp) 394.dp else maxWidth
-                val h = w * 160f / 394f
-                Box(Modifier.width(w).height(h)) {
-                    Image(painterResource(R.drawable.art_lb_ledge), null, Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
-                    if (!loading) {
-                        val fig = w * LeaderboardStage.LEDGE_FIGURE_FRACTION
-                        LeaderboardStage.LEDGE_STEPS.forEach { step ->
-                            val s = minis.firstOrNull { it.place == step.place } ?: return@forEach
-                            Box(
-                                Modifier.size(fig).offset(x = w * step.x - fig / 2, y = h * step.top - fig * 0.88f),
-                                contentAlignment = Alignment.BottomCenter,
-                            ) {
-                                PlayerAvatar(
-                                    s.username ?: s.name, fig, Modifier, userId = s.userId, avatarUrl = s.avatarUrl, config = s.config,
-                                    castId = s.castId, frame = s.frame, accentHex = s.accentHex, podiumPlace = s.place,
-                                )
-                            }
-                        }
+                if (!loading) {
+                    Box(Modifier.widthIn(max = 360.dp).fillMaxWidth()) {
+                        BoardPodium(
+                            minis.take(3), open = (minOf(minis.size, 3) + 1..3).toList(), accent = accent,
+                            bare = true, compact = true,
+                        )
                     }
                 }
             }
@@ -347,7 +379,7 @@ internal fun ModeStageStrip(
         }
         card?.engineMode?.let { gm ->
             if (played) {
-                YourBoardPill(onClick = { GameMotion.arm("lb:play"); onPlay(gm) })
+                YourBoardPill(onClick = { GameMotion.arm("lb:play"); onPlay(gm) }, accent = accent)
             } else {
                 CandyButton(
                     text = "PLAY", onClick = { GameMotion.arm("lb:play"); onPlay(gm) },

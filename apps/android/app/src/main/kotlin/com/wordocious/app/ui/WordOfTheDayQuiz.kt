@@ -119,6 +119,8 @@ internal fun WotdCardFrame(onClick: (() -> Unit)? = null, content: @Composable C
         spacing = 8.dp,
         radius = 20.dp,
         horizontalAlignment = Alignment.Start,
+        // Founder 10-09: the Home cards' frosting cap in the rainbow (band + soft drips), not the flat bar.
+        trim = true,
         content = content,
     )
 }

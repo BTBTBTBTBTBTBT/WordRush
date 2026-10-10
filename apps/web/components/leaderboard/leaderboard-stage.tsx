@@ -2,14 +2,15 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { castPreset, LEDGE_FIGURE_FRACTION, LEDGE_STEPS, STAGE_ART, STAGE_TINT, WIZARD_HAT_PART } from '@wordle-duel/core';
+import { castPreset, STAGE_ART, STAGE_TINT, WIZARD_HAT_PART } from '@wordle-duel/core';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { useAuth } from '@/lib/auth-context';
 import { artSrc, type ArtName } from '@/lib/art';
 import { alphaHex } from '@/lib/soft-surface';
 import { CastButton } from '@/components/ui/cast-button';
-import type { PodiumPlace } from '@/components/leaderboard/podium';
+import { castColorForAccent } from '@/lib/cast-accent';
+import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
 
 // FRIDAY-QUEUE items 11 + 11b: the Leaderboard is ONE living stage. These are its pieces; the page
 // (app/daily/page.tsx) composes them inside <LeaderboardStage>, which owns the continuous backdrop:
@@ -114,48 +115,43 @@ export function OwnMascot({ size, wizardHat = false, lean = 0, onTap, hopKey = 0
   );
 }
 
-/** The compact "Your board" button = today's VIEW BOARD: the family gold cast button, small (founder 10-09: the art pill read as ugly). */
-export function YourBoardButton({ onClick, label = 'Your board' }: { onClick: () => void; label?: string }) {
+/**
+ * The compact "Your board" button = today's VIEW BOARD: the family cast button, small, in the board's game color
+ * (founder 10-09: the art pill read as ugly; the button wears the game's own color). Default gold.
+ */
+export function YourBoardButton({ onClick, label = 'Your board', accent }: { onClick: () => void; label?: string; accent?: string }) {
   return (
-    <CastButton color="gold" size="sm" onClick={onClick} aria-label={label} className="shrink-0">
+    <CastButton color={accent ? castColorForAccent(accent) : 'gold'} size="sm" onClick={onClick} aria-label={label} className="shrink-0">
       {label}
     </CastButton>
   );
 }
 
-function LedgeFigure({ place, size }: { place: PodiumPlace; size: number }) {
-  const look = usePlayerAvatar({
-    name: place.username, userId: place.userId, url: place.avatarUrl, accent: place.avatar?.accent,
-    config: place.avatar?.config, castId: place.avatar?.castId, frame: place.avatar?.frame, level: place.level, pro: place.avatar?.pro,
-  });
-  return (
-    <span className="block" style={{ width: size, height: size, lineHeight: 0 }}>
-      <MascotAvatar config={look.config} initial={look.initial} size={size} cutout living />
-    </span>
-  );
-}
+/** The main stage podium's one fixed min height (px) across games, incl. the empty state (founder 10-09; iOS stagePodiumHeight 300). */
+export const STAGE_PODIUM_HEIGHT = 300;
+
+/** Yesterday's small podium keeps one fixed height (founder 10-09) so the page never jumps while it loads. */
+export const YESTERDAY_PODIUM_HEIGHT = 210;
 
 /**
- * The stage's BASE: "Yesterday" ledge with yesterday's top three as small mascots standing on mini
- * steps; tap to expand the full list in place (`children`) — same backdrop, no separate island.
+ * Yesterday (founder 10-09): it sits UNDER today's last player and the Completed Today line (not inside the stage),
+ * and its collapsed state is a SMALLER COPY of the main podium (gold / silver / bronze steps, the top three's points +
+ * detail lines, the same glows); tap to open everyone else (`children`, rows only).
  * `places` are yesterday's podium (1st, 2nd, 3rd in board order).
  */
-export function YesterdayLedge({ places, open, onToggle, loading, share, children }: {
+export function YesterdayLedge({ places, open, onToggle, loading, share, accent, children }: {
   places: PodiumPlace[];
   open: boolean;
   onToggle: () => void;
   loading: boolean;
   share?: ReactNode;
+  accent?: string;
   children: ReactNode;
 }) {
-  const W = 394;
-  const H = 160;
-  const artW = W;
-  const byPlace = new Map(places.map((p) => [p.rank <= 3 ? p.rank : 0, p] as const));
-  // Known and empty: no ledge (a blank podium reads unfinished), just one calm line in the header.
+  // Known and empty: no podium (a blank podium reads unfinished), just one calm line in the header.
   const empty = !loading && places.length === 0;
   return (
-    <div style={{ padding: '0 12px 8px' }}>
+    <div className="mb-3" style={{ padding: '0 4px 8px' }}>
       <div className="flex items-center justify-between" style={{ padding: '2px 4px' }}>
         {empty ? (
           <div className="flex items-baseline gap-2 min-w-0" style={{ padding: '4px 2px' }}>
@@ -176,36 +172,18 @@ export function YesterdayLedge({ places, open, onToggle, loading, share, childre
         )}
         {open && !empty && share}
       </div>
-      {/* the ledge: the art, with the mini winners standing on its three steps */}
+      {/* the small podium: a fixed height; tapping the stage toggles the list (the header button is the keyboard path) */}
       {!empty && (
-      <button data-squish
-        type="button"
-        onClick={onToggle}
-        aria-label={open ? 'Hide yesterday’s winners' : 'Show yesterday’s winners'}
-        className="relative block w-full border-0 bg-transparent p-0 cursor-pointer mx-auto"
-        style={{ maxWidth: artW, aspectRatio: `${W} / ${H}` }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={artSrc(STAGE_ART.ledge as ArtName)} alt="" width={W} height={H} decoding="async" draggable={false}
-          className="absolute inset-0 w-full h-full select-none pointer-events-none" />
-        {!loading && LEDGE_STEPS.map((s) => {
-          const p = byPlace.get(s.place);
-          if (!p) return null;
-          const size = Math.round(artW * LEDGE_FIGURE_FRACTION);
-          return (
-            <span
-              key={s.place}
-              className="absolute"
-              style={{ left: `${s.x * 100}%`, top: `${s.top * 100}%`, transform: 'translate(-50%, -88%)', width: `${LEDGE_FIGURE_FRACTION * 100}%`, maxWidth: size }}
-              title={p.username}
-            >
-              <LedgeFigure place={p} size={size} />
-            </span>
-          );
-        })}
-      </button>
+        <div
+          onClick={onToggle}
+          className="mx-auto cursor-pointer"
+          style={{ height: YESTERDAY_PODIUM_HEIGHT, maxWidth: 360, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+        >
+          {!loading && <Podium places={places} label="Yesterday's top three" accent={accent} compact bare />}
+        </div>
       )}
       {open && !empty && <div className="mt-1">{children}</div>}
     </div>
   );
 }
+

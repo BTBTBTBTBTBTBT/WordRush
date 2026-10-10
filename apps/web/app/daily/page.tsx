@@ -16,7 +16,7 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { PROFILE_MODES, modeByKey } from '@/components/profile/mode-picker';
 import { LeaderboardBanner } from '@/components/leaderboard/leaderboard-banner';
-import { LeaderboardStage, YesterdayLedge, YourBoardButton } from '@/components/leaderboard/leaderboard-stage';
+import { LeaderboardStage, STAGE_PODIUM_HEIGHT, YesterdayLedge, YourBoardButton } from '@/components/leaderboard/leaderboard-stage';
 import { MASCOT_LINES } from '@/lib/mascots';
 import { PAGE_SCENES, artSrc } from '@/lib/art';
 import { preloadMascotArt } from '@/components/avatar/mascot-avatar';
@@ -825,7 +825,7 @@ export default function DailyPage() {
               {/* Sweep isn't a playable puzzle — no button. After today's daily: the compact Your board
                   pill (= the old VIEW BOARD); before: PLAY. */}
               {!isSweep && (playedSelected
-                ? <YourBoardButton onClick={handlePlayDaily} />
+                ? <YourBoardButton onClick={handlePlayDaily} accent={color} />
                 : <CandyButton size="sm" color="purple" icon="play" onClick={handlePlayDaily} className="shrink-0">Play</CandyButton>)}
             </div>
 
@@ -855,7 +855,8 @@ export default function DailyPage() {
             </div>
 
             {/* The podium (or its empty state) — right under the strip, all three visible on a standard phone. */}
-            <div>
+            {/* Founder 10-09: ONE fixed podium height for every game (tallest case: 1st with crown + three-line plaques), incl. the empty and loading states, so nothing shifts while switching boards. */}
+            <div style={{ minHeight: STAGE_PODIUM_HEIGHT, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
               {boardLoading ? (
                 <div className="px-3 pb-2"><LeaderboardSkeleton /></div>
               ) : isSweep ? (
@@ -885,47 +886,6 @@ export default function DailyPage() {
               )}
             </div>
 
-            {/* The stage's base: Yesterday's winners on a ledge with mini steps; tap to expand in place. */}
-            <YesterdayLedge
-              places={isSweep ? ySweepPodium : yLbPodium}
-              open={showYesterday}
-              onToggle={() => setShowYesterday(!showYesterday)}
-              loading={yesterdayLoading}
-              share={
-                (isSweep ? yesterdaySweep.length > 0 : yesterdayLeaderboard.length > 0) ? (
-                  <HeaderGlyph
-                    icon="share"
-                    size={20}
-                    label="Share yesterday's podium"
-                    onClick={handleSharePodium}
-                    disabled={sharingPodium}
-                    style={{ minWidth: 40, opacity: sharingPodium ? 0.4 : 1 }}
-                  />
-                ) : null
-              }
-            >
-              <BoardCard className="mb-2">
-                {yesterdayLoading ? (
-                  <LeaderboardSkeleton />
-                ) : isSweep ? (
-                  yesterdaySweep.length === 0 ? (
-                    <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>No sweeps yesterday</div>
-                  ) : (
-                    <div>
-                      {ySweepSplit.podium.length > 0 && <Podium places={ySweepPodium} label="Yesterday's top sweepers" />}
-                      {ySweepSplit.rest.map(({ entry }, i) => renderSweepRow(entry, i + (ySweepPodium.length > 0 ? 1 : 0), ySweepOpts))}
-                    </div>
-                  )
-                ) : yesterdayLeaderboard.length === 0 ? (
-                  <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>No results from yesterday</div>
-                ) : (
-                  <div>
-                    <Podium places={yLbPodium} accent={color} label="Yesterday's top three" />
-                    {yLbSplit.rest.map(({ entry, rank }, i) => renderLbRow(entry, rank, i + (yLbPodium.length > 0 ? 1 : 0), yLbScoreLabels))}
-                  </div>
-                )}
-              </BoardCard>
-            </YesterdayLedge>
           </LeaderboardStage>
           </PullToRefresh>
         </div>
@@ -975,6 +935,48 @@ export default function DailyPage() {
             <CompletedDailyBoard modeId={selectedMode} />
           </SoftCompletedCards>
         )}
+        {/* Yesterday (founder 10-09): UNDER today's last player and the Completed Today line (not in the stage) — a small copy of the podium; tap to open everyone else. */}
+        <YesterdayLedge
+          places={isSweep ? ySweepPodium : yLbPodium}
+          open={showYesterday}
+          onToggle={() => setShowYesterday(!showYesterday)}
+          loading={yesterdayLoading}
+          accent={color}
+          share={
+            (isSweep ? yesterdaySweep.length > 0 : yesterdayLeaderboard.length > 0) ? (
+              <HeaderGlyph
+                icon="share"
+                size={20}
+                label="Share yesterday's podium"
+                onClick={handleSharePodium}
+                disabled={sharingPodium}
+                style={{ minWidth: 40, opacity: sharingPodium ? 0.4 : 1 }}
+              />
+            ) : null
+          }
+        >
+          <BoardCard className="mb-2">
+            {yesterdayLoading ? (
+              <LeaderboardSkeleton />
+            ) : (isSweep ? ySweepSplit.rest.length : yLbSplit.rest.length) === 0 && (isSweep ? yesterdaySweep.length : yesterdayLeaderboard.length) > 0 ? (
+              <div className="p-4 text-center text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>That was everyone yesterday</div>
+            ) : isSweep ? (
+              yesterdaySweep.length === 0 ? (
+                <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>No sweeps yesterday</div>
+              ) : (
+                <div>
+                  {ySweepSplit.rest.map(({ entry }, i) => renderSweepRow(entry, i, ySweepOpts))}
+                </div>
+              )
+            ) : yesterdayLeaderboard.length === 0 ? (
+              <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>No results from yesterday</div>
+            ) : (
+              <div>
+                {yLbSplit.rest.map(({ entry, rank }, i) => renderLbRow(entry, rank, i, yLbScoreLabels))}
+              </div>
+            )}
+          </BoardCard>
+        </YesterdayLedge>
         </div>
         </div>
       </div>

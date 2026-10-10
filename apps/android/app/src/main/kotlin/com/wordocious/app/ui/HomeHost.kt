@@ -168,6 +168,7 @@ internal fun HomeHost(
     invite: com.wordocious.core.AvatarConfig? = rememberHostInvite(),
 ) {
     val still = WTheme.reducedMotion || WTheme.calmMotion
+    val ownIsAlive = pick is HomeHostPick.Mascot && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT
     val hop = remember { Animatable(0f) }
     val wag = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
@@ -189,7 +190,9 @@ internal fun HomeHost(
         }
     }
     Box(
-        modifier.size(size).then(if (pick == HomeHostPick.W && invite != null) Modifier else Modifier.clearAndSetSemantics { })
+        // The invite host and your living mascot (founder 10-09: it answers a tap with a hop + its sound) stay in the
+        // accessibility tree; every other host is decoration.
+        modifier.size(size).then(if ((pick == HomeHostPick.W && invite != null) || ownIsAlive) Modifier else Modifier.clearAndSetSemantics { })
             .drawBehind {
                 // The soft floor shadow under its feet (on the strip): radial purple-black ~20% →
                 // clear, 78% × 13%, centered on the box's bottom edge.
@@ -222,7 +225,9 @@ internal fun HomeHost(
                 val drawn = remember(pick.config) { pick.config.copy(frame = "none") }
                 // BJ6 round 5: a full-body CUTOUT — no tile, backdrop, clip or frame (not a boxed sticker).
                 // 10-06: the player's own host is the living mascot while AvatarLiveConfig.LIVING_MASCOT is on.
-                if (com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) LivingMascot(drawn, initial, size, motion, cutout = true, label = null)
+                // Founder 10-09 (iOS interactive: true): a tap on YOUR living mascot makes it hop with its sound (the
+                // cast host still lets taps through to the card).
+                if (com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) LivingMascot(drawn, initial, size, motion, cutout = true, tappable = true, label = "Your mascot, tap to hop")
                 else MascotAvatar(drawn, initial, size, motion, cutout = true)
             }
             HomeHostPick.W -> {

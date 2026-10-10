@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -34,11 +35,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
@@ -244,6 +247,8 @@ private fun FamilyCard(
     spacing: Dp = 10.dp,
     radius: Dp = 28.dp,
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+    /** Founder 10-09: the Home cards' frosting cap (band + soft drips) in the rainbow instead of the flat 8 dp bar. */
+    trim: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(radius)
@@ -258,7 +263,7 @@ private fun FamilyCard(
             .clip(shape)
             .background(Brush.verticalGradient(listOf(top, bottom))),
     ) {
-        Box(Modifier.fillMaxWidth().height(8.dp).background(RAINBOW_BAR))
+        if (trim) RainbowCardTrim() else Box(Modifier.fillMaxWidth().height(8.dp).background(RAINBOW_BAR))
         Column(
             Modifier.fillMaxWidth().padding(contentPadding),
             horizontalAlignment = horizontalAlignment,
@@ -266,6 +271,35 @@ private fun FamilyCard(
             content = content,
         )
     }
+}
+
+/**
+ * Founder 10-09 (iOS guideHeroCard(trim:)): the Word of the Day card wears the Home game cards' frosting cap (CardTrimGeometry:
+ * a slim band whose bottom edge is a row of shallow drips) filled with the rainbow, plus the top white sheen. It takes the
+ * band's height of the layout; the drips hang over the content's top padding.
+ */
+@Composable
+private fun RainbowCardTrim() {
+    Box(
+        Modifier.fillMaxWidth().height(CardTrimGeometry.BAND.dp).wrapContentHeight(Alignment.Top, unbounded = true)
+            .height((CardTrimGeometry.BAND + CardTrimGeometry.DRIP).dp)
+            .clearAndSetSemantics { }
+            .drawWithCache {
+                val u = density
+                val path = Path().apply {
+                    moveTo(0f, 0f)
+                    lineTo(size.width, 0f)
+                    lineTo(size.width, CardTrimGeometry.BAND * u)
+                    for (seg in CardTrimGeometry.segments(size.width / u)) quadraticTo(seg[0] * u, seg[1] * u, seg[2] * u, seg[3] * u)
+                    close()
+                }
+                val sheen = Brush.verticalGradient(0f to Color.White.copy(alpha = 0.42f), 0.6f to Color.White.copy(alpha = 0f))
+                onDrawBehind {
+                    drawPath(path, RAINBOW_BAR)
+                    drawPath(path, sheen)
+                }
+            },
+    )
 }
 
 /** The host's "ready" pose on the soft radial glow with a ground ellipse, springing in once. Decorative. */
@@ -763,8 +797,9 @@ internal fun GuideHeroCard(
     spacing: Dp = 10.dp,
     radius: Dp = 28.dp,
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+    trim: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
-) = FamilyCard(accent, modifier, contentPadding, spacing, radius, horizontalAlignment, content)
+) = FamilyCard(accent, modifier, contentPadding, spacing, radius, horizontalAlignment, trim, content)
 
 /** The host's ready pose on the soft glow, springing in once. Decorative. */
 @Composable

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -8,12 +8,13 @@ import { SOLUTIONS_CUTOVER_DATE, solutionSwapBatchesFor, applySolutionSwapBatche
 import { useAuth } from '@/lib/auth-context';
 import { fetchQuizState, saveQuizAnswer, type QuizAnswer } from '@/lib/home-streaks';
 import { HomeSectionTitle } from '@/components/home/home-section-title';
-import { GUIDE_BAR, GuideStage, ReadChip, guideCardStyle } from '@/components/strategy/guide-family';
+import { GuideStage, ReadChip, guideCardStyle } from '@/components/strategy/guide-family';
 import { LetterTile } from '@/components/game/letter-tile';
 import { BubbleText } from '@/components/ui/bubble-text';
 import { SoftNum } from '@/components/ui/soft-number';
 import { POSE_SIZE, poseSrc } from '@/lib/art';
 import { accentInk, alphaHex } from '@/lib/soft-surface';
+import { TRIM, trimPath } from '@/lib/card-trim';
 
 // Word of the Day, now a three-choice quiz (founder-approved home redesign,
 // 2026-10-01). Before answering, the definition is hidden behind three choices
@@ -64,6 +65,42 @@ const LINK_INK = accentInk('#8b5cf6', '#8b5cf6');
 const RIGHT_INK = accentInk('#34d399', '#047857');
 const WRONG_INK = accentInk('#fb7185', '#be123c');
 
+const WOTD_TRIM_PATH = trimPath();
+/** The rainbow bar's stops, left to right (GUIDE_BAR's colors). */
+const RAINBOW_STOPS: [number, string][] = [[0, '#a78bfa'], [0.5, '#ec4899'], [1, '#fbbf24']];
+
+/**
+ * Founder 10-09: the card wears the Home game cards' frosting cap (a slim band whose bottom edge is a row of shallow
+ * drips, lib/card-trim.ts) filled with the rainbow gradient, plus the top white sheen. Mirrors iOS guideHeroCard(trim:)
+ * and Android's CardTrimShape rainbow. It takes `band` of the card's flow; the drips hang over the padding below it.
+ */
+function WotdTrim() {
+  const gid = `wt${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  return (
+    <div aria-hidden="true" className="relative pointer-events-none" style={{ height: TRIM.band, zIndex: 1 }}>
+      <svg
+        className="absolute inset-x-0 top-0 block"
+        width="100%"
+        height={TRIM.band + TRIM.drip}
+        viewBox={`0 0 ${TRIM.viewW} ${TRIM.band + TRIM.drip}`}
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <linearGradient id={`${gid}r`} x1="0" y1="0" x2="1" y2="0">
+            {RAINBOW_STOPS.map(([o, c]) => <stop key={o} offset={o} stopColor={c} />)}
+          </linearGradient>
+          <linearGradient id={`${gid}s`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#fff" stopOpacity="0.42" />
+            <stop offset="0.6" stopColor="#fff" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={WOTD_TRIM_PATH} fill={`url(#${gid}r)`} />
+        <path d={WOTD_TRIM_PATH} fill={`url(#${gid}s)`} />
+      </svg>
+    </div>
+  );
+}
+
 /**
  * FINISH_SPEC BI17: the guide hero card look (components/strategy/guide-family.tsx)
  * in place of the bordered Home card chrome — no stroke, the 8 px rainbow bar,
@@ -76,7 +113,7 @@ function WotdCard({ children, className = '' }: { children: React.ReactNode; cla
       className="sg-card relative"
       style={guideCardStyle(WOTD_ACCENT, { radius: 20, hi: 0.16, lo: 0.05, hiDark: 0.24, loDark: 0.08, shadow: 0.18 })}
     >
-      <div aria-hidden="true" style={{ height: 6, background: GUIDE_BAR }} />
+      <WotdTrim />
       {/* BJ7: 12 padding (was 12 / 14 / 14). */}
       <div className={className} style={{ padding: 12 }}>{children}</div>
     </div>

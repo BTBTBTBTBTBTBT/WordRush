@@ -8,6 +8,7 @@ import { castPreset } from '@wordle-duel/core';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { decodeImage } from '@/lib/predecode';
+import { useLivingMascotOn } from '@/hooks/use-flags';
 import { HOME_HOST_PORTRAIT, HOME_HOST_SIZE, takeHomeHostWave, type HomeHostChoice } from '@/lib/home-host';
 import { HOME_HOST_CROSSFADE_MS, homeHostChoiceKey, homeHostTransition } from '@/lib/home-host-cache';
 
@@ -40,6 +41,10 @@ export function HomeHost({ choice, initial, level, pro, hidden = false, size = H
     if (takeHomeHostWave()) setWave(true);
   }, []);
   const portrait = Math.round((size * HOME_HOST_PORTRAIT) / HOME_HOST_SIZE);
+  // Founder 10-09: YOUR own living mascot answers a tap (the living hook hops it with its sound); the cast host still
+  // lets taps through to the card. Only a mascot host while the living switch is on takes pointer events.
+  const livingOn = useLivingMascotOn();
+  const interactive = livingOn && choice.kind === 'mascot' && !hidden;
   const [wArtFailed, setWArtFailed] = React.useState(false);
 
   // 2.7.1: the live look replacing a different one on screen (e.g. this device's cached look)
@@ -106,8 +111,8 @@ export function HomeHost({ choice, initial, level, pro, hidden = false, size = H
     // inline span had no box, so the figure hung above it and the Home scroller clipped it away.
     <span
       aria-hidden="true"
-      className="relative block shrink-0 select-none pointer-events-none"
-      style={{ width: size, height: size, opacity: hidden ? 0 : 1, transition: 'opacity 160ms ease-out' }}
+      className="relative block shrink-0 select-none"
+      style={{ width: size, height: size, opacity: hidden ? 0 : 1, transition: 'opacity 160ms ease-out', pointerEvents: interactive ? 'auto' : 'none' }}
     >
       {/* The soft floor shadow at its feet (~78% wide, ~13% tall). */}
       <span
