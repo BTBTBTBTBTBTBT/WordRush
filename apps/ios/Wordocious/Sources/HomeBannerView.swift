@@ -95,6 +95,23 @@ struct HomeBannerView: View {
         case .none: return nil
         }
     }
+    /// The banner art as live figures: Flawless = D · O · I cheering under the bunting; Sweep = O cheering, S flexing,
+    /// W waving; the Halloween idle scene = the costumed O · W · R swaying slow. nil = draw the art as given.
+    private static func liveTrio(art: String, moment: Moment?) -> CelebrationTrio? {
+        func all(_ names: [String]) -> Bool { names.allSatisfy { ArtAsset.exists($0) } }
+        switch moment {
+        case .flawless?:
+            return CelebrationTrio(cast: ["d", "o2", "i"])
+        case .sweep?:
+            let n = ["art-pose-o1-cheer", "art-pose-s-flex", "art-pose-w-wave"]
+            return all(n) ? CelebrationTrio(images: n) : nil
+        case nil:
+            guard art == "art-scene-banner-halloween" else { return nil }
+            let n = ["art-halloween-o1", "art-halloween-w", "art-halloween-r"]
+            return all(n) ? CelebrationTrio(images: n, sparkles: false, tempo: 0.7, swayDegrees: 3) : nil
+        }
+    }
+
     private var momentArt: String? {
         // FINISH_SPEC §X: no celebration today → in the Halloween season the banner
         // shows `art-scene-banner-halloween` in the same slot (nil when it doesn't ship).
@@ -128,10 +145,12 @@ struct HomeBannerView: View {
                 Group {
                     // Founder 10-09: on a Flawless day the celebrating trio is ALIVE (each bounces, sways and squashes on its
                     // own beat under a swaying bunting, sparkles twinkling) instead of one flat picture.
-                    if moment == .flawless && slots.showsMomentArt {
-                        CelebrationTrio(cast: ["d", "o2", "i"]).frame(height: 104)
+                    // Founder 10-10: EVERY banner state is alive the same way (sweep, the season's idle cast), not a still.
+                    if let trio = Self.liveTrio(art: art, moment: slots.showsMomentArt ? moment : nil) {
+                        trio.frame(height: 104)
                     } else {
                         Image(art).resizable().interpolation(.high).scaledToFit()
+                            .idleLife()
                     }
                 }
                     .frame(maxWidth: .infinity, maxHeight: 104)
@@ -141,6 +160,7 @@ struct HomeBannerView: View {
                         if !slots.showsMomentArt && ArtAsset.exists("art-scene-unlimited-loop") {
                             ArtThumbs.image("art-scene-unlimited-loop", points: 130)   // §AQ2: slot-sized
                                 .resizable().interpolation(.high).scaledToFit()
+                                .idleLife(hop: 4, sway: 2.5, period: 1.8)
                                 .transition(.opacity)
                         }
                     }
@@ -844,7 +864,18 @@ extension Color {
 /// each bouncing / swaying / squashing on its own offset beat; the bunting sways and gold sparkles twinkle.
 /// Reduce Motion / Low Power: the same scene, still.
 struct CelebrationTrio: View {
-    let cast: [String]
+    /// The three figures' image names (left to right).
+    let images: [String]
+    var bunting = true
+    var sparkles = true
+    /// Seconds per hop (the Halloween idle trio moves slower and spookier).
+    var tempo: Double = 0.42
+    var swayDegrees: Double = 4
+
+    init(cast: [String]) { images = cast.map { "art-pose-\($0)-cheer" } }
+    init(images: [String], bunting: Bool = false, sparkles: Bool = true, tempo: Double = 0.42, swayDegrees: Double = 4) {
+        self.images = images; self.bunting = bunting; self.sparkles = sparkles; self.tempo = tempo; self.swayDegrees = swayDegrees
+    }
     @Environment(\.accessibilityReduceMotion) private var envReduce
     private var still: Bool { envReduce || Theme.reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled }
     /// Founder 10-09 ("make sure the animations run smooth"): every move is a repeating Core Animation (it runs on the
@@ -857,28 +888,30 @@ struct CelebrationTrio: View {
             let fig = min(h * 0.66, w / 3.6)
             ZStack {
                 // the bunting hangs still (founder 10-09: only the cast celebrates)
-                Image("age-bunting").resizable().scaledToFit()
-                    .frame(width: min(w * 0.36, 136), height: h * 0.20)
-                    .position(x: w / 2, y: h * 0.09)
+                if bunting {
+                    Image("age-bunting").resizable().scaledToFit()
+                        .frame(width: min(w * 0.36, 136), height: h * 0.20)
+                        .position(x: w / 2, y: h * 0.09)
+                }
                 // one shared floor shadow
                 Ellipse().fill(RadialGradient(colors: [Color(hex: 0x2E1065).opacity(0.28), .clear], center: .center,
                                               startRadius: 0, endRadius: fig * 1.6))
                     .frame(width: fig * 3.2, height: 14)
                     .position(x: w / 2, y: h - 18)
-                ForEach(Array(cast.enumerated()), id: \.offset) { i, id in
+                ForEach(Array(images.enumerated()), id: \.offset) { i, name in
                     let delay = Double(i) * 0.18
-                    Image("art-pose-\(id)-cheer").resizable().interpolation(.high).scaledToFit()
+                    Image(name).resizable().interpolation(.high).scaledToFit()
                         .frame(width: fig, height: fig)
                         // hop: stretched at the top, squashed on the landing
                         .scaleEffect(x: on ? 0.97 : 1.04, y: on ? 1.03 : 0.95, anchor: .bottom)
                         .offset(y: on ? -fig * 0.09 : 0)
-                        .animation(.easeInOut(duration: 0.42).repeatForever(autoreverses: true).delay(delay), value: on)
+                        .animation(.easeInOut(duration: tempo).repeatForever(autoreverses: true).delay(delay), value: on)
                         // a slower side-to-side sway on top of the hop
-                        .rotationEffect(.degrees(on ? 4 : -4), anchor: .bottom)
-                        .animation(.easeInOut(duration: 0.95).repeatForever(autoreverses: true).delay(delay * 2), value: on)
+                        .rotationEffect(.degrees(on ? swayDegrees : -swayDegrees), anchor: .bottom)
+                        .animation(.easeInOut(duration: tempo * 2.26).repeatForever(autoreverses: true).delay(delay * 2), value: on)
                         .position(x: w / 2 + CGFloat(i - 1) * fig * 0.95, y: h - fig / 2 - 16)
                 }
-                ForEach(0..<4, id: \.self) { k in
+                ForEach(0..<(sparkles ? 4 : 0), id: \.self) { k in
                     let xs: [CGFloat] = [0.22, 0.78, 0.35, 0.66], ys: [CGFloat] = [0.30, 0.26, 0.12, 0.10]
                     GoldSparkle(size: 9)
                         .opacity(still ? 0.8 : (on ? 1 : 0.3))
@@ -894,5 +927,34 @@ struct CelebrationTrio: View {
         .onAppear { if !still { DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { on = true } } }
         .onChange(of: still) { s in on = !s }
         .accessibilityHidden(true)
+    }
+}
+
+
+/// Founder 10-10: a still mascot comes alive — a gentle hop + breathe and a slower sway, as Core Animation loops (display
+/// rate, no per-frame redraw), started a beat after layout. Still under Reduce Motion / Low Power.
+struct IdleLife: ViewModifier {
+    var hop: CGFloat = 3
+    var sway: Double = 1.5
+    var period: Double = 2.2
+    var delay: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var envReduce
+    @State private var on = false
+
+    func body(content: Content) -> some View {
+        let still = envReduce || Theme.reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled
+        content
+            .scaleEffect(x: on ? 0.99 : 1.01, y: on ? 1.015 : 0.985, anchor: .bottom)
+            .offset(y: on ? -hop : 0)
+            .animation(still ? nil : .easeInOut(duration: period / 2).repeatForever(autoreverses: true).delay(delay), value: on)
+            .rotationEffect(.degrees(on ? sway : -sway), anchor: .bottom)
+            .animation(still ? nil : .easeInOut(duration: period * 0.75).repeatForever(autoreverses: true).delay(delay), value: on)
+            .onAppear { if !still { DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { on = true } } }
+    }
+}
+
+extension View {
+    func idleLife(hop: CGFloat = 3, sway: Double = 1.5, period: Double = 2.2, delay: Double = 0) -> some View {
+        modifier(IdleLife(hop: hop, sway: sway, period: period, delay: delay))
     }
 }

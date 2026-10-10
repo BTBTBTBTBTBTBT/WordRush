@@ -483,19 +483,23 @@ extension View {
     /// from the armed card (or soft-rises), and every close shrinks back.
     /// `hint`: the game's mode key (GameMode raw value) so the shell can carry its page
     /// (default: the item's own `GameCoverHint`).
+    /// `swipeToClose` (founder 10-10): a swipe in from the left edge closes the game back to the menu — off for live
+    /// VS matches, where leaving forfeits.
     func gameCover<Item: Identifiable, Cover: View>(item: Binding<Item?>, onDismiss: (() -> Void)? = nil,
                                                     color: Color? = nil,
                                                     hint: ((Item) -> String?)? = nil,
+                                                    swipeToClose: Bool = true,
                                                     @ViewBuilder content: @escaping (Item) -> Cover) -> some View {
         modifier(GameCoverItem(item: item, onDismiss: onDismiss, color: color,
-                               hint: hint ?? { ($0 as? GameCoverHint)?.coverHintKey }, cover: content))
+                               hint: hint ?? { ($0 as? GameCoverHint)?.coverHintKey }, swipeToClose: swipeToClose, cover: content))
     }
 
     /// BJ9: `.fullScreenCover(isPresented:)` for a GAME.
     func gameCover<Cover: View>(isPresented: Binding<Bool>, onDismiss: (() -> Void)? = nil,
-                                color: Color? = nil, hint: String? = nil,
+                                color: Color? = nil, hint: String? = nil, swipeToClose: Bool = true,
                                 @ViewBuilder content: @escaping () -> Cover) -> some View {
-        modifier(GameCoverFlag(isPresented: isPresented, onDismiss: onDismiss, color: color, hint: hint, cover: content))
+        modifier(GameCoverFlag(isPresented: isPresented, onDismiss: onDismiss, color: color, hint: hint,
+                               swipeToClose: swipeToClose, cover: content))
     }
 }
 
@@ -516,6 +520,7 @@ private struct GameCoverItem<Item: Identifiable, Cover: View>: ViewModifier {
     let onDismiss: (() -> Void)?
     let color: Color?
     let hint: (Item) -> String?
+    let swipeToClose: Bool
     let cover: (Item) -> Cover
     @State private var shown: Item?
 
@@ -528,6 +533,7 @@ private struct GameCoverItem<Item: Identifiable, Cover: View>: ViewModifier {
                 if v == nil { item = nil }   // the cover closed itself (dismiss())
             }), onDismiss: onDismiss) { it in
                 cover(it).background(GameCoverHook())
+                    .modifier(EdgeSwipeClose(enabled: swipeToClose) { item = nil })
             }
     }
 
@@ -560,6 +566,7 @@ private struct GameCoverFlag<Cover: View>: ViewModifier {
     let onDismiss: (() -> Void)?
     let color: Color?
     let hint: String?
+    let swipeToClose: Bool
     let cover: () -> Cover
     @State private var shown = false
 
@@ -572,6 +579,7 @@ private struct GameCoverFlag<Cover: View>: ViewModifier {
                 if !v { isPresented = false }
             }), onDismiss: onDismiss) {
                 cover().background(GameCoverHook())
+                    .modifier(EdgeSwipeClose(enabled: swipeToClose) { isPresented = false })
             }
     }
 
@@ -588,6 +596,47 @@ private struct GameCoverFlag<Cover: View>: ViewModifier {
         DispatchQueue.main.async {
             guard isPresented else { GameTransition.shared.cancelOpen(); return }
             withTransaction(noSlide) { shown = true }
+        }
+    }
+}
+
+/// Founder 10-10: swipe in from the left edge to close a game (like the system back swipe). The drag must start within
+/// 28 pt of the left edge and travel right; the game follows the finger, and past ~90 pt (or a quick flick) it closes
+/// through the cover's own close (the shrink-back). It rides alongside the game's own touches (taps never trigger it).
+struct EdgeSwipeClose: ViewModifier {
+    let enabled: Bool
+    let close: () -> Void
+    @State private var dx: CGFloat = 0
+    @State private var tracking = false
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content
+                .offset(x: dx)
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 14, coordinateSpace: .global)
+                        .onChanged { v in
+                            if !tracking {
+                                guard v.startLocation.x < 28, v.translation.width > abs(v.translation.height) else { return }
+                                tracking = true
+                            }
+                            dx = max(0, v.translation.width) * 0.55
+                        }
+                        .onEnded { v in
+                            guard tracking else { return }
+                            tracking = false
+                            let flick = v.predictedEndTranslation.width - v.translation.width > 140
+                            if v.translation.width > 90 || flick {
+                                Haptics.light()
+                                close()
+                                withAnimation(.easeOut(duration: 0.2)) { dx = 0 }
+                            } else {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { dx = 0 }
+                            }
+                        }
+                )
+        } else {
+            content
         }
     }
 }

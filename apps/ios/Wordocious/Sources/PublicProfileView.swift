@@ -96,7 +96,7 @@ struct PublicProfileView: View {
         .gameCover(item: $openGame, onDismiss: { Task { await FriendlyGamesService.load() } }) { g in
             FriendlyGameScreen(gameId: g.id, initial: g.initial)
         }
-        .gameCover(item: $challengeMatch) { m in
+        .gameCover(item: $challengeMatch, swipeToClose: false) { m in
             NavigationStack { VSGameView(mode: m.mode, inviteCode: m.code) }
         }
         .softSheet(isPresented: Binding(get: { raceRunFriend != nil }, set: { if !$0 { raceRunFriend = nil } })) {

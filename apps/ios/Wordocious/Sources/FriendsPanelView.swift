@@ -176,7 +176,7 @@ struct FriendsPanelView: View {
         // §289: the challenger lands in the private lobby with the code —
         // the same VSGameView(mode:inviteCode:) cover a pending-invite accept
         // and the /vs/join universal link use (RootTabView, VSLobbyView).
-        .gameCover(item: $challengeMatch) { m in
+        .gameCover(item: $challengeMatch, swipeToClose: false) { m in
             NavigationStack { VSGameView(mode: m.mode, inviteCode: m.code) }
         }
         .familyActionMenu(item: $menuFriend) { f in friendMenuModel(f) }

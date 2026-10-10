@@ -416,17 +416,17 @@ struct RootTabView: View {
         }
         // Universal-link VS invite → straight into the private match, exactly
         // like accepting a pending-invite banner (VSGameView handles the rest).
-        .gameCover(item: $deepLink.vsInvite) { inv in
+        .gameCover(item: $deepLink.vsInvite, swipeToClose: false) { inv in
             NavigationStack { VSGameView(mode: inv.mode, inviteCode: inv.code) }
         }
         // A challenge link or push (/vs/challenge/<code>) → the race flow; its
         // VS HOME closes the cover.
-        .gameCover(item: $deepLink.vsChallenge) { link in
+        .gameCover(item: $deepLink.vsChallenge, swipeToClose: false) { link in
             NavigationStack { VSChallengeRaceView(code: link.code) }
         }
         // "Someone's looking" push (/vs/live/<MODE>) → that mode's live search,
         // same as LIVE in the lobby (Pro); without Pro, the Pro page.
-        .gameCover(item: $deepLink.vsLive) { link in
+        .gameCover(item: $deepLink.vsLive, swipeToClose: false) { link in
             VSLiveLaunch(mode: link.mode)
         }
         // Password-recovery universal link → native set-new-password sheet
