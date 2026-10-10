@@ -134,7 +134,9 @@ final class GameTransition {
         let src = takeArmed()
         let frame = MotionSpec.usableSource(src?.frame, in: screen)
         let kind = MotionSpec.openKind(hasSource: frame != nil, reduceMotion: Self.reduceMotion)
-        let color = src?.color ?? fallback
+        // In a dark season the shell under the page is the season's night card (never a pale grey slab).
+        let seasonCard = SeasonKit.surfaces?.dark == true ? SeasonKit.surfaces?.card.map { UIColor($0) } : nil
+        let color = seasonCard ?? src?.color ?? fallback
         let radius = src?.radius ?? 24
         // A frame-only source (no key) closes as the reverse soft rise.
         let closeKind: MotionSpec.OpenKind = kind == .grow && src?.key == nil ? .rise : kind
@@ -195,7 +197,9 @@ final class GameTransition {
                 page.view.alpha = 0
                 stage.addSubview(page.view)
                 peek = w
-                UIView.animate(withDuration: Self.pageFadeIn, delay: MotionSpec.liftDuration + MotionSpec.shellFadeIn * 0.5,
+                // Founder 10-10: the game's page shows through the growing card from the first frame of the grow, so the
+                // card opens straight into the game (no flat shell color in between).
+                UIView.animate(withDuration: Self.pageFadeIn, delay: MotionSpec.liftDuration,
                                options: [.curveEaseOut]) {
                     page.view.alpha = 1
                 }
@@ -734,10 +738,13 @@ enum GameCoverPreview {
             iv.contentMode = .scaleAspectFill
             iv.clipsToBounds = true
             v.addSubview(iv)
-            let over = UIView(frame: v.bounds)
-            over.backgroundColor = dark ? UIColor(red: 0x12 / 255, green: 0x0D / 255, blue: 0x1F / 255, alpha: a11y ? 0.70 : tint.darkOverlay)
-                : UIColor.white.withAlphaComponent(a11y ? 0.20 : 0)
-            v.addSubview(over)
+            // A season wall is the finished night backdrop (the page draws no overlay on it either).
+            if !(seasonalWall(tint, dark: dark) && SeasonKit.surfaces != nil) || a11y {
+                let over = UIView(frame: v.bounds)
+                over.backgroundColor = dark ? UIColor(red: 0x12 / 255, green: 0x0D / 255, blue: 0x1F / 255, alpha: a11y ? 0.70 : tint.darkOverlay)
+                    : UIColor.white.withAlphaComponent(a11y ? 0.20 : 0)
+                v.addSubview(over)
+            }
         } else {
             // The tint's gradient: the page itself when the game has no wallpaper (PageBackground's
             // fallback), else the closest look until the wallpaper is decoded for next time.
@@ -807,13 +814,20 @@ enum GameCoverPreview {
         UserDefaults.standard.set(frames, forKey: defaultsKey)
     }
 
-    private static func wallKey(_ tint: PageTint) -> String { "wall|" + tint.wallpaper }
+    /// Founder 10-10 (the grey in-between): the preview uses the SAME wall the game page will draw — the season's own
+    /// wall when a season is on (no overlay), else the game's wallpaper.
+    private static func wallName(_ tint: PageTint, dark: Bool) -> String {
+        SeasonKit.wall(tint.wallpaper, dark: dark) ?? tint.wallpaper
+    }
+    private static func seasonalWall(_ tint: PageTint, dark: Bool) -> Bool { SeasonKit.wall(tint.wallpaper, dark: dark) != nil }
+    private static var previewDark: Bool { Theme.isDark }
+    private static func wallKey(_ tint: PageTint) -> String { "wall|" + wallName(tint, dark: previewDark) }
     private static func artKey(_ asset: String, _ f: CGRect) -> String { "art|\(asset)|\(Int(f.width * 10))x\(Int(f.height * 10))" }
 
     /// The wallpaper at a fifth of its pixels: it is a soft, blurred backdrop on screen for
     /// a fraction of a second under the real one (~0.5 MB each).
     private static func warmWallpaper(_ tint: PageTint) {
-        let name = tint.wallpaper
+        let name = wallName(tint, dark: previewDark)
         PreviewImages.shared.decode(wallKey(tint)) {
             guard let src = UIImage(named: name) else { return nil }
             let px = CGSize(width: src.size.width * src.scale / 5, height: src.size.height * src.scale / 5)
