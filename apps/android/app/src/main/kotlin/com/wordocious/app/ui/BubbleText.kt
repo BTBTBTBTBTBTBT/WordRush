@@ -61,14 +61,16 @@ fun BubbleLine(
     align: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Center,
     /** 2.8 item 13: tapping a letter bounces it and your host mascot reacts (Home's headline only). */
     interactive: Boolean = false,
+    /** Founder 10-09 ("comes in choppy"): only headlines pop in letter by letter; labels, names and numbers pass false and appear whole. */
+    animated: Boolean = true,
 ) {
     // `bubble_atlas` off-switch (fail-open): off = the live headline font everywhere.
     if (bubbleAtlasCovers(text) && com.wordocious.app.data.FlagsService.isLive("bubble_atlas")) {
-        BubbleAtlasLine(text, palette, sizeDp, modifier, names, align, interactive)
+        BubbleAtlasLine(text, palette, sizeDp, modifier, names, align, interactive, animated)
     } else {
         val sizeSp = with(LocalDensity.current) { sizeDp.dp.toSp() }
         // The fit is exact, so nothing shrinks; 0.6 is only a safety net, never an ellipsis.
-        LiveHeadline(text, palette, modifier, names = names, maxSize = sizeSp, minSize = sizeSp * 0.6f, align = align, maxLines = 1, sound = sound)
+        LiveHeadline(text, palette, modifier, names = names, maxSize = sizeSp, minSize = sizeSp * 0.6f, align = align, maxLines = 1, sound = sound, pops = animated)
     }
 }
 
@@ -85,6 +87,7 @@ private fun BubbleAtlasLine(
     names: List<String>,
     align: androidx.compose.ui.text.style.TextAlign,
     interactive: Boolean = false,
+    pops: Boolean = true,
 ) {
     val context = LocalContext.current
     val tapScope = androidx.compose.runtime.rememberCoroutineScope()
@@ -98,8 +101,8 @@ private fun BubbleAtlasLine(
     val capDp = sizeDp * BUBBLE_CAP_EM
     val lineW = (layout.width * capDp).dp
     val lineH = ((layout.asc + layout.desc) * capDp).dp
-    val still = WTheme.calmMotion
-    val rim = BubbleAtlasMetrics.RIM_HEX
+    val still = WTheme.calmMotion || !pops
+    val rim = (palette.rim?.toArgb()) ?: BubbleAtlasMetrics.RIM_HEX
     Box(
         modifier.height(lineH).semantics { contentDescription = text; heading() },
         contentAlignment = when (align) {
@@ -116,7 +119,7 @@ private fun BubbleAtlasLine(
                     val top: Int
                     val bottom: Int
                     when (kind) {
-                        HeadlineTokens.Kind.NUMBER -> { top = NUMBER_TINT_TOP.toArgb(); bottom = NUMBER_TINT_BOTTOM.toArgb() }
+                        HeadlineTokens.Kind.NUMBER -> { top = (palette.numberTop ?: NUMBER_TINT_TOP).toArgb(); bottom = (palette.numberBottom ?: NUMBER_TINT_BOTTOM).toArgb() }
                         HeadlineTokens.Kind.NAME -> { top = palette.nameTop.toArgb(); bottom = palette.nameBottom.toArgb() }
                         else -> { top = palette.top.toArgb(); bottom = palette.bottom.toArgb() }
                     }
@@ -132,8 +135,10 @@ private fun BubbleAtlasLine(
                     val pop = remember { Animatable(if (still) 1f else 0.6f) }
                     LaunchedEffect(Unit) {
                         if (!still) {
-                            delay(i * 25L)
-                            pop.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 380f))
+                            // Founder 10-09: the wave starts a beat after first layout (the busiest frame), on a softer spring,
+                            // each letter 30 ms after the last (capped at 24 so a long line still finishes quickly).
+                            delay(120L + minOf(i, 24) * 30L)
+                            pop.animateTo(1f, spring(dampingRatio = 0.74f, stiffness = 224f))
                         }
                     }
                     if (img != null) {
@@ -180,6 +185,8 @@ fun BubbleText(
     align: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Center,
     /** 2.8 item 40: a headline whose words change while it is on screen: TalkBack announces each new sentence politely. */
     live: Boolean = false,
+    /** Founder 10-09: false = labels / names / numbers appear whole (only headlines pop). */
+    animated: Boolean = true,
 ) {
     // Item 25: a non-default theme tints page headlines with its accent (a season / the gold celebration keep theirs).
     val seasonOn = rememberSeason() != null
@@ -205,8 +212,30 @@ fun BubbleText(
             },
         ) {
             fit.lines.forEachIndexed { i, line ->
-                BubbleLine(line, palette, fit.size, Modifier.fillMaxWidth(), names = names, sound = sound && i == 0, align = align)
+                BubbleLine(line, palette, fit.size, Modifier.fillMaxWidth(), names = names, sound = sound && i == 0, align = align, animated = animated)
             }
         }
+    }
+}
+
+/**
+ * Founder 10-09: one line of bubble lettering that never wraps: drawn at [size] dp, shrunk to fit its slot (a podium name like
+ * BEANANDBUCKWHEAT stays one word instead of breaking mid-word). The natural width comes straight from the core metrics (the same
+ * table the fit uses), so the line is drawn ONCE at its final size. [minScale] is low enough that the longest username (20
+ * characters) always fits a podium column: nothing ever clips. Mirrors iOS BubbleOneLine.
+ */
+@Composable
+fun BubbleOneLine(
+    text: String,
+    palette: HeadlinePalette,
+    size: Float,
+    modifier: Modifier = Modifier,
+    minScale: Float = 0.3f,
+    align: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Center,
+) {
+    BoxWithConstraints(modifier.fillMaxWidth().height((size * 1.3f).dp).clearAndSetSemantics { contentDescription = text }, contentAlignment = Alignment.Center) {
+        val natural = (com.wordocious.core.bubbleWidthEm(text) * size).toFloat()
+        val s = if (natural > 0f) (maxWidth.value / natural).coerceIn(minScale, 1f) else 1f
+        BubbleLine(text, palette, kotlin.math.floor(size * s).toInt().coerceAtLeast(1), Modifier.fillMaxWidth(), sound = false, align = align, animated = false)
     }
 }

@@ -271,16 +271,16 @@ internal fun castColorForAccent(r: Float, g: Float, b: Float): CastColor {
     }
 }
 
-/** The main stage podium's one fixed min height (founder 10-09; iOS stagePodiumHeight 300): no shift switching games. */
-internal val STAGE_PODIUM_HEIGHT = 300.dp
+/** The main stage podium's one fixed min height (founder 10-09; iOS stagePodiumHeight 240): no shift switching games. */
+internal val STAGE_PODIUM_HEIGHT = 240.dp
 
 /** Yesterday's small podium keeps one fixed height (founder 10-09) so the page never jumps while it loads. */
-internal val YESTERDAY_PODIUM_HEIGHT = 210.dp
+internal val YESTERDAY_PODIUM_HEIGHT = 230.dp
 
 /**
  * Yesterday (founder 10-09): it sits UNDER today's last player and the Completed Today line (not inside the stage), and
  * collapsed it is a SMALLER COPY of the main podium (gold / silver / bronze steps, the top three's points + detail lines,
- * the same glows) at a fixed height; tap to open everyone else ([expanded], rows only). [minis] are the podium spots.
+ * the same glows) at a fixed height; the header folds it all away ([expanded], rows only). [minis] are the podium spots.
  */
 @Composable
 internal fun StageYesterdayLedge(
@@ -330,12 +330,10 @@ internal fun StageYesterdayLedge(
             }
             if (open && !empty) share()
         }
-        if (!empty) {
+        // Founder 10-09: open (the default) shows the small podium + everyone else; minimizing folds it all to the header line.
+        if (open && !empty) {
             Box(
-                Modifier.fillMaxWidth().height(YESTERDAY_PODIUM_HEIGHT).clickable(
-                    interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button,
-                    onClickLabel = if (open) "Hide yesterday's full list" else "Show yesterday's full list", onClick = onToggle,
-                ),
+                Modifier.fillMaxWidth().height(YESTERDAY_PODIUM_HEIGHT),
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 if (!loading) {

@@ -1086,12 +1086,11 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
 
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        profile?.username ?: "Player", fontSize = 18.sp, fontWeight = FontWeight.Black,
-                        color = if (ProfileAccent.isCustom(profile?.accentColor)) ProfileAccent.color(profile?.accentColor)
-                        else if (dark) WTheme.text else FinishInk.heading,
-                        maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
+                    // Founder 10-09: your name in the bubble lettering, in your own color (your backdrop), one line, shrinks to fit.
+                    val shownName = profile?.username ?: "Player"
+                    BubbleOneLine(
+                        shownName.uppercase(), rememberPlayerNamePalette(profile?.id, shownName, accentHex = profile?.accentColor),
+                        24f, Modifier.weight(1f, fill = false), align = androidx.compose.ui.text.style.TextAlign.Start,
                     )
                     // FINISH_SPEC V3: the Pro member mark (art_badge_level_pro) where the PRO
                     // capsule was, gated on isProActive so an expired subscription drops it.
@@ -1506,6 +1505,7 @@ private fun GuessDistributionCard(
             BubbleText(
                 noun.many.uppercase(), ThemeKit.accentPalette(coreHexColor(com.wordocious.core.StatsProfile.CAST_I)),
                 Modifier.widthIn(max = 220.dp), maxSize = 20, minSize = 13, align = androidx.compose.ui.text.style.TextAlign.Start,
+                animated = false,
             )
             if (hint != null) Text(hint, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }

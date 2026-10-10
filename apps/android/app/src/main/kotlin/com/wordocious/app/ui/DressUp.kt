@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -370,6 +371,8 @@ fun DressStage(
     followFinger: Boolean = false,
     /** 2.8 item 40: TalkBack's name for the standing mascot (the mini Stage card passes the player's). */
     mascotDescription: String = "Your mascot",
+    /** Founder 10-09: a soft halo behind the figure (the podium Stage card glows in the place's metal). */
+    glow: Color? = null,
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val podiumW = minOf(StageMetrics.podiumWidth, mascotSize * 1.34f)
@@ -394,6 +397,19 @@ fun DressStage(
         if (bulbs) StageArt(R.drawable.art_dress_bulbs, 30.dp, Modifier.align(Alignment.TopCenter).padding(top = 6.dp), width = 280.dp)
         Box(Modifier.padding(bottom = 10.dp), contentAlignment = Alignment.BottomCenter) {
             StageArt(R.drawable.art_dress_podium, podiumH, width = podiumW)
+            if (glow != null) {
+                Box(
+                    Modifier.padding(bottom = podiumH * 0.42f + mascotSize * 0.05f).size(mascotSize * 1.5f, mascotSize * 1.35f)
+                        .drawBehind {
+                            val c = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                            val r = mascotSize.toPx() * 0.72f
+                            drawCircle(
+                                Brush.radialGradient(0f to glow.copy(alpha = 0.75f), 0.5f to glow.copy(alpha = 0.28f), 1f to Color.Transparent, center = c, radius = r),
+                                radius = r, center = c,
+                            )
+                        }.clearAndSetSemantics { },
+                )
+            }
             Box(Modifier.padding(bottom = podiumH * 0.42f)) {
                 if (photoUrl != null) PhotoAvatar(
                     photoUrl, mascotSize * 0.74f,

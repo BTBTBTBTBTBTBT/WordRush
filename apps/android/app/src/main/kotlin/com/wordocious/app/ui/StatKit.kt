@@ -75,7 +75,7 @@ fun SectionHeader(
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         BubbleText(
             label.uppercase(), ThemeKit.accentPalette(tint), Modifier.widthIn(max = 240.dp), maxSize = 22, minSize = 13,
-            align = TextAlign.Start,
+            align = TextAlign.Start, animated = false,
         )
         Spacer(Modifier.weight(1f))
         right?.invoke()

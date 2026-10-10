@@ -93,6 +93,7 @@ fun <T> CandySegmentedToggle(
     modifier: Modifier = Modifier,
     height: Dp = 36.dp,
     width: Dp = 150.dp,
+    fontSize: androidx.compose.ui.unit.TextUnit = 13.sp,
 ) {
     val n = options.size.coerceAtLeast(1)
     val index = options.indexOfFirst { it.first == selected }
@@ -121,7 +122,7 @@ fun <T> CandySegmentedToggle(
                     contentAlignment = Alignment.Center,
                 ) {
                     androidx.compose.material3.Text(
-                        label, fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                        label, fontSize = fontSize, fontWeight = FontWeight.Black, maxLines = 1,
                         color = if (on) CandyInk.ON else CandyInk.off,
                     )
                 }

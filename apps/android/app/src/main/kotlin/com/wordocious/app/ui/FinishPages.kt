@@ -263,11 +263,12 @@ fun GamePickerCard(
                 verticalArrangement = Arrangement.spacedBy(if (dense) 4.dp else 8.dp),
             ) {
                 PickerLabel("WORDOCIOUS", labelColor)
-                // 2.8 item 8: both rows share ONE tile size (sized for the longer row) and one gap, centered.
-                val slots = maxOf(words.size, puzzles.size)
-                PickerRow(words, selected, onSelect, gap = 6.dp, corner = 12.dp, badge = badge, badgeShown = badgeShown, sweepLabel = sweepLabel, slots = slots)
+                // 2.8 item 8 + founder 10-09: both rows share ONE tile size (max 40, sized for max(10, the longer row)) and spread edge
+                // to edge with even gaps (min 4), exactly like Home's banner rows, on Stats and the Leaderboard alike.
+                val slots = maxOf(10, words.size, puzzles.size)
+                PickerRow(words, selected, onSelect, gap = 4.dp, corner = 12.dp, badge = badge, badgeShown = badgeShown, sweepLabel = sweepLabel, slots = slots)
                 PickerLabel("PUZZLES", labelColor, Modifier.padding(top = if (dense) 2.dp else 4.dp))
-                PickerRow(puzzles, selected, onSelect, gap = 6.dp, corner = 12.dp, badge = badge, badgeShown = badgeShown, sweepLabel = sweepLabel, slots = slots)
+                PickerRow(puzzles, selected, onSelect, gap = 4.dp, corner = 12.dp, badge = badge, badgeShown = badgeShown, sweepLabel = sweepLabel, slots = slots)
             }
         }
     }
@@ -295,14 +296,16 @@ private fun PickerRow(
     slots: Int = tiles.size,
 ) {
     if (tiles.isEmpty()) return
-    val spare = (slots - tiles.size).coerceAtLeast(0) / 2f
-    // Room for the selected tile's 3 dp ring + the press scale.
-    Row(Modifier.fillMaxWidth().padding(horizontal = 1.dp), horizontalArrangement = Arrangement.spacedBy(gap)) {
-        if (spare > 0f) Spacer(Modifier.weight(spare))
-        tiles.forEach { t ->
-            PickerTileBox(t, Modifier.weight(1f).aspectRatio(1f), t.key == selected, onSelect, corner, badge, badgeShown, sweepLabel)
+    // Founder 10-09: exactly Home's banner rows: ONE tile size (max 40) sized so [slots] tiles fit with at least [gap], and each
+    // row spread edge to edge with even gaps (first flush left, last flush right).
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 1.dp)) {
+        val n = slots.coerceAtLeast(1)
+        val size = kotlin.math.floor((maxWidth.value - gap.value * (n - 1)) / n).coerceIn(18f, 40f).dp
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            tiles.forEach { t ->
+                PickerTileBox(t, Modifier.size(size), t.key == selected, onSelect, corner, badge, badgeShown, sweepLabel)
+            }
         }
-        if (spare > 0f) Spacer(Modifier.weight(spare))
     }
 }
 
@@ -408,7 +411,7 @@ object PodiumInk {
 @Composable
 fun MedalPodium(spots: List<PodiumSpot>, modifier: Modifier = Modifier, stepScale: Float = 1f, avatar: Dp = 44.dp) {
     val byPlace = spots.associateBy { it.place }
-    Box(modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 12.dp)) {
+    Box(modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 2.dp)) {
     PodiumFloor(Modifier.align(Alignment.BottomCenter))
     Row(
         Modifier.fillMaxWidth().padding(bottom = PodiumArt.FLOOR_RISE),
@@ -429,6 +432,8 @@ fun MedalPodium(spots: List<PodiumSpot>, modifier: Modifier = Modifier, stepScal
             ) {
                 if (s != null) {
                     val a = if (place == 1) avatar * 1.22f else avatar
+                    // Founder 10-09: the name rides above the head in the bubble lettering (their color, glow in their secondary color).
+                    PodiumNameAbove(s.name, null, s.username ?: s.name, size = if (place == 1) 19f else 16f, pull = 2.dp, accentHex = s.accentHex)
                     Box(contentAlignment = Alignment.TopCenter) {
                         LetterTileAvatar(
                             s.username ?: s.name, a, Modifier.padding(top = if (place == 1) 18.dp else 0.dp), accentHex = s.accentHex, emoji = s.emoji,
@@ -438,12 +443,7 @@ fun MedalPodium(spots: List<PodiumSpot>, modifier: Modifier = Modifier, stepScal
                     }
                     // Founder 10-09: the plaque wears the player's own backdrop (fill) + frame (border); ink picked for contrast.
                     PodiumPlaque(null, s.username ?: s.name, accentHex = s.accentHex) { ink ->
-                        Text(
-                            s.name, fontSize = 13.sp, fontWeight = FontWeight.Black,
-                            color = ink.heading,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                        )
-                        SoftNumber(s.points, 13.sp, color = ink.muted)
+                        BubbleOneLine(s.points.uppercase(), ink.palette, 17f + (if (place == 1) 2f else 0f))
                         // Both parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
                         com.wordocious.core.FriendCards.raceBadgeLines(s.badge).forEach { line ->
                             Text(

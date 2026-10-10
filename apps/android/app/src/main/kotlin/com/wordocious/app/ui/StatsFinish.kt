@@ -262,31 +262,28 @@ object StatsSectionInk {
 
 /**
  * FINISH_SPEC BJ1 a Stats section header — TODAY first, ALL-TIME beneath (the Today | All-time
- * toggle is gone). Brand gradient caps + a short gradient rule, a small muted [note] on the
- * right (the date, "Since Mar 2025"). Static (no animation, no box): cheap to scroll past.
+ * toggle is gone). Bubble lettering (30 pt) and a small bubble [note] on the right
+ * (the date, "Since Mar 2025"). Appears whole (no pop): cheap to scroll past.
  * Twins: iOS StatsSectionBanner, web components/stats/stats-section-banner.tsx.
  */
 @Composable
 fun StatsSectionBanner(today: Boolean, note: String?, modifier: Modifier = Modifier) {
-    val colors = if (today) StatsSectionInk.today else StatsSectionInk.allTime
-    val brush = Brush.horizontalGradient(colors)
     Row(
         modifier.fillMaxWidth().padding(top = 8.dp),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column(Modifier.semantics { heading() }, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                if (today) "TODAY" else "ALL-TIME",
-                style = androidx.compose.ui.text.TextStyle(brush = brush),
-                fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 0.08.em,
-            )
-            Box(Modifier.width(44.dp).height(4.dp).clip(RoundedCornerShape(50)).background(brush))
-        }
+        // Founder 10-09: the section title in the Wordocious bubble lettering (blue Today, amber All-time), one line, no underline bar.
+        BubbleOneLine(
+            if (today) "TODAY" else "ALL-TIME",
+            ThemeKit.accentPalette(if (today) Color(0xFF3B82F6) else Color(0xFFF59E0B)),
+            30f, Modifier.width(190.dp).semantics { heading(); contentDescription = if (today) "Today" else "All-time" },
+            align = androidx.compose.ui.text.style.TextAlign.Start,
+        )
         if (note != null) {
-            Text(
-                note.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.08.em,
-                color = WTheme.textSecondary, modifier = Modifier.padding(bottom = 4.dp),
+            BubbleOneLine(
+                note.uppercase(), ThemeKit.accentPalette(Color(0xFFA78BFA)), 14f,
+                Modifier.width(130.dp).padding(bottom = 4.dp), align = androidx.compose.ui.text.style.TextAlign.End,
             )
         }
     }

@@ -473,7 +473,7 @@ fun GameRecordsCard(
  */
 @Composable
 fun RecordCardTitle(text: String, color: Color, modifier: Modifier = Modifier, maxSize: Int = 19) {
-    BubbleText(text.uppercase(), ThemeKit.accentPalette(color), modifier, maxSize = maxSize, minSize = 12, sound = false, align = TextAlign.Start)
+    BubbleText(text.uppercase(), ThemeKit.accentPalette(color), modifier, maxSize = maxSize, minSize = 12, sound = false, align = TextAlign.Start, animated = false)
 }
 
 /** One medal: the glossy art (28) stacked over its count in the bubble numbers. */
@@ -484,7 +484,7 @@ private fun MedalTally(@androidx.annotation.DrawableRes art: Int, label: String,
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Image(painterResource(art), contentDescription = null, modifier = Modifier.size(28.dp))
-        BubbleText("$count", ThemeKit.accentPalette(tint), Modifier.width(44.dp).clearAndSetSemantics { }, maxSize = 20, minSize = 12, sound = false)
+        BubbleText("$count", ThemeKit.accentPalette(tint), Modifier.width(44.dp).clearAndSetSemantics { }, maxSize = 20, minSize = 12, sound = false, animated = false)
     }
 }
 

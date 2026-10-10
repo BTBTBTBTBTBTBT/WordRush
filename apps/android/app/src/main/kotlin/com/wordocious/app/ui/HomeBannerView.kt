@@ -172,8 +172,11 @@ fun HomeBannerView(
     val topColor = when (wTier) { BannerTier.NONE -> Color(0xFFECE8FF); BannerTier.SWEEP -> TIER_SWEEP; BannerTier.FLAWLESS -> TIER_FLAWLESS }
     val bottomColor = when (pTier) { BannerTier.NONE -> Color(0xFFE2E6FF); BannerTier.SWEEP -> TIER_SWEEP; BannerTier.FLAWLESS -> TIER_FLAWLESS }
     val season = WTheme.season?.takeIf { it.heroFill != null }
-    val headInk = if (double) Color(0xFF78350F) else (season?.text ?: Color(0xFF4C1D95))
-    val subInk = if (double) Color(0xFF92400E) else (season?.textSecondary ?: Color(0xFF6D28D9))
+    // The double's deep amber inks belong to the daytime gold card; on a dark season's night card they'd vanish, so the double
+    // there reads in warm gold instead (founder 10-09).
+    val nightCard = season?.dark == true
+    val headInk = if (double) (if (nightCard) Color(0xFFFDE68A) else Color(0xFF78350F)) else (season?.text ?: Color(0xFF4C1D95))
+    val subInk = if (double) (if (nightCard) Color(0xFFFCD34D) else Color(0xFF92400E)) else (season?.textSecondary ?: Color(0xFF6D28D9))
     // Exactly one shimmer, Daily only, and only once a row has something to celebrate.
     val shimmer = !unlimited && (wTier != BannerTier.NONE || pTier != BannerTier.NONE) && !WTheme.calmMotion // AD: a looping shine (off under Battery Saver too)
     // ART_SPEC §18.4: radius 22, the frosted headline strip across the full width.
