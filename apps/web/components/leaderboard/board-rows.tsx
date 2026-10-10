@@ -231,13 +231,15 @@ export function BoardCard({ children, className = '', style }: { children: React
  * The two-way switch (Everyone | Friends, Solo | VS, Daily | All-time): the candy segmented (family rule —
  * frosted track + the glossy purple thumb, components/ui/candy-segment.tsx), hugging its labels.
  */
-export function SegmentedPill<T extends string | boolean>({ options, value, onChange, accent, label }: {
+export function SegmentedPill<T extends string | boolean>({ options, value, onChange, accent, label, small = false }: {
   options: readonly (readonly [T, ReactNode])[];
   value: T;
   onChange: (v: T) => void;
   /** Kept for callers; the candy sprites are the app's purple in every context. */
   accent: string;
   label: string;
+  /** Founder 10-09: a smaller switch (26px, 11px labels) that sits quietly beside another control. */
+  small?: boolean;
 }) {
   const keyed = options.map(([v, text]) => ({ key: String(v), label: text }));
   return (
@@ -247,9 +249,10 @@ export function SegmentedPill<T extends string | boolean>({ options, value, onCh
       onChange={(k) => { const hit = options.find(([v]) => String(v) === k); if (hit) onChange(hit[0]); }}
       accent={accent}
       label={label}
-      height={32}
+      height={small ? 26 : 32}
       className="shrink-0"
-      itemPad={12}
+      itemPad={small ? 10 : 12}
+      fontSize={small ? 11 : undefined}
     />
   );
 }

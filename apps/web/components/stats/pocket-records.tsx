@@ -15,6 +15,8 @@ import { GameSquare } from '@/components/ui/game-tile';
 import { loadFriends, getFriends, onFriendsChange, type FriendProfile } from '@/lib/friends-service';
 import { profileApiHeaders } from '@/lib/profile-social';
 import { softCard } from '@/lib/soft-surface';
+import { BubbleOneLine } from '@/components/ui/bubble-text';
+import { playerNameColor } from '@/lib/player-tint';
 import Link from 'next/link';
 
 // FRIDAY-QUEUE item 16 (founder 10-07): pocket games get stats too — a POCKET GAMES section (one tile per game,
@@ -85,7 +87,15 @@ export function HeadToHeadSection({ records }: { records: PocketRecords | null }
               castId={r.friend.avatar_cast_id ?? null} frame={r.friend.avatar_frame ?? null} config={r.friend.avatar_config ?? null} level={r.friend.level} pro={r.friend.is_pro} />
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-sm font-black truncate" style={{ color: 'var(--color-text)' }}>{r.friend.username}</span>
+                {/* Founder 10-09: the friend's name in the bubble lettering, in their own color; one line, shrinks to fit. */}
+                <div className="flex-1 min-w-0">
+                  <BubbleOneLine
+                    text={r.friend.username.toUpperCase()}
+                    accent={playerNameColor({ username: r.friend.username, avatarUrl: r.friend.avatar_url, config: r.friend.avatar_config, castId: r.friend.avatar_cast_id, frame: r.friend.avatar_frame })}
+                    size={16}
+                    align="left"
+                  />
+                </div>
                 <SoftNum size={16} className="soft-num-auto shrink-0">{r.wins}–{r.losses}</SoftNum>
               </div>
               <div className="text-[10px] font-extrabold truncate mb-1" style={{ color: 'var(--color-text-muted)' }}>{headToHeadLine(r.vs, r.pocket)}</div>

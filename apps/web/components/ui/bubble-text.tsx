@@ -6,7 +6,7 @@ import { themeHeadlineAccent } from '@/lib/theme-kit';
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   BUBBLE_ATLAS_CAP_PX, BUBBLE_ATLAS_METRICS, BUBBLE_ATLAS_RIM_HEX, BUBBLE_CAP_EM, BUBBLE_MAX_SIZE, BUBBLE_MIN_SIZE,
-  bubbleAtlasCovers, bubbleAtlasLayout, bubbleFit, headlineLabel, headlineTokens,
+  bubbleAtlasCovers, bubbleAtlasLayout, bubbleFit, bubbleWidthEm, headlineLabel, headlineTokens,
 } from '@wordle-duel/core';
 import { tintedGlyph } from '@/lib/bubble-render';
 import { emitMascotMoment } from '@/lib/living-mascot';
@@ -67,10 +67,10 @@ export const BubbleLine = memo(function BubbleLine(props: BubbleLineProps) {
   return <BubbleAtlasLine {...tinted} />;
 });
 
-type Tint = { top: string; bottom: string };
+type Tint = { top: string; bottom: string; rim: string };
 
 /** The atlas line: one small tinted canvas per glyph, absolutely placed from core's layout (cap units). */
-function BubbleAtlasLine({ text, size, palette = 'home', spec, accent, names, level = 2, className = '', style, align = 'center', interactive = false, decorative = false }: BubbleLineProps) {
+function BubbleAtlasLine({ text, size, palette = 'home', spec, accent, names, level = 2, className = '', style, align = 'center', interactive = false, decorative = false, calm = false }: BubbleLineProps) {
   const base = spec ?? HEADLINE_PALETTES[palette];
   const p = accent ? { ...base, top: softMix(accent, 0.55), bottom: accent, deep: darken(accent, 0.45) } : base;
   const layout = useMemo(() => bubbleAtlasLayout(text), [text]);
@@ -83,17 +83,18 @@ function BubbleAtlasLine({ text, size, palette = 'home', spec, accent, names, le
   }, [text, nameKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const cap = size * BUBBLE_CAP_EM;
   const dpr = typeof window === 'undefined' ? 1 : Math.min(3, window.devicePixelRatio || 1);
+  const rim = p.rim ?? BUBBLE_ATLAS_RIM_HEX;
   const tintFor = (kind: string | undefined): Tint =>
-    kind === 'number' ? { top: HEADLINE_NUMBER.top, bottom: HEADLINE_NUMBER.bottom }
-      : kind === 'name' ? { top: p.nameTop, bottom: p.nameBottom }
-      : { top: p.top, bottom: p.bottom };
+    kind === 'number' ? { top: p.numberTop ?? HEADLINE_NUMBER.top, bottom: p.numberBottom ?? HEADLINE_NUMBER.bottom, rim }
+      : kind === 'name' ? { top: p.nameTop, bottom: p.nameBottom, rim }
+      : { top: p.top, bottom: p.bottom, rim };
   return (
     <span
       role={decorative ? undefined : 'heading'}
       aria-level={decorative ? undefined : level}
       aria-label={decorative ? undefined : headlineLabel(text)}
       aria-hidden={decorative ? true : undefined}
-      className={`bt-line ${className}`}
+      className={`bt-line${calm ? ' bt-whole' : ''} ${className}`}
       style={{ width: layout.width * cap, height: (layout.asc + layout.desc) * cap, marginLeft: align === 'left' ? 0 : 'auto', marginRight: 'auto', ...style } as CSSProperties}
     >
       {layout.places.map((g, i) => (
@@ -127,7 +128,7 @@ function BubbleGlyph({ stem, left, top, w, h, f0, f1, tint, dpr, index, interact
   const pxH = Math.max(1, Math.round(Math.min(h * dpr, BUBBLE_ATLAS_METRICS[stem][1] * BUBBLE_ATLAS_CAP_PX)));
   useEffect(() => {
     let dead = false;
-    tintedGlyph(stem, pxW, pxH, f0, f1, { top: tint.top, bottom: tint.bottom, rim: BUBBLE_ATLAS_RIM_HEX })
+    tintedGlyph(stem, pxW, pxH, f0, f1, { top: tint.top, bottom: tint.bottom, rim: tint.rim })
       .then((c) => {
         const el = ref.current;
         if (dead || !el) return;
@@ -137,7 +138,7 @@ function BubbleGlyph({ stem, left, top, w, h, f0, f1, tint, dpr, index, interact
       })
       .catch(() => {});
     return () => { dead = true; };
-  }, [stem, pxW, pxH, f0, f1, tint.top, tint.bottom]);
+  }, [stem, pxW, pxH, f0, f1, tint.top, tint.bottom, tint.rim]);
   const onTap = () => {
     if (!interactive) return;
     emitMascotMoment('progress');   // your host mascot answers the tap (a no-op while the living mascot is off)
@@ -201,3 +202,27 @@ export const BubbleText = memo(function BubbleText({ text, maxSize = BUBBLE_MAX_
 });
 
 export type { HeadlinePalette };
+
+/**
+ * Founder 10-09: one line of bubble lettering that never wraps: drawn at `size` px, shrunk to fit its slot (a podium name like
+ * BEANANDBUCKWHEAT stays one word instead of breaking mid-word). The natural width comes straight from the core metrics (the same
+ * table the fit uses), so the line is drawn ONCE at its final size. `minScale` is low enough that the longest username (20
+ * characters) always fits a podium column: nothing ever clips. Appears whole (no pop). Mirrors iOS BubbleOneLine.
+ */
+export function BubbleOneLine({ text, size, minScale = 0.3, align = 'center', className = '', style, ...rest }: Omit<BubbleLineProps, 'size' | 'align'> & {
+  size: number;
+  minScale?: number;
+  align?: 'left' | 'center' | 'right';
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const width = useElementWidth(box);
+  const natural = bubbleWidthEm(text) * size;
+  const scale = width > 0 && natural > 0 ? Math.max(minScale, Math.min(1, width / natural)) : 1;
+  const px = Math.max(1, Math.floor(size * scale));
+  const margins = align === 'left' ? { marginLeft: 0, marginRight: 'auto' } : align === 'right' ? { marginLeft: 'auto', marginRight: 0 } : {};
+  return (
+    <div ref={box} role="img" aria-label={text} className={className} style={{ width: '100%', minWidth: 0, height: size * 1.3, display: 'flex', alignItems: 'center', ...style }}>
+      {width > 0 && <BubbleLine {...rest} decorative calm text={text} size={px} align={align === 'center' ? 'center' : 'left'} style={{ whiteSpace: 'nowrap', ...margins }} />}
+    </div>
+  );
+}

@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { openDressUp } from '@/components/profile/dress-up';
 import type { ReactNode } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { SoftNum } from '@/components/ui/soft-number';
 import { type BoardAvatarData } from '@/components/leaderboard/board-rows';
-import { placeWord, plateForConfig, plateInk, podiumStageCardLabel } from '@wordle-duel/core';
+import { placeWord, plateForConfig, podiumStageCardLabel } from '@wordle-duel/core';
+import { BubbleOneLine } from '@/components/ui/bubble-text';
+import { nameColorHex, platePaletteSpec, secondaryColorHex } from '@/lib/player-tint';
 import { PodiumFigure, PODIUM_FIGURE_SCALE } from '@/components/leaderboard/podium-figure';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { PodiumStageCard } from '@/components/leaderboard/podium-stage-card';
@@ -47,7 +48,9 @@ export interface PodiumPlace {
   points: ReactNode;
   /** The row's result badge (W / L, the Sweep pill), beside the points. */
   badge?: ReactNode;
-  /** Extra line under the points (the Sweep dot strip, a stats line). */
+  /** Founder 10-09: the stats line under the points as plain text, drawn in the bubble lettering ("4 Guesses · 1m 45s"). */
+  detail?: string;
+  /** Extra line under the points (the Sweep dot strip). */
   extra?: ReactNode;
   /** After the name (the week leader's crown). */
   nameSuffix?: ReactNode;
@@ -147,10 +150,11 @@ export function PodiumGlow({ tone, figureHeight, top }: { tone: PodiumTone; figu
 }
 
 /**
- * Founder 10-09: the name / points / badge / detail plaque under a podium player wears THEIR mascot-maker backdrop (the fill,
- * a top-left to bottom-right gradient) and frame (the border gradient), 12px radius, soft shadow. The ink follows the fill's
- * brightness so the stats read on any backdrop. Colors: core plateHexes (pinned to Swift + Kotlin by player-tint-fixtures.json);
- * the config comes through the same resolver as the avatar above it.
+ * Founder 10-09: the plaque under a podium player wears THEIR mascot-maker backdrop (the fill, a top-left to bottom-right
+ * gradient) and frame (the border gradient), 12px radius, soft shadow, and holds only the NUMBERS now (the name rides above the
+ * head): points and the detail line, both in the bubble lettering on the plate palette (pale plate: purple letters + numbers
+ * with a white outline; dark plate: white letters + gold numbers). Colors: core plateHexes (pinned to Swift + Kotlin by
+ * player-tint-fixtures.json); the config comes through the same resolver as the avatar above it.
  */
 export function PodiumPlaque({ place, compact = false, first = false }: { place: PodiumPlace; compact?: boolean; first?: boolean }) {
   const look = usePlayerAvatar({
@@ -158,36 +162,63 @@ export function PodiumPlaque({ place, compact = false, first = false }: { place:
     config: place.avatar?.config, castId: place.avatar?.castId, frame: place.avatar?.frame, level: place.level, pro: place.avatar?.pro,
   });
   const plate = React.useMemo(() => plateForConfig(look.config), [look.config]);
-  const ink = plateInk(plate.lightInk);
+  const spec = React.useMemo(() => platePaletteSpec(plate.lightInk), [plate.lightInk]);
   const fill = plate.fill.length > 1 ? plate.fill : [plate.fill[0], plate.fill[0]];
   const edge = plate.border.length > 1 ? plate.border : [plate.border[0], plate.border[0]];
+  const points = typeof place.points === 'string' || typeof place.points === 'number' ? String(place.points).toUpperCase() : null;
   return (
     <div
-      className="podium-plaque relative flex flex-col items-center max-w-full"
+      className="podium-plaque relative flex flex-col items-center max-w-full w-full"
       style={{
         gap: 2, padding: '4px 10px', zIndex: 2, borderRadius: 12, boxShadow: '0 2px 3px rgba(0,0,0,0.18)', border: `${plate.borderWidth}px solid transparent`,
         // the fill paints under the padding box, the border gradient under the border box (the usual two-layer gradient border)
         background: `linear-gradient(135deg, ${fill.join(', ')}) padding-box, linear-gradient(to bottom, ${edge.join(', ')}) border-box`,
         // the badge and extra nodes inherit the ink
-        color: ink.heading,
+        color: plate.lightInk ? '#ffffff' : '#2a1650',
       }}
     >
-      <Link
-        href={`/profile/${place.userId}`}
-        className={`max-w-full truncate ${compact ? 'text-[12px]' : 'text-[13px]'} font-black leading-tight hover:opacity-80 transition-opacity`}
-        style={{ color: ink.heading }}
-      >
-        {place.username}
-        {place.level ? <LevelBadge level={place.level} size={16} numberSize={11} className="ml-1 align-middle" /> : null}
-        {place.nameSuffix}
-      </Link>
-      <div className="flex items-center justify-center gap-1 max-w-full">
-        <SoftNum size={compact ? 11 + (first ? 1.5 : 0) : 13} style={{ color: ink.muted, textShadow: plate.lightInk ? 'none' : undefined }}>{place.points}</SoftNum>
+      <div className="flex items-center justify-center gap-1 w-full min-w-0">
+        <div className="flex-1 min-w-0">
+          {points !== null
+            ? <BubbleOneLine text={points} spec={spec} size={(compact ? 14 : 17) + (first ? 2 : 0)} />
+            : <span className="font-black" style={{ fontSize: compact ? 11 : 13 }}>{place.points}</span>}
+        </div>
         {place.badge}
       </div>
-      {place.extra && <div style={{ color: ink.badge }}>{place.extra}</div>}
+      {place.detail ? <BubbleOneLine text={place.detail.toUpperCase()} spec={spec} size={compact ? 10 : 11.5} minScale={0.55} /> : null}
+      {place.extra && <div style={{ color: plate.lightInk ? '#f5b82e' : '#b45309' }}>{place.extra}</div>}
+      {place.nameSuffix}
       {place.action}
     </div>
+  );
+}
+
+/**
+ * Founder 10-09: the player's NAME rides ABOVE their head in the bubble lettering, one line that shrinks to fit (never wraps or
+ * clips; floor 0.3), in their own name color, with a soft glow behind it in their SECONDARY color (their pattern color): two blurred
+ * capsules (outer 55% blur 12, inner 90% blur 6). The slot is 10px wider than its column on each side, and `pull` px of its height
+ * overlap the figure below, so the name sits close to the head (standing figures 18px, the winner only 4px so it stays above the
+ * crown, a framed tile 2px).
+ */
+function PodiumNameAbove({ place, size, pull }: { place: PodiumPlace; size: number; pull: number }) {
+  const look = usePlayerAvatar({
+    name: place.username, userId: place.userId, url: place.avatarUrl, accent: place.avatar?.accent,
+    config: place.avatar?.config, castId: place.avatar?.castId, frame: place.avatar?.frame, level: place.level, pro: place.avatar?.pro,
+  });
+  const nameColor = nameColorHex(look.config.bg, look.config.color);
+  const glow = secondaryColorHex(look.config.patternColor);
+  return (
+    <Link
+      href={`/profile/${place.userId}`}
+      className="relative block hover:opacity-90 transition-opacity"
+      style={{ width: 'calc(100% + 20px)', marginLeft: -10, marginRight: -10, marginBottom: -pull, zIndex: 2 }}
+    >
+      <span aria-hidden="true" className="absolute pointer-events-none" style={{ left: -2, right: -2, top: -6, bottom: -6, borderRadius: 999, background: alphaHex(glow, 0.55), filter: 'blur(12px)' }} />
+      <span aria-hidden="true" className="absolute pointer-events-none" style={{ left: 10, right: 10, top: 1, bottom: 1, borderRadius: 999, background: alphaHex(glow, 0.9), filter: 'blur(6px)' }} />
+      <span className="relative block">
+        <BubbleOneLine text={place.username.toUpperCase()} accent={nameColor} size={size} />
+      </span>
+    </Link>
   );
 }
 
@@ -214,6 +245,7 @@ function Column({ place, index, compact = false }: { place: PodiumPlace; index: 
         <img aria-hidden="true" alt="" src="/art/celebrate-burst-party.webp" width={150} draggable={false}
           className="podium-burst absolute pointer-events-none" style={{ left: '50%', top: 0, marginLeft: -75, zIndex: 0 }} />
       )}
+      <PodiumNameAbove place={place} size={compact ? 14 : (first ? 19 : 16)} pull={livingOn ? (first ? 4 : 18) : 2} />
       {place.isMe || cardOn ? (
         // Founder 10-05 (door 1): your own place opens your Stage; with the living mascot on, anyone else's opens their mini Stage card.
         <button type="button" onClick={() => (place.isMe ? openDressUp() : setStageOpen(true))}
@@ -317,7 +349,7 @@ export function Podium({ places, label = 'Top three', accent = STAGE_GOLD, bare 
   const slots = podiumSlots(shown.map((p) => p.rank));
   if (slots.length === 0) return null;
   return (
-    <div role="group" aria-label={label} className="relative overflow-hidden" style={{ padding: '8px 12px 0' }}>
+    <div role="group" aria-label={label} className="relative overflow-hidden" style={{ padding: bare ? '2px 12px 0' : '8px 12px 0' }}>
       {/* 11b: on the Leaderboard stage the shared backdrop already draws the light + glow */}
       {!bare && <Stage accent={accent} />}
       <PodiumFloor />

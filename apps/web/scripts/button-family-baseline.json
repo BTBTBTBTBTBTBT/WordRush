@@ -127,6 +127,7 @@
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/EditProfileScreen.kt": 7,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/FinishPages.kt": 2,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/FriendsPanel.kt": 9,
+    "apps/android/app/src/main/kotlin/com/wordocious/app/ui/GameOrderEdit.kt": 1,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/HelpInfoScreens.kt": 1,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/HomeBannerView.kt": 2,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/HomeHost.kt": 1,

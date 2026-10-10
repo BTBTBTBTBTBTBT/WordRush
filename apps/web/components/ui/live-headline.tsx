@@ -101,7 +101,7 @@ export const LiveHeadline = memo(function LiveHeadline({
     '--lh-size': typeof size === 'number' ? `${size}px` : size,
     '--lh-top': p.top, '--lh-bottom': p.bottom, '--lh-deep': p.deep,
     '--lh-name-top': p.nameTop, '--lh-name-bottom': p.nameBottom,
-    '--lh-num-top': HEADLINE_NUMBER.top, '--lh-num-bottom': HEADLINE_NUMBER.bottom, '--lh-num-deep': HEADLINE_NUMBER.deep,
+    '--lh-num-top': p.numberTop ?? HEADLINE_NUMBER.top, '--lh-num-bottom': p.numberBottom ?? HEADLINE_NUMBER.bottom, '--lh-num-deep': HEADLINE_NUMBER.deep,
     '--lh-outline': HEADLINE_OUTLINE,
     textAlign: align,
     ...style,

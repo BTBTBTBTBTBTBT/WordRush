@@ -131,11 +131,11 @@ export function YourBoardButton({ onClick, label = 'View board', accent }: { onC
   );
 }
 
-/** The main stage podium's one fixed min height (px) across games, incl. the empty state (founder 10-09; iOS stagePodiumHeight 300). */
-export const STAGE_PODIUM_HEIGHT = 300;
+/** The main stage podium's one fixed min height (px) across games, incl. the empty state (founder 10-09; iOS stagePodiumHeight 240). */
+export const STAGE_PODIUM_HEIGHT = 240;
 
 /** Yesterday's small podium keeps one fixed height (founder 10-09) so the page never jumps while it loads. */
-export const YESTERDAY_PODIUM_HEIGHT = 210;
+export const YESTERDAY_PODIUM_HEIGHT = 230;
 
 /**
  * Yesterday (founder 10-09): it sits UNDER today's last player and the Completed Today line (not inside the stage),
@@ -176,11 +176,10 @@ export function YesterdayLedge({ places, open, onToggle, loading, share, accent,
         )}
         {open && !empty && share}
       </div>
-      {/* the small podium: a fixed height; tapping the stage toggles the list (the header button is the keyboard path) */}
-      {!empty && (
+      {/* the small podium (founder 10-09: shown only while open; minimizing folds everything to the header line) */}
+      {open && !empty && (
         <div
-          onClick={onToggle}
-          className="mx-auto cursor-pointer"
+          className="mx-auto"
           style={{ height: YESTERDAY_PODIUM_HEIGHT, maxWidth: 360, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
         >
           {!loading && <Podium places={places} label="Yesterday's top three" accent={accent} compact bare />}

@@ -21,12 +21,12 @@ describe('AU2 the compact rank row', () => {
     expect(compactRankLine({ rank: 7, total: 40, points: '9,100', detail: 'Swept · 8/8 · 6m' })).toBe('#7 of 40 · 9,100 PTS · Swept · 8/8 · 6m');
   });
 
-  it('BB3/BB4: the Leaderboard picker is the compact two-row grid with no ALL-TIME button', () => {
+  it('BB3/BB4: the Leaderboard picker is the two-row grid (the Home banner rows) with no ALL-TIME button', () => {
     const banner = read('components/leaderboard/leaderboard-banner.tsx');
     expect(banner).toContain('density="compact"');
     expect(banner).not.toContain('layout="strip"');
     expect(banner).not.toContain('href="/records"');
-    expect(read('components/ui/game-picker.tsx')).toContain('maxSize={compact ? 34 : 44}');
+    expect(read('components/ui/game-picker.tsx')).toContain('maxSize={40}'); // founder 10-09: the Home banner rows, one 40 px tile size
   });
 });
 

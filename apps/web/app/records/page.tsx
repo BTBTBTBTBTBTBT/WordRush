@@ -489,7 +489,7 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
     avatarUrl: entry.avatar_url, avatarEmoji: entry.avatar_emoji, isMe: !!userId && entry.user_id === userId,
     points: lbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score),
     badge: rowBadge(entry, playType) ? <WinLossBadge won={entry.completed} size={15} /> : undefined,
-    extra: <span className="text-[10px] font-bold text-center leading-tight" style={{ color: 'var(--color-text-secondary)' }}>{recordsStatsText(entry, selectedMode, playType)}</span>,
+    detail: recordsStatsText(entry, selectedMode, playType),
   }));
   const sweepPodium: PodiumPlace[] = sweepSplit.podium.map(({ entry, rank }) => ({
     avatar: boardAvatarFor(entry),
@@ -711,7 +711,7 @@ function YesterdayPodium({ mode, playType, userId }: { mode: string; playType: '
     avatarUrl: entry.avatar_url, avatarEmoji: entry.avatar_emoji, isMe: !!userId && entry.user_id === userId,
     points: podiumScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score),
     badge: rowBadge(entry, playType) ? <WinLossBadge won={entry.completed} size={15} /> : undefined,
-    extra: <span className="text-[10px] font-bold text-center leading-tight" style={{ color: 'var(--color-text-secondary)' }}>{recordsStatsText(entry, mode, playType)}</span>,
+    detail: recordsStatsText(entry, mode, playType),
   }));
 
   const handleShare = async () => {

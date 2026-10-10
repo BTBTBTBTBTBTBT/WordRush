@@ -11,7 +11,7 @@ import { CANDY_INK, candyPad, threeSlice } from '@/lib/candy-toggle';
 
 export interface CandySegmentOption<K extends string> { key: K; label: ReactNode; ariaLabel?: string }
 
-export function CandySegment<K extends string>({ options, value, onChange, label, height = 38, itemPad = 0, className = '', style }: {
+export function CandySegment<K extends string>({ options, value, onChange, label, height = 38, itemPad = 0, fontSize, className = '', style }: {
   options: CandySegmentOption<K>[];
   value: K | '';
   onChange: (key: K) => void;
@@ -22,6 +22,8 @@ export function CandySegment<K extends string>({ options, value, onChange, label
   height?: number;
   /** Horizontal padding of each option (a hugging segmented, e.g. Everyone | Friends). */
   itemPad?: number;
+  /** Founder 10-09: a smaller switch beside another control (px; default 12 / 13 by height). */
+  fontSize?: number;
   className?: string;
   style?: CSSProperties;
 }) {
@@ -56,7 +58,7 @@ export function CandySegment<K extends string>({ options, value, onChange, label
             aria-label={o.ariaLabel}
             onClick={() => onChange(o.key)}
             className={`relative z-10 inline-flex items-center justify-center gap-1 font-black rounded-full ${height < 36 ? 'text-[12px]' : 'text-[13px]'}`}
-            style={{ minHeight: height, padding: itemPad ? `0 ${itemPad}px` : undefined, whiteSpace: 'nowrap', color: on ? CANDY_INK.on : CANDY_INK.off, textShadow: on ? '0 1px 0 rgba(76, 29, 149, 0.45)' : undefined, transition: 'color 160ms ease-out' }}
+            style={{ minHeight: height, fontSize, padding: itemPad ? `0 ${itemPad}px` : undefined, whiteSpace: 'nowrap', color: on ? CANDY_INK.on : CANDY_INK.off, textShadow: on ? '0 1px 0 rgba(76, 29, 149, 0.45)' : undefined, transition: 'color 160ms ease-out' }}
           >
             {o.label}
           </button>

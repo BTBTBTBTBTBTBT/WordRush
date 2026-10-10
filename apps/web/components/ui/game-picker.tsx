@@ -99,13 +99,14 @@ export function GamePicker({
   const rowLabel = (text: string) => (
     <span className={`${compact ? 'text-[10px]' : 'text-[11px]'} font-black picker-label`} style={{ letterSpacing: '0.12em', color: labelInk }}>{text}</span>
   );
-  // Both rows share ONE tile size and gap (sized for the longer row), centered — like Home's banner rows.
-  const slots = Math.max(rows.wordocious.length, rows.puzzles.length);
-  const gap = compact ? 5 : 6;
+  // Founder 10-09: exactly Home's banner rows on Stats and the Leaderboard alike: ONE tile size (max 40) sized for max(10, the longer
+  // row) with at least a 4px gap, and each row spread edge to edge with even gaps (no smaller "compact" tiles).
+  const slots = Math.max(10, rows.wordocious.length, rows.puzzles.length);
+  const gap = 4;
   const row = (tiles: PickerTile[]) => (
-    <div className="flex justify-center" style={{ gap }} role="group">
+    <div className="flex justify-between w-full" style={{ gap }} role="group">
       {tiles.map((t) => (
-        <Tile key={t.key} t={t} on={selected === t.key} badge={badges?.[t.key]} onSelect={onSelect} maxSize={compact ? 34 : 44} slots={slots} gap={gap} />
+        <Tile key={t.key} t={t} on={selected === t.key} badge={badges?.[t.key]} onSelect={onSelect} maxSize={40} slots={slots} gap={gap} />
       ))}
     </div>
   );

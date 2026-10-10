@@ -59,7 +59,7 @@ export function SectionHeader({
   return (
     <div className="flex items-center justify-between gap-2 mb-2">
       <div className="flex-1 min-w-0" style={{ maxWidth: 240 }}>
-        <BubbleText text={label.toUpperCase()} accent={color} align="left" maxSize={22} minSize={13} level={2} />
+        <BubbleText text={label.toUpperCase()} accent={color} align="left" maxSize={22} minSize={13} level={2} calm />
       </div>
       {right}
     </div>
