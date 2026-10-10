@@ -558,6 +558,11 @@ enum StoreDemoDriver {
         case "quad": await multi("QUORDLE")
         // An Unlimited ProperNoundle in play (layout checks; pair with `-pnAnswerLength N`).
         case "propernoundle": PerfDrive.playUnlimited("PROPERNOUNDLE")
+        // 2.8 store set (10-10): a few Puzzles boards (Unlimited, fresh), and the Friends page itself.
+        case "regions": PerfDrive.playUnlimited("REGIONS")
+        case "crossword": PerfDrive.playUnlimited("CROSSWORD")
+        case "hub": PerfDrive.playUnlimited("HUB")
+        case "friendspage": PerfTour.send(.selectTab(.friends))
         case "stats": PerfTour.send(.selectTab(.stats))
         case "leaderboard": PerfTour.send(.selectTab(.leaderboard))
         case "friends":

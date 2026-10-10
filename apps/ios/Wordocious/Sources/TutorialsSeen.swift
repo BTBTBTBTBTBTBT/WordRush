@@ -92,7 +92,10 @@ final class TutorialsSeen: ObservableObject {
 
     /// Whether this game's welcome card should show on its own right now.
     func shouldAutoShow(_ key: String, hasResults: Bool = false) -> Bool {
-        PocketHelp.shouldAutoShowTutorial(live: FlagsService.shared.isLive(PocketHelp.firstPlayFlag), seen: seen, key: key, hasResults: hasResults)
+        #if DEBUG
+        if StoreDemo.active { return false }   // store shots: the board, never the first-play card
+        #endif
+        return PocketHelp.shouldAutoShowTutorial(live: FlagsService.shared.isLive(PocketHelp.firstPlayFlag), seen: seen, key: key, hasResults: hasResults)
     }
 
     /// The player already has results here but the key is unseen: record it silently (no card).

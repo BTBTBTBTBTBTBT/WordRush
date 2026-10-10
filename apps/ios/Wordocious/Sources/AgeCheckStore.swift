@@ -29,6 +29,10 @@ final class AgeCheckStore: ObservableObject {
 
     private init() {
         stored = Self.read()
+        #if DEBUG
+        // Store shots: the demo player has passed the 13+ check (in memory only, never stored).
+        if StoreDemo.active { stored = AgeCheck.Stored(state: .ok, year: 1990) }
+        #endif
     }
 
     /// Passed on this device, or the off-switch is off (fail open: unknown flags = the check is live).

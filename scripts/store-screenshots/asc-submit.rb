@@ -5,12 +5,14 @@ require "jwt"; require "json"; require "net/http"; require "openssl"
 # disk and never printed.
 APP = "6775966055"; VERSION = ENV.fetch("VER", "2.3"); BUILD = ENV.fetch("BUILD", "204")
 WHATS_NEW = <<~TXT.strip
-  • A new home screen: one banner shows your whole day across Wordocious and the 10 Puzzles, with a streak for each and a gold glow when you go flawless.
-  • Puzzles now sit right on the home screen, no extra menu.
-  • Word of the Day is a quick quiz: pick the real definition and build a word streak.
-  • Pro: the Daily / Unlimited switch now lives in the banner.
-  • Stats: a chart for every puzzle, Puzzles sweep records, a Word of the Day record, and VS stats on the All-time page.
-  • Refreshed widgets and a cleaner streak saver.
+  Happy Halloween from Wordocious!
+  • A spooky new look for the season: costumed cast, moonlit walls, bats and a witch on the wing.
+  • Easier to read on the night theme: names, scores, labels and menus reworked for contrast.
+  • New podiums and Leaderboard stage, with each player's own colors.
+  • Friends: pick-a-game dropdowns and a tidy resign flag on every pocket game.
+  • Rock Paper Scissors gets a SHOOT! countdown, and Call It has a real coin flip.
+  • Redesigned widgets in every size, starring your own mascot.
+  • Smoother screens, swipe right to close any game, and lots of polish.
 TXT
 kid = "C8FRS9T697"; iss = "8bdd3f73-0d8b-427d-95c7-8097b77dfb7a"
 p8 = File.join(Dir.home, ".appstoreconnect/private_keys/AuthKey_#{kid}.p8")

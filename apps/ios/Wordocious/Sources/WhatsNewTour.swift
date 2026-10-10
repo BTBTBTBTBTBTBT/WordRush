@@ -11,6 +11,9 @@ import WordociousCore
 @MainActor
 enum WhatsNewGate {
     static func decide() async -> WhatsNew.Decision {
+        #if DEBUG
+        if StoreDemo.active { return .none }   // store shots: no tour over the screen
+        #endif
         await TutorialsSeen.shared.refresh()
         let auth = AuthService.shared
         let p = auth.profile

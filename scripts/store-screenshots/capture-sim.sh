@@ -11,6 +11,7 @@
 #   ./capture-sim.sh                 build + capture every shot + compose
 #   SKIP_BUILD=1 ./capture-sim.sh    reuse the last DEBUG build
 #   SHOTS="stats leaderboard" ./capture-sim.sh   just those
+#   EXTRA_ARGS="-debug-season halloween" ./capture-sim.sh   the Halloween season look (2.8 store set)
 #   KEEP_BOOTED=1 ./capture-sim.sh   leave the sim running afterwards
 #   APP=/path/Wordocious.app SKIP_BUILD=1 ./capture-sim.sh   capture a prebuilt DEBUG .app
 set -euo pipefail
@@ -22,7 +23,7 @@ UDID="${UDID:-9BE11FAF-B046-4550-85DC-3FB35753CD5E}"   # iPhone 17 Pro Max (1320
 BUNDLE="com.wordocious.app"
 OUT="$HERE/store-src"
 LOG="${TMPDIR:-/tmp}/store-demo-logs"
-ALL="home classic octo finish stats leaderboard friends vs mascot"   # store order (NN in the file name)
+ALL="home classic octo regions crossword hub friends friendspage stats leaderboard"   # store order (NN in the file name)
 SHOTS="${SHOTS:-$ALL}"
 
 # Seconds to wait after launch before the screenshot (the driver plays its moves first).
@@ -59,7 +60,7 @@ for shot in $SHOTS; do
   xcrun simctl install "$UDID" "$APP"
   rm -f "$LOG/$shot.requests"
   xcrun simctl launch --terminate-running-process --stdout="$LOG/$shot.log" --stderr="$LOG/$shot.err" \
-    "$UDID" "$BUNDLE" -storeDemo -storeShot "$shot" -storeLog "$LOG/$shot.requests" >/dev/null
+    "$UDID" "$BUNDLE" -storeDemo -storeShot "$shot" -storeLog "$LOG/$shot.requests" ${EXTRA_ARGS:-} >/dev/null
   sleep "$(settle "$shot")"
   f="$OUT/sim-$(printf %02d $i)-$shot.png"
   xcrun simctl io "$UDID" screenshot --type=png "$f" >/dev/null 2>&1

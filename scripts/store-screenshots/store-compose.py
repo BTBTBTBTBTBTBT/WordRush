@@ -9,6 +9,14 @@ FONT = os.path.join(HERE, '..', '..', 'apps', 'ios', 'Wordocious', 'Resources', 
 # SET=sim composes the simulator captures (capture-sim.sh → store-src/sim-NN-<name>.png);
 # the default is the founder-phone set below.
 SET = os.environ.get('SET', 'sim')   # 'phone' = the founder-shot SHOTS table
+# 2.8 (10-10): THEME=halloween puts the frames on the season's night ground (black → deep orange-brown, like the widgets),
+# with an orange → gold headline, a soft cream subline and an ember hairline around the phone.
+THEME = os.environ.get('THEME', 'day')
+NIGHT = THEME == 'halloween'
+HEAD_GRAD = ((0xF9, 0x73, 0x16), (0xFB, 0xBF, 0x24)) if NIGHT else ((0x7C, 0x3A, 0xED), (0xEC, 0x48, 0x99))
+SUB_INK = (0xE9, 0xD5, 0xC4) if NIGHT else (0x6B, 0x67, 0x85)
+EDGE = (0x7C, 0x2D, 0x12) if NIGHT else (0xDD, 0xD6, 0xFE)
+SHADOW = (0xF9, 0x73, 0x16, 60) if NIGHT else (0x4C, 0x1D, 0x95, 70)
 
 # founder order (2026-09-28): Home, More Games, Classic board, Classic answered, then ours
 SHOTS = [
@@ -26,20 +34,23 @@ SHOTS = [
 # Simulator set (capture-sim.sh, -storeDemo). Slot 10 composes the mascot widget renders
 # from docs/design/widgets-2026-10-02 (a `None` source = compose_widgets).
 SHOTS_SIM = [
+    # 2.8 Halloween set (10-10): the Home board always first.
     ('sim-01-home.png',        'home',        '18 fresh puzzles every day',  'Eight dailies and ten puzzles, new each morning'),
     ('sim-02-classic.png',     'classic',     'One word, six tries',         'Every guess shows you a little more'),
     ('sim-03-octo.png',        'octoword',    'Eight boards at once',        'OctoWord: every guess plays on all eight'),
-    ('sim-04-finish.png',      'victory',     'Every solve is scored',       'Guesses, time and points on every win'),
-    ('sim-05-stats.png',       'stats',       'Your day at a glance',        'Your streak, level and every daily played'),
-    ('sim-06-leaderboard.png', 'leaderboard', 'Climb the daily podium',      'See where you rank in every game today'),
-    ('sim-07-friends.png',     'friends',     'Play with your friends',      'Pocket games like Tic-Tac-Tile, live'),
-    ('sim-08-vs.png',          'vs',          'VS battles, head to head',    'Match up with a friend and track who leads'),
-    ('sim-09-mascot.png',      'mascot',      'Build your own mascot',       'Pick a body, color, pattern, eyes and more'),
-    (None,                     'widgets',     'Widgets with your mascot',    'Your dailies, streak and points at a glance'),
+    ('sim-04-regions.png',     'starsweep',   'Ten puzzles beyond words',    'Starsweep, Crossword, Hubbub and more'),
+    ('sim-05-crossword.png',   'crossword',   'A fresh crossword daily',     'Hints when you need them, points when you don\'t'),
+    ('sim-06-hub.png',         'hubbub',      'Find every word',             'Hubbub: how many can you spell?'),
+    ('sim-07-friends.png',     'pocket',      'Pocket games with friends',   'Tic-Tac-Tile, Ghost, Call It and more'),
+    ('sim-08-friendspage.png', 'friends',     'Race your friends daily',     'A podium every day and who\'s on now'),
+    ('sim-09-stats.png',       'stats',       'Your day at a glance',        'Your streak, records and every daily played'),
+    ('sim-10-leaderboard.png', 'leaderboard', 'Climb the daily podium',      'See where you rank in every game today'),
 ]
 if SET == 'sim': SHOTS = SHOTS_SIM
 WIDGET_DIR = os.path.join(HERE, '..', '..', 'docs', 'design', 'widgets-2026-10-02')
 SIZES = {'67': (1320, 2868), '65': (1284, 2778)}
+# 2.8 (10-10): PLAY=1 also writes Google Play phone frames (9:16, within Play's 2:1 limit).
+if os.environ.get('PLAY'): SIZES['play'] = (1080, 1920)
 
 def font(size, weight):
     f = ImageFont.truetype(FONT, size)
@@ -92,7 +103,7 @@ def caption(canvas, head, sub, W, fixed):
         tw = draw.textlength(ln, font=hf)
         mask = Image.new('L', (int(tw) + 20, lh + 30), 0)
         ImageDraw.Draw(mask).text((10, 0), ln, font=hf, fill=255)
-        grad = hgradient(mask.width, mask.height, (0x7C, 0x3A, 0xED), (0xEC, 0x48, 0x99)).convert('RGBA')
+        grad = hgradient(mask.width, mask.height, HEAD_GRAD[0], HEAD_GRAD[1]).convert('RGBA')
         canvas.paste(grad, (int((W - tw) / 2) - 10, y), mask)
         y += lh
     sf = font(int(SUB_PX * s), 'Bold')
@@ -101,11 +112,13 @@ def caption(canvas, head, sub, W, fixed):
     if fixed: assert len(sublines) == 1, f'subline wraps: {sub!r}'
     for ln in sublines:
         tw = draw.textlength(ln, font=sf)
-        draw.text(((W - tw) / 2, y), ln, font=sf, fill=(0x6B, 0x67, 0x85))
+        draw.text(((W - tw) / 2, y), ln, font=sf, fill=SUB_INK)
         y += int(sf.size * 1.3)
     return y
 
 def ground(W, H):
+    if NIGHT:
+        return gradient(W, H, (0x0B, 0x07, 0x10), (0x3A, 0x1A, 0x05)).convert('RGBA')
     return gradient(W, H, (0xF5, 0xF3, 0xFF), (0xEC, 0xE8, 0xFC)).convert('RGBA')
 
 def compose(src, head, sub, W, H):
@@ -122,11 +135,11 @@ def compose(src, head, sub, W, H):
     m = Image.new('L', (pw, ph), 0); ImageDraw.Draw(m).rounded_rectangle((0, 0, pw - 1, ph - 1), r, fill=255)
     x0 = (W - pw) // 2; y0 = top + (H - top - bottom_pad - ph) // 2
     shadow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).rounded_rectangle((x0, y0 + int(28 * s), x0 + pw, y0 + ph + int(28 * s)), r, fill=(0x4C, 0x1D, 0x95, 70))
+    ImageDraw.Draw(shadow).rounded_rectangle((x0, y0 + int(28 * s), x0 + pw, y0 + ph + int(28 * s)), r, fill=SHADOW)
     shadow = shadow.filter(ImageFilter.GaussianBlur(int(40 * s)))
     canvas = Image.alpha_composite(canvas, shadow)
     canvas.paste(shot, (x0, y0), m)
-    ImageDraw.Draw(canvas).rounded_rectangle((x0, y0, x0 + pw - 1, y0 + ph - 1), r, outline=(0xDD, 0xD6, 0xFE), width=max(2, int(3 * s)))
+    ImageDraw.Draw(canvas).rounded_rectangle((x0, y0, x0 + pw - 1, y0 + ph - 1), r, outline=EDGE, width=max(2, int(3 * s)))
     return canvas.convert('RGB')
 
 def compose_widgets(head, sub, W, H):
