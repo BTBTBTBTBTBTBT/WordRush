@@ -62,7 +62,7 @@ class SolutionSwapTest {
     }
 
     @Test fun batch2TableShape() {
-        assertEquals("2026-10-17", SOLUTION_SWAP_2_CUTOVER_DATE)
+        assertEquals("2026-10-10", SOLUTION_SWAP_2_CUTOVER_DATE)
         assertTrue(SOLUTION_SWAP_2_CUTOVER_DATE > SOLUTION_SWAP_CUTOVER_DATE)
         assertEquals("batch 1 must not grow", 23, SOLUTION_SWAPS.size)
         assertEquals(13, SOLUTION_SWAPS_2.size)
@@ -94,30 +94,32 @@ class SolutionSwapTest {
     }
 
     @Test fun onlyBatch1BetweenCutovers_bothFromSecondCutover() {
-        // Batch 4 started earlier (2026-10-13), so its words have already moved by both dates.
-        val bothOld = SOLUTION_SWAPS.keys + SOLUTION_SWAPS_2.keys + SOLUTION_SWAPS_4.keys
+        // Masks come from the live cutover dates (batch 2 moved to 2026-10-10, before batch 4's 2026-10-13).
+        val mBefore = solutionSwapBatchesFor("2026-10-09")
+        val mAfter = solutionSwapBatchesFor(SOLUTION_SWAP_2_CUTOVER_DATE)
+        assertEquals(0, mBefore and 2)
+        assertEquals(2, mAfter and 2)
+        val tables = listOf(SOLUTION_SWAPS, SOLUTION_SWAPS_2, SOLUTION_SWAPS_3, SOLUTION_SWAPS_4)
+        val liveOld = tables.withIndex().flatMap { (k, t) -> if (mAfter and (1 shl k) != 0) t.keys else emptySet() }
         for (len in listOf(5, 6, 7)) {
             val raw = if (len == 5) GameDictionary.solutionPool("2026-10-04") else GameDictionary.solutionPoolForLength(len, "2026-10-04")
-            val between = if (len == 5) GameDictionary.solutionPool("2026-10-16") else GameDictionary.solutionPoolForLength(len, "2026-10-16")
-            val after = if (len == 5) GameDictionary.solutionPool("2026-10-17") else GameDictionary.solutionPoolForLength(len, "2026-10-17")
-            assertEquals(applySolutionSwapBatches(raw, 1 or 8), between)
-            // Batch 3 shares this date while SOLUTION_SWAP_3_CUTOVER_DATE == SOLUTION_SWAP_2_CUTOVER_DATE.
-            val sameDay3 = SOLUTION_SWAP_3_CUTOVER_DATE == SOLUTION_SWAP_2_CUTOVER_DATE
-            assertEquals(applySolutionSwapBatches(raw, if (sameDay3) 15 else 11), after)
+            val between = if (len == 5) GameDictionary.solutionPool("2026-10-09") else GameDictionary.solutionPoolForLength(len, "2026-10-09")
+            val after = if (len == 5) GameDictionary.solutionPool(SOLUTION_SWAP_2_CUTOVER_DATE) else GameDictionary.solutionPoolForLength(len, SOLUTION_SWAP_2_CUTOVER_DATE)
+            assertEquals(applySolutionSwapBatches(raw, mBefore), between)
+            assertEquals(applySolutionSwapBatches(raw, mAfter), after)
             assertEquals(raw.size, after.size)
-            bothOld.forEach { assertFalse(it, after.contains(it)) }
+            liveOld.forEach { assertFalse(it, after.contains(it)) }
             val moved = raw.indices.filter { raw[it] != after[it] }.map { raw[it] }.sorted()
-            val expected = (bothOld + if (sameDay3) SOLUTION_SWAPS_3.keys else emptySet()).filter { it.length == len && raw.contains(it) }
-            assertEquals(expected.sorted(), moved)
+            assertEquals(liveOld.filter { it.length == len && raw.contains(it) }.sorted(), moved)
         }
-        assertTrue(GameDictionary.solutionPoolForLength(6, "2026-10-16").contains("FUCKER"))
-        assertTrue(GameDictionary.solutionPoolForLength(6, "2026-10-17").contains("CASHEW"))
+        assertTrue(GameDictionary.solutionPoolForLength(6, "2026-10-09").contains("FUCKER"))
+        assertTrue(GameDictionary.solutionPoolForLength(6, "2026-10-10").contains("CASHEW"))
     }
 
     @Test fun batch2UndatedSeedsGateOnWallClock() {
-        GameDictionary.todayOverrideForTests = "2026-10-16"
+        GameDictionary.todayOverrideForTests = "2026-10-09"
         assertTrue(GameDictionary.solutionPoolForLength(6, null).contains("FUCKER"))
-        GameDictionary.todayOverrideForTests = "2026-10-17"
+        GameDictionary.todayOverrideForTests = "2026-10-10"
         assertFalse(GameDictionary.solutionPoolForLength(6, null).contains("FUCKER"))
         assertTrue(GameDictionary.solutionPoolForLength(6, null).contains("CASHEW"))
         assertTrue(GameDictionary.solutionPoolForLength(7, null).contains("APRICOT"))
@@ -128,7 +130,7 @@ class SolutionSwapTest {
     }
 
     @Test fun batch2PinnedDeals() {
-        // 2026-10-28 is past the (moved, 2026-10-17) batch-2 cutover: V******'s slot now deals COPILOT,
+        // 2026-10-28 is past the (moved, 2026-10-10) batch-2 cutover: V******'s slot now deals COPILOT,
         // and LUNATIC's slot holds batch 4's DIEHARD (batch 4 starts 2026-10-13).
         assertEquals(listOf("PRESSED", "DENOTED", "PALETTE", "FAILING", "DIEHARD", "BREEDER", "WAITING", "COPILOT"),
             generateSolutionsFromSeedForLength("daily-2026-10-28-DUEL_7", 8, 7))
@@ -206,7 +208,7 @@ class SolutionSwapTest {
 
     @Test fun batch4TableShapeAndGate() {
         assertEquals("2026-10-13", SOLUTION_SWAP_4_CUTOVER_DATE)
-        assertTrue(SOLUTION_SWAP_4_CUTOVER_DATE < SOLUTION_SWAP_2_CUTOVER_DATE)
+        assertTrue(SOLUTION_SWAP_4_CUTOVER_DATE < SOLUTION_SWAP_3_CUTOVER_DATE)
         assertEquals(23, SOLUTION_SWAPS.size)
         assertEquals(13, SOLUTION_SWAPS_2.size)
         assertEquals(46, SOLUTION_SWAPS_3.size)
@@ -214,8 +216,8 @@ class SolutionSwapTest {
         assertEquals(283, SOLUTION_SWAPS_4.values.toSet().size)
         assertEquals("BEANIE", SOLUTION_SWAPS_4["TOGGLE"])
         assertEquals("SUITOR", SOLUTION_SWAPS_4["LATINO"])
-        assertEquals(1, solutionSwapBatchesFor("2026-10-12"))
-        assertEquals(1 or 8, solutionSwapBatchesFor("2026-10-13"))
+        assertEquals(0, solutionSwapBatchesFor("2026-10-12") and 8)
+        assertEquals(solutionSwapBatchesFor("2026-10-12") or 8, solutionSwapBatchesFor("2026-10-13"))
         val earlier = SOLUTION_SWAPS.keys + SOLUTION_SWAPS_2.keys + SOLUTION_SWAPS_3.keys +
             SOLUTION_SWAPS.values + SOLUTION_SWAPS_2.values + SOLUTION_SWAPS_3.values
         SOLUTION_SWAPS_4.forEach { (o, n) ->
@@ -244,9 +246,11 @@ class SolutionSwapTest {
             val raw = if (len == 5) GameDictionary.solutionPool("2026-10-04") else GameDictionary.solutionPoolForLength(len, "2026-10-04")
             val dayBefore = if (len == 5) GameDictionary.solutionPool("2026-10-12") else GameDictionary.solutionPoolForLength(len, "2026-10-12")
             val after = if (len == 5) GameDictionary.solutionPool(SOLUTION_SWAP_4_CUTOVER_DATE) else GameDictionary.solutionPoolForLength(len, SOLUTION_SWAP_4_CUTOVER_DATE)
-            assertEquals(applySolutionSwaps(raw), dayBefore)
-            assertEquals(applySolutionSwaps4(applySolutionSwaps(raw)), after)
-            val old = (SOLUTION_SWAPS.keys + SOLUTION_SWAPS_4.keys).filter { it.length == len }
+            assertEquals(applySolutionSwapBatches(raw, solutionSwapBatchesFor("2026-10-12")), dayBefore)
+            val m4 = solutionSwapBatchesFor(SOLUTION_SWAP_4_CUTOVER_DATE)
+            assertEquals(applySolutionSwapBatches(raw, m4), after)
+            val old = listOf(SOLUTION_SWAPS, SOLUTION_SWAPS_2, SOLUTION_SWAPS_3, SOLUTION_SWAPS_4).withIndex()
+                .flatMap { (k, t) -> if (m4 and (1 shl k) != 0) t.keys else emptySet() }.filter { it.length == len }
             old.forEach { assertFalse(it, after.contains(it)) }
             val moved = raw.indices.filter { raw[it] != after[it] }.map { raw[it] }.sorted()
             assertEquals(old.filter { raw.contains(it) }.sorted(), moved)

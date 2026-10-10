@@ -96,7 +96,7 @@ describe('solution swaps batch 2 (profanity, own later cutover, real lists)', ()
   const pools: Record<number, string[]> = { 5: J('solutions.json'), 6: J('solutions-6.json'), 7: J('solutions-7.json') };
   const legacy: Record<number, string[]> = { 5: J('solutions-legacy.json'), 6: J('solutions-6-legacy.json'), 7: J('solutions-7-legacy.json') };
   const allowed: Record<number, string[]> = { 5: J('allowed.json'), 6: J('allowed-6.json'), 7: J('allowed-7.json') };
-  const DAY_BEFORE_2 = '2026-10-16';
+  const DAY_BEFORE_2 = '2026-10-09';
   const poolFor = (len: number, date: string | null) => (len === 5 ? getSolutionPoolForDate(date) : getSolutionPoolForLengthAndDate(len, date));
 
   beforeAll(() => {
@@ -108,7 +108,7 @@ describe('solution swaps batch 2 (profanity, own later cutover, real lists)', ()
   afterAll(() => { _setTodayForTests(null); });
 
   it('the second cutover is the day after DAY_BEFORE_2 and later than the first', () => {
-    expect(SOLUTION_SWAP_2_CUTOVER_DATE).toBe('2026-10-17');
+    expect(SOLUTION_SWAP_2_CUTOVER_DATE).toBe('2026-10-10');
     expect(SOLUTION_SWAP_2_CUTOVER_DATE > SOLUTION_SWAP_CUTOVER_DATE).toBe(true);
   });
 
@@ -132,27 +132,28 @@ describe('solution swaps batch 2 (profanity, own later cutover, real lists)', ()
     expect(new Set(Object.values(SOLUTION_SWAPS_2)).size).toBe(13);
   });
 
-  it('between the two cutovers batch 2 is not live yet (batch-2 words still dealt; batches 1 and 4 are)', () => {
-    for (const len of [5, 6, 7]) expect(poolFor(len, DAY_BEFORE_2)).toEqual(applySolutionSwapBatches(up(pools[len]), 1 | 8));
+  it('the day before the second cutover batch 2 is not live yet (batch-2 words still dealt)', () => {
+    // Masks come from the live cutover dates (batch 2 moved to 2026-10-10, before batch 4's 2026-10-13).
+    expect(solutionSwapBatchesFor(DAY_BEFORE_2) & 2).toBe(0);
+    for (const len of [5, 6, 7]) expect(poolFor(len, DAY_BEFORE_2)).toEqual(applySolutionSwapBatches(up(pools[len]), solutionSwapBatchesFor(DAY_BEFORE_2)));
     expect(poolFor(6, DAY_BEFORE_2)).toContain('FUCKER');
     expect(poolFor(7, DAY_BEFORE_2)).toContain('BLOWJOB');
     expect(poolFor(6, DAY_BEFORE_2)).not.toContain('CASHEW');
   });
 
-  it('from the second cutover on, both batches hold in place and nothing else moves', () => {
-    // Batch 4 started earlier (2026-10-13), so its words have already moved.
-    const bothOld = [...Object.keys(SOLUTION_SWAPS), ...Object.keys(SOLUTION_SWAPS_2), ...Object.keys(SOLUTION_SWAPS_4)];
-    // Batch 3 may share this date; when it does, its words move too.
-    const sameDay3 = SOLUTION_SWAP_3_CUTOVER_DATE === SOLUTION_SWAP_2_CUTOVER_DATE;
+  it('from the second cutover on, every live batch holds in place and nothing else moves', () => {
+    const mask = solutionSwapBatchesFor(SOLUTION_SWAP_2_CUTOVER_DATE);
+    expect(mask & 2).toBe(2);
+    const tables = [SOLUTION_SWAPS, SOLUTION_SWAPS_2, SOLUTION_SWAPS_3, SOLUTION_SWAPS_4];
+    const liveOld = tables.flatMap((t, k) => (mask & (1 << k) ? Object.keys(t) : []));
     for (const len of [5, 6, 7]) {
       const before = up(pools[len]);
       const after = poolFor(len, SOLUTION_SWAP_2_CUTOVER_DATE);
       expect(after).toHaveLength(before.length);
-      expect(after).toEqual(applySolutionSwapBatches(before, sameDay3 ? 15 : 11));
-      for (const oldW of bothOld) expect(after).not.toContain(oldW);
+      expect(after).toEqual(applySolutionSwapBatches(before, mask));
+      for (const oldW of liveOld) expect(after).not.toContain(oldW);
       const moved = before.filter((w, i) => w !== after[i]);
-      const expected = [...bothOld, ...(sameDay3 ? Object.keys(SOLUTION_SWAPS_3) : [])].filter((w) => before.includes(w));
-      expect(moved.sort()).toEqual(expected.filter((w) => w.length === len).sort());
+      expect(moved.sort()).toEqual(liveOld.filter((w) => w.length === len && before.includes(w)).sort());
     }
   });
 
@@ -171,7 +172,7 @@ describe('solution swaps batch 2 (profanity, own later cutover, real lists)', ()
   });
 
   it('pinned deals around the second cutover (the natives assert the same three)', () => {
-    // 2026-10-28 is past the (moved, 2026-10-17) batch-2 cutover: V******'s slot now deals
+    // 2026-10-28 is past the (moved, 2026-10-10) batch-2 cutover: V******'s slot now deals
     // COPILOT, and LUNATIC's slot holds batch 4's DIEHARD (batch 4 starts 2026-10-13).
     expect(generateSolutionsFromSeedForLength('daily-2026-10-28-DUEL_7', 8, 7))
       .toEqual(['PRESSED', 'DENOTED', 'PALETTE', 'FAILING', 'DIEHARD', 'BREEDER', 'WAITING', 'COPILOT']);
@@ -296,15 +297,15 @@ describe('solution swaps batch 4 (content audit, earliest cutover, real lists)',
   });
   afterAll(() => { _setTodayForTests(null); });
 
-  it('cutover: after the 2026-10-12 builds, before batches 2–3; earlier batches never grow', () => {
+  it('cutover: after the 2026-10-12 builds, before batch 3; earlier batches never grow', () => {
     expect(SOLUTION_SWAP_4_CUTOVER_DATE).toBe('2026-10-13');
     expect(SOLUTION_SWAP_4_CUTOVER_DATE > SOLUTION_SWAP_CUTOVER_DATE).toBe(true);
-    expect(SOLUTION_SWAP_4_CUTOVER_DATE < SOLUTION_SWAP_2_CUTOVER_DATE).toBe(true);
+    expect(SOLUTION_SWAP_4_CUTOVER_DATE < SOLUTION_SWAP_3_CUTOVER_DATE).toBe(true);
     expect(Object.keys(SOLUTION_SWAPS)).toHaveLength(23);
     expect(Object.keys(SOLUTION_SWAPS_2)).toHaveLength(13);
     expect(Object.keys(SOLUTION_SWAPS_3)).toHaveLength(46);
-    expect(solutionSwapBatchesFor(DAY_BEFORE_4)).toBe(1);
-    expect(solutionSwapBatchesFor(SOLUTION_SWAP_4_CUTOVER_DATE)).toBe(1 | 8);
+    expect(solutionSwapBatchesFor(DAY_BEFORE_4) & 8).toBe(0);
+    expect(solutionSwapBatchesFor(SOLUTION_SWAP_4_CUTOVER_DATE)).toBe(solutionSwapBatchesFor(DAY_BEFORE_4) | 8);
     expect(solutionSwapBatchesFor('2026-11-16')).toBe(ALL_SOLUTION_SWAP_BATCHES);
   });
 
@@ -329,15 +330,18 @@ describe('solution swaps batch 4 (content audit, earliest cutover, real lists)',
     expect(new Set(Object.values(SOLUTION_SWAPS_4)).size).toBe(283);
   });
 
-  it('the day before: only batch 1; from the cutover batches 1 + 4 hold in place and nothing else moves', () => {
+  it('the day before: batch 4 not live; from the cutover its words move too and nothing else moves', () => {
     expect(poolFor(6, DAY_BEFORE_4)).toContain('TOGGLE');
     expect(poolFor(5, DAY_BEFORE_4)).toContain('DUCHY');
     for (const len of [5, 6, 7]) {
-      expect(poolFor(len, DAY_BEFORE_4)).toEqual(applySolutionSwaps(pools[len]));
+      const dayBefore = poolFor(len, DAY_BEFORE_4);
+      expect(dayBefore).toEqual(applySolutionSwapBatches(pools[len], solutionSwapBatchesFor(DAY_BEFORE_4)));
       const after = poolFor(len, SOLUTION_SWAP_4_CUTOVER_DATE);
-      expect(after).toEqual(applySolutionSwaps4(applySolutionSwaps(pools[len])));
+      expect(after).toEqual(applySolutionSwapBatches(pools[len], solutionSwapBatchesFor(SOLUTION_SWAP_4_CUTOVER_DATE)));
       expect(after).toHaveLength(pools[len].length);
-      const old = [...Object.keys(SOLUTION_SWAPS), ...Object.keys(SOLUTION_SWAPS_4)].filter((w) => w.length === len);
+      const m4 = solutionSwapBatchesFor(SOLUTION_SWAP_4_CUTOVER_DATE);
+      const old = [SOLUTION_SWAPS, SOLUTION_SWAPS_2, SOLUTION_SWAPS_3, SOLUTION_SWAPS_4]
+        .flatMap((t, k) => (m4 & (1 << k) ? Object.keys(t) : [])).filter((w) => w.length === len);
       for (const w of old) expect(after, w).not.toContain(w);
       const moved = pools[len].filter((w, i) => w !== after[i]);
       expect(moved.sort()).toEqual(old.filter((w) => pools[len].includes(w)).sort());

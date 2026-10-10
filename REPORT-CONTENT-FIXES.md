@@ -8,7 +8,7 @@ named by game + date/index + a masked form (first letter + asterisks). Offensive
 base64-encoded and decoded at run time. The gate's leak scan (G11) enforces this. The tables below are generated
 from the banks themselves (a diff against the audited commit `843a2aa`), so they list **every** change.
 
-## Update 2026-10-10 — batch 2 moved up to 2026-10-17 (2.8.1)
+## Update 2026-10-10 — batch 2 moved up to 2026-10-10 (2.8; first planned for 10-17)
 
 - **Why:** retaking Google Play's IARC content-rating questionnaire. The July 30 answers say "no language,
   no sexual or drug references", but until batch 2 cuts over, the 13 batch-2 answers (F-words and sexual
@@ -18,7 +18,7 @@ from the banks themselves (a diff against the audited commit `843a2aa`), so they
 - **Checked first:** none of the 13 is dealt as a Six or Seven **daily** from 2026-07-01 to 2026-11-15 (276 deals
   scanned), and the duels use only the first word of the seed. Live VS words come from the server
   (`match_start`). So moving the date changes Unlimited only, and dated dailies agree across every build.
-- **Change:** `SOLUTION_SWAP_2_CUTOVER_DATE` 2026-11-16 → **2026-10-17** in `solution-swaps.ts`,
+- **Change:** `SOLUTION_SWAP_2_CUTOVER_DATE` 2026-11-16 → **2026-10-10** (founder: "can we do that switch sooner?") in `solution-swaps.ts`,
   `SolutionSwaps.swift` and `SolutionSwaps.kt`. The table is unchanged (it has shipped in every build since
   2026-09-23). Tests updated on all three: the cutover assert, the day-before checks, the wall-clock gate, the
   batch-3 day-before mask (now 1|2|8), and the `daily-2026-10-28-DUEL_7` pin, whose 8th word is now COPILOT.
@@ -63,7 +63,7 @@ Rules kept throughout:
   - `CONTENT_RELEASE_DATE = '2026-10-13'` (`apps/web/scripts/content-release-date.mjs`).
 - **Mechanism:**
   - `solutionSwapBatchesFor(date)` now returns a bitmask (1, 2, 4, 8 = batches 1–4).
-  - Batch 3 keeps its 2026-11-16 cutover. Batch 2 was moved up to **2026-10-17** on 2026-10-10 (see the update at the top), so 10-13 → 10-16 deals batches 1 + 4, 10-17 → 11-15 adds batch 2, and from 11-16 all four.
+  - Batch 3 keeps its 2026-11-16 cutover. Batch 2 was moved up to **2026-10-10** (see the update at the top), so 10-10 → 10-12 deals batches 1 + 2, 10-13 → 11-15 adds batch 4, and from 11-16 all four.
   - Dictionary caches are keyed by the mask.
   - The old words stay valid guesses.
 - **Pinned deals:** Swift, Kotlin and TS tests pin the same deals:

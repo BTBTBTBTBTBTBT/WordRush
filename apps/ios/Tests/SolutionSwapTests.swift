@@ -60,7 +60,7 @@ final class SolutionSwapTests: XCTestCase {
     // Store builds carrying batch 1 are already out, so batch 1 never grows.
 
     func testBatch2TableShape() {
-        XCTAssertEqual(SOLUTION_SWAP_2_CUTOVER_DATE, "2026-10-17")
+        XCTAssertEqual(SOLUTION_SWAP_2_CUTOVER_DATE, "2026-10-10")
         XCTAssertTrue(SOLUTION_SWAP_2_CUTOVER_DATE > SOLUTION_SWAP_CUTOVER_DATE)
         XCTAssertEqual(SOLUTION_SWAPS.count, 23, "batch 1 must not grow")
         XCTAssertEqual(SOLUTION_SWAPS_2.count, 13)
@@ -91,31 +91,32 @@ final class SolutionSwapTests: XCTestCase {
 
     func testOnlyBatch1BetweenCutovers_BothFromSecondCutover() {
         let d = GameDictionary.shared
-        // Batch 4 started earlier (2026-10-13), so its words have already moved by both dates.
-        let bothOld = Array(SOLUTION_SWAPS.keys) + Array(SOLUTION_SWAPS_2.keys) + Array(SOLUTION_SWAPS_4.keys)
+        // Masks come from the live cutover dates (batch 2 moved to 2026-10-10, before batch 4's 2026-10-13).
+        let mBefore = solutionSwapBatchesFor("2026-10-09"), mAfter = solutionSwapBatchesFor(SOLUTION_SWAP_2_CUTOVER_DATE)
+        XCTAssertEqual(mBefore & 2, 0)
+        XCTAssertEqual(mAfter & 2, 2)
+        let tables = [SOLUTION_SWAPS, SOLUTION_SWAPS_2, SOLUTION_SWAPS_3, SOLUTION_SWAPS_4]
+        let liveOld = tables.enumerated().flatMap { k, t in mAfter & (1 << k) != 0 ? Array(t.keys) : [] }
         for (len, file) in [(5, "solutions"), (6, "solutions-6"), (7, "solutions-7")] {
             let raw = loadList(file)
-            let between = len == 5 ? d.solutionPool(forDateKey: "2026-10-16") : d.solutionPool(forLength: len, dateKey: "2026-10-16")
-            let after = len == 5 ? d.solutionPool(forDateKey: "2026-10-17") : d.solutionPool(forLength: len, dateKey: "2026-10-17")
-            XCTAssertEqual(between, applySolutionSwapBatches(raw, 1 | 8))
-            // Batch 3 shares this date while SOLUTION_SWAP_3_CUTOVER_DATE == SOLUTION_SWAP_2_CUTOVER_DATE.
-            let sameDay3 = SOLUTION_SWAP_3_CUTOVER_DATE == SOLUTION_SWAP_2_CUTOVER_DATE
-            XCTAssertEqual(after, applySolutionSwapBatches(raw, sameDay3 ? 15 : 11))
+            let between = len == 5 ? d.solutionPool(forDateKey: "2026-10-09") : d.solutionPool(forLength: len, dateKey: "2026-10-09")
+            let after = len == 5 ? d.solutionPool(forDateKey: SOLUTION_SWAP_2_CUTOVER_DATE) : d.solutionPool(forLength: len, dateKey: SOLUTION_SWAP_2_CUTOVER_DATE)
+            XCTAssertEqual(between, applySolutionSwapBatches(raw, mBefore))
+            XCTAssertEqual(after, applySolutionSwapBatches(raw, mAfter))
             XCTAssertEqual(after.count, raw.count)
-            for o in bothOld { XCTAssertFalse(after.contains(o), o) }
+            for o in liveOld { XCTAssertFalse(after.contains(o), o) }
             let moved = zip(raw, after).filter { $0 != $1 }.map { $0.0 }.sorted()
-            let expected = (bothOld + (sameDay3 ? Array(SOLUTION_SWAPS_3.keys) : [])).filter { $0.count == len && raw.contains($0) }
-            XCTAssertEqual(moved, expected.sorted())
+            XCTAssertEqual(moved, liveOld.filter { $0.count == len && raw.contains($0) }.sorted())
         }
-        XCTAssertTrue(d.solutionPool(forLength: 6, dateKey: "2026-10-16").contains("FUCKER"))
-        XCTAssertTrue(d.solutionPool(forLength: 6, dateKey: "2026-10-17").contains("CASHEW"))
+        XCTAssertTrue(d.solutionPool(forLength: 6, dateKey: "2026-10-09").contains("FUCKER"))
+        XCTAssertTrue(d.solutionPool(forLength: 6, dateKey: "2026-10-10").contains("CASHEW"))
     }
 
     func testBatch2UndatedSeedsGateOnWallClock() {
         let d = GameDictionary.shared
-        d.todayOverrideForTests = "2026-10-16"
+        d.todayOverrideForTests = "2026-10-09"
         XCTAssertTrue(d.solutionPool(forLength: 6, dateKey: nil).contains("FUCKER"))
-        d.todayOverrideForTests = "2026-10-17"
+        d.todayOverrideForTests = "2026-10-10"
         XCTAssertFalse(d.solutionPool(forLength: 6, dateKey: nil).contains("FUCKER"))
         XCTAssertTrue(d.solutionPool(forLength: 6, dateKey: nil).contains("CASHEW"))
         XCTAssertTrue(d.solutionPool(forLength: 7, dateKey: nil).contains("APRICOT"))
@@ -127,7 +128,7 @@ final class SolutionSwapTests: XCTestCase {
     }
 
     func testBatch2PinnedDeals() {
-        // 2026-10-28 is past the (moved, 2026-10-17) batch-2 cutover: V******'s slot now deals COPILOT,
+        // 2026-10-28 is past the (moved, 2026-10-10) batch-2 cutover: V******'s slot now deals COPILOT,
         // and LUNATIC's slot holds batch 4's DIEHARD (batch 4 starts 2026-10-13).
         XCTAssertEqual(generateSolutionsFromSeedForLength("daily-2026-10-28-DUEL_7", count: 8, wordLength: 7),
                        ["PRESSED", "DENOTED", "PALETTE", "FAILING", "DIEHARD", "BREEDER", "WAITING", "COPILOT"])
@@ -207,7 +208,7 @@ final class SolutionSwapTests: XCTestCase {
 
     func testBatch4TableShapeAndGate() {
         XCTAssertEqual(SOLUTION_SWAP_4_CUTOVER_DATE, "2026-10-13")
-        XCTAssertTrue(SOLUTION_SWAP_4_CUTOVER_DATE < SOLUTION_SWAP_2_CUTOVER_DATE)
+        XCTAssertTrue(SOLUTION_SWAP_4_CUTOVER_DATE < SOLUTION_SWAP_3_CUTOVER_DATE)
         XCTAssertEqual(SOLUTION_SWAPS.count, 23)
         XCTAssertEqual(SOLUTION_SWAPS_2.count, 13)
         XCTAssertEqual(SOLUTION_SWAPS_3.count, 46)
@@ -215,8 +216,8 @@ final class SolutionSwapTests: XCTestCase {
         XCTAssertEqual(Set(SOLUTION_SWAPS_4.values).count, 283)
         XCTAssertEqual(SOLUTION_SWAPS_4["TOGGLE"], "BEANIE")
         XCTAssertEqual(SOLUTION_SWAPS_4["LATINO"], "SUITOR")
-        XCTAssertEqual(solutionSwapBatchesFor("2026-10-12"), 1)
-        XCTAssertEqual(solutionSwapBatchesFor("2026-10-13"), 1 | 8)
+        XCTAssertEqual(solutionSwapBatchesFor("2026-10-12") & 8, 0)
+        XCTAssertEqual(solutionSwapBatchesFor("2026-10-13"), solutionSwapBatchesFor("2026-10-12") | 8)
         let earlier = Set(SOLUTION_SWAPS.keys).union(SOLUTION_SWAPS_2.keys).union(SOLUTION_SWAPS_3.keys)
             .union(SOLUTION_SWAPS.values).union(SOLUTION_SWAPS_2.values).union(SOLUTION_SWAPS_3.values)
         for (o, n) in SOLUTION_SWAPS_4 {
@@ -246,9 +247,11 @@ final class SolutionSwapTests: XCTestCase {
             let raw = loadList(file)
             let dayBefore = len == 5 ? d.solutionPool(forDateKey: "2026-10-12") : d.solutionPool(forLength: len, dateKey: "2026-10-12")
             let after = len == 5 ? d.solutionPool(forDateKey: SOLUTION_SWAP_4_CUTOVER_DATE) : d.solutionPool(forLength: len, dateKey: SOLUTION_SWAP_4_CUTOVER_DATE)
-            XCTAssertEqual(dayBefore, applySolutionSwaps(raw))
-            XCTAssertEqual(after, applySolutionSwaps4(applySolutionSwaps(raw)))
-            let old = (Array(SOLUTION_SWAPS.keys) + Array(SOLUTION_SWAPS_4.keys)).filter { $0.count == len }
+            XCTAssertEqual(dayBefore, applySolutionSwapBatches(raw, solutionSwapBatchesFor("2026-10-12")))
+            let m4 = solutionSwapBatchesFor(SOLUTION_SWAP_4_CUTOVER_DATE)
+            XCTAssertEqual(after, applySolutionSwapBatches(raw, m4))
+            let old = [SOLUTION_SWAPS, SOLUTION_SWAPS_2, SOLUTION_SWAPS_3, SOLUTION_SWAPS_4].enumerated()
+                .flatMap { k, t in m4 & (1 << k) != 0 ? Array(t.keys) : [] }.filter { $0.count == len }
             for o in old { XCTAssertFalse(after.contains(o), o) }
             let moved = zip(raw, after).filter { $0 != $1 }.map { $0.0 }.sorted()
             XCTAssertEqual(moved, old.filter { raw.contains($0) }.sorted())
