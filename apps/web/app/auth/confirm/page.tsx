@@ -20,6 +20,18 @@ function ConfirmInner() {
 
   useEffect(() => {
     (async () => {
+      // Device-independent link (?token_hash=…&type=signup|email|magiclink|email_change from the templates).
+      const tokenHash = searchParams.get('token_hash');
+      const otpType = searchParams.get('type');
+      if (tokenHash && otpType) {
+        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: otpType as 'signup' | 'email' | 'magiclink' | 'email_change' | 'invite' });
+        if (!error) {
+          router.replace('/');
+          return;
+        }
+        setFailed(true);
+        return;
+      }
       const code = searchParams.get('code');
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
