@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { CAST_COLORS, friendsSinceLine, headToHeadLine, levelTier, profileActions, type FriendshipState, type ProfileAction } from '@wordle-duel/core';
+import { CAST_COLORS, friendsSinceLine, headToHeadLine, levelTier, nameHexForConfig, profileActions, type FriendshipState, type ProfileAction } from '@wordle-duel/core';
 import { DressStage } from '@/components/profile/dress-up';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
@@ -15,7 +15,7 @@ import { RecordBar } from '@/components/stats/stat-hero';
 import { SoftNum } from '@/components/ui/soft-number';
 import { usePocketRecords } from '@/components/stats/pocket-records';
 import type { FriendProfile } from '@/lib/friends-service';
-import { resolveAccent } from '@/lib/profile-personalization';
+import { DEFAULT_ACCENT, resolveAccent } from '@/lib/profile-personalization';
 import { useLivingMascotOn } from '@/hooks/use-flags';
 
 // FRIDAY-QUEUE item 17 (founder 10-07, Oliver's profile): the player's mascot full-body on a mini Stage (the Edit
@@ -118,7 +118,15 @@ export function ProfileActionRow({ state, h, busy, menu }: { state: FriendshipSt
 
 /** The identity block under the stage: name (bubble lettering) + friendship badge + "Friends since", rank strip. */
 export function ProfileIdentity({ profile, friendsSince, isFriend, children }: { profile: HeroProfile; friendsSince?: string | null; isFriend: boolean; children?: ReactNode }) {
-  const accent = resolveAccent(profile.accent_color ?? null);
+  // Founder 10-09: the name wears the player's mascot-maker backdrop color (lemon becomes a sunny gold), like their name on the
+  // friend menu; no backdrop picked gives the vivid color from their body, unless they chose a custom accent.
+  const look = usePlayerAvatar({
+    name: profile.username, userId: profile.id, url: profile.avatar_url, accent: profile.accent_color,
+    config: profile.avatar_config, castId: profile.avatar_cast_id, frame: profile.avatar_frame, level: profile.level, pro: profile.is_pro,
+  });
+  const customAccent = resolveAccent(profile.accent_color ?? null);
+  const hasBackdrop = !!look.config.bg && look.config.bg !== 'auto';
+  const accent = hasBackdrop || customAccent.toLowerCase() === DEFAULT_ACCENT.toLowerCase() ? nameHexForConfig(look.config) : customAccent;
   const since = isFriend ? friendsSinceLine(friendsSince) : null;
   return (
     <div className="flex flex-col items-center gap-1.5 text-center">

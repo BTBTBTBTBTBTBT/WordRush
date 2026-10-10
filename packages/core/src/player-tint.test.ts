@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nameHex, plateHexes, plateInk, mixHex, backdropHexes } from './player-tint';
+import { nameHex, plateHexes, plateInk, tintMix, backdropHexes } from './player-tint';
 
 describe('plateHexes', () => {
   it('auto backdrop = a light tint of the body color', () => {
@@ -7,7 +7,7 @@ describe('plateHexes', () => {
     expect(p.fill).toEqual(['#e2d4fb']);
     expect(p.lightInk).toBe(false);
     expect(p.borderWidth).toBe(1.5);
-    expect(p.border).toEqual([mixHex('#e2d4fb', '#000000', 0.28)]);
+    expect(p.border).toEqual([tintMix('#e2d4fb', '#000000', 0.28)]);
   });
   it('unknown backdrop and frame fall back like auto / none', () => {
     expect(plateHexes('mystery', 'bogus', '#0ea5e9')).toEqual(plateHexes('auto', 'none', '#0ea5e9'));
@@ -19,7 +19,7 @@ describe('plateHexes', () => {
     expect(plateInk(false).heading).toBe('#2a1650');
   });
   it('a pattern reads as its base color plus a whisper of the accent', () => {
-    expect(backdropHexes('galaxy', '#000000')).toEqual(['#4c1d95', mixHex('#4c1d95', '#fde68a', 0.3)]);
+    expect(backdropHexes('galaxy', '#000000')).toEqual(['#4c1d95', tintMix('#4c1d95', '#fde68a', 0.3)]);
   });
   it('frames: metals are 2.5 wide, none is 1.5', () => {
     for (const m of ['bronze', 'silver', 'gold', 'platinum', 'diamond', 'pro']) expect(plateHexes('auto', m, '#7c3aed').borderWidth).toBe(2.5);

@@ -436,18 +436,21 @@ fun MedalPodium(spots: List<PodiumSpot>, modifier: Modifier = Modifier, stepScal
                         )
                         if (place == 1) Icon3D(Icon3DName.CROWN, 26.dp)
                     }
-                    Text(
-                        s.name, fontSize = 13.sp, fontWeight = FontWeight.Black,
-                        color = if (WTheme.isDark) WTheme.text else FinishInk.heading,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                    )
-                    SoftNumber(s.points, 13.sp)
-                    // Both parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
-                    com.wordocious.core.FriendCards.raceBadgeLines(s.badge).forEach { line ->
+                    // Founder 10-09: the plaque wears the player's own backdrop (fill) + frame (border); ink picked for contrast.
+                    PodiumPlaque(null, s.username ?: s.name, accentHex = s.accentHex) { ink ->
                         Text(
-                            line, fontSize = 9.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = RACE_BADGE_GOLD,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, lineHeight = 11.sp,
+                            s.name, fontSize = 13.sp, fontWeight = FontWeight.Black,
+                            color = ink.heading,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                         )
+                        SoftNumber(s.points, 13.sp, color = ink.muted)
+                        // Both parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
+                        com.wordocious.core.FriendCards.raceBadgeLines(s.badge).forEach { line ->
+                            Text(
+                                line, fontSize = 9.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = ink.badge,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, lineHeight = 11.sp,
+                            )
+                        }
                     }
                 }
                 val h = when (place) { 1 -> 74.dp; 2 -> 54.dp; else -> 40.dp } * stepScale

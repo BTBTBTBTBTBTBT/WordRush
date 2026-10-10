@@ -27,7 +27,7 @@ function byteHex(v: number): string {
 }
 
 /** Blend two hexes (t = 0 gives a, 1 gives b), returned as lowercase #rrggbb. */
-export function mixHex(a: string, b: string, t: number): string {
+export function tintMix(a: string, b: string, t: number): string {
   const x = rgb(a);
   const y = rgb(b);
   const c = (p: number, q: number) => (p + (q - p) * t) * 255;
@@ -46,9 +46,9 @@ export function backdropHexes(bg: string, bodyHex: string): string[] {
   const b = AVATAR_BACKDROPS.find((x) => x.id === bg);
   if (b) {
     // A pattern reads as its base color (+ a whisper of its accent): the pattern itself would fight the text.
-    return b.kind === 'pattern' ? [b.colors[0], mixHex(b.colors[0], b.colors[1], 0.3)] : [...b.colors];
+    return b.kind === 'pattern' ? [b.colors[0], tintMix(b.colors[0], b.colors[1], 0.3)] : [...b.colors];
   }
-  return [mixHex(bodyHex, '#ffffff', 0.78)];
+  return [tintMix(bodyHex, '#ffffff', 0.78)];
 }
 
 /** The frame's metal as a border gradient; "none" = a deeper shade of the fill so every plate has an edge. */
@@ -60,7 +60,7 @@ export function frameHexes(frame: string, fill: string[]): { colors: string[]; w
     case 'platinum': return { colors: ['#E0F2FE', '#64748B'], width: 2.5 };
     case 'diamond': return { colors: ['#A5F3FC', '#818CF8', '#F0ABFC'], width: 2.5 };
     case 'pro': return { colors: ['#F5B82E', '#EC4899', '#8B5CF6'], width: 2.5 };
-    default: return { colors: [mixHex(fill[0], '#000000', 0.28)], width: 1.5 };
+    default: return { colors: [tintMix(fill[0], '#000000', 0.28)], width: 1.5 };
   }
 }
 

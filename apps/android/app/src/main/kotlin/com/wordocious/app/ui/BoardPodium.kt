@@ -309,29 +309,24 @@ fun BoardPodium(
                         )
                         if (place == 1) Icon3D(Icon3DName.CROWN, if (compact) 24.dp else 26.dp)
                     }
-                    // Name, points and detail ride on a soft plaque above the step when the figure stands.
-                    Column(
-                        (if (stands) {
-                            // sits fully ABOVE the step (it used to be laid out 12 dp short, so the step rose under it and the plaque covered its top face)
-                            Modifier.zIndex(2f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (dark) WTheme.surface.copy(alpha = 0.8f) else Color.White.copy(alpha = 0.72f))
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
-                        } else Modifier),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
+                    // Name, points and detail ride on a plaque above the step that wears the player's own backdrop (fill) and frame
+                    // (border); the ink follows the fill's brightness (founder 10-09, parity with iOS PlayerTint).
+                    PodiumPlaque(
+                        s.userId, s.username ?: s.name, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
+                        frame = s.frame, accentHex = s.accentHex,
+                    ) { ink ->
                         Text(
                             s.name, fontSize = if (compact) 12.sp else 13.sp, fontWeight = FontWeight.Black,
-                            color = if (dark) WTheme.text else FinishInk.heading,
+                            color = ink.heading,
                             maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                         )
                         // Points stay the headline (#1 a touch larger), then ONE muted detail line,
                         // shrink-to-fit, never wrapping into the pedestal.
-                        SoftNumber(s.points, if (compact) (if (place == 1) 12.5.sp else 11.sp) else (if (place == 1) 14.5.sp else 13.sp))
+                        SoftNumber(s.points, if (compact) (if (place == 1) 12.5.sp else 11.sp) else (if (place == 1) 14.5.sp else 13.sp), color = ink.muted)
                         s.detail?.takeIf { it.isNotEmpty() }?.let { d ->
                             FitText(
                                 d, if (compact) 9.sp else 10.sp, Modifier.fillMaxWidth().padding(top = 0.dp).offset(y = (-2).dp),
-                                color = (if (dark) WTheme.textMuted else LB_SUB_INK).copy(alpha = if (place == 1) 1f else 0.85f),
+                                color = ink.muted.copy(alpha = if (place == 1) 1f else 0.9f),
                                 fontWeight = if (place == 1) FontWeight.ExtraBold else FontWeight.Bold,
                                 textAlign = TextAlign.Center, minScale = 0.6f,
                             )
