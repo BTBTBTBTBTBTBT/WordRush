@@ -1001,38 +1001,65 @@ struct LargeView: View {
                 }
             }
             Spacer(minLength: 8)
-            // Founder 10-10: a small DAILIES title over the ring + chips, like PUZZLES below.
-            Link(destination: homeURL) {
-                HStack {
-                    Caps(text: "DAILIES", color: WInk.number(dark))
-                    Spacer()
-                    Caps(text: "\(snap.word.played)/\(snap.word.total)", color: muted)
-                }
-            }
-            Spacer(minLength: 6).frame(maxHeight: 8)
+            // Founder 10-10: two mirrored bands with ONE chip size and gap. DAILIES: the ring on the left, its 8 chips on the
+            // right. PUZZLES: its 10 chips (5 × 2) on the left, the PUZZLES ring on the right. Both rings the same size.
             GeometryReader { g in
-                HStack(spacing: 16) {
+                let hasPuzzles = !snap.puzzleModes.isEmpty
+                let gap: CGFloat = 8, ringGap: CGFloat = 12, title: CGFloat = 12, titleGap: CGFloat = 6, bandGap: CGFloat = 12
+                let w = g.size.width
+                // Width: 5 chips + 4 gaps + the ring (= 2 chips + a gap) + the ring gap fill the width.
+                let byWidth = (w - ringGap - 5 * gap) / 7
+                // Height: both bands (2 chips + a gap each) and their titles fit.
+                let bands: CGFloat = hasPuzzles ? 2 : 1
+                let byHeight = (g.size.height - bands * (title + titleGap) - (hasPuzzles ? bandGap : 0) - bands * gap) / (2 * bands)
+                let c = max(20, min(56, byWidth, byHeight))
+                let ring = 2 * c + gap
+                VStack(alignment: .leading, spacing: 0) {
                     Link(destination: homeURL) {
-                        DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
-                            .frame(width: min(g.size.height, g.size.width * 0.32), height: min(g.size.height, g.size.width * 0.32))
+                        HStack {
+                            Caps(text: "DAILIES", color: WInk.number(dark))
+                            Spacer()
+                            Caps(text: "\(snap.word.played)/\(snap.word.total)", color: muted)
+                        }
+                        .frame(height: title)
                     }
-                    ChipGrid(modes: snap.modes, columns: 4, dark: dark)
-                }
-            }
-            .frame(minHeight: 84, maxHeight: 108)
-            if !snap.puzzleModes.isEmpty {
-                Spacer(minLength: 10)
-                Link(destination: homeURL) {
-                    HStack {
-                        Caps(text: "PUZZLES", color: WInk.number(dark))
-                        Spacer()
-                        Caps(text: "\(snap.puzzleProgress.played)/\(snap.puzzleProgress.total)", color: muted)
+                    Spacer().frame(height: titleGap)
+                    HStack(spacing: 0) {
+                        Link(destination: homeURL) {
+                            DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
+                                .frame(width: ring, height: ring)
+                        }
+                        Spacer(minLength: ringGap)
+                        ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: c, spread: true)
+                            .frame(width: 4 * c + 3 * gap, height: ring)
+                    }
+                    .frame(height: ring)
+                    if hasPuzzles {
+                        Spacer().frame(height: bandGap)
+                        Link(destination: homeURL) {
+                            HStack {
+                                Caps(text: "PUZZLES", color: WInk.number(dark))
+                                Spacer()
+                                Caps(text: "\(snap.puzzleProgress.played)/\(snap.puzzleProgress.total)", color: muted)
+                            }
+                            .frame(height: title)
+                        }
+                        Spacer().frame(height: titleGap)
+                        HStack(spacing: 0) {
+                            // Every Puzzles chip links to its own daily (ChipGrid is linked by default).
+                            ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, maxChip: c, spread: true,
+                                     peek: (.asset(snap.peekAsset(at: date)), 2))
+                                .frame(width: 5 * c + 4 * gap, height: ring)
+                            Spacer(minLength: ringGap)
+                            Link(destination: homeURL) {
+                                DailyRing(modes: snap.puzzleModes, dark: dark, label: "PUZZLES")
+                                    .frame(width: ring, height: ring)
+                            }
+                        }
+                        .frame(height: ring)
                     }
                 }
-                Spacer(minLength: 6).frame(maxHeight: 8)
-                // Every Puzzles chip links to its own daily (ChipGrid is linked by default).
-                ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, spread: true, peek: (.asset(snap.peekAsset(at: date)), 2))
-                    .frame(minHeight: 90, maxHeight: 116)
+                .frame(width: w, height: g.size.height, alignment: .center)
             }
             Spacer(minLength: 8)
             Link(destination: homeURL) {
