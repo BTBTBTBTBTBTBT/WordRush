@@ -263,19 +263,21 @@ struct FriendsQuickPlaySheet: View {
     private func stakeStep(_ f: FriendsService.FriendProfile) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(spacing: 4) {
-                Text(FriendlyKind.coin.title.uppercased()).font(Brand.font(17, .black)).tracking(0.6)
-                    .foregroundStyle(FriendsInk.bannerHead)
+                BubbleTextView(text: FriendlyKind.coin.title.uppercased(), palette: .accent(FriendsKit.tileAccent(.coin)),
+                               maxSize: 34, minSize: 22, animated: true)
                 Text(FriendsKit.rules(.coin)).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.muted)
             }
             .frame(maxWidth: .infinity)
             VStack(alignment: .leading, spacing: 6) {
-                FriendsLabel("What's on the line")
+                PocketBubble(text: "What's on the line", color: FriendsKit.tileAccent(.coin), size: 15, minScale: 0.5)
+                    .accessibilityAddTraits(.isHeader)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
                         ForEach(FriendlyGames.coinStakes, id: \.self) { s in
                             Button { stake = s } label: {
                                 // §A1 chips: tinted, the picked stake stronger + ringed.
-                                Text(s).font(Brand.font(11, .heavy)).foregroundStyle(FriendsInk.chip)
+                                PocketBubble(text: s, color: FriendsKit.purple, size: 13, palette: PlayerTint.platePalette(lightInk: FriendsInk.dark),
+                                             fixed: true)
                                     .padding(.horizontal, 12).frame(minHeight: 30)
                                     .friendsChip(FriendsKit.tileAccent(.coin), strong: stake == s)
                             }
