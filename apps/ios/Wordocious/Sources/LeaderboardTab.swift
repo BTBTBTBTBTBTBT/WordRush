@@ -373,10 +373,11 @@ struct LeaderboardTab: View {
                 // (no card), the selected-game strip, the podium and Yesterday's ledge on one continuous backdrop in
                 // the game's tint; ranks 4+ and your finished board list below it.
                 LeaderboardStageCard(accent: stageAccent) {
-                    LeaderboardBannerView(selected: modeSelection, isSweep: sweepSelection,
-                                          bleed: 16,
-                                          results: completions.dataDay == LeaderboardService.todayLocal() ? completions.byMode.mapValues { $0.completed } : [:],
-                                          sweepResult: completions.dataDay == LeaderboardService.todayLocal() && completions.allDone ? true : nil)
+                    EquatableLeaderboardBanner(selected: mode, isSweep: isSweep,
+                                               results: completions.dataDay == LeaderboardService.todayLocal() ? completions.byMode.mapValues { $0.completed } : [:],
+                                               sweepResult: completions.dataDay == LeaderboardService.todayLocal() && completions.allDone ? true : nil,
+                                               selectedBinding: modeSelection, sweepBinding: sweepSelection)
+                        .equatable()
                     if isSweep { sweepStageBody } else { modeStageBody }
                 }
                 if isSweep { sweepRanksBlock } else { modeRanksBlock }
@@ -599,8 +600,9 @@ struct LeaderboardTab: View {
             let ranks = entries.indices.map { LeaderboardService.competitionRank(entries, $0) }
             let layout = PodiumLayout.layout(ranks)
             if layout.filled > 0 {
-                PodiumView(entries: entries.prefix(layout.filled).enumerated().map { podiumEntry($1, rank: ranks[$0], labels: lbScoreLabels) },
-                           open: layout.open, stage: nil, onTap: { path.append($0.id) })
+                EquatablePodium(entries: entries.prefix(layout.filled).enumerated().map { podiumEntry($1, rank: ranks[$0], labels: lbScoreLabels) },
+                                open: layout.open, stage: nil, onTap: { path.append($0.id) })
+                    .equatable()
                     // Founder 10-09: one fixed podium height for every game (no shift while clicking through the boards).
                     .frame(minHeight: Self.stagePodiumHeight, alignment: .bottom)
             }

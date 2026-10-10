@@ -405,3 +405,58 @@ struct StageDayProp: View {
         }
     }
 }
+
+
+// MARK: - Equatable boundaries (founder 10-10, smoothness)
+
+/// The stage's top (title row + game picker) as an equality boundary: a Leaderboard game switch runs the tab's body several
+/// times (the cached paint, the load, yesterday's board, the completions), and the banner's ~20 picker tiles, mascots and
+/// bubble lettering used to be rebuilt and re-laid out on EVERY pass although only the selection ever changes. Measured: with
+/// the banner removed the 4-game switch cost drops from ~550 to ~175 ms/s of hitch. The bindings are kept out of `==`.
+struct EquatableLeaderboardBanner: View, Equatable {
+    let selected: GameMode
+    let isSweep: Bool
+    let results: [String: Bool]
+    let sweepResult: Bool?
+    let selectedBinding: Binding<GameMode>
+    let sweepBinding: Binding<Bool>
+    // Anything the old code re-read on every pass of the tab's body still reaches the banner: a theme / Reduce Motion /
+    // colorblind change, and the admin season preview, re-evaluate it even though its inputs above are equal.
+    @ObservedObject private var theme = ThemeManager.shared
+    @AppStorage(CastSkin.debugKey) private var debugSeason = ""
+
+    static func == (a: EquatableLeaderboardBanner, b: EquatableLeaderboardBanner) -> Bool {
+        a.selected == b.selected && a.isSweep == b.isSweep && a.results == b.results && a.sweepResult == b.sweepResult
+    }
+
+    var body: some View {
+        LeaderboardBannerView(selected: selectedBinding, isSweep: sweepBinding, bleed: 16, results: results, sweepResult: sweepResult)
+    }
+}
+
+/// The stage podium as an equality boundary: it rebuilds only when a place's shown values change (the closures are kept out).
+struct EquatablePodium: View, Equatable {
+    let entries: [PodiumEntry]
+    let open: [Int]
+    let stage: Color?
+    let onTap: ((PodiumEntry) -> Void)?
+    @ObservedObject private var theme = ThemeManager.shared
+
+    static func == (a: EquatablePodium, b: EquatablePodium) -> Bool {
+        guard a.open == b.open, a.stage == b.stage, a.entries.count == b.entries.count else { return false }
+        return zip(a.entries, b.entries).allSatisfy { $0.sameShown($1) }
+    }
+
+    var body: some View {
+        PodiumView(entries: entries, open: open, stage: stage, onTap: onTap)
+    }
+}
+
+extension PodiumEntry {
+    /// Everything a podium place draws (the taunt bell by presence: its closure acts on the same entry).
+    func sameShown(_ o: PodiumEntry) -> Bool {
+        id == o.id && name == o.name && username == o.username && accentHex == o.accentHex && emoji == o.emoji
+            && value == o.value && avatarUrl == o.avatarUrl && pro == o.pro && rank == o.rank
+            && detail == o.detail && badge == o.badge && (bell == nil) == (o.bell == nil)
+    }
+}

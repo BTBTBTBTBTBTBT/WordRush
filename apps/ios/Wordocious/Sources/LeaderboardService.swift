@@ -193,16 +193,30 @@ final class LeaderboardCache {
 /// lib/daily-service.ts getDailyLeaderboard() exactly (same columns, filters,
 /// ordering). `day` is the device-LOCAL date (matches web getTodayLocal()).
 enum LeaderboardService {
+    // Founder 10-10 (smoothness): one formatter per time zone instead of one per call. `todayLocal` runs from dozens of
+    // body passes (every Leaderboard / Home / Stats refresh), and building a DateFormatter each time showed up in the profile.
+    private static let dayLock = NSLock()
+    private static var dayFormatter: DateFormatter?
+    private static var dayFormatterZone = ""
+    private static var yesterdayFormatter: DateFormatter?
+    private static var yesterdayFormatterZone = ""
+
     static func todayLocal() -> String {
         // en_US_POSIX + Gregorian: without these, devices on the Buddhist or
         // Japanese calendar render yyyy as e.g. 2569 — wrong daily seed, split
         // leaderboards, broken streak comparisons.
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.calendar = Calendar(identifier: .gregorian)
-        f.dateFormat = "yyyy-MM-dd"
-        f.timeZone = .current
-        return f.string(from: Date())
+        dayLock.lock(); defer { dayLock.unlock() }
+        let zone = TimeZone.current
+        if dayFormatter == nil || dayFormatterZone != zone.identifier {
+            let f = DateFormatter()
+            f.locale = Locale(identifier: "en_US_POSIX")
+            f.calendar = Calendar(identifier: .gregorian)
+            f.dateFormat = "yyyy-MM-dd"
+            f.timeZone = zone
+            dayFormatter = f
+            dayFormatterZone = zone.identifier
+        }
+        return dayFormatter!.string(from: Date())
     }
 
     /// UTC date string — used ONLY for daily-VS matchmaking so players in
@@ -218,8 +232,14 @@ enum LeaderboardService {
     }
 
     static func yesterdayLocal() -> String {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
-        return f.string(from: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date())
+        dayLock.lock(); defer { dayLock.unlock() }
+        let zone = TimeZone.current
+        if yesterdayFormatter == nil || yesterdayFormatterZone != zone.identifier {
+            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = zone
+            yesterdayFormatter = f
+            yesterdayFormatterZone = zone.identifier
+        }
+        return yesterdayFormatter!.string(from: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date())
     }
 
     static func fetch(gameMode: GameMode, day: String? = nil, playType: String = "solo",
