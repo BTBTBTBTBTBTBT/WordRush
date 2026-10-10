@@ -888,69 +888,84 @@ struct MediumView: View {
     var body: some View {
         let hall = halloweenOn(snap, date)
         let dark = hall || (snap.theme?.dark ?? (scheme == .dark))
-        // Founder 10-10: two columns, each its own little stack — the ring centered over its group, a white label, the
-        // chips (DAILIES 4×2 | PUZZLES 5×2) — with a hairline between them and WORDOCIOUS centered in the gap between
-        // the rings. A finished group's ring glows gold. The info line runs along the bottom.
+        // Founder 10-10: two columns of chips (DAILIES 4×2 | PUZZLES 5×2) under a header band. Each group's ring sits at its
+        // left edge (over Classic / over ProperNoundle) with its white label under it; your own mascot stands between the
+        // two rings; WORDOCIOUS + TODAY'S DAILIES fill the top right. A finished group's ring glows gold.
         GeometryReader { g in
             let hasPuzzles = !snap.puzzleModes.isEmpty
             let W: CGFloat = g.size.width, H: CGFloat = g.size.height
             let gap: CGFloat = 4, middle: CGFloat = 14, bottom: CGFloat = 16, label: CGFloat = 10, ring: CGFloat = 36
+            let headerH: CGFloat = ring + 2 + label
             let cols: CGFloat = hasPuzzles ? 9 : 4
             let byWidth: CGFloat = (W - (cols - (hasPuzzles ? 2 : 1)) * gap - (hasPuzzles ? middle : 0)) / cols
-            let byHeight: CGFloat = (H - ring - label - bottom - 4 * 3 - gap) / 2
+            let byHeight: CGFloat = (H - headerH - bottom - 2 * 4 - gap) / 2
             let c: CGFloat = max(16, min(40, min(byWidth, byHeight)))
             let gridH: CGFloat = 2 * c + gap
             let dW: CGFloat = 4 * c + 3 * gap
             let pW: CGFloat = 5 * c + 4 * gap
+            let pX: CGFloat = hasPuzzles ? W - pW : W
             let dDone = !snap.modes.isEmpty && snap.modes.allSatisfy(\.played)
             let pDone = hasPuzzles && snap.puzzleModes.allSatisfy(\.played)
             let gold = Color(widgetHex: "#f59e0b")
             VStack(spacing: 0) {
-                HStack(alignment: .top, spacing: 0) {
-                    // DAILIES column
-                    VStack(spacing: 3) {
+                // Header band (absolute layout so every piece lines up with the chip columns below).
+                ZStack(alignment: .topLeading) {
+                    VStack(alignment: .leading, spacing: 2) {
                         Link(destination: homeURL) {
                             DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
                                 .frame(width: ring, height: ring)
                                 .shadow(color: dDone ? gold.opacity(0.85) : .clear, radius: dDone ? 7 : 0)
                         }
                         Caps(text: "DAILIES", color: .white).frame(height: label)
-                        ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: c, spread: true)
-                            .frame(width: dW, height: gridH)
                     }
-                    .frame(width: dW)
+                    // Your mascot, centered between the DAILIES ring and the PUZZLES ring.
+                    let mLeft: CGFloat = ring + 6
+                    let mRight: CGFloat = hasPuzzles ? pX - 6 : W * 0.6
+                    Link(destination: homeURL) {
+                        HeaderHost(date: date, own: OwnLook.load(), seasonOn: snap.seasonHalloween != false)
+                            .frame(width: min(headerH, mRight - mLeft), height: headerH)
+                    }
+                    .frame(width: max(0, mRight - mLeft), height: headerH)
+                    .offset(x: mLeft)
                     if hasPuzzles {
-                        // The middle: the hairline (WORDOCIOUS floats above it, between the rings — see the overlay).
-                        Capsule().fill(Color.white.opacity(0.18)).frame(width: 1.5)
-                            .padding(.top, ring + 4)
-                            .frame(width: max(middle, W - dW - pW))
-                        // PUZZLES column
-                        VStack(spacing: 3) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Link(destination: homeURL) {
                                 DailyRing(modes: snap.puzzleModes, dark: dark, label: "PUZZLES")
                                     .frame(width: ring, height: ring)
                                     .shadow(color: pDone ? gold.opacity(0.85) : .clear, radius: pDone ? 7 : 0)
                             }
                             Caps(text: "PUZZLES", color: .white).frame(height: label)
-                            ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, maxChip: c, spread: true)
-                                .frame(width: pW, height: gridH)
                         }
-                        .frame(width: pW)
-                    } else {
-                        Spacer(minLength: 0)
+                        .offset(x: pX)
                     }
-                }
-                .overlay(alignment: .topLeading) {
-                    // WORDOCIOUS centered in the gap between the two rings.
-                    let leftEdge: CGFloat = dW / 2 + ring / 2 + 6
-                    let rightEdge: CGFloat = W - pW / 2 - ring / 2 - 6
+                    // WORDOCIOUS + TODAY'S DAILIES in the top right, after the PUZZLES ring.
+                    let tLeft: CGFloat = (hasPuzzles ? pX : W * 0.6) + ring + 8
                     Link(destination: homeURL) {
-                        WordmarkImage(size: .medium, halloween: hall, dark: dark, height: 12)
-                            .frame(width: max(40, rightEdge - leftEdge), height: ring)
+                        VStack(alignment: .center, spacing: 3) {
+                            WordmarkImage(size: .medium, halloween: hall, dark: dark, height: 14)
+                            Image("widget-headline-\(hall ? "halloween-orange" : "normal")")
+                                .resizable().interpolation(.high).scaledToFit().frame(height: 8)
+                                .accessibilityLabel("Today's dailies")
+                        }
+                        .frame(width: max(40, W - tLeft), height: headerH)
                     }
-                    .offset(x: leftEdge)
+                    .offset(x: tLeft)
                 }
-                Spacer(minLength: 3)
+                .frame(width: W, height: headerH, alignment: .topLeading)
+                Spacer(minLength: 4)
+                HStack(spacing: 0) {
+                    ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: c, spread: true)
+                        .frame(width: dW, height: gridH)
+                    if hasPuzzles {
+                        Spacer(minLength: 0)
+                        Capsule().fill(Color.white.opacity(0.18)).frame(width: 1.5, height: gridH - 6)
+                        Spacer(minLength: 0)
+                        ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, maxChip: c, spread: true)
+                            .frame(width: pW, height: gridH)
+                    }
+                }
+                .frame(width: W, height: gridH)
+                Spacer(minLength: 4)
                 Link(destination: homeURL) {
                     HStack(spacing: 8) {
                         StreakPair(snap: snap, size: bottom + 2)
