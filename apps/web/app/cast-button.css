@@ -71,7 +71,7 @@
    Only block buttons with a live label become containers (they never size to their content). */
 .cast-block:has(> .cast-label-live) { container-type: inline-size; }
 .cast-block > .cast-label-live {
-  font-size: min(calc(var(--cast-cap) / 0.75), calc((100cqi - var(--cast-lead, 0px)) / (var(--cast-n, 1) * 0.66)));
+  font-size: min(calc(var(--cast-cap) / 0.75), calc((100cqi - var(--cast-lead, 0px) - 24px) / (var(--cast-n, 1) * 0.72)));
 }
 .cast-block:has(> :not(.cast-label-live) + .cast-label-live) > .cast-label-live { --cast-lead: calc(var(--cast-h) * 0.5 + 6px); }
 /* BJ15 round 2: text links / tertiary actions stay text (never a pill). */

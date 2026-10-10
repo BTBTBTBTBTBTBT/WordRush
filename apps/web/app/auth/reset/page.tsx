@@ -31,6 +31,17 @@ function ResetPasswordInner() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Device-independent link (the email template sends ?token_hash=…&type=recovery): verified here with no
+      // PKCE verifier, so a reset requested in the iOS / Android app opens fine in any browser (founder 10-09:
+      // the app-started PKCE link failed in Mail's browser with "invalid or expired").
+      const tokenHash = searchParams.get('token_hash');
+      if (tokenHash) {
+        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+        if (cancelled) return;
+        if (error) setLinkError('This reset link has expired or was already used. Request a new one and use the newest email.');
+        setReady(true);
+        return;
+      }
       const code = searchParams.get('code');
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
