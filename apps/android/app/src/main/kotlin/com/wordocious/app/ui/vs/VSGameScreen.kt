@@ -1378,7 +1378,7 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.FLAME, 18.dp)
                                     VsNumber("$m", 20.sp)
-                                    Text("-win bot streak", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFC2410C))
+                                    Text("-win bot streak", fontSize = 13.sp, fontWeight = FontWeight.Black, color = com.wordocious.app.ui.SurfaceInk.seasonInk(0xC2410C, 0xFDBA74)) // Founder 10-10 (readability): the night-glass twin under a dark season
                                 }
                             }
                         }
@@ -1388,7 +1388,7 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 ) {
                                     com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.FLAME, 16.dp)
-                                    Text("Bot win streak", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF92400E))
+                                    Text("Bot win streak", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = com.wordocious.app.ui.SurfaceInk.seasonInk(0x92400E, 0xFCD34D))
                                     VsNumber("${vm.cpuStreak}", 16.sp)
                                 }
                             }
@@ -1408,7 +1408,7 @@ private fun ResultScreen(vm: VSMatchViewModel, onHome: () -> Unit, onGoPro: () -
                                 modifier = Modifier.size(150.dp).clearAndSetSemantics { },
                             )
                             Text(
-                                "LADDER CLEARED! You beat all ten bots.", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF78350F),
+                                "LADDER CLEARED! You beat all ten bots.", fontSize = 13.sp, fontWeight = FontWeight.Black, color = com.wordocious.app.ui.SurfaceInk.seasonInk(0x78350F, 0xFDE68A),
                                 textAlign = TextAlign.Center, modifier = Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite },
                             )
                         }

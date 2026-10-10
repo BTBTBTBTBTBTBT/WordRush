@@ -858,7 +858,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 when {
                     mode == GameMode.PROPERNOUNDLE -> Text(
                         com.wordocious.app.ui.modeTitle(mode),
-                        color = Color(0xFFDC2626),
+                        color = com.wordocious.app.ui.SurfaceInk.errorRed,
                         fontSize = 24.sp, fontWeight = FontWeight.Black,
                     )
                     else -> Text(
@@ -895,7 +895,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                                 color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                             )
                             // §20 holiday title beside the number (Codebreaker/Crosswordocious parity).
-                            com.wordocious.core.getDailySeedDate(seed)?.let { com.wordocious.core.ProperNoundle.holidayTitle(it) }?.let { Text(it, color = Color(0xFFDC2626), fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                            com.wordocious.core.getDailySeedDate(seed)?.let { com.wordocious.core.ProperNoundle.holidayTitle(it) }?.let { Text(it, color = com.wordocious.app.ui.SurfaceInk.errorRed, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
                         }
                         Text(
                             "${board0.solution.length} letters",

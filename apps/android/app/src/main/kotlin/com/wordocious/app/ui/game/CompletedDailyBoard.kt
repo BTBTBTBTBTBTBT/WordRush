@@ -409,7 +409,7 @@ internal fun CompletedBoardsRecapGrid(
                     Text(
                         b.solution.uppercase(),
                         fontSize = 11.sp, fontWeight = FontWeight.Black,
-                        letterSpacing = 1.sp, color = Color(0xFFDC2626),
+                        letterSpacing = 1.sp, color = com.wordocious.app.ui.SurfaceInk.errorRed,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }

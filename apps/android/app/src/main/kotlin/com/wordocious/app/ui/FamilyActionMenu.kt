@@ -163,7 +163,7 @@ fun FamilyActionMenu(
                 Column(Modifier.weight(1f).semantics(mergeDescendants = true) { heading() }) {
                     if (titleColor != null) {
                         BubbleText(
-                            title.uppercase(), ThemeKit.accentPalette(titleColor), maxSize = 26, minSize = 15,
+                            title.uppercase(), ThemeKit.accentPalette(titleColor, dark = FamilyMenuInk.night), maxSize = 26, minSize = 15,
                             sound = false, align = androidx.compose.ui.text.style.TextAlign.Start, animated = false,
                         )
                     } else {

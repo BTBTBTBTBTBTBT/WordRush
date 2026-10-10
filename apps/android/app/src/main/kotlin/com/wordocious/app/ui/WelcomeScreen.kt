@@ -132,7 +132,7 @@ fun WelcomeScreen() {
                         .border(1.5.dp, if (error == null) accentLine(WELCOME_PURPLE, 0.40f) else Color(0xFFDC2626), RoundedCornerShape(14.dp))
                         .padding(horizontal = 14.dp, vertical = 12.dp),
                 )
-                error?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626), modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SurfaceInk.errorRed, modifier = Modifier.padding(top = 4.dp)) }
                     ?: Text(
                         "3-20 characters. Letters, numbers, and underscores.",
                         fontSize = 11.sp, fontWeight = FontWeight.Bold, color = welcomeMuted(),

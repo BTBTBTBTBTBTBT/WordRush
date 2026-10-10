@@ -137,11 +137,16 @@ object ThemeKit {
     fun keyCorrect(): Color? = tileCorrect()?.let { color(com.wordocious.app.data.ThemeSurfaces.mix(
         String.format("#%06X", it.toArgb() and 0xFFFFFF), "#000000", 0.12)) }
     /** A headline palette from one accent: lighter top, the accent, a deep shade. */
-    fun accentPalette(c: Color): HeadlinePalette = HeadlinePalette(
-        top = androidx.compose.ui.graphics.lerp(c, Color.White, 0.4f), bottom = c,
-        deep = androidx.compose.ui.graphics.lerp(c, Color.Black, 0.5f),
-        nameTop = androidx.compose.ui.graphics.lerp(c, Color.White, 0.4f), nameBottom = c,
-    )
+    // Founder 10-10 (readability): a label's ink is lifted on dark surfaces (the dark theme and a dark season's night cards)
+    // until it reads (SurfaceInk.lift, idempotent); [lift] = false keeps the exact ink (page headlines, light-only pages).
+    fun accentPalette(c0: Color, lift: Boolean = true, dark: Boolean = WTheme.isDark): HeadlinePalette {
+        val c = if (lift) SurfaceInk.lift(c0, dark) else c0
+        return HeadlinePalette(
+            top = androidx.compose.ui.graphics.lerp(c, Color.White, 0.4f), bottom = c,
+            deep = androidx.compose.ui.graphics.lerp(c, Color.Black, 0.5f),
+            nameTop = androidx.compose.ui.graphics.lerp(c, Color.White, 0.4f), nameBottom = c,
+        )
+    }
 
     /** The accent page headlines (bubble lettering) wear. */
     fun headlineAccent(): Color? = buttonTint()

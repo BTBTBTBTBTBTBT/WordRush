@@ -958,7 +958,7 @@ fun FinishedBoardsGrid(boards: List<BoardState>, revealMissed: Boolean, maxWidth
                         if (revealMissed && b.status != GameStatus.WON) {
                             Text(
                                 b.solution.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black,
-                                letterSpacing = 1.sp, color = Color(0xFFDC2626), maxLines = 1,
+                                letterSpacing = 1.sp, color = com.wordocious.app.ui.SurfaceInk.errorRed, maxLines = 1,
                                 modifier = Modifier.padding(top = 2.dp),
                             )
                         }

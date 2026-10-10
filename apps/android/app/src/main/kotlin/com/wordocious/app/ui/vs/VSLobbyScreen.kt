@@ -559,7 +559,7 @@ private fun CodeRow(onOpenChallenge: (String) -> Unit, onEnterInvite: (GameMode,
             }
         }
     }
-    error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
+    error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.wordocious.app.ui.SurfaceInk.seasonInk(0xDC2626, 0xF87171)) }
 }
 
 /** Guest sign-in prompt — VS is account-based. Founder: no plain-text headings — the

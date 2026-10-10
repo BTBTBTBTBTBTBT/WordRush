@@ -101,7 +101,7 @@ fun VsLimitWindow(
                 // BJ16: the DAILY VS USED lettering, not plain text.
                 if (title == "DAILY VS USED") com.wordocious.app.ui.HeadingArt(com.wordocious.app.ui.Heading.VSUSED)
                 else Text(
-                    title, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = Color(0xFF78350F),
+                    title, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = com.wordocious.app.ui.SurfaceInk.seasonInk(0x78350F, 0xFDE68A),
                     modifier = Modifier.semantics { heading() },
                 )
                 Text(body, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsInk.muted, textAlign = TextAlign.Center)
@@ -120,7 +120,7 @@ fun VsLimitWindow(
                         androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.art_badge_icon_clock_sprite),
                         contentDescription = null, modifier = Modifier.size(18.dp),
                     )
-                    VsCapsLabel("RESETS IN", color = Color(0xFF92400E), fontSize = 11.sp)
+                    VsCapsLabel("RESETS IN", color = com.wordocious.app.ui.SurfaceInk.seasonInk(0x92400E, 0xFCD34D), fontSize = 11.sp)
                     VsNumber(clock, 16.sp)
                 }
                 CandyButtonFill("GO PRO", { onClose(); onGoPro() }, color = CandyColor.AMBER)

@@ -225,7 +225,7 @@ fun DressingRoom(
                 }
                 else -> Grid(MascotBuilderLogic.options(tab))
             }
-            note?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
+            note?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SurfaceInk.ink(0x6D28D9, 0xC4B5FD), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
         }
     }
     paywallFor?.let { o ->

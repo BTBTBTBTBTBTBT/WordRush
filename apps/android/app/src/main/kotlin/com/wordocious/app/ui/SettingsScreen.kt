@@ -449,7 +449,7 @@ private fun LinkedSignIns() {
         when {
             loadError && list == null -> Text(
                 "Couldn’t load your sign-ins. Close Settings and try again.",
-                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626), modifier = Modifier.padding(12.dp),
+                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SurfaceInk.errorRed, modifier = Modifier.padding(12.dp),
             )
             list == null -> Text("Loading…", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(12.dp))
             else -> {
@@ -465,7 +465,7 @@ private fun LinkedSignIns() {
                             identity.email?.let { email ->
                                 Text(
                                     if (com.wordocious.app.data.IdentityLinking.isHideMyEmail(email)) "Hide My Email" else email,
-                                    fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted, maxLines = 1,
+                                    fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted, maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                 )
                             }
@@ -602,7 +602,7 @@ private fun ChoiceTile(
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(label, fontSize = 14.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, color = if (active) Color.White else WTheme.text)
-                Text(desc, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito, color = if (active) Color.White.copy(alpha = 0.88f) else WTheme.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(desc, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito, color = if (active) Color.White.copy(alpha = 0.88f) else WTheme.textMuted) // Founder 10-10 (readability): the description wraps, never "…"
             }
             preview()
             Box(Modifier.size(20.dp).alpha(face).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
@@ -743,11 +743,8 @@ private fun SettingsDialog(
 }
 
 /** Item 25: a section's bubble-lettering palette from its cast accent. */
-private fun accentPalette(accent: Color): HeadlinePalette = HeadlinePalette(
-    top = androidx.compose.ui.graphics.lerp(accent, Color.White, 0.4f), bottom = accent,
-    deep = androidx.compose.ui.graphics.lerp(accent, Color.Black, 0.5f),
-    nameTop = androidx.compose.ui.graphics.lerp(accent, Color.White, 0.4f), nameBottom = accent,
-)
+// Founder 10-10 (readability): the same lifted-on-dark ink as every other label (ThemeKit.accentPalette → SurfaceInk.lift).
+private fun accentPalette(accent: Color): HeadlinePalette = ThemeKit.accentPalette(accent)
 
 /** Item 25: a theme row's REAL mini preview: its wall (registry stops + glow) with a small card of four tiles. */
 @Composable

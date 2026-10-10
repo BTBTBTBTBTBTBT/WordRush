@@ -173,9 +173,9 @@ fun ChartCard(
 ) {
     KitCard(accent = accent) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.text else FinishInk.heading)
-            Spacer(Modifier.weight(1f))
-            if (hint != null) Text(hint, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            // Founder 10-10 (readability): the title takes what the hint leaves and wraps; it never squeezes the hint to a sliver.
+            Text(title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.text else FinishInk.heading, modifier = Modifier.weight(1f))
+            if (hint != null) Text(hint, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.End, modifier = Modifier.padding(start = 8.dp))
         }
         Spacer(Modifier.height(8.dp))
         if (empty != null) {

@@ -162,7 +162,7 @@ internal fun MascotStep(profile: Profile?) {
                     Text(
                         "Couldn't save just now. Try again, or do it later.",
                         fontFamily = Nunito, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFFDC2626), textAlign = TextAlign.Center,
+                        color = SurfaceInk.errorRed, textAlign = TextAlign.Center,
                     )
                 }
                 Spacer(Modifier.height(14.dp))

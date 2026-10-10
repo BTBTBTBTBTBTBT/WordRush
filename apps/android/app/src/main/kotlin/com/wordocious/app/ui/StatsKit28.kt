@@ -415,7 +415,7 @@ fun ProScene(benefit: StatsProfile.ProBenefit, modifier: Modifier = Modifier, he
             }
         }
         if (caption) {
-            Text(StatsProfile.PRO_BENEFIT_CAPTION.getValue(benefit), fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFB45309), modifier = Modifier.padding(top = 2.dp))
+            Text(StatsProfile.PRO_BENEFIT_CAPTION.getValue(benefit), fontSize = 12.sp, fontWeight = FontWeight.Black, color = SurfaceInk.ink(0xB45309, 0xFCD34D), modifier = Modifier.padding(top = 2.dp))
         }
     }
 }

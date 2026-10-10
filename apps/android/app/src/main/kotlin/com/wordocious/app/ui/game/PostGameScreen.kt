@@ -250,7 +250,7 @@ fun PostGameScreen(
                     ) {
                         Text(
                             com.wordocious.app.ui.modeTitle(mode),
-                            color = Color(0xFFDC2626), fontSize = 24.sp, fontWeight = FontWeight.Black,
+                            color = com.wordocious.app.ui.SurfaceInk.errorRed, fontSize = 24.sp, fontWeight = FontWeight.Black,
                         )
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             pnPuzzle?.themeCategory?.let { PnCategoryPill(it) }

@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import com.wordocious.app.ui.theme.WTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -132,7 +133,7 @@ fun PodiumNameAbove(
         AvatarFields(userId, username, avatarUrl, config, castId, frame, accentHex)
     }
     val cfg = PlayerAvatars.resolve(row).config
-    val palette = remember(cfg.bg, cfg.color) { ThemeKit.accentPalette(hex(PlayerTint.nameHex(cfg.bg, avatarColorHex(cfg.color)))) }
+    val palette = remember(cfg.bg, cfg.color, WTheme.isDark) { ThemeKit.accentPalette(hex(PlayerTint.nameHex(cfg.bg, avatarColorHex(cfg.color)))) }
     val glow = remember(cfg.patternColor) { hex(avatarColorHex(cfg.patternColor)) }
     val bleed = 10.dp
     Box(
@@ -183,5 +184,5 @@ fun rememberPlayerNamePalette(
         AvatarFields(userId, username, avatarUrl, config, castId, frame, accentHex)
     }
     val cfg = PlayerAvatars.resolve(row).config
-    return remember(cfg.bg, cfg.color) { ThemeKit.accentPalette(hex(PlayerTint.nameHex(cfg.bg, avatarColorHex(cfg.color)))) }
+    return remember(cfg.bg, cfg.color, WTheme.isDark) { ThemeKit.accentPalette(hex(PlayerTint.nameHex(cfg.bg, avatarColorHex(cfg.color)))) }
 }

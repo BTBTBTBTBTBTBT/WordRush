@@ -460,7 +460,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                     hopToken++
                 }
             }
-            error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626), modifier = Modifier.padding(top = 8.dp)) }
+            error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SurfaceInk.errorRed, modifier = Modifier.padding(top = 8.dp)) }
             // Backdrop + frame: one-tap swatch rows.
             SwatchLabel("BACKDROP", labelInk, Modifier.padding(top = 14.dp))
             Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {

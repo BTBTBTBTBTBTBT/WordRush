@@ -164,7 +164,7 @@ fun HaveACodeSheet(color: CandyColor, onDismiss: () -> Unit, onResolved: (HaveAC
                     },
                 )
             }
-            error?.let { Text(it, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFDC2626)) }
+            error?.let { Text(it, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = SurfaceInk.seasonInk(0xDC2626, 0xF87171)) }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),

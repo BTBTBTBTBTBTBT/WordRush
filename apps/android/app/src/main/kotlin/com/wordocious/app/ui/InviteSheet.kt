@@ -284,7 +284,7 @@ fun InviteSheet(onDismiss: () -> Unit) {
 
                 error?.let {
                     Spacer(Modifier.size(12.dp))
-                    Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626),
+                    Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SurfaceInk.errorRed,
                         modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
