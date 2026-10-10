@@ -36,10 +36,10 @@ struct StageDriftingClouds: View {
             .offset(x: still ? 0 : (drift ? 26 : -26), y: -6)
             .animation(still ? nil : .easeInOut(duration: 22).repeatForever(autoreverses: true), value: drift)
             .opacity(0.85)
-            .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.22),
-                                         .init(color: .black, location: 0.6), .init(color: .clear, location: 0.92)],
+            .mask(LinearGradient(stops: [.init(color: PerfFlags.noMask ? .black : .clear, location: 0), .init(color: .black, location: 0.22),
+                                         .init(color: .black, location: 0.6), .init(color: PerfFlags.noMask ? .black : .clear, location: 0.92)],
                                  startPoint: .top, endPoint: .bottom).offset(y: -6))
-            .onAppear { if !still { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { drift = true } } }
+            .onAppear { if !still && !PerfFlags.noDrift { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { drift = true } } }
             .allowsHitTesting(false)
             .accessibilityHidden(true)
     }
@@ -63,19 +63,19 @@ struct LeaderboardStageBackdrop: View {
                 Color.black
                 LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 90)
             })
-            VStack { Spacer(minLength: 0)
+            if !PerfFlags.noSun { VStack { Spacer(minLength: 0)
                 Image("art-lb-sunburst").resizable().scaledToFit()
                     .frame(maxWidth: .infinity).scaleEffect(1.3, anchor: .bottom)
                     .opacity(LeaderboardStage.rays).blendMode(.softLight)
                     .accessibilityHidden(true)
-            }
+            } }
             VStack { Spacer(minLength: 0)
                 RadialGradient(colors: [accent.opacity(LeaderboardStage.floorGlow), accent.opacity(0)],
                                center: .bottom, startRadius: 0, endRadius: 170)
                     .frame(height: 60)
             }
         }
-        .animation(Theme.reduceMotion ? nil : .easeInOut(duration: 0.38), value: accent.description)
+        .animation(Theme.reduceMotion || PerfFlags.noAccentAnim ? nil : .easeInOut(duration: 0.38), value: accent.description)
         .allowsHitTesting(false)
     }
 }
@@ -181,7 +181,7 @@ struct StageTitleRow: View {
                 RadialGradient(colors: [Color(hex: 0xFFD978).opacity(0.62), Color(hex: 0xFFB04A).opacity(0.22), .clear],
                                center: .center, startRadius: 4, endRadius: 210)
                     .scaleEffect(x: 1.25, y: 0.75)
-                    .blur(radius: 10)
+                    .blur(radius: PerfFlags.noGlow ? 0 : 10)
                     .padding(-24)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
@@ -257,8 +257,8 @@ struct YourBoardPill: View {
             .shadow(color: Color(hex: 0x4C1D95).opacity(0.45), radius: 0, x: 0, y: 1)
             .padding(.horizontal, 13)
             .frame(height: 26)
-            .background(CandyPill(sprite: .thumbOn).hueRotation(GameHue.shift(to: accent)))
-            .animation(.easeInOut(duration: 0.3), value: accent.description)
+            .background(CandyPill(sprite: .thumbOn).hueRotation(PerfFlags.noHue ? .zero : GameHue.shift(to: accent)))
+            .animation(PerfFlags.noAccentAnim ? nil : .easeInOut(duration: 0.3), value: accent.description)
             .contentShape(Capsule())
         }
         .buttonStyle(.squish)
@@ -459,4 +459,32 @@ extension PodiumEntry {
             && value == o.value && avatarUrl == o.avatarUrl && pro == o.pro && rank == o.rank
             && detail == o.detail && badge == o.badge && (bell == nil) == (o.bell == nil)
     }
+}
+
+
+/// DEBUG A/B switches for the Leaderboard stage (`-perfFlag noAccentAnim` / `noGlow`); always false in Release.
+enum PerfFlags {
+    #if DEBUG
+    nonisolated static let noAccentAnim = PerfTour.flag("noAccentAnim")
+    nonisolated static let noGlow = PerfTour.flag("noGlow")
+    nonisolated static let noHue = PerfTour.flag("noHue")
+    nonisolated static let noSun = PerfTour.flag("noSun")
+    nonisolated static let noPodGlow = PerfTour.flag("noPodGlow")
+    nonisolated static let noMask = PerfTour.flag("noMask")
+    nonisolated static let noDrift = PerfTour.flag("noDrift")
+    nonisolated static let noStageBody = PerfTour.flag("noStageBody")
+    nonisolated static let noRanks = PerfTour.flag("noRanks")
+    nonisolated static let noYesterday = PerfTour.flag("noYesterday")
+    #else
+    nonisolated static let noAccentAnim = false
+    nonisolated static let noGlow = false
+    nonisolated static let noHue = false
+    nonisolated static let noSun = false
+    nonisolated static let noPodGlow = false
+    nonisolated static let noMask = false
+    nonisolated static let noDrift = false
+    nonisolated static let noStageBody = false
+    nonisolated static let noRanks = false
+    nonisolated static let noYesterday = false
+    #endif
 }

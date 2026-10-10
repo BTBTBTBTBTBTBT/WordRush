@@ -583,8 +583,10 @@ struct PodiumView: View {
                     .background {
                         let glow = PlayerTint.secondaryColor(userId: e.id, username: e.username)
                         ZStack {
+                            if !PerfFlags.noPodGlow {
                             Capsule().fill(glow.opacity(0.55)).padding(.horizontal, -2).padding(.vertical, -6).blur(radius: 12)
                             Capsule().fill(glow.opacity(0.9)).padding(.horizontal, 10).padding(.vertical, 1).blur(radius: 6)
+                            }
                         }
                     }
                     .padding(.horizontal, -10)

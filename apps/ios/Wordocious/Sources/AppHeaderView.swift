@@ -37,6 +37,9 @@ struct AppHeaderView: View {
     typealias HeaderPop = HeaderPopups.Kind
 
     var body: some View {
+        #if DEBUG
+        let _ = PerfTour.flag("printChanges") ? Self._printChanges() : ()
+        #endif
         VStack(spacing: 0) {
             // §AS2: the controls row ABOVE the WORDOCIOUS cast row.
             HStack(spacing: 2) {

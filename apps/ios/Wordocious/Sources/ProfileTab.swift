@@ -231,6 +231,9 @@ struct ProfileTab: View {
     }
 
     var body: some View {
+        #if DEBUG
+        let _ = PerfTour.flag("printChanges") ? Self._printChanges() : ()
+        #endif
         NavigationStack {
             Group {
             ZStack {

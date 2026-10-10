@@ -1485,6 +1485,9 @@ struct FriendsScreenView: View {
     private static let sidePadding: CGFloat = 16
 
     var body: some View {
+        #if DEBUG
+        let _ = PerfTour.flag("printChanges") ? Self._printChanges() : ()
+        #endif
         ScrollViewReader { proxy in
             if asTab {
                 VStack(spacing: 0) {

@@ -141,7 +141,7 @@ struct EquatableRanksBlock: View, Equatable {
                 let shown = entries.count - start
                 let windowCount = rankWindow?.entries.count ?? 0
                 if shown > 0 || rankWindow != nil || (maker.friendsOnly && !ghosts.isEmpty) {
-                    VStack(spacing: 0) {
+                    LbRankStack {
                         ForEach(Array(entries.enumerated().dropFirst(start)), id: \.element.id) { idx, entry in
                             maker.row(rank: ranks[idx], entry: entry)
                                 .stripedRow(idx - start, accent: LbStyle.gold)
@@ -248,5 +248,17 @@ struct EquatableYesterdayBlock: View, Equatable {
                            accentHex: e.profiles.accentColor, emoji: e.profiles.avatarEmoji,
                            value: labels[e.compositeScore] ?? formatScore(e.compositeScore),
                            avatarUrl: e.profiles.avatarUrl, rank: rank, bell: bell, detail: lbDetailLine(e, mode: maker.mode))
+    }
+}
+
+/// The ranked rows' stack (A/B: `-perfFlag lazyRanks` builds only the rows near the viewport).
+struct LbRankStack<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+    var body: some View {
+        #if DEBUG
+        if PerfTour.flag("lazyRanks") { LazyVStack(spacing: 0) { content() } } else { VStack(spacing: 0) { content() } }
+        #else
+        VStack(spacing: 0) { content() }
+        #endif
     }
 }

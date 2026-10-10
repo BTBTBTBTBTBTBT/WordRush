@@ -51,6 +51,8 @@ enum PerfTour {
         case builderHop
         /// 2.7.1 gate: ProperNoundle's whole-clue card open / closed.
         case noundleClue(Bool)
+        /// Leaderboard: pick a game's tile directly (no tab-selection hand-off).
+        case lbMode(String)
     }
 
     enum Sheet: String, Identifiable { case settings, help, strategy, words, quickPlay; var id: String { rawValue } }
@@ -334,6 +336,7 @@ enum PerfTourDriver {
             if always { await body(); await PerfDrive.sleep(hold + rest) }
             return
         }
+        if PerfTour.flag("printChanges") { print("STEP|\(name)") }
         PerfMonitor.shared.begin(name)
         await body()
         await PerfDrive.sleep(hold)
@@ -405,7 +408,8 @@ enum PerfTourDriver {
         await step("leaderboard.picker", hold: 0.8) {
             // The same note the post-game "Leaderboard" CTA posts (preselects the mode).
             for key in ["QUORDLE", "OCTORDLE", "GAUNTLET", "DUEL"] {
-                NotificationCenter.default.post(name: NextDailyCTA.openLeaderboard, object: key)
+                if PerfTour.flag("pickerDirect") { PerfTour.send(.lbMode(key)) }
+                else { NotificationCenter.default.post(name: NextDailyCTA.openLeaderboard, object: key) }
                 await PerfDrive.sleep(0.7)
             }
         }

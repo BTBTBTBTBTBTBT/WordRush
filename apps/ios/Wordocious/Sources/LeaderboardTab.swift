@@ -107,6 +107,9 @@ struct LeaderboardTab: View {
     }
 
     var body: some View {
+        #if DEBUG
+        let _ = PerfTour.flag("printChanges") ? Self._printChanges() : ()
+        #endif
         NavigationStack(path: $path) {
             ZStack {
                 PageBackground(tint: .leaderboard)
@@ -151,6 +154,12 @@ struct LeaderboardTab: View {
             }
             // §214 (Lindsay): the post-game "View Leaderboard" capsule lands
             // here with its mode preselected (root switches the tab).
+            #if DEBUG
+            // Perf tour (`-perfFlag pickerDirect`): the tile tap without the root's tab-selection note.
+            .onPerfTour { c in
+                if case .lbMode(let key) = c, let gm = GameMode(rawValue: key) { selectMode(gm) }
+            }
+            #endif
             .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.openLeaderboard)) { note in
                 guard let key = note.object as? String, let gm = GameMode(rawValue: key) else { return }
                 NextDailyCTA.pendingLeaderboardMode = nil
@@ -252,8 +261,8 @@ struct LeaderboardTab: View {
                     }
                     modeShareButton
                 }
-                .hueRotation(GameHue.shift(to: stageAccent))
-                .animation(.easeInOut(duration: 0.3), value: stageAccent.description)
+                .hueRotation(PerfFlags.noHue ? .zero : GameHue.shift(to: stageAccent))
+                .animation(PerfFlags.noAccentAnim ? nil : .easeInOut(duration: 0.3), value: stageAccent.description)
                 .layoutPriority(2)
             }
             HStack(spacing: 6) {
@@ -378,10 +387,10 @@ struct LeaderboardTab: View {
                                                sweepResult: completions.dataDay == LeaderboardService.todayLocal() && completions.allDone ? true : nil,
                                                selectedBinding: modeSelection, sweepBinding: sweepSelection)
                         .equatable()
-                    if isSweep { sweepStageBody } else { modeStageBody }
+                    if PerfFlags.noStageBody { EmptyView() } else if isSweep { sweepStageBody } else { modeStageBody }
                 }
-                if isSweep { sweepRanksBlock } else { modeRanksBlock }
-                if isSweep { sweepYesterdayBlock } else { modeYesterdayBlock }
+                if PerfFlags.noRanks { EmptyView() } else if isSweep { sweepRanksBlock } else { modeRanksBlock }
+                if PerfFlags.noYesterday { EmptyView() } else if isSweep { sweepYesterdayBlock } else { modeYesterdayBlock }
             }
             .padding(.horizontal, 16).padding(.vertical, 8)
             .background(alignment: .top) { HeaderScrollProbe() }   // 2.8 item 14

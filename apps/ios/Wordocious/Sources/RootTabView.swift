@@ -161,6 +161,9 @@ struct RootTabView: View {
     }
 
     var body: some View {
+        #if DEBUG
+        let _ = PerfTour.flag("printChanges") ? Self._printChanges() : ()
+        #endif
         TabView(selection: tabSelection) {
             HomeView().tag(Tab.home).tabItem { Label("Home", systemImage: "house") }
             LeaderboardTab(path: $leaderboardPath).tag(Tab.leaderboard).tabItem { Label("Leaderboard", systemImage: "trophy") }
@@ -531,6 +534,9 @@ private struct BottomNav: View {
     }
 
     var body: some View {
+        #if DEBUG
+        let _ = PerfTour.flag("printChanges") ? Self._printChanges() : ()
+        #endif
         HStack(spacing: 0) {
             item(.home, .tabHome, "Home")
             item(.leaderboard, .tabLeaderboard, "Leaderboard")

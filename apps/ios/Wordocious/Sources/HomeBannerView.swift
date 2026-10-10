@@ -129,6 +129,9 @@ struct HomeBannerView: View {
     }
 
     var body: some View {
+        #if DEBUG
+        let _ = PerfTour.flag("printChanges") ? Self._printChanges() : ()
+        #endif
         // ART_SPEC §18.4: radius 22, the full content width.
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         let hasPuzzles = !puzzles.modes.isEmpty

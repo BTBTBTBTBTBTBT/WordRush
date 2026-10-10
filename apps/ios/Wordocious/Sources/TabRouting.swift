@@ -21,7 +21,14 @@ final class TabRouterModel: ObservableObject {
 
     func token(_ t: AppTab) -> Int { popTokens[t] ?? 0 }
 
-    func rootAppeared(_ t: AppTab) { pushed.remove(t) }
+    func rootAppeared(_ t: AppTab) {
+        #if DEBUG
+        if PerfTour.flag("printChanges") { print("ROUTER|rootAppeared \(t) pushedBefore=\(pushed)") }
+        #endif
+        // Only write when something changes: a @Published write notifies even when the set is unchanged, and
+        // every tab root's appearance (each tab switch) then re-ran RootTabView, HomeView, ProfileTab and BottomNav.
+        if pushed.contains(t) { pushed.remove(t) }
+    }
 
     /// A root disappearing while its tab is current means a screen was pushed over it
     /// (switching tabs also hides it, but then its tab is no longer current).
@@ -30,6 +37,9 @@ final class TabRouterModel: ObservableObject {
     /// re-identified Home's stack mid-dismissal (rebuilding every game cover modifier —
     /// a still-set game binding then presented again) and reset its scroll.
     func rootDisappeared(_ t: AppTab) {
+        #if DEBUG
+        if PerfTour.flag("printChanges") { print("ROUTER|rootDisappeared \(t)") }
+        #endif
         if HomeButtonRules.rootDisappearanceIsPush(tab: t, current: current,
                                                    modalUp: ChromeVisibility.inModalPresentation()) {
             pushed.insert(t)
@@ -38,7 +48,7 @@ final class TabRouterModel: ObservableObject {
 
     func popToRoot(_ t: AppTab) {
         popTokens[t, default: 0] += 1
-        pushed.remove(t)
+        if pushed.contains(t) { pushed.remove(t) }
     }
 
     /// Whatever the shell has presented (sheets, covers, popovers).
