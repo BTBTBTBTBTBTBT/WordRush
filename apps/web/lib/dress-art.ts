@@ -24,6 +24,7 @@ export const DRESS_ART_SIZE: Record<string, readonly [number, number]> = {
   'art-dress-tab-extras': [144, 83],
   'art-dress-tab-eyes': [144, 85],
   'art-dress-tab-frame': [144, 142],
+  'art-dress-tab-halloween': [144, 148],
   'art-dress-tab-hats': [144, 124],
   'art-dress-tab-mouth': [144, 92],
   'art-dress-tab-nose': [144, 128],
