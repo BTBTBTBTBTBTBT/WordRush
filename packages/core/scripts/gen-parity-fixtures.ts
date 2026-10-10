@@ -55,7 +55,7 @@ import { SECRET_ACHIEVEMENT_KEYS, achievementListed } from '../src/achievement-r
 import { avatarPartSeason, isPartAvailable, mascotSeason, seasonNudgeDue, seasonNudgeKey, seasonTag, seasonalShelf, wearsSeasonalPart } from '../src/avatar-season';
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
 import { BOT_CAST, botSolveLine, canonicalBotId, migrateLegacyLadderCleared, botOfTheDay } from '../src/bot-cast';
-import { friendsLayout, tileWord, waitingHeadline, theirTurnLine, cardPresence, allFriendsLabel, type CardFriend, type CardGame } from '../src/friend-cards';
+import { friendsLayout, raceBadge, raceBadgeLines, tileWord, waitingHeadline, theirTurnLine, cardPresence, allFriendsLabel, type CardFriend, type CardGame } from '../src/friend-cards';
 import { POCKET_HELP, FIRST_PLAY_FLAG, shouldAutoShowTutorial, tutorialShouldRecordSeen, withTutorialSeen, mergeTutorialsSeen, pocketTutorialKey } from '../src/pocket-help';
 import { ADS_SERVING } from '../src/ads';
 import { PRO_BENEFIT_CAPTION, proBenefitForReason } from '../src/stats-profile';
@@ -1176,6 +1176,8 @@ export function renderFriendCardFixtures() {
     theirTurn: [0, 1, 3].map((n) => ({ n, name: 'Johnny', text: theirTurnLine(n, 'Johnny') })),
     presence: ([[false, null], [true, null], [true, 'Classic'], [true, '']] as Array<[boolean, string | null]>).map(([online, activity]) => ({ online, activity, text: cardPresence(online, activity) })),
     all: [0, 1, 12].map((n) => ({ n, text: allFriendsLabel(n) })),
+    badges: ([[null, null, null], [3, 2, 40], [8, 0, 0], [8, 0, 1], [8, 0, 2], [8, 3, 89], [7, 3, 89], [12, 1, null], [undefined, undefined, 26], [0, 0, 2]] as Array<[number | null | undefined, number | null | undefined, number | null | undefined]>)
+      .map(([played, flawlessRun, streak]) => { const text = raceBadge(played, flawlessRun, streak); return { played: played ?? null, flawlessRun: flawlessRun ?? null, streak: streak ?? null, text, lines: raceBadgeLines(text) }; }),
   };
   return { tiles, layouts, words };
 }

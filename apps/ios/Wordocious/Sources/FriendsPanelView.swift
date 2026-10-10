@@ -329,7 +329,7 @@ struct FriendsPanelView: View {
                     }
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.squish)
+                .buttonStyle(.squishCard)
                 .accessibilityLabel(showWeek ? "Hide this week's race" : "Show this week's race")
                 Spacer(minLength: 6)
                 // §218: name the window and when it closes; §226 live clock.
@@ -507,8 +507,9 @@ struct FriendsPanelView: View {
                                     Text(e.username)
                                         .font(Brand.font(12, .black)).lineLimit(1)
                                         .foregroundStyle(e.isMe ? FriendsKit.solid : FriendsInk.heading)
-                                    if let b = e.badge {
-                                        Text(b).font(Brand.font(8.5, .black)).tracking(0.4)
+                                    // Both parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
+                                    ForEach(Array(FriendCards.raceBadgeLines(e.badge).enumerated()), id: \.offset) { _, line in
+                                        Text(line).font(Brand.font(8.5, .black)).tracking(0.4)
                                             .foregroundStyle(Color(hex: 0xF5B82E)).lineLimit(1).minimumScaleFactor(0.7)
                                     }
                                 }
@@ -519,7 +520,7 @@ struct FriendsPanelView: View {
                             .padding(.horizontal, 12).padding(.vertical, 7)
                             .contentShape(Rectangle())
                         }
-                        .buttonStyle(.squish)
+                        .buttonStyle(.squishCard)
                         .friendsStripe(i, accent: ink)
                     }
                 }
@@ -553,7 +554,7 @@ struct FriendsPanelView: View {
             .padding(.vertical, 6)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.squish)
+        .buttonStyle(.squishCard)
     }
 
     /// A race entry on the shared podium (letter-tile avatar, soft points).
@@ -1203,11 +1204,7 @@ struct FriendsPanelView: View {
 
     /// Founder 10-09: a Flawless (all 8 won) or a Sweep (all 8 played) today, and the day streak when there is one.
     static func raceBadge(played: Int?, flawlessRun: Int?, streak: Int?) -> String? {
-        let all = (played ?? 0) >= 8
-        let day = all ? ((flawlessRun ?? 0) > 0 ? "FLAWLESS" : "SWEEP") : nil
-        let run = (streak ?? 0) > 1 ? "\(streak!)-DAY STREAK" : nil
-        let parts = [day, run].compactMap { $0 }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+        FriendCards.raceBadge(played: played, flawlessRun: flawlessRun, streak: streak)
     }
 
     /// Me + friends by this week's daily points, best first (§212/§238).

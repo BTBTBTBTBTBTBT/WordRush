@@ -169,6 +169,24 @@ export function allFriendsLabel(count: number): string {
   return `All friends · ${count}`;
 }
 
+/**
+ * Today's highlight on the daily race (founder 10-09): "FLAWLESS" (all 8 played, a flawless run today) or "SWEEP"
+ * (all 8 played), plus "N-DAY STREAK" when the streak is past 1, joined with " · ". Null when there is nothing to show.
+ * The UI splits on " · " and stacks the two parts on two lines (FLAWLESS / 89-DAY STREAK).
+ */
+export function raceBadge(played: number | null | undefined, flawlessRun: number | null | undefined, streak: number | null | undefined): string | null {
+  const all = (played ?? 0) >= 8;
+  const day = all ? ((flawlessRun ?? 0) > 0 ? 'FLAWLESS' : 'SWEEP') : null;
+  const run = (streak ?? 0) > 1 ? `${streak}-DAY STREAK` : null;
+  const parts = [day, run].filter((x): x is string => x !== null);
+  return parts.length ? parts.join(' · ') : null;
+}
+
+/** The badge's parts for display: ["FLAWLESS", "89-DAY STREAK"] stacks on two lines; one part stays one line. */
+export function raceBadgeLines(badge: string | null | undefined): string[] {
+  return badge ? badge.split(' · ') : [];
+}
+
 /** Whether a card or tile order should read "your turn" at all: any waiting game. */
 export function hasYourTurn(layout: FriendsLayout): boolean {
   return layout.cards.some((c) => c.waiting > 0);

@@ -42,7 +42,7 @@ import com.wordocious.core.GameTile
 // The Friends tab, ONE card per friend (FRIDAY-QUEUE items 9 + 9e, 2.8 wave 3; words and order from
 // core FriendCards, pinned by friend-cards-fixtures.json). Their living mascot with the green dot and
 // "playing Classic" under it, the name, "N games waiting on you" and a compact strip of game tiles (the
-// game's art + a one-word state); a tile opens that game. No PLAY pills, no repeated "vs @name", no
+// game's art + its name + what waits in plain words); a tile opens that game. No PLAY pills, no repeated "vs @name", no
 // bordered boxes. Their-turn games collapse into one quiet line, expanded on tap. The ⋯ opens the
 // family action menu (profile, play a game, resign …) hosted by the Friends screen.
 
@@ -154,21 +154,32 @@ private fun TileGrid(tiles: List<GameTile>, quiet: Boolean, onOpen: (String) -> 
     }
 }
 
-/** The game's art + its one-word state; a tap goes straight into that game. */
+/**
+ * The game's art, its NAME (bold, one line), then what waits in plain words (up to two lines, centered, shrink to fit);
+ * a tap goes straight into that game. Founder 10-09: never a cryptic two-word state.
+ */
 @Composable
 private fun TileCell(t: GameTile, quiet: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Column(
         modifier.tileClickable(card = false, label = "${t.kind.title}, ${t.word}", onClick = onClick).alpha(if (quiet) 0.72f else 1f),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        FriendlyGameIcon(t.kind, 48.dp)
-        // The word shrinks to fit its cell (never an ellipsis: "E…" read as a clipped tile); the iOS minimumScaleFactor.
-        var size by remember(t.word) { mutableStateOf(10.5f) }
+        FriendlyGameIcon(t.kind, 42.dp)
+        // The name shrinks to fit one line (the iOS minimumScaleFactor), never an ellipsis.
+        var nameSize by remember(t.kind) { mutableStateOf(12f) }
         Text(
-            t.word, fontSize = size.sp, fontWeight = FontWeight.ExtraBold,
+            t.kind.title, fontSize = nameSize.sp, fontWeight = FontWeight.Black,
             color = if (quiet) FriendsPink.muted else FriendsPink.heading,
             maxLines = 1, softWrap = false, overflow = TextOverflow.Clip, textAlign = TextAlign.Center,
-            onTextLayout = { if (it.hasVisualOverflow && size > 7f) size -= 0.5f },
+            onTextLayout = { if (it.hasVisualOverflow && nameSize > 8f) nameSize -= 0.5f },
+        )
+        // The plain-words state: two lines at most, centered, shrinking until it fits.
+        var size by remember(t.word) { mutableStateOf(10.5f) }
+        Text(
+            t.word, fontSize = size.sp, fontWeight = FontWeight.Bold, lineHeight = (size + 2f).sp,
+            color = if (quiet) FriendsPink.muted else FriendsPink.heading.copy(alpha = 0.85f),
+            maxLines = 2, overflow = TextOverflow.Clip, textAlign = TextAlign.Center,
+            onTextLayout = { if (it.hasVisualOverflow && size > 7.5f) size -= 0.5f },
         )
     }
 }

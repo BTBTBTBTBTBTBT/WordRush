@@ -83,12 +83,12 @@ import com.wordocious.app.ui.friends.buildFriendsLayout
 import com.wordocious.app.ui.friends.FriendFace
 import com.wordocious.app.ui.friends.FriendlyGameGlyph
 import com.wordocious.app.ui.friends.FriendlyGameIcon
-import com.wordocious.app.ui.friends.FriendsBannerView
 import com.wordocious.app.ui.friends.FriendsLabel
 import com.wordocious.app.ui.friends.FriendsNotice
 import com.wordocious.app.ui.friends.FriendsPink
 import com.wordocious.app.ui.friends.FRIENDS_CARD_ACCENT
 import com.wordocious.app.ui.friends.friendsLine
+import com.wordocious.app.ui.friends.localMidnightClock
 import com.wordocious.app.ui.friends.friendsWash
 import com.wordocious.app.ui.friends.QuickPlayRequest
 import com.wordocious.app.ui.friends.QuickPlaySheet
@@ -258,15 +258,12 @@ fun FriendsScreen(
         // K1: the note as a notice card — springs in, squishes, taps or swipes away.
         FriendsNotice(note, onDismiss = { note = null })
 
-        // 2.8 TestFlight (founder): the page LEADS with THIS WEEK'S RACE podium, right under the cast header;
-        // Today's Race (the banner) follows it, then INVITES and the friends.
-        if (friends.isNotEmpty()) WeeklyRaceSection(version, onOpenProfile)
-
-        // 2. The Friends banner (the race, told once: the pills; the countdown small in its header)
-        FriendsBannerView(
-            friends = friends, rows = raceRows, nowMs = now,
-            onRace = { if (friends.isNotEmpty()) showRace = true },
-        )
+        // Founder 10-09: the page LEADS with TODAY'S RACE on the podium (top 5, the rest in an "All friends" fold), then
+        // This week's race (collapsed, Last week inside) under it. The old pill strip / banner is gone.
+        if (friends.isNotEmpty()) {
+            TodayRaceSection(version, onOpenProfile)
+            WeeklyRaceSection(version, onOpenProfile)
+        }
 
         // 9f: the branded Invites row (hides itself when branded_invites is off). "Have a code?" is a small quiet
         // pill in the ADD A FRIEND header now (it no longer leads the page). Accepting hands the code to the same
@@ -586,6 +583,9 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
     val scope = rememberCoroutineScope()
     var sharingRace by remember { mutableStateOf(false) }
     var showPastWeeks by remember { mutableStateOf(false) }
+    // Founder 10-09: This week's race is a dropdown under Today's race (collapsed by default).
+    var showWeek by remember { mutableStateOf(false) }
+    var showAllWeek by remember { mutableStateOf(false) }
     // Weekly race standings (§212/§238) — me + friends by this week's daily points, best first.
     val standings = remember(version) {
         val friendEntries = FriendsService.friends.map {
@@ -616,7 +616,17 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            FriendsLabel("THIS WEEK’S RACE", Modifier.weight(1f, fill = false), color = ink)
+            Row(
+                Modifier.weight(1f, fill = false)
+                    .tileClickable(card = false, label = if (showWeek) "Hide this week's race" else "Show this week's race") { showWeek = !showWeek },
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                FriendsLabel("THIS WEEK’S RACE", Modifier.weight(1f, fill = false), color = ink)
+                Icon(
+                    Icons.Filled.KeyboardArrowDown, null, tint = ink,
+                    modifier = Modifier.size(16.dp).rotate(if (showWeek) 180f else 0f),
+                )
+            }
             Spacer(Modifier.weight(1f))
             WeekEndsCountdown(ink)
             if (raceStarted) {
@@ -640,6 +650,7 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
                 )
             }
         }
+        if (showWeek) {
         // §294 (D3.3) — the Sunday finish, settled server-side.
         val lastWeekResult = remember(version) { FriendsService.lastWeek }
         lastWeekResult?.let { r ->
@@ -726,34 +737,136 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
             },
             stepScale = 0.84f, avatar = 40.dp,
         )
-        if (standings.size > 3) {
-            Column(Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(12.dp))) {
-                standings.drop(3).forEachIndexed { i, e ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                            .squishClickable(label = "${ordinal(i + 4)}, ${e.username}, ${fmtPts(e.pts)} points") { onOpenProfile(e.id) }
-                            .stripedRow(i, RACE_GOLD)
-                            .padding(horizontal = 10.dp, vertical = 7.dp),
-                    ) {
-                        Text(
-                            ordinal(i + 4), style = softNumberStyle(12.sp, if (dark) null else FinishInk.softNumber),
-                            modifier = Modifier.width(32.dp), textAlign = TextAlign.End,
-                        )
-                        Text(
-                            e.username, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
-                            color = if (e.isMe) FriendsPink.solid else ink,
-                            fontFamily = Nunito, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-                        )
-                        Text(fmtPts(e.pts), style = softNumberStyle(13.sp, if (dark) null else FinishInk.softNumber))
-                    }
-                }
-            }
-        }
+        RaceRankRows(standings, showAllWeek, { showAllWeek = !showAllWeek }, RACE_GOLD, ink, dark, onOpenProfile)
         if (!raceStarted) {
             Text(
                 "Race resets Mondays — first daily takes the lead.",
+                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = sub, fontFamily = Nunito,
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        } // showWeek
+    }
+}
+
+// ── TODAY'S RACE (founder 10-09: the podium leads the page) ────────────────
+
+private val TODAY_PINK = Color(0xFFEC4899)
+
+/** Rows 4th onward: the top 5 on soft striped rows, then the "All friends · N more" fold (shared by Today and This week). */
+@Composable
+private fun RaceRankRows(
+    rows: List<PodiumEntry>, showAll: Boolean, onToggle: () -> Unit, accent: Color, ink: Color, dark: Boolean,
+    onOpenProfile: (String) -> Unit,
+) {
+    if (rows.size <= 3) return
+    val shown = rows.drop(3).take(if (showAll) rows.size else 2)
+    Column(Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(12.dp))) {
+        shown.forEachIndexed { i, e ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+                    .squishClickable(label = "${ordinal(i + 4)}, ${e.username}, ${fmtPts(e.pts)} points") { onOpenProfile(e.id) }
+                    .stripedRow(i, accent)
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
+            ) {
+                Text(
+                    ordinal(i + 4), style = softNumberStyle(12.sp, if (dark) null else FinishInk.softNumber),
+                    modifier = Modifier.width(32.dp), textAlign = TextAlign.End,
+                )
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        e.username, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
+                        color = if (e.isMe) FriendsPink.solid else ink,
+                        fontFamily = Nunito, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                    // Both parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
+                    FriendCards.raceBadgeLines(e.badge).forEach { line ->
+                        Text(
+                            line, fontSize = 8.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = RACE_BADGE_GOLD,
+                            fontFamily = Nunito, maxLines = 1, overflow = TextOverflow.Ellipsis, lineHeight = 10.sp,
+                        )
+                    }
+                }
+                Text(fmtPts(e.pts), style = softNumberStyle(13.sp, if (dark) null else FinishInk.softNumber))
+            }
+        }
+    }
+    if (rows.size > 5) {
+        Row(
+            Modifier.fillMaxWidth().tileClickable(card = false, label = if (showAll) "Show top 5" else "All friends, ${rows.size - 5} more", onClick = onToggle)
+                .padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                if (showAll) "Show top 5" else "All friends · ${rows.size - 5} more",
+                fontSize = 11.sp, fontWeight = FontWeight.Black, color = ink, fontFamily = Nunito,
+            )
+            Icon(
+                Icons.Filled.KeyboardArrowDown, null, tint = ink,
+                modifier = Modifier.size(16.dp).rotate(if (showAll) 180f else 0f),
+            )
+        }
+    }
+}
+
+/** Me + friends by today's daily points: a pink card, "ENDS IN hh:mm:ss" to midnight, the podium, rows 4-5, the fold. */
+@Composable
+private fun TodayRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
+    var showAll by remember { mutableStateOf(false) }
+    val rows = remember(version) {
+        val friendEntries = FriendsService.friends.map {
+            PodiumEntry(
+                it.id, it.username, it.avatarUrl, it.avatarEmoji, it.todayPoints ?: 0, isMe = false,
+                badge = FriendCards.raceBadge(it.playedToday, it.flawlessStreak, it.streak),
+            )
+        }
+        val p = AuthService.profile.value
+        val d = FriendsService.meDigest
+        val all = if (p != null && friendEntries.isNotEmpty()) {
+            friendEntries + PodiumEntry(
+                p.id, "You", p.avatarUrl, p.avatarEmoji, d?.todayPoints ?: 0, isMe = true,
+                avatarName = p.username ?: "You", accentHex = p.accentColor,
+                badge = FriendCards.raceBadge(d?.playedToday, d?.flawlessStreak, AuthService.headerStreak),
+            )
+        } else friendEntries
+        all.sortedByDescending { it.pts }
+    }
+    if (rows.isEmpty()) return
+    val started = rows.any { it.pts > 0 }
+    val dark = WTheme.isDark
+    val ink = if (dark) WTheme.text else Color(0xFF931048)
+    val sub = if (dark) WTheme.textMuted else FriendsPink.muted
+    val hidden = LocalTabHidden.current
+    val clock by produceState(localMidnightClock()) {
+        while (true) { delay(1_000); hidden.awaitShown(); value = localMidnightClock() }
+    }
+    TintedCard(
+        TODAY_PINK, Modifier.fillMaxWidth(),
+        bar = Brush.horizontalGradient(listOf(Color(0xFFEC4899), Color(0xFFF59E0B))),
+        tint = if (dark) WTheme.surface else Color(0xFFFFF0F7),
+        line = if (dark) WTheme.border else Color(0xFFF8D4E6),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            FriendsLabel("TODAY’S RACE", Modifier.weight(1f, fill = false), color = ink)
+            Spacer(Modifier.weight(1f))
+            Text("ENDS IN $clock", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = ink, fontFamily = Nunito, maxLines = 1)
+        }
+        MedalPodium(
+            rows.take(3).mapIndexed { i, e ->
+                PodiumSpot(
+                    place = i + 1, name = e.username, points = "${fmtPts(e.pts)} pts", username = e.avatarName,
+                    accentHex = e.accentHex, emoji = e.avatarEmoji, onClick = { onOpenProfile(e.id) }, badge = e.badge,
+                )
+            },
+            stepScale = 0.84f, avatar = 40.dp,
+        )
+        RaceRankRows(rows, showAll, { showAll = !showAll }, TODAY_PINK, ink, dark, onOpenProfile)
+        if (!started) {
+            Text(
+                "First daily of the day takes the lead.",
                 fontSize = 11.sp, fontWeight = FontWeight.Bold, color = sub, fontFamily = Nunito,
                 textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
             )
@@ -1336,6 +1449,8 @@ internal data class PodiumEntry(
     val avatarEmoji: String?, val pts: Int, val isMe: Boolean,
     /** §20 letter tile: initials + accent come from the real profile, not the "You" label. */
     val avatarName: String = username, val accentHex: String? = null,
+    /** Today's race highlight ("FLAWLESS · 89-DAY STREAK", "SWEEP", "26-DAY STREAK"); null = none. */
+    val badge: String? = null,
 )
 
 // FRIENDS row (§207 Tier 3) — the compact card on the OWN profile screen

@@ -510,8 +510,9 @@ struct PodiumView: View {
                     .font(Brand.font((compact ? 11 : 12) + (first ? 1.5 : 0), .heavy)).monospacedDigit()
                     .foregroundStyle(lightInk ? FinishInk.muted : FinishInk.secondary)
                     .lineLimit(1).minimumScaleFactor(0.7)
-                if let b = e.badge, !b.isEmpty {
-                    Text(b)
+                // Two parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
+                ForEach(Array(FriendCards.raceBadgeLines(e.badge).enumerated()), id: \.offset) { _, line in
+                    Text(line)
                         .font(Brand.font(compact ? 8.5 : 9.5, .black)).tracking(0.4).monospacedDigit()
                         .foregroundStyle(Color(hex: 0xF5B82E))
                         .lineLimit(1).minimumScaleFactor(0.55)
