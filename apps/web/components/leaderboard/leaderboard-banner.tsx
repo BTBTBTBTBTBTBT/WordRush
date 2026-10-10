@@ -137,7 +137,7 @@ export function StageTitle({ today }: { today: string | null }) {
           <span className="flex-1 min-w-0" key={`b${taps}`} style={{ paddingBottom: 14 }} aria-hidden="true">
             <BubbleOneLine text={line2 || ' '} palette="leaderboard" size={42} />
           </span>
-          {host ? <Host castId={host.castId} pose={host.pose} size={72} flip /> : <span style={{ width: 72 }} />}
+          {host ? <Host castId={host.castId} pose={host.pose} size={72} /> : <span style={{ width: 72 }} />}
         </div>
       </h1>
       {/* the cloud fades out above this line, so on a dark theme it takes a warm light ink (globals.css .lb-date-ink) */}

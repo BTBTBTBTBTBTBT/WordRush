@@ -264,7 +264,8 @@ internal fun StageTitleRow() {
                 if (hostRes != 0) {
                     Image(
                         painterResource(hostRes), null,
-                        Modifier.size(72.dp).graphicsLayer { scaleX = -1f },
+                        // Never mirrored: a mirrored cast member wears its letter backwards (founder 10-10).
+                        Modifier.size(72.dp),
                         contentScale = ContentScale.Fit,
                     )
                 } else Box(Modifier.size(72.dp))

@@ -167,7 +167,7 @@ struct StageTitleRow: View {
                     ArtThumbs.image("art-pose-\(host.castId)-\(host.pose)", points: 90)
                         .resizable().interpolation(.high).scaledToFit()
                         .frame(width: 72, height: 72)
-                        .scaleEffect(x: -1, y: 1)
+                        // Never mirrored: a mirrored cast member wears its letter backwards (founder 10-10).
                         .shadow(color: Color(hex: 0x3C1478).opacity(0.22), radius: 4, x: 0, y: 3)
                         .accessibilityHidden(true)
                 }

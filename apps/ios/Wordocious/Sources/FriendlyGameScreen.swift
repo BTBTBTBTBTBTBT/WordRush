@@ -788,12 +788,11 @@ struct FriendlyGameScreen: View {
         VStack(spacing: 14) {
             // §L: the coin sits on the shared tray.
             VStack(spacing: 8) {
-                SpinningCoin(face: c.rounds.last?.flip ?? .heads, spinKey: c.rounds.count)
-                if let last = c.rounds.last {
-                    let who = last.caller == g.me ? "You" : themName
-                    Text("\(who) called \(last.call.rawValue) · it landed \(last.flip.rawValue)")
-                        .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                let caption = c.rounds.last.map { last in
+                    "\(last.caller == g.me ? "You" : themName) called \(last.call.rawValue) · it landed \(last.flip.rawValue)"
                 }
+                // The result line rides with the coin and appears only once it has landed (no spoiler mid-flip).
+                SpinningCoin(face: c.rounds.last?.flip ?? .heads, spinKey: c.rounds.count, caption: caption)
             }
             .frame(maxWidth: .infinity)
             .gameTray(accent: FriendsKit.tileAccent(.coin), state: trayState(g))
@@ -1309,56 +1308,142 @@ private struct RpsReveal: View {
     }
 }
 
-/// The Call It coin art: spins briefly on each new flip, then lands on the server's face.
+/// The Call It coin (founder 10-10: "smoother and a bit more suspenseful"): on each new flip it crouches, launches, turns
+/// end over end in real 3D (fast at first, slowing over its last turns as it falls), lands with a small bounce, teeters
+/// for a beat, THEN shows the face and the result line. Everything runs on SwiftUI animations (display rate); the face
+/// is picked per frame from the turn angle. Haptic ticks slow down with the spin. Reduce Motion: the face, no flip.
 private struct SpinningCoin: View {
     let face: CoinFace
     let spinKey: Int
-    /// The art shown right now: nil = the landed face, else a flip frame (tilt, edge, tilt).
-    @State private var frame: String?
+    /// The result line, shown only once the coin has settled (never before it lands).
+    var caption: String? = nil
+    @State private var angle: Double = 0
     @State private var hop: CGFloat = 0
+    @State private var squash: CGFloat = 1
+    @State private var teeter: Double = 0
+    @State private var settled = true
+    @State private var glow = false
+    @State private var shownFace: CoinFace?
     @State private var flipTask: Task<Void, Never>?
 
     var body: some View {
-        let showing = frame ?? PocketArt.coin(face)
-        ZStack {
-            if let shadow = PocketArt.coinShadow {
-                // The contact shadow shrinks as the coin hops.
-                Image(shadow).resizable().interpolation(.high).scaledToFit()
-                    .frame(width: 140, height: 140)
-                    .offset(y: 10)
-                    .scaleEffect(1 + hop / 160)
-                    .opacity(0.9)
-                    .accessibilityHidden(true)
+        let landed = shownFace ?? face
+        VStack(spacing: 8) {
+            ZStack {
+                if let shadow = PocketArt.coinShadow {
+                    // The contact shadow shrinks and fades as the coin rises.
+                    Image(shadow).resizable().interpolation(.high).scaledToFit()
+                        .frame(width: 140, height: 140)
+                        .offset(y: 10)
+                        .scaleEffect(1 + hop / 260)
+                        .opacity(0.9 + Double(hop) / 260)
+                        .accessibilityHidden(true)
+                }
+                // the reveal glow
+                Circle().fill(RadialGradient(colors: [Color(hex: 0xFDE68A).opacity(0.7), .clear], center: .center,
+                                             startRadius: 10, endRadius: 110))
+                    .frame(width: 220, height: 220)
+                    .opacity(glow ? 1 : 0)
+                    .scaleEffect(glow ? 1 : 0.6)
+                    .allowsHitTesting(false)
+                CoinFlipFace(angle: angle, front: PocketArt.coin(landed),
+                             back: PocketArt.coin(landed == .heads ? .tails : .heads))
+                    .frame(width: 150, height: 150)
+                    .scaleEffect(x: 2 - squash, y: squash, anchor: .bottom)
+                    .rotationEffect(.degrees(teeter), anchor: .bottom)
+                    .offset(y: hop)
+                    .shadow(color: Color(hex: 0xCA8A04).opacity(0.35), radius: 12, y: 4)
             }
-            Image(showing)
-                .resizable().interpolation(.high).scaledToFit()
-                .frame(width: 150, height: 150)
-                .offset(y: hop)
-                .shadow(color: Color(hex: 0xCA8A04).opacity(0.35), radius: 12, y: 4)
+            .frame(width: 150, height: 160)
+            if let caption {
+                Text(caption)
+                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                    .opacity(settled ? 1 : 0)
+                    .animation(.easeOut(duration: 0.25), value: settled)
+            }
         }
-        .frame(width: 150, height: 160)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(face == .heads ? "Coin, heads" : "Coin, tails")   // §AB
+        .accessibilityLabel(settled ? (face == .heads ? "Coin, heads" : "Coin, tails") : "Coin flipping")   // §AB
         .onChange(of: spinKey) { _ in flip() }
         .onDisappear { flipTask?.cancel() }
     }
 
-    /// Wave 3: face -> tilt -> edge -> tilt -> face, a small hop, ~0.45 s. Reduce Motion: no flip.
+    private func wait(_ s: Double) async { try? await Task.sleep(nanoseconds: UInt64(s * 1_000_000_000)) }
+
     private func flip() {
-        guard !Theme.reduceMotion else { return }
         flipTask?.cancel()
-        let frames = [PocketArt.coinTilt, PocketArt.coinEdge, PocketArt.coinTilt].compactMap { $0 }
+        guard !Theme.reduceMotion else { shownFace = face; settled = true; return }
+        let result = face
+        // Start from whatever face is showing now; end on the result after five whole turns (+ a half if it changes).
+        let before = shownFace ?? (result == .heads ? .tails : .heads)
+        settled = false
+        glow = false
         flipTask = Task { @MainActor in
-            withAnimation(.easeOut(duration: 0.2)) { hop = -22 }
-            for name in frames {
-                if Task.isCancelled { return }
-                frame = name
-                try? await Task.sleep(nanoseconds: 70_000_000)
+            shownFace = result
+            var t = Transaction(); t.disablesAnimations = true
+            withTransaction(t) { angle = before == result ? 0 : 180 }
+            // crouch
+            withAnimation(.easeOut(duration: 0.14)) { squash = 0.86 }
+            await wait(0.14)
+            Haptics.medium()
+            // launch: up fast, then the fall; the turns slow toward the end (the suspense)
+            let spin = 1.55
+            withAnimation(.timingCurve(0.12, 0.55, 0.2, 1, duration: spin)) { angle = 360 * 5 }
+            withAnimation(.easeOut(duration: 0.12)) { squash = 1.06 }
+            withAnimation(.easeOut(duration: spin * 0.46)) { hop = -120 }
+            // ticks that slow with the spin
+            Task { @MainActor in
+                for gap in [0.12, 0.13, 0.15, 0.18, 0.22, 0.27, 0.34] {
+                    await wait(gap)
+                    if Task.isCancelled { return }
+                    Haptics.selection()
+                }
             }
+            await wait(spin * 0.46)
             if Task.isCancelled { return }
-            frame = nil
-            withAnimation(.easeIn(duration: 0.2)) { hop = 0 }
+            withAnimation(.easeIn(duration: spin * 0.54)) { hop = 0; squash = 1 }
+            await wait(spin * 0.54)
+            if Task.isCancelled { return }
+            // land: a squash + a small bounce, then a teeter before it settles
+            Haptics.heavy()
+            withAnimation(.easeOut(duration: 0.08)) { squash = 0.88 }
+            await wait(0.08)
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.5)) { squash = 1; hop = -12 }
+            await wait(0.14)
+            withAnimation(.easeIn(duration: 0.14)) { hop = 0 }
+            withAnimation(.easeInOut(duration: 0.16)) { teeter = 7 }
+            await wait(0.16)
+            withAnimation(.easeInOut(duration: 0.16)) { teeter = -5 }
+            await wait(0.16)
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { teeter = 0 }
+            await wait(0.12)
+            if Task.isCancelled { return }
+            // the reveal
+            Haptics.success()
+            withAnimation(.easeOut(duration: 0.3)) { glow = true; settled = true }
+            await wait(0.9)
+            withAnimation(.easeIn(duration: 0.5)) { glow = false }
         }
+    }
+}
+
+/// The coin turning end over end around its horizontal axis: the visible face is picked from the angle each frame, the
+/// art squashes to its edge as it turns and darkens a touch on the far side of the turn.
+private struct CoinFlipFace: View, Animatable {
+    var angle: Double
+    let front: String
+    let back: String
+    var animatableData: Double {
+        get { angle }
+        set { angle = newValue }
+    }
+
+    var body: some View {
+        let c = cos(angle * .pi / 180)
+        Image(c >= 0 ? front : back)
+            .resizable().interpolation(.high).scaledToFit()
+            .scaleEffect(x: 1, y: max(0.07, abs(c)))
+            .brightness(-0.18 * (1 - abs(c)))
     }
 }
 

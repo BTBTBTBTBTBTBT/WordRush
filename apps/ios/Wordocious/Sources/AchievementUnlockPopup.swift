@@ -456,8 +456,8 @@ struct AchievementUnlockPopup: View {
                     } else if !isLevel {
                         HStack(spacing: badgeSize * 0.62) {
                             PoseImage(Self.presenters[0].0, Self.presenters[0].1, height: 82)
+                            // Never mirrored: a mirrored cast member wears its letter backwards (founder 10-10).
                             PoseImage(Self.presenters[1].0, Self.presenters[1].1, height: 82)
-                                .scaleEffect(x: -1, y: 1)
                         }
                         .offset(y: 26)
                         .opacity(badgeIn ? 1 : 0)
