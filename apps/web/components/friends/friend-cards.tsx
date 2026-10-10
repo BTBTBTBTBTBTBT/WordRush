@@ -9,7 +9,7 @@
 // Resign lives). Words and ordering come from core (friend-cards.ts) so the three apps match.
 // iOS: FriendsPanelView.swift · Android: FriendsPanel.kt.
 
-import { useState } from 'react';
+import { useState, type HTMLAttributes, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { FRIENDLY_KINDS, FRIENDLY_TITLES, type FriendCard, type FriendlyKind, type GameTile } from '@wordle-duel/core';
 import { CandyBadge } from '@/components/ui/candy-badge';
@@ -21,20 +21,29 @@ import { softMix } from '@/lib/soft-surface';
 import { FlameCount, FriendAvatar, GameGlyph } from './friends-ui';
 import type { FriendProfile } from '@/lib/friends-service';
 
-const TILE_W = 60;
-/** A swipeable strip with no visible scrollbar. */
-const STRIP = { scrollbarWidth: 'none' } as const;
+/**
+ * The tile strip: up to four tiles share one row, five or six wrap three across, so no tile is ever
+ * sliced by the card edge (the old sideways scroller cut the fifth one mid-tile). Same rule as iOS and Android.
+ */
+function TileGrid({ count, className = '', children, ...rest }: { count: number; className?: string; children: ReactNode } & HTMLAttributes<HTMLDivElement>) {
+  const cols = count <= 4 ? Math.max(count, 1) : 3;
+  return (
+    <div {...rest} className={`grid gap-2 ${className}`.trim()} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, ${count <= 4 ? '104px' : '1fr'}))` }}>
+      {children}
+    </div>
+  );
+}
 
 /** One game tile: the game's glossy icon on its soft tint, one word under it. */
-function Tile({ tile, quiet, onOpen }: { tile: GameTile; quiet?: boolean; onOpen: () => void }) {
+function Tile({ tile, quiet, bare, onOpen }: { tile: GameTile; quiet?: boolean; bare?: boolean; onOpen: () => void }) {
   const color = KIND_COLOR[tile.kind];
   return (
     <button data-tile
       type="button"
       onClick={onOpen}
       aria-label={`${FRIENDLY_TITLES[tile.kind]}, ${tile.word}`}
-      className="shrink-0 flex flex-col items-center gap-1 active:scale-95 transition-transform"
-      style={{ width: TILE_W, opacity: quiet ? 0.62 : 1 }}
+      className="min-w-0 flex flex-col items-center gap-1 active:scale-95 transition-transform"
+      style={{ opacity: quiet ? 0.62 : 1 }}
     >
       <span
         className="flex items-center justify-center"
@@ -47,9 +56,11 @@ function Tile({ tile, quiet, onOpen }: { tile: GameTile; quiet?: boolean; onOpen
       >
         <GameGlyph kind={tile.kind} size={28} color={color} />
       </span>
-      <span className="w-full text-center text-[10.5px] font-black truncate leading-none" style={{ color: tile.yourTurn ? FR_LOOK.ink : FR_LOOK.rowSub }}>
-        {tile.word}
-      </span>
+      {!bare && (
+        <span className="w-full text-center text-[10.5px] font-black leading-[1.1] break-words" style={{ color: tile.yourTurn ? FR_LOOK.ink : FR_LOOK.rowSub }}>
+          {tile.word}
+        </span>
+      )}
     </button>
   );
 }
@@ -57,9 +68,9 @@ function Tile({ tile, quiet, onOpen }: { tile: GameTile; quiet?: boolean; onOpen
 /** The six games as a start strip (a friend with nothing waiting). */
 function StartStrip({ onStart }: { onStart: (kind: FriendlyKind) => void }) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-0.5" style={STRIP} role="group" aria-label="Start a game">
+    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${FRIENDLY_KINDS.length}, minmax(0, 1fr))` }} role="group" aria-label="Start a game">
       {FRIENDLY_KINDS.map((k) => (
-        <Tile key={k} tile={{ gameId: k, kind: k, word: FRIENDLY_TITLES[k].split(' ')[0], yourTurn: false }} onOpen={() => onStart(k)} />
+        <Tile key={k} bare tile={{ gameId: k, kind: k, word: FRIENDLY_TITLES[k], yourTurn: false }} onOpen={() => onStart(k)} />
       ))}
     </div>
   );
@@ -121,9 +132,9 @@ export function FriendCards({ cards, profiles, onOpenGame, onStart, onMenu, onPr
             {/* The strip: your-turn tiles, or the six games to start one. */}
             <div className="mt-2.5">
               {c.tiles.length > 0 ? (
-                <div className="flex gap-2 overflow-x-auto pb-0.5" style={STRIP}>
+                <TileGrid count={c.tiles.length}>
                   {c.tiles.map((t) => <Tile key={t.gameId} tile={t} onOpen={() => onOpenGame(t.gameId)} />)}
-                </div>
+                </TileGrid>
               ) : c.theirTurn.length === 0 ? (
                 <StartStrip onStart={(k) => onStart(c.friendId, k)} />
               ) : null}
@@ -143,9 +154,9 @@ export function FriendCards({ cards, profiles, onOpenGame, onStart, onMenu, onPr
                   <ChevronDown className="w-3 h-3 transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'none' }} aria-hidden="true" />
                 </button>
                 {expanded && (
-                  <div className="flex gap-2 overflow-x-auto mt-1.5 pb-0.5" style={STRIP}>
+                  <TileGrid count={c.theirTurn.length} className="mt-1.5">
                     {c.theirTurn.map((t) => <Tile key={t.gameId} tile={t} quiet onOpen={() => onOpenGame(t.gameId)} />)}
-                  </div>
+                  </TileGrid>
                 )}
               </div>
             )}

@@ -9,7 +9,8 @@ import { PocketArt } from '@/components/ui/game-art';
 import { PlayerAvatar } from '@/components/avatar/player-avatar';
 import { avatarRadiusPx } from '@/lib/avatar-render';
 import { CandyButton } from '@/components/ui/candy-button';
-import { GAME_ART_FILL } from '@/lib/art';
+import { GAME_ART_FILL, pageWall } from '@/lib/art';
+import { SeasonWallLayer } from '@/components/ui/season-preview';
 import type { FriendlyKind } from '@wordle-duel/core';
 import { FR, KIND_COLOR } from '@/lib/friends-play';
 import { FR_LOOK, frBar, frSurface } from '@/lib/friends-look';
@@ -219,7 +220,7 @@ export function PocketGameCard({ kind, title, sub, onClick }: { kind: FriendlyKi
           reserved so a row's cards match). */}
       <span className="flex flex-col gap-[3px]" style={{ padding: 8 }}>
         <PocketArt kind={kind} size={32} fallback={<OutlineGlyph kind={kind} size={24} color={color} stroke={2.2} />} />
-        <span className="text-[12px] font-black leading-tight truncate" style={{ color: FR_LOOK.ink }}>{title}</span>
+        <span className="text-[12px] font-black leading-tight line-clamp-2" style={{ color: FR_LOOK.ink }}>{title}</span>
         <span className="text-[10px] font-bold leading-tight line-clamp-2" style={{ color: FR_LOOK.sub, minHeight: '2.5em' }}>{sub}</span>
       </span>
     </button>
@@ -232,12 +233,25 @@ export function PocketGameCard({ kind, title, sub, onClick }: { kind: FriendlyKi
  * from its bottom center (0.94 → 1 + fade); closing plays the quick reverse
  * (MOTION.popDismissMs) before `onClose`. Reduce Motion closes at once.
  */
-export function Sheet({ onClose, children, label, tint }: {
+export function Sheet({ onClose, children, label, tint, wall = false }: {
   onClose: () => void; children: React.ReactNode; label: string;
   /** A calmer sheet color for one state (BJ13: the friend picker's lavender). */
   tint?: string;
+  /** The Friends wall behind the sheet when a season is on (off season: the sheet's own tint). */
+  wall?: boolean;
 }) {
   const [closing, setClosing] = useState(false);
+  // The on-screen keyboard (iOS Safari does not resize the layout viewport): lift the sheet by what it covers.
+  const [kb, setKb] = useState(0);
+  useEffect(() => {
+    const vv = typeof window === 'undefined' ? null : window.visualViewport;
+    if (!vv) return;
+    const sync = () => setKb(Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)));
+    sync();
+    vv.addEventListener('resize', sync);
+    vv.addEventListener('scroll', sync);
+    return () => { vv.removeEventListener('resize', sync); vv.removeEventListener('scroll', sync); };
+  }, []);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   const close = useCallback(() => {
@@ -257,19 +271,23 @@ export function Sheet({ onClose, children, label, tint }: {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center animate-fade-in"
-      style={{ background: 'rgba(42,22,80,0.35)', transition: `opacity ${MOTION.popDismissMs}ms ease-in`, opacity: closing ? 0 : 1 }}
+      style={{ background: 'rgba(42,22,80,0.35)', transition: `opacity ${MOTION.popDismissMs}ms ease-in`, opacity: closing ? 0 : 1, paddingBottom: kb }}
       onClick={close}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className={`w-full max-w-md overflow-y-auto ${closing ? 'soft-pop-out' : 'soft-pop'}`}
+        className={`relative w-full max-w-md overflow-y-auto ${closing ? 'soft-pop-out' : 'soft-pop'}`}
+        data-page-tint={wall ? 'friends' : undefined}
         style={{ background: tint ?? softMix(FR_LOOK.pink, 0.08), transition: 'background-color 220ms ease-out', borderTop: `1.5px solid ${softMix(FR_LOOK.pink, 0.32)}`, borderRadius: '20px 20px 0 0', maxHeight: '88vh', padding: '8px 16px max(20px, env(safe-area-inset-bottom))', boxShadow: '0 -8px 30px rgba(60,30,110,0.18)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-3" style={{ width: 38, height: 5, borderRadius: 999, background: softMix(FR_LOOK.pink, 0.4) }} />
-        {children}
+        {wall && <div aria-hidden="true" className="absolute inset-0 pointer-events-none"><SeasonWallLayer wall={pageWall('friends')} /></div>}
+        <div className="relative">
+          <div className="mx-auto mb-3" style={{ width: 38, height: 5, borderRadius: 999, background: softMix(FR_LOOK.pink, 0.4) }} />
+          {children}
+        </div>
       </div>
     </div>
   );

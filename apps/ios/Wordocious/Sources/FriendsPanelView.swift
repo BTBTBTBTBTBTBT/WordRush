@@ -2,10 +2,11 @@ import SwiftUI
 import WordociousCore
 
 /// The Friends tab, top to bottom (Friends overhaul, founder 2026-10-01; spec
-/// docs/FRIENDS_REDESIGN_SPEC.md §2): the Friends banner (on now + today's
-/// race), INVITES, YOUR TURN (pocket games in play), PLAY WITH FRIENDS (the
-/// four pocket games), THIS WEEK'S RACE, YOUR FRIENDS (presence, friend
-/// streaks, one action each), MOMENTS (with reactions) and Add by username.
+/// docs/FRIENDS_REDESIGN_SPEC.md §2; 2.8 TestFlight reorder): THIS WEEK'S RACE
+/// (the podium leads), the Friends banner (today's race), INVITES, YOUR FRIENDS
+/// (presence, friend streaks, one action each), PLAY WITH FRIENDS (the pocket
+/// games), MOMENTS (with reactions) and Add by username (with the small
+/// "Have a code?" pill).
 /// Same look as the home and VS pages (FriendsKit). Started life as the §207
 /// friends card (components/friends/friends-panel.tsx twin); every earlier
 /// action — taunts, Challenge, shield gifts, Unfriend, the weekly podium —
@@ -89,6 +90,11 @@ struct FriendsPanelView: View {
 
         // BJ7: crisp page rhythm — 14 between sections (was 18).
         VStack(alignment: .leading, spacing: 14) {
+            // 2.8 TestFlight (founder): the page LEADS with THIS WEEK'S RACE podium, right under the cast header;
+            // Today's Race (the banner) follows it, then INVITES and the friends.
+            if !podium.isEmpty {
+                weeklyRaceSection
+            }
             if let p = AuthService.shared.profile {
                 // Wave 3 (9e): "On now" folds into the friend cards below (green dot + "playing
                 // Classic"), and the race is told once (the pills, countdown small in the header).
@@ -97,9 +103,10 @@ struct FriendsPanelView: View {
                                   onFace: { quickPlay = QuickPlay(friend: $0, kind: nil) },
                                   onRace: { showRace = true })
             }
-            // 9f: the branded Invites row and ONE obvious "Have a code?" button (both hide themselves when
-            // branded_invites is off). Accepting hands the code to the same DeepLink state the universal links use,
-            // so RootTabView presents the private match / the race exactly like a tapped link.
+            // 9f: the branded Invites row (hides itself when branded_invites is off). "Have a code?" is a small
+            // quiet pill in the ADD A FRIEND header now (it no longer leads the page). Accepting hands the code to the
+            // same DeepLink state the universal links use, so RootTabView presents the private match / the race
+            // exactly like a tapped link.
             InvitesRow { item in
                 switch item.variant {
                 case .race: DeepLink.shared.vsChallenge = DeepLink.VSChallengeLink(code: item.code)
@@ -107,21 +114,11 @@ struct FriendsPanelView: View {
                     if let m = GameMode(rawValue: item.gameMode) { DeepLink.shared.vsInvite = DeepLink.VSInviteLink(mode: m, code: item.code) }
                 }
             }
-            HaveACodeButton(color: .pink) { result in
-                switch result {
-                case .race(let code): DeepLink.shared.vsChallenge = DeepLink.VSChallengeLink(code: code)
-                case .live(let mode, let code): DeepLink.shared.vsInvite = DeepLink.VSInviteLink(mode: mode, code: code)
-                case .friend(let code): if let u = URL(string: "https://wordocious.com/join/\(code)") { UIApplication.shared.open(u) }
-                }
-            }
             // Wave 3 (items 9 + 9e): the friends list at the top, one card per friend (online
             // first), their games as tiles inside the card, the rest under "All friends".
             yourFriendsSection(friends, incoming: incoming, outgoing: outgoing)
             if AuthService.shared.profile != nil {
                 playWithFriendsSection
-            }
-            if !podium.isEmpty {
-                weeklyRaceSection
             }
             if let nf = newFriend {
                 FriendsNewFriendsCard(
@@ -817,7 +814,16 @@ struct FriendsPanelView: View {
 
     private var addFriendSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            FriendsSectionHeader(title: "ADD A FRIEND")
+            FriendsSectionHeader(title: "ADD A FRIEND") {
+                // The small secondary entry (it used to be a full-width hero at the top of the page).
+                HaveACodeButton(color: .pink, quiet: true) { result in
+                    switch result {
+                    case .race(let code): DeepLink.shared.vsChallenge = DeepLink.VSChallengeLink(code: code)
+                    case .live(let mode, let code): DeepLink.shared.vsInvite = DeepLink.VSInviteLink(mode: mode, code: code)
+                    case .friend(let code): if let u = URL(string: "https://wordocious.com/join/\(code)") { UIApplication.shared.open(u) }
+                    }
+                }
+            }
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     TextField("Add by username", text: $username)

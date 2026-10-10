@@ -2424,6 +2424,15 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
     justify-content: center;
   }
 }
+/* Friends: THIS WEEK'S RACE leads the page (2.8 TestFlight). One card, placed twice: under the headline
+   below 1200 px, at the head of the left column on the three-column desktop grid. */
+.fr-weekly-desk { display: none; }
+.fr-weekly-desk + * { margin-top: 0 !important; }   /* the hidden copy must not leave a space-y gap behind it */
+@media (min-width: 1200px) {
+  .fr-weekly-top { display: none; }
+  .fr-weekly-desk { display: block; }
+  .fr-weekly-desk + * { margin-top: 0.75rem !important; }
+}
 /* Three columns once each one is at least phone-width (≥ 1200 px; 1024–1199
    keeps the AG two columns under the top bar). */
 @media (min-width: 1200px) {
