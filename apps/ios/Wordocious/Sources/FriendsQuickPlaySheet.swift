@@ -315,8 +315,7 @@ struct FriendsQuickPlaySheet: View {
                 Button { self.error = nil; kind = nil } label: { CandyLabel(title: "Pick another game") }
                     .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium, fullWidth: false))
             } else {
-                ProgressView().tint(FriendsInk.purple)
-                Text("Starting \(k.title)…").font(Brand.font(13, .heavy)).foregroundStyle(FriendsInk.muted)
+                CastLoader(label: "STARTING \(k.title.uppercased())", labelColor: FriendsInk.muted, showTips: false)
             }
         }
         .frame(maxWidth: .infinity).padding(.vertical, 24)

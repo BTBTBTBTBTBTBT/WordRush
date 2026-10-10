@@ -1143,7 +1143,10 @@ struct FriendsPanelView: View {
             HStack(spacing: 10) {
                 // BJ16: the NUDGE! lettering; who rides under it.
                 VStack(alignment: .leading, spacing: 0) {
-                    HeadingArtView(.nudge, height: 30, maxWidth: 140, label: "Nudge \(target.username)", alignment: .leading)
+                    BubbleTextView(text: "NUDGE!", palette: .accent(FriendsInk.pink), maxSize: 32, minSize: 22,
+                                   slotWidth: 150, animated: false, alignment: .leading)
+                        .frame(width: 150, alignment: .leading)
+                        .accessibilityLabel("Nudge \(target.username)")
                     FriendsLabel("@\(target.username)", color: FriendsInk.section).accessibilityHidden(true)
                 }
                 Spacer(minLength: 0)
@@ -1156,41 +1159,35 @@ struct FriendsPanelView: View {
                 G5CandyMessage(text: status, tone: status == "Sent!" ? .success : (status.hasPrefix("Could not") ? .error : .warn))
                     .frame(maxWidth: .infinity).padding(.vertical, 32)
             } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(FriendTaunts.all.enumerated()), id: \.element.id) { i, taunt in
-                        Button {
-                            Task {
-                                let outcome = await FriendsService.taunt(
-                                    friendId: target.id, tauntId: taunt.id,
-                                    day: LeaderboardService.todayLocal())
-                                switch outcome {
-                                case .sent: tauntStatus = "Sent!"
-                                case .alreadySent: tauntStatus = "Already taunted them today"
-                                case .failed: tauntStatus = "Could not send"
+                ScrollView {
+                    VStack(spacing: 4) {
+                        ForEach(FriendTaunts.all) { taunt in
+                            TauntNoteRow(text: taunt.text, tint: FriendsInk.pink) {
+                                Task {
+                                    let outcome = await FriendsService.taunt(
+                                        friendId: target.id, tauntId: taunt.id,
+                                        day: LeaderboardService.todayLocal())
+                                    switch outcome {
+                                    case .sent: tauntStatus = "Sent!"
+                                    case .alreadySent: tauntStatus = "Already taunted them today"
+                                    case .failed: tauntStatus = "Could not send"
+                                    }
+                                    try? await Task.sleep(nanoseconds: 1_400_000_000)
+                                    tauntTarget = nil
+                                    tauntStatus = nil
                                 }
-                                try? await Task.sleep(nanoseconds: 1_400_000_000)
-                                tauntTarget = nil
-                                tauntStatus = nil
                             }
-                        } label: {
-                            Text(taunt.text).font(Brand.font(13, .heavy)).foregroundStyle(FriendsInk.heading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 14).padding(.vertical, 12)
-                                .contentShape(Rectangle())
                         }
-                        .buttonStyle(.squish)
-                        .friendsStripe(i, accent: FriendsInk.pink)
                     }
+                    .padding(.horizontal, 16).padding(.vertical, 4)
                 }
-                .friendsCard(accent: FriendsInk.pink, radius: 16)
-                .padding(.horizontal, 16)
                 Button { tauntTarget = nil } label: { CandyLabel(title: "Cancel") }
                     .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium, fullWidth: true))
                     .padding(.horizontal, 16).padding(.top, 12)
             }
             Spacer(minLength: 0)
         }
-        .background(Color(hex: 0xFFF0F7).ignoresSafeArea())
+        .background((FriendsInk.nightCard ?? Color(hex: 0xFFF0F7)).ignoresSafeArea())
         .presentationDetents([.medium])
     }
 
@@ -1607,5 +1604,69 @@ struct FriendsRowLink: View {
         .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
             version = FriendsService.version
         }
+    }
+}
+
+// MARK: - Taunt note rows (shared by the Friends and Leaderboard nudge sheets)
+
+/// A speech bubble's little tail (a soft triangle pointing down-left); the same shape the family menu's notes wear.
+private struct TauntBubbleTail: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
+        p.addQuadCurve(to: CGPoint(x: r.minX + 1, y: r.maxY), control: CGPoint(x: r.midX + 1, y: r.midY))
+        p.closeSubpath()
+        return p
+    }
+}
+
+/// One canned nudge as a speech bubble from you: the whole sentence (two lines at most), a candy coin with the bell, a paper
+/// plane, and a little tail on the left. Mirrors the family menu's `note(_:)`; follows the season (night glass).
+struct TauntNoteRow: View {
+    let text: String
+    var tint: Color = FamilyMenuInk.pink
+    let action: () -> Void
+
+    var body: some View {
+        let night = FriendsInk.dark
+        let ink = FamilyInk.helperInk(tint, dark: false)
+        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+        Button(action: action) {
+            HStack(spacing: 10) {
+                ZStack {
+                    FamilyPillSkin(fill: FamilyInk.helperFill(tint, dark: false, pressed: false), height: 32)
+                        .frame(width: 32, height: 32)
+                    FamClayIcon(name: "bell", size: 18, ink: ink)
+                }
+                .accessibilityHidden(true)
+                Text(text).font(Brand.font(14.5, .black))
+                    .foregroundStyle(night ? Color.white : FamilyMenuInk.heading)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2).minimumScaleFactor(0.85)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                Image(systemName: "paperplane.fill").font(.system(size: 13, weight: .black))
+                    .foregroundStyle(tint.opacity(night ? 0.9 : 0.7))
+                    .accessibilityHidden(true)
+            }
+            .padding(.leading, 10).padding(.trailing, 14)
+            .frame(minHeight: FamilyMenuInk.noteHeight)
+            .background(
+                shape.fill(LinearGradient(colors: night
+                                            ? [tint.opacity(0.42), tint.opacity(0.26)]
+                                            : [Color.white, tint.opacity(0.10).mixed(over: .white, 0.9)],
+                                          startPoint: .top, endPoint: .bottom))
+                    .overlay(alignment: .bottomLeading) {
+                        TauntBubbleTail().fill(night ? tint.opacity(0.26) : Color.white)
+                            .frame(width: 14, height: 10).offset(x: 18, y: 8)
+                    }
+            )
+            .shadow(color: tint.opacity(0.25), radius: 6, y: 3)
+            .padding(.bottom, 8)
+            .contentShape(shape)
+        }
+        .buttonStyle(.squishCard)
+        .accessibilityLabel(text)
     }
 }

@@ -161,7 +161,7 @@ struct FinishedShareButton: View {
         .accessibilityLabel("Share")
         .softSheet(isPresented: $showShareOptions,
                onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
-            ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
+            ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(340)])
         }
     }
 }
@@ -782,7 +782,8 @@ struct DefinitionCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .tintedCard(accent: Self.green, bar: [Self.green, Color(hex: 0x5ED59A)])
                 .frame(maxWidth: 400)
-            } else if loaded {
+            } else if loaded && def != nil {
+                // No definition and no word card: nothing to show (the empty line only lives inside the word card).
                 details
                     .padding(.horizontal, 12).padding(.vertical, 10)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -834,8 +835,14 @@ struct DefinitionCard: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             } else {
-                Text("No definition available for this word.")
-                    .font(Brand.font(13, .medium)).italic().foregroundStyle(Theme.textMuted)
+                // Founder 10-09: no plain grey italic: a small cast pose and one short line in the brand voice.
+                HStack(spacing: 8) {
+                    MascotView(Mascots.tips, size: 26)
+                    Text("No definition for this one yet.")
+                        .font(Brand.font(13, .bold))
+                        .foregroundStyle(Theme.isDark ? Theme.textSecondary : Color(hex: 0x4B3D66))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
     }
