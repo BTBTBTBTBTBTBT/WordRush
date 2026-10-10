@@ -59,8 +59,9 @@ struct HomeHostMascot: View {
             .animation(.easeInOut(duration: HostLookRules.crossfadeSeconds), value: choice)
             .rotationEffect(.degrees(waveAngle), anchor: .bottom)
             .offset(y: hop)
-            // only the invite host is a button; every other host lets taps through
-            .allowsHitTesting(choice == .w && directory.ownHostInvite() != nil)
+            // The invite host is a button; YOUR living mascot answers a tap (founder 10-09: hop + its sound); the cast
+            // host still lets taps through to the card.
+            .allowsHitTesting((choice == .w && directory.ownHostInvite() != nil) || ownIsAlive)
         }
         .frame(width: size, height: size)
         .overlay(alignment: .topLeading) {
@@ -102,6 +103,11 @@ struct HomeHostMascot: View {
     }
 
     private var choice: HomeHostChoice { directory.ownHostChoice() }
+    /// Your own mascot is showing and alive (the living mascot is on): it takes taps.
+    private var ownIsAlive: Bool {
+        if case .mascot(let config) = choice { return LivingMascotView.canAnimate(config) }
+        return false
+    }
 
     @ViewBuilder private var figure: some View {
         switch choice {
@@ -127,10 +133,10 @@ struct HomeHostMascot: View {
             // avatar keeps its backdrop + frame.)
             Group {
                 if LivingMascotView.canAnimate(config) {
-                    // 10-06 (behind AvatarLiveConfig.livingMascot, off): alive in its saved pose; taps still pass through
-                    // to the card (the host is never a button here), so it breathes, blinks and reacts to moments.
+                    // Alive in its saved pose: it breathes, blinks, reacts to moments, and (founder 10-09) a tap makes it hop
+                    // with its sound.
                     LivingMascotView(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username ?? HostLookCache.load()?.username), size: size,
-                                     cutout: true, interactive: false)
+                                     cutout: true, interactive: true)
                 } else {
                     MascotCutout(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username ?? HostLookCache.load()?.username), size: size)
                 }

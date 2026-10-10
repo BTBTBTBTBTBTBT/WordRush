@@ -169,6 +169,8 @@ struct LeaderboardTab: View {
     // MARK: - The living stage (items 11 + 11b)
 
     /// The stage's tint: the selected game's accent (the Sweep's gold on the Sweep board).
+    /// The stage podium's fixed height (tallest case: 1st with crown + three-line plaques), so switching games never shifts.
+    static let stagePodiumHeight: CGFloat = 300
     private var stageAccent: Color { isSweep ? GamePicker.sweepAccent : ModeStyle.accent(mode) }
 
     /// Opens today's solved board (the old VIEW BOARD) or the daily to play, exactly as before.
@@ -249,7 +251,7 @@ struct LeaderboardTab: View {
             }
             Spacer(minLength: 4)
             if played {
-                YourBoardPill { openMyBoard(played: true) }
+                YourBoardPill(accent: stageAccent) { openMyBoard(played: true) }
             } else {
                 Button { openMyBoard(played: false) } label: { CandyLabel(title: "Play", symbol: "play.fill") }
                     .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
@@ -333,6 +335,7 @@ struct LeaderboardTab: View {
                     if isSweep { sweepStageBody } else { modeStageBody }
                 }
                 if isSweep { sweepRanksBlock } else { modeRanksBlock }
+                if isSweep { sweepYesterdayBlock } else { modeYesterdayBlock }
             }
             .padding(.horizontal, 16).padding(.vertical, 8)
             .background(alignment: .top) { HeaderScrollProbe() }   // 2.8 item 14
@@ -413,9 +416,58 @@ struct LeaderboardTab: View {
             if layout.filled > 0 {
                 PodiumView(entries: sweepEntries.prefix(layout.filled).map { sweepPodiumEntry($0, labels: sweepScoreLabels, details: sweepDetails, day: LeaderboardService.todayLocal()) },
                            open: layout.open, stage: nil, onTap: { path.append($0.id) })
+                    .frame(minHeight: Self.stagePodiumHeight, alignment: .bottom)
             }
         }
 
+    }
+
+    /// Founder 10-09: Yesterday sits UNDER today's last player (it used to split the podium from today's rows):
+    /// a small copy of the podium (top three + stats + glows), tap to open everyone else.
+    @ViewBuilder private var modeYesterdayBlock: some View {
+        // The stage's base: Yesterday's top three on the ledge; tap to expand the full list in place.
+        let yRanks = yesterday.indices.map { LeaderboardService.competitionRank(yesterday, $0) }
+        let yLayout = PodiumLayout.layout(yRanks)
+        StageYesterdayLedge(
+            minis: yesterday.prefix(yLayout.filled).enumerated().map { podiumEntry($1, rank: yRanks[$0], labels: yLbScoreLabels) },
+            open: $showYesterday, loading: yesterdayKnown == nil,
+            share: {
+                // Settled-podium share — only with rows.
+                if !yesterday.isEmpty {
+                    shareIcon(busy: sharingPodium, label: "Share yesterday's podium") {
+                        guard !sharingPodium else { return }
+                        sharingPodium = true
+                        Task {
+                            await LeaderboardShareFlow.sharePodium(
+                                mode: mode, playType: "solo",
+                                top3: yesterday, userId: auth.profile?.id,
+                                friends: friendsOnly)
+                            sharingPodium = false
+                        }
+                    }
+                }
+            },
+            expanded: {
+                if yesterdayKnown == nil {
+                    boardSkeleton
+                } else if yesterday.isEmpty {
+                    BrandEmptyState(title: "Quiet yesterday", line: "No results from yesterday. Today's board is wide open.",
+                                    scene: .asleep, artHeight: 90)
+                        .lbCard()
+                } else {
+                    // Full daily rows (founder ask, Aug 11): profile links, guesses + time detail, W/L badge.
+                    VStack(spacing: 0) {
+                        ForEach(Array(yesterday.enumerated().dropFirst(yLayout.filled)), id: \.element.id) { idx, entry in
+                            row(rank: yRanks[idx], entry: entry, scoreLabels: yLbScoreLabels)
+                                .stripedRow(idx - yLayout.filled, accent: LbStyle.gold)
+                        }
+                    }
+                    .lbCard()
+                }
+            })
+    }
+
+    @ViewBuilder private var sweepYesterdayBlock: some View {
         // The stage's base: Yesterday's top sweepers on the ledge; tap to expand the full list in place.
         let yLayout = PodiumLayout.layout(yesterdaySweep.map(\.rank))
         StageYesterdayLedge(
@@ -542,7 +594,7 @@ struct LeaderboardTab: View {
                         .padding(.top, 4)
                     }
                 }
-                .frame(maxWidth: .infinity).padding(.vertical, 24)
+                .frame(maxWidth: .infinity, minHeight: Self.stagePodiumHeight).padding(.vertical, 24)
             }
         } else {
             // §217: exact (score, time) ties share the rank. BJ4: the podium from ONE result up, open spots for the rest.
@@ -551,54 +603,11 @@ struct LeaderboardTab: View {
             if layout.filled > 0 {
                 PodiumView(entries: entries.prefix(layout.filled).enumerated().map { podiumEntry($1, rank: ranks[$0], labels: lbScoreLabels) },
                            open: layout.open, stage: nil, onTap: { path.append($0.id) })
+                    // Founder 10-09: one fixed podium height for every game (no shift while clicking through the boards).
+                    .frame(minHeight: Self.stagePodiumHeight, alignment: .bottom)
             }
         }
 
-        // The stage's base: Yesterday's top three on the ledge; tap to expand the full list in place.
-        let yRanks = yesterday.indices.map { LeaderboardService.competitionRank(yesterday, $0) }
-        let yLayout = PodiumLayout.layout(yRanks)
-        StageYesterdayLedge(
-            minis: yesterday.prefix(yLayout.filled).enumerated().map { podiumEntry($1, rank: yRanks[$0], labels: yLbScoreLabels) },
-            open: $showYesterday, loading: yesterdayKnown == nil,
-            share: {
-                // Settled-podium share — only with rows.
-                if !yesterday.isEmpty {
-                    shareIcon(busy: sharingPodium, label: "Share yesterday's podium") {
-                        guard !sharingPodium else { return }
-                        sharingPodium = true
-                        Task {
-                            await LeaderboardShareFlow.sharePodium(
-                                mode: mode, playType: "solo",
-                                top3: yesterday, userId: auth.profile?.id,
-                                friends: friendsOnly)
-                            sharingPodium = false
-                        }
-                    }
-                }
-            },
-            expanded: {
-                if yesterdayKnown == nil {
-                    boardSkeleton
-                } else if yesterday.isEmpty {
-                    BrandEmptyState(title: "Quiet yesterday", line: "No results from yesterday. Today's board is wide open.",
-                                    scene: .asleep, artHeight: 90)
-                        .lbCard()
-                } else {
-                    // Full daily rows (founder ask, Aug 11): profile links, guesses + time detail, W/L badge.
-                    VStack(spacing: 0) {
-                        if yLayout.filled > 0 {
-                            PodiumView(entries: yesterday.prefix(yLayout.filled).enumerated().map { podiumEntry($1, rank: yRanks[$0], labels: yLbScoreLabels) },
-                                       open: yLayout.open, stage: ModeStyle.accent(mode),
-                                       onTap: { path.append($0.id) })
-                        }
-                        ForEach(Array(yesterday.enumerated().dropFirst(yLayout.filled)), id: \.element.id) { idx, entry in
-                            row(rank: yRanks[idx], entry: entry, scoreLabels: yLbScoreLabels)
-                                .stripedRow(idx - yLayout.filled, accent: LbStyle.gold)
-                        }
-                    }
-                    .lbCard()
-                }
-            })
     }
 
     /// Ranks 4+ (plus your neighborhood and the friends' ghost rows), then the daily-only note and your finished board.

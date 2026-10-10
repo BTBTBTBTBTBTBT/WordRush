@@ -168,12 +168,32 @@ struct StageTitleRow: View {
 /// The compact "Your board" pill (`art-lb-btn-yourboard`, label drawn live) = today's VIEW BOARD.
 struct YourBoardPill: View {
     var label = "Your board"
+    /// The board's game color (founder 10-09: the button wears the game's own color).
+    var accent: Color = Color(hex: 0xF5B82E)
     let action: () -> Void
 
+    /// The family cast color nearest the game's accent hue.
+    static func castColor(for accent: Color) -> CastColor {
+        var h: CGFloat = 0, sat: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(accent).getHue(&h, saturation: &sat, brightness: &b, alpha: &a)
+        if sat < 0.18 { return .slate }
+        let deg = h * 360
+        switch deg {
+        case ..<18, 335...: return .pink
+        case ..<40: return .orange
+        case ..<62: return .gold
+        case ..<150: return .green
+        case ..<190: return .teal
+        case ..<245: return .blue
+        case ..<300: return .purple
+        default: return .pink
+        }
+    }
+
     var body: some View {
-        // Founder 10-09 ("the your board buttons are ugly"): the family candy button (gold), not the washed-out art pill.
+        // Founder 10-09 ("the your board buttons are ugly"): the family candy button in the game's color, not the art pill.
         Button { Haptics.light(); action() } label: { CandyLabel(title: label).frame(width: 96) }
-            .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: false))
+            .buttonStyle(CastButtonStyle(color: Self.castColor(for: accent), size: .small, fullWidth: false))
         .accessibilityLabel(label)
     }
 }
@@ -219,29 +239,24 @@ struct StageYesterdayLedge<Expanded: View, Share: View>: View {
                 if open && !empty { share() }
             }
             if !empty {
-                GeometryReader { geo in
-                    let w = min(geo.size.width, 394)
-                    ZStack {
-                        Image("art-lb-ledge").resizable().scaledToFit().frame(width: w)
-                            .accessibilityHidden(true)
-                        if !loading {
-                            ForEach(LeaderboardStage.ledgeSteps, id: \.place) { step in
-                                if let e = minis.first(where: { ($0.rank ?? 0) == step.place }) {
-                                    StageLedgeFigure(entry: e, size: w * CGFloat(LeaderboardStage.ledgeFigureFraction))
-                                        .position(x: w * CGFloat(step.x) + (geo.size.width - w) / 2,
-                                                  y: w / Self.artAspect * CGFloat(step.top) - w * CGFloat(LeaderboardStage.ledgeFigureFraction) * 0.38)
-                                }
-                            }
-                        }
+                // Founder 10-09: yesterday is a SMALLER copy of the main podium (gold / silver / bronze steps, the top
+                // three's points + how they got them, the same glows) — no white ledge art. Fixed height so the page
+                // never jumps while it loads.
+                Group {
+                    if loading {
+                        Color.clear
+                    } else {
+                        PodiumView(entries: Array(minis.prefix(3)), compact: true,
+                                   open: Array(stride(from: min(minis.count, 3) + 1, through: 3, by: 1)))
                     }
-                    .frame(width: geo.size.width, height: w / Self.artAspect)
-                    .contentShape(Rectangle())
-                    .onTapGesture { Haptics.light(); withAnimation(.easeInOut(duration: 0.22)) { open.toggle() } }
                 }
-                .aspectRatio(Self.artAspect, contentMode: .fit)
-                .frame(maxWidth: 394)
+                .frame(height: 210)
+                .frame(maxWidth: 360)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+                .onTapGesture { Haptics.light(); withAnimation(.easeInOut(duration: 0.22)) { open.toggle() } }
                 .accessibilityAddTraits(.isButton)
-                .accessibilityLabel(open ? "Hide yesterday's winners" : "Show yesterday's winners")
+                .accessibilityLabel(open ? "Hide yesterday's full list" : "Show yesterday's full list")
             }
             if open && !empty { expanded().transition(.opacity) }
         }
