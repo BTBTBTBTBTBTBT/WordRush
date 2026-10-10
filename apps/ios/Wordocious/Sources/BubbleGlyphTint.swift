@@ -26,15 +26,33 @@ enum BubbleGlyphTint {
     /// The tinted glyph for `stem`, drawn for a `width` x `height` pt box. `f0` / `f1` = the tint gradient position
     /// (0 at the cap line, 1 at the baseline) at the glyph's top and bottom edge, so a whole word shares ONE gradient.
     static func glyph(stem: String, width: CGFloat, height: CGFloat, f0: Double, f1: Double, top: Color, bottom: Color) -> UIImage? {
-        let scale = UIScreen.main.scale
-        guard let m = BubbleAtlasMetrics.glyphs[stem] else { return nil }
+        let req = Request(stem: stem, w: width, h: height, f0: f0, f1: f1, t0: rgb(top), t1: rgb(bottom), scale: UIScreen.main.scale)
+        guard let (img, key) = tint(req) else { return nil }
+        GlyphManifest.record(key: key as String, req)
+        return img
+    }
+
+    // MARK: - The tint itself (thread-safe: NSCache, UIImage(named:) and CGContext all are)
+
+    /// One glyph request, in plain values (so a background queue can replay it).
+    struct Request {
+        var stem: String
+        var w: CGFloat, h: CGFloat
+        var f0: Double, f1: Double
+        var t0: (Float, Float, Float), t1: (Float, Float, Float)
+        var scale: CGFloat
+    }
+
+    /// Source-image loads are serialized per stem name by UIImage(named:)'s own cache; the lookup is thread-safe.
+    static func tint(_ q: Request) -> (UIImage, NSString)? {
+        guard let m = BubbleAtlasMetrics.glyphs[q.stem] else { return nil }
         // Never more pixels than the source art has (cap capPx).
-        let w = max(1, Int(min(width * scale, CGFloat(m.w * Double(BubbleAtlasMetrics.capPx))).rounded()))
-        let h = max(1, Int(min(height * scale, CGFloat(m.h * Double(BubbleAtlasMetrics.capPx))).rounded()))
-        let t0 = rgb(top), t1 = rgb(bottom)
-        let key = "\(stem)|\(w)x\(h)|\(Int(f0 * 1000))|\(Int(f1 * 1000))|\(t0)|\(t1)" as NSString
-        if let hit = cache.object(forKey: key) { return hit }
-        guard let src = UIImage(named: "bubble-\(stem)")?.cgImage else { return nil }
+        let w = max(1, Int(min(q.w * q.scale, CGFloat(m.w * Double(BubbleAtlasMetrics.capPx))).rounded()))
+        let h = max(1, Int(min(q.h * q.scale, CGFloat(m.h * Double(BubbleAtlasMetrics.capPx))).rounded()))
+        let (t0, t1, f0, f1) = (q.t0, q.t1, q.f0, q.f1)
+        let key = "\(q.stem)|\(w)x\(h)|\(Int(f0 * 1000))|\(Int(f1 * 1000))|\(t0)|\(t1)" as NSString
+        if let hit = cache.object(forKey: key) { return (hit, key) }
+        guard let src = UIImage(named: "bubble-\(q.stem)")?.cgImage else { return nil }
 
         var bytes = [UInt8](repeating: 0, count: w * h * 4)
         let out: CGImage? = bytes.withUnsafeMutableBytes { buf -> CGImage? in
@@ -72,8 +90,71 @@ enum BubbleGlyphTint {
             return ctx.makeImage()
         }
         guard let out else { return nil }
-        let img = UIImage(cgImage: out, scale: scale, orientation: .up)
+        let img = UIImage(cgImage: out, scale: q.scale, orientation: .up)
         cache.setObject(img, forKey: key, cost: w * h * 4)
-        return img
+        return (img, key)
+    }
+}
+
+/// Founder 10-10 (smoothness): the glyphs a session actually drew are written to a small manifest (Caches), and the next
+/// launch re-tints them on a background queue once the intro has landed, so a tab's first visit (and a Leaderboard game
+/// switch to a board with new names) finds its lettering already built instead of tinting it pixel by pixel on the main
+/// thread. Exactly the keys the views asked for (no layout guessing, so it covers every screen), capped, replayed gently.
+/// The manifest is this session's glyphs first, then the last manifest's leftovers, so it never grows past `cap`.
+enum GlyphManifest {
+    private struct Entry: Codable { var k: String; var s: String; var v: [Double] }
+
+    private static let lock = NSLock()
+    private static var session: [Entry] = []
+    private static var seen: Set<String> = []
+    private static var previous: [Entry] = []
+    private static var writeScheduled = false
+    private static let cap = 2500
+    private static let queue = DispatchQueue(label: "com.wordocious.glyph-manifest", qos: .utility)
+
+    private static var fileURL: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("bubble-glyph-manifest.json")
+    }
+
+    /// One lock + one set lookup per drawn glyph; an unseen key is stored and a write is queued 8 s later.
+    static func record(key: String, _ q: BubbleGlyphTint.Request) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard session.count < cap, seen.insert(key).inserted else { return }
+        session.append(Entry(k: key, s: q.stem, v: [Double(q.w), Double(q.h), q.f0, q.f1, Double(q.t0.0), Double(q.t0.1), Double(q.t0.2),
+                                                   Double(q.t1.0), Double(q.t1.1), Double(q.t1.2), Double(q.scale)]))
+        if !writeScheduled {
+            writeScheduled = true
+            queue.asyncAfter(deadline: .now() + 8) { write() }
+        }
+    }
+
+    private static func write() {
+        lock.lock()
+        writeScheduled = false
+        var out = session
+        for e in previous where out.count < cap && !seen.contains(e.k) { out.append(e) }
+        lock.unlock()
+        guard let url = fileURL, let data = try? JSONEncoder().encode(out) else { return }
+        try? data.write(to: url, options: .atomic)
+    }
+
+    /// Re-tints last session's glyphs on a utility queue (batches of 40 with a short breather). Call once, after the intro landed.
+    static func warmFromLastSession() {
+        queue.async {
+            guard let url = fileURL, let data = try? Data(contentsOf: url),
+                  let entries = try? JSONDecoder().decode([Entry].self, from: data) else { return }
+            lock.lock(); previous = entries; lock.unlock()
+            var n = 0
+            for e in entries where e.v.count == 11 {
+                let v = e.v
+                let q = BubbleGlyphTint.Request(stem: e.s, w: CGFloat(v[0]), h: CGFloat(v[1]), f0: v[2], f1: v[3],
+                                                t0: (Float(v[4]), Float(v[5]), Float(v[6])), t1: (Float(v[7]), Float(v[8]), Float(v[9])),
+                                                scale: CGFloat(v[10]))
+                _ = BubbleGlyphTint.tint(q)
+                n += 1
+                if n % 40 == 0 { Thread.sleep(forTimeInterval: 0.02) }
+            }
+        }
     }
 }
