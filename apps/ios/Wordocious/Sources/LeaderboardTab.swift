@@ -359,8 +359,9 @@ struct LeaderboardTab: View {
         // used to fetch only on toggle-open, so switching chips while the
         // dropdown was expanded kept showing the previous mode's podium until
         // you closed and reopened it.
-        .task(id: "yesterday-\(mode.rawValue)-\(isSweep)-\(showYesterday)-\(friendsOnly)-\(friendsVersion)") {
-            guard showYesterday else { return }
+        // (It loads as soon as the board is up, not only on open: the ledge under the podium shows yesterday's winners,
+        // or collapses to one calm line when nobody played.)
+        .task(id: "yesterday-\(mode.rawValue)-\(isSweep)-\(friendsOnly)-\(friendsVersion)") {
             await loadYesterday()
         }
         .task { if auth.isAuthenticated { await FriendsService.load() } }
@@ -419,7 +420,7 @@ struct LeaderboardTab: View {
         let yLayout = PodiumLayout.layout(yesterdaySweep.map(\.rank))
         StageYesterdayLedge(
             minis: yesterdaySweep.prefix(yLayout.filled).map { sweepPodiumEntry($0, labels: ySweepScoreLabels, details: ySweepDetails, day: LeaderboardService.yesterdayLocal()) },
-            open: $showYesterday, loading: showYesterday && ySweepKnown == nil,
+            open: $showYesterday, loading: ySweepKnown == nil,
             share: {
                 // §231: settled sweep-podium share — only with rows.
                 if !yesterdaySweep.isEmpty {
@@ -558,7 +559,7 @@ struct LeaderboardTab: View {
         let yLayout = PodiumLayout.layout(yRanks)
         StageYesterdayLedge(
             minis: yesterday.prefix(yLayout.filled).enumerated().map { podiumEntry($1, rank: yRanks[$0], labels: yLbScoreLabels) },
-            open: $showYesterday, loading: showYesterday && yesterdayKnown == nil,
+            open: $showYesterday, loading: yesterdayKnown == nil,
             share: {
                 // Settled-podium share — only with rows.
                 if !yesterday.isEmpty {

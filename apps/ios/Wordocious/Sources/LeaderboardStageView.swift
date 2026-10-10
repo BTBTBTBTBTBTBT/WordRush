@@ -194,50 +194,61 @@ struct StageYesterdayLedge<Expanded: View, Share: View>: View {
     private static var artAspect: CGFloat { 394.0 / 160.0 }
 
     var body: some View {
+        // Known and empty: no ledge (a blank podium reads unfinished), just one calm line beside the header.
+        let empty = !loading && minis.isEmpty
         VStack(spacing: 4) {
             HStack {
-                Button { Haptics.light(); withAnimation(.easeInOut(duration: 0.22)) { open.toggle() } } label: {
-                    HStack(spacing: 4) {
+                if empty {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text("YESTERDAY").font(Brand.font(11, .black)).tracking(1.2)
                             .foregroundStyle(Theme.isDark ? Theme.textMuted : LbStyle.goldInk)
-                        Image(systemName: open ? "chevron.up" : "chevron.down").font(.system(size: 10, weight: .black))
-                            .foregroundStyle(Theme.isDark ? Theme.textMuted : LbStyle.goldInk)
+                        Text("No results from yesterday").font(Brand.font(11.5, .bold))
+                            .foregroundStyle(FinishInk.secondary)
+                            .lineLimit(1).minimumScaleFactor(0.8)
                     }
                     .padding(.vertical, 4)
+                    .accessibilityElement(children: .combine)
+                } else {
+                    Button { Haptics.light(); withAnimation(.easeInOut(duration: 0.22)) { open.toggle() } } label: {
+                        HStack(spacing: 4) {
+                            Text("YESTERDAY").font(Brand.font(11, .black)).tracking(1.2)
+                                .foregroundStyle(Theme.isDark ? Theme.textMuted : LbStyle.goldInk)
+                            Image(systemName: open ? "chevron.up" : "chevron.down").font(.system(size: 10, weight: .black))
+                                .foregroundStyle(Theme.isDark ? Theme.textMuted : LbStyle.goldInk)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.squishCard)
                 }
-                .buttonStyle(.squishCard)
                 Spacer(minLength: 4)
-                if open { share() }
+                if open && !empty { share() }
             }
-            GeometryReader { geo in
-                let w = min(geo.size.width, 394)
-                ZStack {
-                    Image("art-lb-ledge").resizable().scaledToFit().frame(width: w)
-                        .accessibilityHidden(true)
-                    if !loading {
-                        ForEach(LeaderboardStage.ledgeSteps, id: \.place) { step in
-                            if let e = minis.first(where: { ($0.rank ?? 0) == step.place }) {
-                                StageLedgeFigure(entry: e, size: w * CGFloat(LeaderboardStage.ledgeFigureFraction))
-                                    .position(x: w * CGFloat(step.x) + (geo.size.width - w) / 2,
-                                              y: w / Self.artAspect * CGFloat(step.top) - w * CGFloat(LeaderboardStage.ledgeFigureFraction) * 0.38)
+            if !empty {
+                GeometryReader { geo in
+                    let w = min(geo.size.width, 394)
+                    ZStack {
+                        Image("art-lb-ledge").resizable().scaledToFit().frame(width: w)
+                            .accessibilityHidden(true)
+                        if !loading {
+                            ForEach(LeaderboardStage.ledgeSteps, id: \.place) { step in
+                                if let e = minis.first(where: { ($0.rank ?? 0) == step.place }) {
+                                    StageLedgeFigure(entry: e, size: w * CGFloat(LeaderboardStage.ledgeFigureFraction))
+                                        .position(x: w * CGFloat(step.x) + (geo.size.width - w) / 2,
+                                                  y: w / Self.artAspect * CGFloat(step.top) - w * CGFloat(LeaderboardStage.ledgeFigureFraction) * 0.38)
+                                }
                             }
                         }
-                        if minis.isEmpty {
-                            Text("No results from yesterday").font(Brand.font(11.5, .heavy))
-                                .foregroundStyle(FinishInk.secondary)
-                                .position(x: geo.size.width / 2, y: w / Self.artAspect * 0.3)
-                        }
                     }
+                    .frame(width: geo.size.width, height: w / Self.artAspect)
+                    .contentShape(Rectangle())
+                    .onTapGesture { Haptics.light(); withAnimation(.easeInOut(duration: 0.22)) { open.toggle() } }
                 }
-                .frame(width: geo.size.width, height: w / Self.artAspect)
-                .contentShape(Rectangle())
-                .onTapGesture { Haptics.light(); withAnimation(.easeInOut(duration: 0.22)) { open.toggle() } }
+                .aspectRatio(Self.artAspect, contentMode: .fit)
+                .frame(maxWidth: 394)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(open ? "Hide yesterday's winners" : "Show yesterday's winners")
             }
-            .aspectRatio(Self.artAspect, contentMode: .fit)
-            .frame(maxWidth: 394)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityLabel(open ? "Hide yesterday's winners" : "Show yesterday's winners")
-            if open { expanded().transition(.opacity) }
+            if open && !empty { expanded().transition(.opacity) }
         }
         .padding(.horizontal, 12).padding(.bottom, 8)
     }

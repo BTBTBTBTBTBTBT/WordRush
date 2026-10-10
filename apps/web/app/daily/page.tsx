@@ -392,8 +392,9 @@ export default function DailyPage() {
   const yesterdayKey = isSweep
     ? `SWEEP:${yesterday}`
     : `${selectedMode}:${yesterday}:${friendsOnly && user ? `friends:${user.id}` : 'all'}`;
+  // Fetched as soon as the board is up (not only on open): the ledge under the podium shows yesterday's winners, or
+  // — when nobody played — collapses to one calm line instead of a blank podium.
   useEffect(() => {
-    if (!showYesterday) return;
     let live = true;
     const key = yesterdayKey;
     const landed = () => { if (live) setYesterdayVersion((v) => v + 1); };
@@ -418,7 +419,7 @@ export default function DailyPage() {
       }).catch(() => { /* keep the cached podium */ });
     }
     return () => { live = false; };
-  }, [showYesterday, yesterdayKey, selectedMode, yesterday, friendsOnly, friendsVersion, user]);
+  }, [yesterdayKey, selectedMode, yesterday, friendsOnly, friendsVersion, user]);
   const yesterdayEntry = yesterdayCache.get(yesterdayKey);
   const yesterdayLoading = !yesterdayEntry;
   const yesterdayLeaderboard = yesterdayEntry?.lb ?? [];
@@ -889,7 +890,7 @@ export default function DailyPage() {
               places={isSweep ? ySweepPodium : yLbPodium}
               open={showYesterday}
               onToggle={() => setShowYesterday(!showYesterday)}
-              loading={showYesterday && yesterdayLoading}
+              loading={yesterdayLoading}
               share={
                 (isSweep ? yesterdaySweep.length > 0 : yesterdayLeaderboard.length > 0) ? (
                   <HeaderGlyph

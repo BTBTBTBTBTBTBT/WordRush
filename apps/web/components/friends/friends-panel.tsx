@@ -52,7 +52,8 @@ import { FlameCount, FrCard, FriendAvatar, GameIconSquare, Pill, PocketGameCard,
 import { GREEN_CANDY, InviteSentCard, NewFriendsModal, PendingPill, ShieldNotice, type InvitePerson } from './invite-screens';
 import { WATCHED_REQUESTS_KEY, giftShareText, inviteShareText, parseWatched, trackRequests } from '@/lib/invite-screens';
 import { FR_LOOK, frBar, frSurface, podiumSlots, rowStripe } from '@/lib/friends-look';
-import { PODIUM_FLOOR_RISE, PodiumFloor, PodiumPedestal } from '@/components/leaderboard/podium';
+import { PODIUM_FLOOR_RISE, PodiumFloor, PodiumGlow, PodiumPedestal } from '@/components/leaderboard/podium';
+import { podiumTone } from '@/lib/leaderboard-podium';
 import { ART_SIZE, artSrc, poseArt } from '@/lib/art';
 import { softMix } from '@/lib/soft-surface';
 import { LevelBadge } from '@/components/badges/badge-art';
@@ -595,9 +596,10 @@ export function FriendsPanel() {
                   <Link
                     key={e.id}
                     href={e.me ? '/profile' : `/profile/${e.id}`}
-                    className="grid justify-items-center min-w-0"
-                    style={{ gridColumn: slot.column, gridRow: 1, gap: 3 }}
+                    className="relative grid justify-items-center min-w-0"
+                    style={{ gridColumn: slot.column, gridRow: 1, gap: 3, isolation: 'isolate' }}
                   >
+                    <PodiumGlow tone={podiumTone(slot.place)} figureHeight={slot.avatar} top={(slot.place === 1 && raceStarted ? 18 : 0) + slot.avatar / 2} />
                     {slot.place === 1 && raceStarted && (
                       <Icon3D name="crown" size={24} className="relative" style={{ marginBottom: -6, zIndex: 2 }} label="Leads the week" />
                     )}

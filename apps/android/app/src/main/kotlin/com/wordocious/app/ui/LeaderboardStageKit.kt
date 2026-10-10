@@ -243,58 +243,72 @@ internal fun StageYesterdayLedge(
     share: @Composable () -> Unit,
     expanded: @Composable () -> Unit,
 ) {
+    // Known and empty: no ledge (a blank podium reads unfinished), just one calm line beside the header.
+    val empty = !loading && minis.isEmpty()
     Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 8.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Row(
-                Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button,
-                    onClickLabel = "Yesterday's winners, " + if (open) "expanded" else "collapsed", onClick = onToggle)
-                    .padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    "YESTERDAY", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
-                    color = if (WTheme.isDark) WTheme.textSecondary else LB_SECTION_INK,
-                )
-                Icon(
-                    if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, null,
-                    tint = if (WTheme.isDark) WTheme.textSecondary else LB_SECTION_INK, modifier = Modifier.size(16.dp),
-                )
+            if (empty) {
+                Row(
+                    Modifier.weight(1f).padding(vertical = 6.dp).semantics(mergeDescendants = true) { },
+                    verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        "YESTERDAY", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
+                        color = if (WTheme.isDark) WTheme.textSecondary else LB_SECTION_INK,
+                    )
+                    Text(
+                        "No results from yesterday", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = lbSubInk(),
+                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                    )
+                }
+            } else {
+                Row(
+                    Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button,
+                        onClickLabel = "Yesterday's winners, " + if (open) "expanded" else "collapsed", onClick = onToggle)
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "YESTERDAY", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
+                        color = if (WTheme.isDark) WTheme.textSecondary else LB_SECTION_INK,
+                    )
+                    Icon(
+                        if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, null,
+                        tint = if (WTheme.isDark) WTheme.textSecondary else LB_SECTION_INK, modifier = Modifier.size(16.dp),
+                    )
+                }
+                Box(Modifier.weight(1f))
             }
-            Box(Modifier.weight(1f))
-            if (open) share()
+            if (open && !empty) share()
         }
-        BoxWithConstraints(
-            Modifier.fillMaxWidth().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = onToggle),
-            contentAlignment = Alignment.TopCenter,
-        ) {
-            val w = if (maxWidth > 394.dp) 394.dp else maxWidth
-            val h = w * 160f / 394f
-            Box(Modifier.width(w).height(h)) {
-                Image(painterResource(R.drawable.art_lb_ledge), null, Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
-                if (!loading) {
-                    val fig = w * LeaderboardStage.LEDGE_FIGURE_FRACTION
-                    LeaderboardStage.LEDGE_STEPS.forEach { step ->
-                        val s = minis.firstOrNull { it.place == step.place } ?: return@forEach
-                        Box(
-                            Modifier.size(fig).offset(x = w * step.x - fig / 2, y = h * step.top - fig * 0.88f),
-                            contentAlignment = Alignment.BottomCenter,
-                        ) {
-                            PlayerAvatar(
-                                s.username ?: s.name, fig, Modifier, userId = s.userId, avatarUrl = s.avatarUrl, config = s.config,
-                                castId = s.castId, frame = s.frame, accentHex = s.accentHex, podiumPlace = s.place,
-                            )
+        if (!empty) {
+            BoxWithConstraints(
+                Modifier.fillMaxWidth().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = onToggle),
+                contentAlignment = Alignment.TopCenter,
+            ) {
+                val w = if (maxWidth > 394.dp) 394.dp else maxWidth
+                val h = w * 160f / 394f
+                Box(Modifier.width(w).height(h)) {
+                    Image(painterResource(R.drawable.art_lb_ledge), null, Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
+                    if (!loading) {
+                        val fig = w * LeaderboardStage.LEDGE_FIGURE_FRACTION
+                        LeaderboardStage.LEDGE_STEPS.forEach { step ->
+                            val s = minis.firstOrNull { it.place == step.place } ?: return@forEach
+                            Box(
+                                Modifier.size(fig).offset(x = w * step.x - fig / 2, y = h * step.top - fig * 0.88f),
+                                contentAlignment = Alignment.BottomCenter,
+                            ) {
+                                PlayerAvatar(
+                                    s.username ?: s.name, fig, Modifier, userId = s.userId, avatarUrl = s.avatarUrl, config = s.config,
+                                    castId = s.castId, frame = s.frame, accentHex = s.accentHex, podiumPlace = s.place,
+                                )
+                            }
                         }
-                    }
-                    if (minis.isEmpty()) {
-                        Text(
-                            "No results from yesterday", fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, color = lbSubInk(),
-                            modifier = Modifier.align(Alignment.TopCenter).padding(top = h * 0.28f),
-                        )
                     }
                 }
             }
         }
-        if (open) expanded()
+        if (open && !empty) expanded()
     }
 }
 
