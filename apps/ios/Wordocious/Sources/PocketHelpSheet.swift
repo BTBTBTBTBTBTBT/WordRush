@@ -61,8 +61,8 @@ struct PocketHelpSheet: View {
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(accent.vsWash(0.10)))
-            line(symbol: "trophy.fill", text: help.win)
-            line(symbol: "bell.fill", text: help.turns)
+            line(art: .asset("art-badge-trophy"), text: help.win)
+            line(art: .icon(.bell), text: help.turns)
             Button { dismiss() } label: {
                 CandyLabel(title: firstPlay ? PocketHelp.buttonFirst : PocketHelp.buttonAgain, symbol: "checkmark")
             }
@@ -129,13 +129,23 @@ struct PocketHelpSheet: View {
         }
     }
 
-    private func line(symbol: String, text: String) -> some View {
+    /// A small lines' icon: the app's art (the trophy badge, the 3D bell), never an SF Symbol.
+    private enum LineArt { case asset(String), icon(Icon3DName) }
+
+    private func line(art: LineArt, text: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
-            Image(systemName: symbol).font(.system(size: 13, weight: .bold))
-                .foregroundStyle(FriendsInk.dark ? accent.mixed(over: .white, 0.6) : accent)
-                .frame(width: 20).accessibilityHidden(true)
+            Group {
+                switch art {
+                case .asset(let name):
+                    Image(name).resizable().interpolation(.high).scaledToFit().frame(width: 22, height: 22)
+                case .icon(let icon):
+                    Icon3D(icon, size: 22)
+                }
+            }
+            .frame(width: 24).accessibilityHidden(true)
             Text(text).font(Brand.font(13, .bold)).foregroundStyle(FriendsInk.heading)
                 .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 2)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 4)

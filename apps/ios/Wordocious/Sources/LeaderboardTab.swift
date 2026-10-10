@@ -822,12 +822,14 @@ struct LeaderboardTab: View {
     /// are tinted option cards (they carry emoji, so no outlined candy text); Cancel is
     /// the quiet peach candy button.
     private func tauntSheet(_ target: FriendsService.FriendProfile) -> some View {
-        let accent = Color(hex: 0x7C3AED)
         return VStack(spacing: 12) {
             // BJ16: the NUDGE! lettering; who rides under it.
             VStack(alignment: .leading, spacing: 0) {
-                HeadingArtView(.nudge, height: 30, maxWidth: 140, label: "Nudge \(target.username)", alignment: .leading)
-                FinishLabel("@\(target.username)", color: Color(hex: 0x5B3C96)).accessibilityHidden(true)
+                BubbleTextView(text: "NUDGE!", palette: .accent(FriendsInk.purple), maxSize: 32, minSize: 22,
+                               slotWidth: 150, animated: false, alignment: .leading)
+                    .frame(width: 150, alignment: .leading)
+                    .accessibilityLabel("Nudge \(target.username)")
+                FinishLabel("@\(target.username)", color: FriendsInk.lavender).accessibilityHidden(true)
             }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20).padding(.top, 20)
@@ -837,9 +839,9 @@ struct LeaderboardTab: View {
                     .frame(maxWidth: .infinity).padding(.vertical, 32)
             } else {
                 ScrollView {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 4) {
                         ForEach(FriendTaunts.all) { taunt in
-                            Button {
+                            TauntNoteRow(text: taunt.text, tint: FriendsInk.purple) {
                                 Task {
                                     let outcome = await FriendsService.taunt(
                                         friendId: target.id, tauntId: taunt.id,
@@ -853,14 +855,7 @@ struct LeaderboardTab: View {
                                     tauntTarget = nil
                                     tauntStatus = nil
                                 }
-                            } label: {
-                                Text(taunt.text).font(Brand.font(14, .heavy)).foregroundStyle(FinishInk.heading)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.horizontal, 14).padding(.top, 14).padding(.bottom, 11)
-                                    .tintedPill(accent, radius: 14)
-                                    .contentShape(Rectangle())
                             }
-                            .buttonStyle(.squish)
                         }
                     }
                     .padding(.horizontal, 16).padding(.vertical, 4)
@@ -874,7 +869,7 @@ struct LeaderboardTab: View {
             Spacer(minLength: 0)
         }
         .padding(.bottom, 12)
-        .background((Theme.isDark ? Theme.surface : FinishInk.lavender).ignoresSafeArea())
+        .background((FriendsInk.nightCard ?? (Theme.isDark ? Theme.surface : FinishInk.lavender)).ignoresSafeArea())
         .presentationDetents([.medium])
     }
 

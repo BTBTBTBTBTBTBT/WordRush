@@ -186,7 +186,12 @@ struct LockedItemCard: View {
         return VStack(alignment: .leading, spacing: 8) {
             Text(MascotAccess.partName(part)).font(Brand.font(14, .black)).foregroundStyle(Theme.isDark ? Theme.textPrimary : Color(hex: 0x4C1D95))
             if routes.isEmpty {
-                Text("Not available right now.").font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                HStack(spacing: 8) {
+                    Image("art-badge-calendar").resizable().interpolation(.high).scaledToFit()
+                        .frame(width: 22, height: 22).accessibilityHidden(true)
+                    Text("Not up for grabs right now. Check back soon.").font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             ForEach(Array(routes.enumerated()), id: \.offset) { _, route in routeRow(route) }
         }
@@ -203,9 +208,7 @@ struct LockedItemCard: View {
                 Text(line).font(Brand.font(12, .heavy)).foregroundStyle(Theme.isDark ? Theme.textPrimary : Color(hex: 0x5B21B6))
                     .fixedSize(horizontal: false, vertical: true)
                 if p.target > 1 {
-                    ProgressView(value: Double(p.current), total: Double(p.target))
-                        .tint(Color(hex: 0x7C3AED))
-                        .accessibilityLabel("\(p.current) of \(p.target)")
+                    BadgeProgressBar(current: p.current, target: p.target, accent: FinishInk.purple, numberSize: 11)
                 }
             }
         case .pro:
@@ -219,7 +222,14 @@ struct LockedItemCard: View {
                 .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: true))
                 .accessibilityLabel("Buy for \(AvatarAccess.priceLabel(price))")
         case .season:
-            Text(line).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xC2410C))
+            // Not earnable right now: a small calendar badge and the season line, never a bare orange sentence.
+            HStack(spacing: 8) {
+                Image("art-badge-calendar").resizable().interpolation(.high).scaledToFit()
+                    .frame(width: 22, height: 22).accessibilityHidden(true)
+                Text(line).font(Brand.font(12, .heavy)).foregroundStyle(Theme.isDark ? Color(hex: 0xFDBA74) : Color(hex: 0xC2410C))
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
         }
     }
 }

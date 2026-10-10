@@ -468,41 +468,81 @@ struct EditProfileView: View {
 
     // MARK: - Small sheets (soft-pop)
 
+    /// The small sheets' title: bubble lettering in a season-aware purple (founder 10-09: no plain titles).
     private func sheetTitle(_ t: String) -> some View {
-        Text(t).font(Brand.font(18, .black)).foregroundStyle(Color(hex: 0x6D28D9)).padding(.top, 18)
+        BubbleTextView(text: t.uppercased(), palette: .accent(FriendsInk.dark ? Color(hex: 0xA78BFA) : Color(hex: 0x7C3AED)),
+                       maxSize: 30, minSize: 20, animated: false)
+            .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 4)
+    }
+
+    /// A frosted candy coin with a white-clay icon (the family menu's coin).
+    private func sheetCoin(_ name: String, tint: Color, size: CGFloat = 30) -> some View {
+        ZStack {
+            FamilyPillSkin(fill: FamilyInk.helperFill(tint, dark: false, pressed: false), height: size)
+                .frame(width: size, height: size)
+            FamClayIcon(name: name, size: size * 0.55, ink: FamilyInk.helperInk(tint, dark: false))
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// Each link row wears its platform's color on its coin.
+    private func platformTint(_ key: String) -> Color {
+        switch key {
+        case "twitter": return Color(hex: 0x0EA5E9)
+        case "instagram": return Color(hex: 0xDB2777)
+        case "tiktok": return Color(hex: 0x0D9488)
+        case "threads": return Color(hex: 0x6D28D9)
+        case "discord": return Color(hex: 0x6366F1)
+        default: return Color(hex: 0xD97706)
+        }
     }
 
     private var socialsSheet: some View {
         VStack(spacing: 0) {
             sheetTitle("Your links")
-            VStack(spacing: 0) {
-                ForEach(platforms, id: \.key) { p in
-                    row(p.label.uppercased()) {
-                        TextField(p.placeholder, text: Binding(get: { socials[p.key] ?? "" }, set: { socials[p.key] = $0 }))
-                            .textInputAutocapitalization(.never).autocorrectionDisabled()
-                            .keyboardType(p.key == "website" ? .URL : .default).font(Brand.font(14, .bold))
-                            .foregroundStyle(ink)
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(platforms, id: \.key) { p in
+                        HStack(spacing: 10) {
+                            sheetCoin("link", tint: platformTint(p.key))
+                            Text(p.label.uppercased()).font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(labelInk)
+                                .frame(width: 74, alignment: .leading).lineLimit(2).minimumScaleFactor(0.8)
+                            TextField(p.placeholder, text: Binding(get: { socials[p.key] ?? "" }, set: { socials[p.key] = $0 }))
+                                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                                .keyboardType(p.key == "website" ? .URL : .default).font(Brand.font(14, .bold))
+                                .foregroundStyle(ink)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.vertical, 9)
+                        if p.key != platforms.last?.key { divider }
                     }
-                    if p.key != platforms.last?.key { divider }
                 }
+                .padding(.horizontal, 14).padding(.vertical, 4)
+                .tintedCard(accent: FinishInk.purple, radius: 18, tint: 0.06, line: 0.2)
+                .padding(.horizontal, 16).padding(.top, 8)
+                Text("Saved with the rest of your profile.").font(Brand.font(11, .bold)).foregroundStyle(labelInk).padding(.top, 10)
             }
-            .padding(.horizontal, 20).padding(.top, 8)
-            Text("Saved with the rest of your profile.").font(Brand.font(11, .bold)).foregroundStyle(labelInk).padding(.top, 8)
-            Spacer(minLength: 0)
         }
+        .pageBackground(.home)
     }
 
     private var privacySheet: some View {
         VStack(spacing: 14) {
             sheetTitle("Private profile")
-            Toggle(isOn: $isPrivate) {
-                Text("Hide my words, stats and game history").font(Brand.font(14, .heavy)).foregroundStyle(ink)
+            HStack(spacing: 12) {
+                sheetCoin("lock", tint: FamilyMenuInk.purple, size: 36)
+                Toggle(isOn: $isPrivate) {
+                    Text("Hide my words, stats and game history").font(Brand.font(14, .heavy)).foregroundStyle(ink)
+                }
+                .toggleStyle(.candy)   // button family §4: the candy switch everywhere
             }
-            .toggleStyle(.candy)   // button family §4: the candy switch everywhere
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .tintedCard(accent: FinishInk.purple, radius: 18, tint: 0.06, line: 0.2)
+            .padding(.horizontal, 20)
             Text("You'll still appear on leaderboards.").font(Brand.font(12, .bold)).foregroundStyle(labelInk)
             Spacer(minLength: 0)
         }
+        .pageBackground(.home)
     }
 
     private var favoriteSheet: some View {
@@ -511,11 +551,13 @@ struct EditProfileView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     Button { favoriteMode = nil; showFavorite = false } label: {
-                        Text("None").font(Brand.font(12, .black)).foregroundStyle(labelInk)
-                            .frame(width: 58, height: 58)
-                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0x7C3AED).opacity(0.08)))
+                        GameTileSquare(accent: FinishInk.purple, label: "None", selected: favoriteMode == nil, side: 58) { chip in
+                            FamClayIcon(name: "xmark", size: chip * 0.7, ink: FriendsInk.lavender)
+                        }
                     }
                     .buttonStyle(.squish)
+                    .accessibilityLabel("No favorite game")
+                    .accessibilityAddTraits(favoriteMode == nil ? .isSelected : [])
                     ForEach(dailyModes) { m in
                         Button { favoriteMode = m.dbKey; showFavorite = false } label: {
                             GameTileSquare(accent: m.accent, label: ModeGen.byId(m.id)?.shortTitle ?? m.title,
@@ -532,6 +574,7 @@ struct EditProfileView: View {
             }
             Spacer(minLength: 0)
         }
+        .pageBackground(.home)
     }
 
     private var hasPhoto: Bool { !(auth.profile?.avatarUrl?.trimmingCharacters(in: .whitespaces).isEmpty ?? true) }
@@ -725,7 +768,7 @@ struct EditProfileView: View {
             case .camera:
                 return FamilyMenuAction(id: "camera", title: "Take photo", icon: .symbol("camera.fill")) { showCamera = true }
             case .library:
-                return FamilyMenuAction(id: "library", title: "Choose from library", icon: .symbol("photo.on.rectangle"),
+                return FamilyMenuAction(id: "library", title: "From library", icon: .symbol("photo.on.rectangle"),
                                         tint: FamilyMenuInk.teal) { showLibraryPicker = true }
             case .remove:
                 return FamilyMenuAction(id: "remove", title: "Remove photo", icon: .clay("xmark"), danger: true) {

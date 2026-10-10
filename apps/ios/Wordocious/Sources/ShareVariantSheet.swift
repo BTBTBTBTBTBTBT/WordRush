@@ -19,39 +19,36 @@ struct ShareVariantSheet: View {
 
     var body: some View {
         MenuScaffold("Share", heading: .share) {   // BJ16
-            VStack(spacing: 8) {
+            VStack(spacing: 12) {
+                // Founder 10-09: no plain rows. Two candy cast buttons with the white-clay eye on each.
                 Button { selection = false; dismiss() } label: {
-                    row(icon: "eye.slash.fill", accent: Color(hex: 0x7C3AED),
-                        title: "No spoilers", subtitle: "Colors only")
-                }.buttonStyle(.squish)
+                    CandyLabel(title: "No spoilers") {
+                        FamClayIcon(name: "eye", size: 20, ink: .white)
+                    }
+                }
+                .buttonStyle(CastButtonStyle(color: .purple, size: .large, fullWidth: true))
+                .accessibilityLabel("No spoilers, colors only")
+                caption("Colors only")
 
                 Button { selection = true; dismiss() } label: {
-                    row(icon: "eye.fill", accent: Color(hex: 0xEC4899),
-                        title: "Full results", subtitle: "Letters revealed")
-                }.buttonStyle(.squish)
+                    CandyLabel(title: "Full results") {
+                        FamClayIcon(name: "eye", size: 20, ink: .white)
+                    }
+                }
+                .buttonStyle(CastButtonStyle(color: .pink, size: .large, fullWidth: true))
+                .accessibilityLabel("Full results, letters revealed")
+                caption("Letters revealed")
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 20)
+            .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 20)
         }
     }
 
-    /// Like MenuSheet.row — accent icon tile, uppercase title, muted subtitle (no
-    /// chevron, ART_SPEC §21.4) — on a tinted card in the option's accent (§A1).
-    private func row(icon: String, accent: Color, title: String, subtitle: String) -> some View {
-        HStack(spacing: 12) {
-            // §A1 icon tile = a mini game card: accent wash, border, inset top bar.
-            Image(systemName: icon).font(.system(size: 16, weight: .bold)).foregroundStyle(accent)
-                .frame(width: 40, height: 40)
-                .tintedPill(accent, radius: 11)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(Brand.font(15, .black)).textCase(.uppercase).foregroundStyle(FinishInk.heading)
-                Text(subtitle).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
-            }
-            Spacer()
-        }
-        .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-        // §A1: a tinted row in the option's accent (no plain white; dark keeps its surface).
-        .tintedCard(accent: accent, radius: 16, tint: 0.09, line: 0.28)
+    /// The one short line under each candy.
+    private func caption(_ text: String) -> some View {
+        Text(text).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+            .accessibilityHidden(true)
+            .padding(.top, -6).padding(.bottom, 4)
     }
 }

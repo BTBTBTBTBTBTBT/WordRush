@@ -97,12 +97,6 @@ struct ProfileTab: View {
     @State private var badgeGame: LeaderboardTab.LbGame?
     @State private var badgeSolved: LeaderboardTab.LbGame?
     @State private var badgePN = false
-    // Account section (web parity): notification toggle + Delete Account flow.
-    @AppStorage("pref-daily-reminder") private var dailyReminder = false
-    @State private var reminderDenied = false
-    @State private var showDeleteConfirm = false
-    @State private var deleting = false
-    @State private var deleteError = false
     // Games played in the last 7 days — powers the Insights "this week" line.
     @State private var sevenDayTotal = 0
     /// D2 step 3: the old Records → You view's data (records held, sweep
@@ -879,65 +873,6 @@ struct ProfileTab: View {
         } else {
             badgeMore = m
         }
-    }
-
-    /// Account actions — ports profile/page.tsx section H (notification toggle,
-    /// Sign Out, Delete Account with confirm).
-    private var accountSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("ACCOUNT").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-            // Daily reminder toggle (web NotificationToggle).
-            Toggle(isOn: $dailyReminder) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Daily Reminders").font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
-                    Text("A nudge to play today's puzzles").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
-                }
-            }
-            .toggleStyle(.candy).padding(14)   // button family §4
-            .statsCard()
-
-            Button { Task { await auth.signOut() } } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "rectangle.portrait.and.arrow.right").font(.system(size: 18)).foregroundStyle(Theme.textMuted)
-                    Text("Sign Out").font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
-                    Spacer()
-                }
-                .padding(16)
-                .statsCard()
-            }.buttonStyle(.squish)
-
-            Button(role: .destructive) { showDeleteConfirm = true } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "trash").font(.system(size: 18)).foregroundStyle(Color(hex: 0xDC2626))
-                    Text("Delete Account").font(Brand.font(14, .heavy)).foregroundStyle(Color(hex: 0xDC2626))
-                    Spacer()
-                }
-                .padding(16)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface).pageCardShadow())
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFECACA), lineWidth: 1.5))
-            }.buttonStyle(.squish).disabled(deleting)
-        }
-        .onChange(of: dailyReminder) { on in
-            if on {
-                Task {
-                    let granted = await NotificationService.requestAndSchedule()
-                    if !granted { dailyReminder = false; reminderDenied = true }
-                }
-            } else {
-                NotificationService.cancel()
-            }
-        }
-        .familyNotice("Notifications are off", isPresented: $reminderDenied,
-                      message: "Enable notifications for Wordocious in iOS Settings to get a daily reminder.")
-        .familyConfirm("Delete your account?", isPresented: $showDeleteConfirm,
-                       message: "This permanently deletes your profile, stats, streak, medals, achievements and all game data. It can't be undone.",
-                       confirm: "Delete Forever", danger: true) {
-            guard !deleting else { return }
-            deleting = true
-            Task { let ok = await auth.deleteAccount(); deleting = false; if !ok { deleteError = true } }
-        }
-        .familyNotice("Couldn't delete account", isPresented: $deleteError,
-                      message: "Please try again or contact support@wordocious.com.")
     }
 
     /// Insight strings for the All view — ports the web `insights` IIFE

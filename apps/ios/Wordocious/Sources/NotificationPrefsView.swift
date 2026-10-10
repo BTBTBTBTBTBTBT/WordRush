@@ -21,34 +21,9 @@ enum PushCategories {
     }
 }
 
-/// The old bell from beside the FRIENDS title (FINISH_SPEC §C4b moved the prefs to
-/// Settings → Notifications). Kept for any remaining caller; the Friends tab no
-/// longer shows it.
-struct NotificationPrefsButton: View {
-    @ObservedObject private var auth = AuthService.shared
-    @State private var open = false
-
-    var body: some View {
-        if auth.profile != nil {
-            let anyOff = PushCategories.anyOff(auth.profile?.notificationPrefs)
-            Button { open = true } label: {
-                // ART_SPEC §5: the 3D bell; slashed + dimmed when a category is off.
-                HeaderCircleLabel(glyph: anyOff ? .mutedIcon(.bell) : .icon(.bell), size: 32,
-                                  tint: anyOff ? Theme.textMuted : PageHeaderStyle.ink)
-            }
-            .buttonStyle(RoundIconButtonStyle())   // 2.8 item 23: the family round icon
-            .accessibilityLabel("Friends notification settings")
-            .softSheet(isPresented: $open) {
-                NotificationPrefsSheet().presentationDetents([.medium])
-            }
-        }
-    }
-}
-
 /// The four Friends push categories as toggles — one tinted row each (§A1). Each
 /// flip writes profiles.notification_prefs for the owner (the Simulate Pro update →
-/// refreshProfile pattern) so every surface agrees. Shared by the prefs sheet and
-/// Settings → Notifications.
+/// refreshProfile pattern) so every surface agrees. Used by Settings → Notifications.
 struct NotificationPrefsToggles: View {
     @ObservedObject private var auth = AuthService.shared
     @State private var saving: String?
@@ -88,22 +63,6 @@ struct NotificationPrefsToggles: View {
             await auth.refreshProfile()
             saving = nil
         }
-    }
-}
-
-/// The prefs sheet: the label, the four toggles and the friend-request note.
-struct NotificationPrefsSheet: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            FinishLabel("Friends notifications")
-            NotificationPrefsToggles()
-            Text("Friend requests always come through.")
-                .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
-            Spacer(minLength: 0)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .pageBackground(.home)
     }
 }
 

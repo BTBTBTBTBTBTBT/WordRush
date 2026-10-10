@@ -277,21 +277,21 @@ struct ArchetypeSheet: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    HeadingArtView(.archetypes, height: 30, maxWidth: 220, label: "Player archetypes", alignment: .leading)   // BJ16
-                    Spacer()
+                HStack(spacing: 8) {
+                    BubbleTextView(text: "PLAYER ARCHETYPES", palette: .accent(FriendsInk.dark ? Color(hex: 0xA78BFA) : FinishInk.purple),
+                                   maxSize: 30, minSize: 18, animated: false, alignment: .leading)
                     HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
                 }
                 Text("Every player gets one of five archetypes from how they actually play. The first rule you qualify for — top to bottom — is yours.")
-                    .font(Brand.body(13)).foregroundStyle(Theme.textSecondary)
+                    .font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
                 ForEach(ProfileArchetype.all, id: \.key) { info in
                     archetypeRow(info, highlighted: info.key == targetArchetype)
                 }
                 if let mine = viewerArchetype, let info = ProfileArchetype.info(mine) {
                     HStack(spacing: 8) {
-                        SymbolGlyph(info.symbol, size: 14, color: Theme.primary)
-                        Text("You are a ").font(Brand.body(13)).foregroundColor(Theme.textSecondary)
-                        + Text(info.name).font(Brand.font(13, .black)).foregroundColor(Theme.primary)
+                        archetypeArt(info.key, size: 26, highlighted: true)
+                        Text("You are a ").font(Brand.font(13, .bold)).foregroundColor(FinishInk.secondary)
+                        + Text(info.name).font(Brand.font(13, .black)).foregroundColor(FinishInk.purple)
                     }
                     .padding(12).frame(maxWidth: .infinity, alignment: .leading)
                     .socialTile(Color(hex: 0x7C3AED), strong: true)
@@ -307,25 +307,38 @@ struct ArchetypeSheet: View {
         }
     }
 
+    /// Each archetype's art (the badge set); the rest of the five stay quiet until one is yours.
+    @ViewBuilder private func archetypeArt(_ key: String, size: CGFloat, highlighted: Bool) -> some View {
+        let asset: String = {
+            switch key {
+            case "GRINDER": return "art-badge-trending-up"
+            case "SPEEDRUNNER": return "art-badge-zap"
+            case "SNIPER": return "art-badge-target"
+            case "NIGHT_OWL": return "art-ach-night_owl"
+            default: return "art-badge-swords"
+            }
+        }()
+        Image(asset).resizable().interpolation(.high).scaledToFit()
+            .frame(width: size, height: size)
+            .saturation(highlighted ? 1 : 0.45)
+            .opacity(highlighted ? 1 : 0.8)
+            .accessibilityHidden(true)
+    }
+
     private func archetypeRow(_ info: ProfileArchetype.Info, highlighted: Bool) -> some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: info.symbol)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(highlighted ? Theme.primary : Theme.textMuted)
-                .frame(width: 28, height: 28)
-                .background(RoundedRectangle(cornerRadius: 8)
-                    .fill((highlighted ? Theme.primary : Theme.textMuted).opacity(0.1)))
+            archetypeArt(info.key, size: 30, highlighted: highlighted)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(info.name).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                    Text(info.name).font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
                     if highlighted {
                         Text(targetName).font(Brand.font(9, .black)).foregroundStyle(.white)
                             .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(Capsule().fill(Theme.primary))
+                            .background(Capsule().fill(FinishInk.purple))
                             .lineLimit(1).minimumScaleFactor(0.7)
                     }
                 }
-                Text(info.rule).font(Brand.font(11, .bold)).foregroundStyle(Theme.textSecondary)
+                Text(info.rule).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
             Spacer(minLength: 0)
         }
@@ -728,7 +741,7 @@ struct MedalHistorySheet: View {
 
     private func rowContent(_ m: MedalRow) -> some View {
         HStack(spacing: 10) {
-            SymbolGlyph(medalIcon(m.medalType).0, size: 14, color: medalIcon(m.medalType).1)
+            MedalGlyph(type: m.medalType, size: 26)
             VStack(alignment: .leading, spacing: 1) {
                 Text(medalLabel(m)).font(Brand.font(12, .black)).foregroundStyle(FinishInk.heading)
                 Text(socialDayLabel(m.day)).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
@@ -750,6 +763,35 @@ struct MedalHistorySheet: View {
         case "streak_100": return "100-Day Streak"
         case "perfect": return "Perfect! · \(socialModeTitle(m.gameMode))"
         default: return socialModeTitle(m.gameMode)
+        }
+    }
+}
+
+/// A medal row's icon as the app's art (gold / silver / bronze medals, the flame badge for streaks, the trophy badge for
+/// Perfect); a type with no art keeps its symbol.
+struct MedalGlyph: View {
+    let type: String
+    var size: CGFloat = 26
+
+    private var asset: String? {
+        switch type {
+        case "gold": return "art-medal-gold"
+        case "silver": return "art-medal-silver"
+        case "bronze": return "art-medal-bronze"
+        case "streak_7", "streak_30", "streak_100": return "art-badge-flame"
+        case "perfect": return "art-badge-trophy"
+        default: return nil
+        }
+    }
+
+    var body: some View {
+        if let asset {
+            Image(asset).resizable().interpolation(.high).scaledToFit()
+                .frame(width: size, height: size)
+                .accessibilityHidden(true)
+        } else {
+            SymbolGlyph(medalIcon(type).0, size: size * 0.55, color: medalIcon(type).1)
+                .frame(width: size, height: size)
         }
     }
 }
@@ -791,7 +833,7 @@ struct PodiumScreen: View {
                         ForEach(entries) { e in
                             NavigationLink(value: e.userId) {
                                 HStack(spacing: 10) {
-                                    SymbolGlyph(medalIcon(e.medalType).0, size: 15, color: medalIcon(e.medalType).1)
+                                    MedalGlyph(type: e.medalType, size: 28)
                                     Text(e.username).font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
                                     Spacer()
                                 }
@@ -932,29 +974,29 @@ struct StreakCalendarSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                socialCaption("\(username.uppercased()) · LAST 60 DAYS")
-                Spacer()
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 0) {
+                    BubbleTextView(text: "LAST 60 DAYS", palette: .accent(FriendsInk.dark ? Color(hex: 0xFCD34D) : Color(hex: 0xF59E0B)),
+                                   maxSize: 30, minSize: 18, animated: false, alignment: .leading)
+                    FinishLabel(username.uppercased(), color: FriendsInk.lavender)
+                }
                 HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
             }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 10), spacing: 10) {
                 ForEach(days, id: \.key) { day in
-                    Circle()
-                        .fill(day.count > 0 ? Theme.primary.opacity(min(1, 0.35 + Double(day.count) / 12)) : Theme.border.opacity(0.6))
-                        .frame(width: 15, height: 15)
-                        .overlay {
-                            // Each day judged against ITS era's sweep size (the
-                            // 60-day window can straddle the Stage 9 switch).
-                            if day.count >= ModeGen.requiredSweepCount(for: day.key) {
-                                Circle().stroke(Theme.gold, lineWidth: 2).frame(width: 21, height: 21)
-                            }
-                        }
+                    // Each day judged against ITS era's sweep size (the
+                    // 60-day window can straddle the Stage 9 switch).
+                    dot(played: day.count > 0, strength: min(1, 0.55 + Double(day.count) / 12),
+                        sweep: day.count >= ModeGen.requiredSweepCount(for: day.key), size: 15)
+                        .frame(width: 21, height: 21)
                 }
             }
+            .padding(.horizontal, 12).padding(.vertical, 14)
+            .tintedCard(accent: FinishInk.purple, radius: 18, tint: 0.06, line: 0.2)
             HStack(spacing: 14) {
-                legend(fill: Theme.primary, ring: false, label: "Played")
-                legend(fill: Theme.primary, ring: true, label: "Daily Sweep")
-                legend(fill: Theme.border.opacity(0.6), ring: false, label: "Missed")
+                legend(played: true, ring: false, label: "Played")
+                legend(played: true, ring: true, label: "Daily Sweep")
+                legend(played: false, ring: false, label: "Missed")
             }
             Spacer(minLength: 0)
         }
@@ -964,11 +1006,35 @@ struct StreakCalendarSheet: View {
         .presentationDetents([.medium])
     }
 
-    private func legend(fill: Color, ring: Bool, label: String) -> some View {
-        HStack(spacing: 5) {
-            Circle().fill(fill).frame(width: 10, height: 10)
-                .overlay { if ring { Circle().stroke(Theme.gold, lineWidth: 1.5).frame(width: 14, height: 14) } }
-            Text(label).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+    /// A glossy candy dot: a lit gradient with a small highlight (a missed day is a quiet recessed one); a gold ring on sweeps.
+    private func dot(played: Bool, strength: Double, sweep: Bool, size: CGFloat) -> some View {
+        ZStack {
+            if played {
+                Circle().fill(LinearGradient(colors: [Color.white.mixed(over: FinishInk.purple, 0.35), FinishInk.purple],
+                                             startPoint: .top, endPoint: .bottom))
+                    .opacity(strength)
+                    .frame(width: size, height: size)
+                    .shadow(color: FinishInk.purple.opacity(0.3), radius: 1.5, y: 1)
+                Ellipse().fill(Color.white.opacity(0.45 * strength))
+                    .frame(width: size * 0.5, height: size * 0.28)
+                    .offset(y: -size * 0.24)
+            } else {
+                Circle().fill(FinishInk.purple.opacity(Theme.isDark ? 0.18 : 0.10))
+                    .frame(width: size, height: size)
+            }
+            if sweep {
+                Circle().stroke(LinearGradient(colors: [Color(hex: 0xFFE07A), Color(hex: 0xF5A524)], startPoint: .top, endPoint: .bottom),
+                                lineWidth: 2)
+                    .frame(width: size + 6, height: size + 6)
+            }
+        }
+    }
+
+    private func legend(played: Bool, ring: Bool, label: String) -> some View {
+        HStack(spacing: 6) {
+            dot(played: played, strength: 1, sweep: ring, size: 11)
+                .frame(width: 17, height: 17)
+            Text(label).font(Brand.font(11, .black)).foregroundStyle(FinishInk.secondary)
         }
     }
 }

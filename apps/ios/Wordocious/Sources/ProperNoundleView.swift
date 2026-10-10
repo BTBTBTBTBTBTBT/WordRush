@@ -390,7 +390,7 @@ struct ProperNoundleView: View {
                                     onShare: { _ in showShareOptions = true })
                         .softSheet(isPresented: $showShareOptions,
                                onDismiss: { if let r = shareReveal { shareReveal = nil; shareResult(reveal: r) } }) {
-                            ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
+                            ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(340)])
                         }
                 } extras: {
                     result

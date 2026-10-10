@@ -720,15 +720,6 @@ struct LivingCastHeader: View {
     }
 }
 
-/// Force the popover to stay a popover (not a sheet) on iPhone where available;
-/// falls back to the default adaptation on iOS < 16.4.
-struct CompactPopover: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 16.4, *) { content.presentationCompactAdaptation(.popover) }
-        else { content }
-    }
-}
-
 /// §AA1: the header reads as one element ("Wordocious Pro"); for Pro it also offers
 /// the crown's action so VoiceOver can open the membership sheet.
 private struct ProCrownAccessibility: ViewModifier {

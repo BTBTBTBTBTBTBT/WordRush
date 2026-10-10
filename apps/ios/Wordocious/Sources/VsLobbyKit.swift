@@ -831,8 +831,10 @@ struct VSConfirmCard: View {
         ZStack {
             Color.black.opacity(0.35).ignoresSafeArea().onTapGesture(perform: onPrimary)
             VStack(spacing: 12) {
-                Text(title).font(Brand.font(17, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
-                    .multilineTextAlignment(.center)
+                // Founder 10-09: no plain caps title. A small cast pose and the question in the bubble lettering.
+                MascotView(secondaryDestructive ? Mascots.loss : Mascots.vs, size: 52, motion: .bob)
+                BubbleTextView(text: title.uppercased(), palette: .accent(VsLobbyKit.purple),
+                               maxSize: 26, minSize: 16, animated: false)
                 Text(message).font(Brand.font(13, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                 VSPrimaryButton(title: primary, action: onPrimary).padding(.top, 4)
