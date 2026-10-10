@@ -1014,6 +1014,12 @@ struct LargeView: View {
                 let byHeight = (g.size.height - bands * (title + titleGap) - (hasPuzzles ? bandGap : 0) - bands * gap) / (2 * bands)
                 let c = max(20, min(56, byWidth, byHeight))
                 let ring = 2 * c + gap
+                // Founder 10-10 ("an odd gap between the daily circle and the games"): the DAILIES band grows into the spare
+                // room so it also spans the full width (ring + 4 chips: w = 6 cD + 4 gaps + the ring gap) — its ring's left
+                // edge stays over the Puzzles chips, its last chip's right edge over the Puzzles ring.
+                let spareH = g.size.height - (bands * (title + titleGap) + (hasPuzzles ? bandGap + ring : 0))
+                let cD = hasPuzzles ? max(c, min((w - ringGap - 4 * gap) / 6, (spareH - gap) / 2)) : c
+                let ringD = 2 * cD + gap
                 VStack(alignment: .leading, spacing: 0) {
                     Link(destination: homeURL) {
                         HStack {
@@ -1027,13 +1033,13 @@ struct LargeView: View {
                     HStack(spacing: 0) {
                         Link(destination: homeURL) {
                             DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
-                                .frame(width: ring, height: ring)
+                                .frame(width: ringD, height: ringD)
                         }
                         Spacer(minLength: ringGap)
-                        ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: c, spread: true)
-                            .frame(width: 4 * c + 3 * gap, height: ring)
+                        ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: cD, spread: true)
+                            .frame(width: 4 * cD + 3 * gap, height: ringD)
                     }
-                    .frame(height: ring)
+                    .frame(height: ringD)
                     if hasPuzzles {
                         Spacer().frame(height: bandGap)
                         Link(destination: homeURL) {
