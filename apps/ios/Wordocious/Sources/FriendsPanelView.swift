@@ -45,6 +45,10 @@ struct FriendsPanelView: View {
     @State private var sharingRace = false
     // §238: the "Last week" line unfolds into the settled-week history.
     @State private var showPastWeeks = false
+    /// Founder 10-09: Today's Race leads (podium + top 5); everyone else, This week and Last week fold away.
+    @State private var showAllToday = false
+    @State private var showWeek = false
+    @State private var showAllWeek = false
     // §289: Challenge from any row — the friend id in flight (double-tap
     // guard + button dimming) and the private Classic match to present.
     @State private var challenging: String?
@@ -90,18 +94,13 @@ struct FriendsPanelView: View {
 
         // BJ7: crisp page rhythm — 14 between sections (was 18).
         VStack(alignment: .leading, spacing: 14) {
-            // 2.8 TestFlight (founder): the page LEADS with THIS WEEK'S RACE podium, right under the cast header;
-            // Today's Race (the banner) follows it, then INVITES and the friends.
+            // Founder 10-09: the page LEADS with TODAY'S RACE on the podium (top 5, the rest in an "All friends"
+            // dropdown), then This week's race and Last week as dropdowns under it. (The old pill strip is gone.)
+            if !todayStandings.isEmpty {
+                todayRaceSection
+            }
             if !podium.isEmpty {
                 weeklyRaceSection
-            }
-            if let p = AuthService.shared.profile {
-                // Wave 3 (9e): "On now" folds into the friend cards below (green dot + "playing
-                // Classic"), and the race is told once (the pills, countdown small in the header).
-                FriendsBannerView(friends: friends, me: p, meDigest: FriendsService.meDigest,
-                                  showOnNow: false,
-                                  onFace: { quickPlay = QuickPlay(friend: $0, kind: nil) },
-                                  onRace: { showRace = true })
             }
             // 9f: the branded Invites row (hides itself when branded_invites is off). "Have a code?" is a small
             // quiet pill in the ADD A FRIEND header now (it no longer leads the page). Accepting hands the code to the
@@ -320,7 +319,18 @@ struct FriendsPanelView: View {
         // §C4: this week's race on a warm gold card with the shared podium.
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                FriendsLabel("This week's race", color: weekInk)
+                Button {
+                    if Theme.reduceMotion { showWeek.toggle() } else { withAnimation(.easeInOut(duration: 0.18)) { showWeek.toggle() } }
+                } label: {
+                    HStack(spacing: 5) {
+                        FriendsLabel("This week's race", color: weekInk)
+                        Image(systemName: "chevron.down").font(.system(size: 9, weight: .black)).foregroundStyle(weekInk)
+                            .rotationEffect(.degrees(showWeek ? 180 : 0))
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.squish)
+                .accessibilityLabel(showWeek ? "Hide this week's race" : "Show this week's race")
                 Spacer(minLength: 6)
                 // §218: name the window and when it closes; §226 live clock.
                 TimelineView(.periodic(from: .now, by: 1)) { ctx in
@@ -348,7 +358,8 @@ struct FriendsPanelView: View {
                     .accessibilityLabel("Share weekly race")
                 }
             }
-            .padding(.horizontal, 12).padding(.top, 8)
+            .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, showWeek ? 0 : 8)
+            if showWeek {
             VStack(spacing: 4) {
                 // D3.3 (§294) — the Sunday finish, settled server-side.
                 if let r = FriendsService.lastWeek {
@@ -402,10 +413,10 @@ struct FriendsPanelView: View {
                        open: podium.isEmpty ? [] : Array(stride(from: podium.count + 1, through: 3, by: 1)),
                        stage: FriendsInk.goldAccent) { e in profileTarget = e.id }
                 .padding(.horizontal, 4)
-            // §238: everyone past the medals, ranked, on soft striped rows.
+            // §238: everyone past the medals, ranked, on soft striped rows — the top 5, then an "All friends" fold.
             if standings.count > 3 {
                 VStack(spacing: 0) {
-                    ForEach(Array(standings.dropFirst(3).enumerated()), id: \.element.id) { i, e in
+                    ForEach(Array(standings.dropFirst(3).prefix(showAllWeek ? standings.count : 2).enumerated()), id: \.element.id) { i, e in
                         OwnOrProfileLink(id: e.id, own: e.isMe) {
                             HStack(spacing: 8) {
                                 Text(FriendsPanelView.ordinal(i + 4))
@@ -427,6 +438,9 @@ struct FriendsPanelView: View {
                     }
                 }
             }
+            if standings.count > 5 {
+                allFriendsToggle(count: standings.count - 5, open: $showAllWeek, ink: weekInk)
+            }
             if !raceStarted {
                 Text("Race resets Mondays — first daily takes the lead.")
                     .font(Brand.font(10, .bold)).foregroundStyle(weekInk)
@@ -434,9 +448,112 @@ struct FriendsPanelView: View {
                     .padding(.horizontal, 12)
             }
             Color.clear.frame(height: 2)
+            }
         }
         .friendsCard(accent: FriendsInk.goldAccent, bar: [FriendsInk.goldAccent, Color(hex: 0xFFD166)],
                      tint: 0.09, line: 0.28)
+    }
+
+    // MARK: TODAY'S RACE (founder 10-09 — the podium leads the page)
+
+    /// Me + friends by today's daily points, best first (the same numbers the old race strip showed).
+    private var todayStandings: [RaceEntry] {
+        let friends = FriendsService.friends
+        guard !friends.isEmpty else { return [] }
+        var entries = friends.map {
+            RaceEntry(id: $0.id, username: $0.username, avatarUrl: $0.avatar_url,
+                      avatarEmoji: $0.avatar_emoji, pts: $0.todayPoints ?? 0, isMe: false,
+                      badge: FriendsPanelView.raceBadge(played: $0.playedToday, flawlessRun: $0.flawlessStreak, streak: $0.streak))
+        }
+        if let p = AuthService.shared.profile {
+            let d = FriendsService.meDigest
+            entries.append(RaceEntry(id: p.id, username: "You", avatarUrl: p.avatarUrl, avatarEmoji: p.avatarEmoji,
+                                     pts: d?.todayPoints ?? 0, isMe: true,
+                                     badge: FriendsPanelView.raceBadge(played: d?.playedToday, flawlessRun: d?.flawlessStreak,
+                                                                       streak: AuthService.shared.headerStreak)))
+        }
+        entries.sort { $0.pts > $1.pts }
+        return entries
+    }
+
+    private var todayRaceSection: some View {
+        let rows = todayStandings
+        let started = rows.contains { $0.pts > 0 }
+        let ink = FriendsInk.pink
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                FriendsLabel("Today's race", color: ink)
+                Spacer(minLength: 6)
+                TimelineView(.periodic(from: .now, by: 1)) { _ in
+                    Text("ENDS IN \(LeaderboardBannerView.resetClock())")
+                        .font(Brand.font(9.5, .black)).tracking(0.6).foregroundStyle(ink)
+                        .monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+                }
+            }
+            .padding(.horizontal, 12).padding(.top, 8)
+            PodiumView(entries: rows.prefix(3).map(podiumEntry), compact: true, lightOnly: true,
+                       open: Array(stride(from: min(rows.count, 3) + 1, through: 3, by: 1)),
+                       stage: FriendsInk.pink) { e in profileTarget = e.id }
+                .padding(.horizontal, 4)
+            if rows.count > 3 {
+                VStack(spacing: 0) {
+                    ForEach(Array(rows.dropFirst(3).prefix(showAllToday ? rows.count : 2).enumerated()), id: \.element.id) { i, e in
+                        OwnOrProfileLink(id: e.id, own: e.isMe) {
+                            HStack(spacing: 8) {
+                                Text(FriendsPanelView.ordinal(i + 4))
+                                    .font(Brand.font(11, .black)).foregroundStyle(ink)
+                                    .frame(width: 30, alignment: .trailing)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(e.username)
+                                        .font(Brand.font(12, .black)).lineLimit(1)
+                                        .foregroundStyle(e.isMe ? FriendsKit.solid : FriendsInk.heading)
+                                    if let b = e.badge {
+                                        Text(b).font(Brand.font(8.5, .black)).tracking(0.4)
+                                            .foregroundStyle(Color(hex: 0xF5B82E)).lineLimit(1).minimumScaleFactor(0.7)
+                                    }
+                                }
+                                Spacer(minLength: 4)
+                                Text(e.pts.formatted()).softNumber(13, color: VsLobbyKit.numberInk).fixedSize()
+                                Text("pts").font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.muted)
+                            }
+                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.squish)
+                        .friendsStripe(i, accent: ink)
+                    }
+                }
+            }
+            if rows.count > 5 {
+                allFriendsToggle(count: rows.count - 5, open: $showAllToday, ink: ink)
+            }
+            if !started {
+                Text("First daily of the day takes the lead.")
+                    .font(Brand.font(10, .bold)).foregroundStyle(ink)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 12)
+            }
+            Color.clear.frame(height: 2)
+        }
+        .friendsCard(accent: FriendsInk.pink, bar: [FriendsInk.pink, FriendsInk.amber], tint: 0.09, line: 0.28)
+    }
+
+    /// The clean fold for everyone past the top 5: "All friends · 4 more" ⌄.
+    private func allFriendsToggle(count: Int, open: Binding<Bool>, ink: Color) -> some View {
+        Button {
+            if Theme.reduceMotion { open.wrappedValue.toggle() } else { withAnimation(.easeInOut(duration: 0.18)) { open.wrappedValue.toggle() } }
+        } label: {
+            HStack(spacing: 5) {
+                Text(open.wrappedValue ? "Show top 5" : "All friends · \(count) more")
+                    .font(Brand.font(11, .black)).foregroundStyle(ink)
+                Image(systemName: "chevron.down").font(.system(size: 9, weight: .black)).foregroundStyle(ink)
+                    .rotationEffect(.degrees(open.wrappedValue ? 180 : 0))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.squish)
     }
 
     /// A race entry on the shared podium (letter-tile avatar, soft points).
@@ -445,7 +562,7 @@ struct FriendsPanelView: View {
         return PodiumEntry(id: e.id, name: e.username,
                            username: e.isMe ? (me?.username ?? e.username) : e.username,
                            accentHex: e.isMe ? me?.accentColor : nil, emoji: e.avatarEmoji,
-                           value: "\(e.pts.formatted()) pts", avatarUrl: e.avatarUrl)
+                           value: "\(e.pts.formatted()) pts", avatarUrl: e.avatarUrl, badge: e.badge)
     }
 
     /// The small game icon on the Friends cards: the glossy 3D pocket art when it
@@ -1080,6 +1197,17 @@ struct FriendsPanelView: View {
     struct RaceEntry {
         let id: String; let username: String; let avatarUrl: String?
         let avatarEmoji: String?; let pts: Int; let isMe: Bool
+        /// Today's highlight (Today's Race only): "FLAWLESS · 89-DAY STREAK" / "SWEEP" / "26-DAY STREAK".
+        var badge: String? = nil
+    }
+
+    /// Founder 10-09: a Flawless (all 8 won) or a Sweep (all 8 played) today, and the day streak when there is one.
+    static func raceBadge(played: Int?, flawlessRun: Int?, streak: Int?) -> String? {
+        let all = (played ?? 0) >= 8
+        let day = all ? ((flawlessRun ?? 0) > 0 ? "FLAWLESS" : "SWEEP") : nil
+        let run = (streak ?? 0) > 1 ? "\(streak!)-DAY STREAK" : nil
+        let parts = [day, run].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     /// Me + friends by this week's daily points, best first (§212/§238).

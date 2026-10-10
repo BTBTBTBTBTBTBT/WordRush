@@ -434,6 +434,9 @@ struct PodiumEntry: Identifiable {
     /// rows under the podium use ("4 Guesses · 1m 45s", "0 Mistakes · 3m 2s · No hints");
     /// one small muted line under the points. Nil = none (the Friends race: points only).
     var detail: String? = nil
+    /// Founder 10-09: today's highlight on the daily race podium — "FLAWLESS · 89-DAY STREAK", "SWEEP", "26-DAY STREAK"
+    /// (gold, under the points). Nil = none.
+    var badge: String? = nil
 }
 
 /// FINISH_SPEC §C2 / §C4 / BJ4: the top-three podium — the players' avatars on gold /
@@ -507,6 +510,12 @@ struct PodiumView: View {
                     .font(Brand.font((compact ? 11 : 12) + (first ? 1.5 : 0), .heavy)).monospacedDigit()
                     .foregroundStyle(lightInk ? FinishInk.muted : FinishInk.secondary)
                     .lineLimit(1).minimumScaleFactor(0.7)
+                if let b = e.badge, !b.isEmpty {
+                    Text(b)
+                        .font(Brand.font(compact ? 8.5 : 9.5, .black)).tracking(0.4).monospacedDigit()
+                        .foregroundStyle(Color(hex: 0xF5B82E))
+                        .lineLimit(1).minimumScaleFactor(0.55)
+                }
                 if let d = e.detail, !d.isEmpty {
                     Text(d)
                         .font(Brand.font(compact ? 9 : 10, first ? .heavy : .bold)).monospacedDigit()
