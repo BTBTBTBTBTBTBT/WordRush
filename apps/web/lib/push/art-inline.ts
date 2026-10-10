@@ -8,6 +8,10 @@ import sharp from 'sharp';
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
 
+// Vercel's functions have no system fonts: the mascot's letter (SVG <text>) rendered as a missing-glyph box. Point
+// fontconfig at the bundled Nunito (lib/push/fonts, traced in next.config.js) before librsvg first lays out text.
+process.env.FONTCONFIG_PATH ??= path.join(process.cwd(), 'lib', 'push', 'fonts');
+
 async function pngDataUri(urlPath: string, cache: Map<string, string | null>): Promise<string | null> {
   if (cache.has(urlPath)) return cache.get(urlPath) ?? null;
   let out: string | null = null;
@@ -29,10 +33,12 @@ export async function inlineLocalImages(svg: string): Promise<string> {
   const paths = Array.from(new Set(Array.from(svg.matchAll(/href="(\/[^"]+)"/g), (m) => m[1])));
   const cache = new Map<string, string | null>();
   await Promise.all(paths.map((p) => pngDataUri(p, cache)));
-  return svg.replace(/href="(\/[^"]+)"/g, (_m, p: string) => {
-    const uri = cache.get(p);
-    return uri ? `href="${uri}"` : 'href=""';
-  });
+  return svg
+    .replace(/href="(\/[^"]+)"/g, (_m, p: string) => {
+      const uri = cache.get(p);
+      return uri ? `href="${uri}"` : 'href=""';
+    })
+    .replace(/font-family="inherit"/g, 'font-family="Nunito"');
 }
 
 /** The bundled fallback mascot (the W) at `size` px. */

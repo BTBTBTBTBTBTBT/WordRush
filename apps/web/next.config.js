@@ -58,7 +58,7 @@ const nextConfig = {
       // function bundle and 500'd): the sender's mascot parts, the crown, the game icons and the fallback mascot.
       // sharp loads its native build through a dynamic require the tracer can't follow: include the platform
       // packages (linux-x64 on Vercel; darwin here, so a local build proves the patterns) and sharp's own @img links.
-      '/api/push/art/[kind]/[id]': ['./public/art/art-av-*', './public/art/art-badge-*', './public/art/game-*', './public/mascots/**',
+      '/api/push/art/[kind]/[id]': ['./public/art/art-av-*', './public/art/art-badge-*', './public/art/game-*', './public/mascots/**', './lib/push/fonts/**',
         '../../node_modules/.pnpm/sharp@*/node_modules/@img/**',
         '../../node_modules/.pnpm/@img+sharp-linux-x64@*/**', '../../node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/**',
         '../../node_modules/.pnpm/@img+sharp-darwin-arm64@*/**', '../../node_modules/.pnpm/@img+sharp-libvips-darwin-arm64@*/**'],
