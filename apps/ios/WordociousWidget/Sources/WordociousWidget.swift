@@ -839,36 +839,36 @@ struct SmallView: View {
     var body: some View {
         let hall = halloweenOn(snap, date)
         let dark = hall || (snap.theme?.dark ?? (scheme == .dark))
+        // Founder 10-10: the large widget's look, distilled: WORDOCIOUS, the DAILIES and PUZZLES rings side by side,
+        // then the streak pair (left) mirrored by the live countdown (right). The chips are the small size's sacrifice.
         GeometryReader { g in
-            let ring = min(g.size.width * 0.64, g.size.height - 44 - 16)
-            VStack(alignment: .leading, spacing: 0) {
-                // Item 28: the WORDOCIOUS lettering (an image) on every size.
-                WordmarkImage(size: .small, halloween: hall, dark: dark, height: 13)
-                Spacer(minLength: 3)
-                HStack(alignment: .top, spacing: 0) {
+            let hasPuzzles = !snap.puzzleModes.isEmpty
+            let mark: CGFloat = 13
+            let bottom: CGFloat = 30
+            let ring = max(40, min((g.size.width - 8) / (hasPuzzles ? 2 : 1), g.size.height - mark - bottom - 12))
+            VStack(spacing: 0) {
+                WordmarkImage(size: .small, halloween: hall, dark: dark, height: mark)
+                Spacer(minLength: 4)
+                HStack(spacing: 8) {
                     DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
                         .frame(width: ring, height: ring)
-                    Spacer(minLength: 2)
-                    // BI13b: the day's cast member in the mascot corner (sleepy R before the
-                    // first daily, a cheer on a sweep, S with a trophy on a milestone).
-                    CastPeek(art: snap.peekArt(at: date, own: OwnLook.load(), photoOK: true))
-                        .frame(width: min(46, g.size.width - ring - 2), height: min(46, g.size.width - ring - 2))
-                }
-                Spacer(minLength: 4)
-                HStack(spacing: 6) {
-                    StreakPair(snap: snap, size: 32)
-                    VStack(alignment: .leading, spacing: 3) {
-                        StreakLabel(stacked: snap.flawlessRun >= 2, color: WInk.number(dark))
-                        // The gold clock sprite (night art 10-03) leads the live countdown.
-                        HStack(spacing: 3) {
-                            Image("art-badge-icon-clock-sprite").resizable().interpolation(.high)
-                                .frame(width: 11, height: 11).accessibilityHidden(true)
-                            CapsTimer(date: date, color: WInk.label(dark).opacity(0.75), width: 52)
-                        }
+                    if hasPuzzles {
+                        DailyRing(modes: snap.puzzleModes, dark: dark, label: "PUZZLES")
+                            .frame(width: ring, height: ring)
                     }
                 }
+                Spacer(minLength: 4)
+                HStack(spacing: 4) {
+                    StreakPair(snap: snap, size: bottom - 2)
+                    Spacer(minLength: 2)
+                    // The gold clock sprite (night art 10-03) leads the live countdown.
+                    Image("art-badge-icon-clock-sprite").resizable().interpolation(.high)
+                        .frame(width: 11, height: 11).accessibilityHidden(true)
+                    CapsTimer(date: date, color: WInk.label(dark).opacity(0.8), width: 50)
+                }
+                .frame(height: bottom)
             }
-            .frame(width: g.size.width, height: g.size.height, alignment: .topLeading)
+            .frame(width: g.size.width, height: g.size.height)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(widgetPhrase(snap, date))
@@ -888,71 +888,58 @@ struct MediumView: View {
     var body: some View {
         let hall = halloweenOn(snap, date)
         let dark = hall || (snap.theme?.dark ?? (scheme == .dark))
-        // Founder 10-10: Top: WORDOCIOUS over two rings (DAILIES 0/8 · PUZZLES 0/10) on the left; the DAILIES title and
-        // the 8 dailies on the right, running to the right edge (its last column lines up with the last Puzzle).
-        // Middle: the PUZZLES title + all 10 Puzzles in one row. Bottom: the streak pair in line with next / countdown / points.
+        // Founder 10-10: the large widget's mirrored bands, scaled down and spread edge to edge. WORDOCIOUS on top; the
+        // DAILIES band (ring left, 8 chips right) over the PUZZLES band (10 chips left, ring right), one chip size;
+        // the streak pair + next / countdown / points along the bottom, as on the large.
         GeometryReader { g in
             let hasPuzzles = !snap.puzzleModes.isEmpty
-            let gap: CGFloat = 4
-            let title: CGFloat = 10
-            let bottomH: CGFloat = 20
-            let puzzleN = CGFloat(max(snap.puzzleModes.count, 1))
-            let puzzleChip = hasPuzzles ? min(30, (g.size.width - 5 * (puzzleN - 1)) / puzzleN) : 0
-            let topH = max(40, g.size.height - bottomH - (hasPuzzles ? puzzleChip + title + gap * 2 : 0) - gap)
-            let mark: CGFloat = 12
-            // The 8 dailies sit exactly over the last four Puzzles columns: same chip size, same column gap.
-            let pGap = hasPuzzles && puzzleN > 1 ? (g.size.width - puzzleChip * puzzleN) / (puzzleN - 1) : 8
-            let dChip = hasPuzzles ? min(puzzleChip * 1.1, (topH - title - 4) / 2) : min(40, (topH - title - 4) / 2)
-            let dailyW = hasPuzzles ? puzzleChip * 4 + pGap * 3 : dChip * 4 + 8 * 3
-            let leftW = g.size.width - dailyW - 10
-            let ring = max(26, min(topH - mark - 5, (leftW - 8) / (hasPuzzles ? 2 : 1)))
-            VStack(alignment: .leading, spacing: gap) {
-                HStack(alignment: .top, spacing: 10) {
+            let gap: CGFloat = 4, ringGap: CGFloat = 10, mark: CGFloat = 12, bottom: CGFloat = 18
+            let bands: CGFloat = hasPuzzles ? 2 : 1
+            let free = g.size.height - mark - bottom
+            // Three even gaps (under the lettering, between the bands, above the bottom line) of at least 4.
+            let c = max(16, min(34, (free - 3 * 5 - bands * gap) / (2 * bands)))
+            let ring = 2 * c + gap
+            let even = max(4, (free - bands * ring) / (hasPuzzles ? 3 : 2))
+            VStack(spacing: 0) {
+                Link(destination: homeURL) {
+                    WordmarkImage(size: .medium, halloween: hall, dark: dark, height: mark)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(height: mark)
+                Spacer().frame(height: even)
+                HStack(spacing: 0) {
                     Link(destination: homeURL) {
-                        VStack(alignment: .leading, spacing: 5) {
-                            WordmarkImage(size: .medium, halloween: hall, dark: dark, height: mark)
-                            HStack(spacing: 6) {
-                                DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
-                                    .frame(width: ring, height: ring)
-                                if hasPuzzles {
-                                    DailyRing(modes: snap.puzzleModes, dark: dark, label: "PUZZLES")
-                                        .frame(width: ring, height: ring)
-                                }
-                            }
-                        }
+                        DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
+                            .frame(width: ring, height: ring)
                     }
-                    .frame(width: leftW, alignment: .leading)
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack {
-                            Caps(text: "DAILIES", color: WInk.number(dark))
-                            Spacer()
-                            Caps(text: "\(snap.word.played)/\(snap.word.total)", color: WInk.label(dark).opacity(0.75))
-                        }
-                        .frame(height: title)
-                        ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: dChip, spread: true)
-                    }
-                    .frame(width: dailyW, height: topH)
+                    Spacer().frame(width: ringGap)
+                    ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: c, spread: true)
+                        .frame(height: ring)
                 }
-                .frame(height: topH)
+                .frame(height: ring)
                 if hasPuzzles {
-                    HStack {
-                        Caps(text: "PUZZLES", color: WInk.number(dark))
-                        Spacer()
-                        Caps(text: "\(snap.puzzleProgress.played)/\(snap.puzzleProgress.total)", color: WInk.label(dark).opacity(0.75))
+                    Spacer().frame(height: even)
+                    HStack(spacing: 0) {
+                        ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, maxChip: c, spread: true)
+                            .frame(height: ring)
+                        Spacer().frame(width: ringGap)
+                        Link(destination: homeURL) {
+                            DailyRing(modes: snap.puzzleModes, dark: dark, label: "PUZZLES")
+                                .frame(width: ring, height: ring)
+                        }
                     }
-                    .frame(height: title)
-                    // Every Puzzles chip links to its own daily (ChipGrid is linked by default).
-                    ChipGrid(modes: snap.puzzleModes, columns: snap.puzzleModes.count, dark: dark, maxChip: puzzleChip)
-                        .frame(height: puzzleChip)
+                    .frame(height: ring)
                 }
+                Spacer().frame(height: even)
                 Link(destination: homeURL) {
                     HStack(spacing: 8) {
-                        StreakPair(snap: snap, size: 20)
+                        StreakPair(snap: snap, size: bottom + 2)
                         StatLine(items: statTexts(snap, date, dark, nextFirst: true), dark: dark)
                     }
-                    .frame(height: bottomH)
+                    .frame(height: bottom)
                 }
             }
+            .frame(width: g.size.width, height: g.size.height, alignment: .top)
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(widgetPhrase(snap, date))
@@ -1121,6 +1108,9 @@ struct WidgetBackdrop: View {
     var halloween = false
     var date = Date()
     var skin: WSnapshot.ThemeSkin? = nil
+    /// Founder 10-10: on the medium / large layouts the content reaches every corner, so the motif sits smaller and
+    /// fainter (it read on top of NEXT / DAY STREAK).
+    var subtle = false
 
     private static let motifs: [(name: String, alignment: Alignment, w: CGFloat, opacity: Double)] = [
         ("widget-halloween-moon-bats", .topTrailing, 70, 0.55),
@@ -1138,7 +1128,7 @@ struct WidgetBackdrop: View {
                 LinearGradient(colors: [Color(widgetHex: "#000000"), Color(widgetHex: "#1f1004"), Color(widgetHex: "#3a1a05")],
                                startPoint: .top, endPoint: .bottom)
                 Image(m.name).resizable().interpolation(.high).scaledToFit()
-                    .frame(width: m.w).opacity(m.opacity)
+                    .frame(width: subtle ? m.w * 0.7 : m.w).opacity(subtle ? m.opacity * 0.35 : m.opacity)
             }
             .accessibilityHidden(true)
         } else if let skin {
@@ -1197,13 +1187,13 @@ private struct BackdropModifier: ViewModifier {
             // The system content margins pad the views; lock-screen accessories tint
             // themselves, so they get no background.
             content.containerBackground(for: .widget) {
-                if accessory { Color.clear } else { WidgetBackdrop(halloween: halloween, date: date, skin: skin) }
+                if accessory { Color.clear } else { WidgetBackdrop(halloween: halloween, date: date, skin: skin, subtle: true) }
             }
         } else if accessory {
             content
         } else {
             // iOS 16 has no content margins: the same 16 pt by hand.
-            content.padding(16).background(WidgetBackdrop(halloween: halloween, date: date, skin: skin))
+            content.padding(16).background(WidgetBackdrop(halloween: halloween, date: date, skin: skin, subtle: true))
         }
     }
 }
