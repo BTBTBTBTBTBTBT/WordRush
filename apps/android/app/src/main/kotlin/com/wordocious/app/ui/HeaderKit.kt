@@ -1,5 +1,6 @@
 package com.wordocious.app.ui
 
+import com.wordocious.app.ui.theme.WTheme
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -192,12 +193,15 @@ fun PageTitleText(
     fontSize: TextUnit = 22.sp,
     maxLines: Int = 2,
 ) {
+    // Founder 10-10 (readability): on a dark surface (dark theme / night season) each gradient stop is lifted until it reads.
+    val dark = WTheme.isDark
+    val stops = if (dark) accent.map { SurfaceInk.lift(it, true) } else accent
     Text(
         title.uppercase(),
         modifier = modifier.semantics { heading() },
         fontSize = fontSize, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
         maxLines = maxLines, overflow = TextOverflow.Ellipsis,
-        style = TextStyle(brush = Brush.horizontalGradient(accent), fontFamily = Nunito),
+        style = TextStyle(brush = Brush.horizontalGradient(stops), fontFamily = Nunito),
     )
 }
 

@@ -116,13 +116,14 @@ fun VSLiveTile(
                         Text("LIVE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
                         Text(
                             "· $countText", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = muted, fontFamily = Nunito,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            maxLines = 2, overflow = TextOverflow.Ellipsis,
                         )
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
+                            // Founder 10-10 (readability): a large font scale wraps the line instead of "Today's shared ba…".
                             subtitle, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                            maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
                         )
                         if (done) {
                             Spacer(Modifier.width(4.dp))
@@ -136,7 +137,7 @@ fun VSLiveTile(
                         )
                         Text(
                             "Bot of the day: ${bot.name}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = muted,
-                            fontFamily = Nunito, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            fontFamily = Nunito, maxLines = 2, overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }

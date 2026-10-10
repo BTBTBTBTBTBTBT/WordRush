@@ -35,13 +35,24 @@ fun FitText(
     textAlign: TextAlign? = null,
     minScale: Float = 0.6f,
     letterSpacing: TextUnit = TextUnit.Unspecified,
+    /**
+     * Founder 10-10 (readability): a multi-word text still wider than its slot at [minScale] wraps onto a second line at that
+     * size instead of being cut (a 1.3x font scale on a narrow phone clipped "Guess the name" / "Letter Ladder").
+     */
+    wrapAtMin: Boolean = false,
 ) {
     var scale by remember(text) { mutableFloatStateOf(1f) }
     var fitted by remember(text) { mutableStateOf(false) }
+    var wrap by remember(text) { mutableStateOf(false) }
     Text(
         text, fontSize = fontSize * scale, color = color, fontWeight = fontWeight, fontFamily = fontFamily, textAlign = textAlign, letterSpacing = letterSpacing,
-        maxLines = 1, softWrap = false, overflow = TextOverflow.Clip,
+        maxLines = if (wrap) 2 else 1, softWrap = wrap, overflow = TextOverflow.Clip,
         modifier = modifier.drawWithContent { if (fitted) drawContent() },
-        onTextLayout = { r -> if (r.hasVisualOverflow && scale > minScale) scale -= 0.05f else fitted = true },
+        onTextLayout = { r ->
+            if (wrap) fitted = true
+            else if (r.hasVisualOverflow && scale > minScale) scale -= 0.05f
+            else if (r.hasVisualOverflow && wrapAtMin && text.contains(' ')) wrap = true
+            else fitted = true
+        },
     )
 }

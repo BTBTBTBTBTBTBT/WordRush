@@ -332,7 +332,7 @@ internal fun ModeCardView(
                         // as a last resort (a name still wider than its slot at the uniform floor).
                         FitText(
                             card.title, fontSize = LocalCardNameSize.current.sp, fontWeight = FontWeight.Black,
-                            color = if (isLocked) WTheme.textMuted else (WTheme.season?.onCard(card.accent) ?: card.accent), minScale = 0.6f,
+                            color = if (isLocked) WTheme.textMuted else (WTheme.season?.onCard(card.accent) ?: card.accent), minScale = 0.6f, wrapAtMin = true,
                             modifier = Modifier.weight(1f),
                         )
                         Spacer(Modifier.width(4.dp))
@@ -352,7 +352,7 @@ internal fun ModeCardView(
                             HomeCardSpec.compactLine("${formatGuessStat(card.guessSemantics, card.guessBase, completion.guessCount)} · ${formatShortTime(completion.timeSeconds)}")
                         } else if (vsDone) "Played today" else card.desc,
                         fontSize = HomeCardSpec.DESC.sp, fontWeight = FontWeight.Medium, color = WTheme.textMuted,
-                        minScale = 0.7f,
+                        minScale = 0.7f, wrapAtMin = true,
                         modifier = Modifier.offset(y = (-3).dp),
                     )
                 }

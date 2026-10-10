@@ -1,5 +1,6 @@
 package com.wordocious.app.ui
 
+import androidx.compose.ui.graphics.toArgb
 import com.wordocious.app.ui.theme.Nunito
 
 import androidx.compose.foundation.background
@@ -589,6 +590,8 @@ private fun ChoiceTile(
         listOf(androidx.compose.ui.graphics.lerp(accent, Color.White, 0.22f), accent, androidx.compose.ui.graphics.lerp(accent, Color.Black, 0.12f)),
     )
     val sheen = androidx.compose.ui.graphics.Brush.verticalGradient(0f to Color.White.copy(alpha = 0.32f), 0.5f to Color.Transparent)
+    // Founder 10-10 (readability): white text only where it clears 4.5:1 on the glossy face (Halloween orange carries dark ink).
+    val onFace = Color(InkContrast.onSolid(androidx.compose.ui.graphics.lerp(accent, Color.White, 0.3f).toArgb()))
     Box(
         Modifier.fillMaxWidth()
             .squishClickable(label = "$label, $desc" + if (active) ", selected" else "", role = Role.RadioButton, onClick = onClick),
@@ -601,8 +604,8 @@ private fun ChoiceTile(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(label, fontSize = 14.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, color = if (active) Color.White else WTheme.text)
-                Text(desc, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito, color = if (active) Color.White.copy(alpha = 0.88f) else WTheme.textMuted) // Founder 10-10 (readability): the description wraps, never "…"
+                Text(label, fontSize = 14.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, color = if (active) onFace else WTheme.text)
+                Text(desc, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito, color = if (active) onFace.copy(alpha = 0.88f) else WTheme.textMuted) // Founder 10-10 (readability): the description wraps, never "…"
             }
             preview()
             Box(Modifier.size(20.dp).alpha(face).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {

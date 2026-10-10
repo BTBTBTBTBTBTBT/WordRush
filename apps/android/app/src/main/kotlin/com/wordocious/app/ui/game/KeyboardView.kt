@@ -182,7 +182,10 @@ private fun keyLookFor(state: TileState): KeyLook {
         else -> TileFace.ABSENT
     }
     val t = TileLooks.of(face, WTheme.colorblind)
-    return KeyLook(t.faceMid, if (face == TileFace.ABSENT) Color(0xFFEEF1F6) else Color.White)
+    // Founder 10-10 (readability): the key light map lifts the cap, so a not-in-word key at the tile's slate read ~2.6:1 under its
+    // letter; its fill is deepened 22% (white letter ~5:1 once the cap is drawn) while the board tile keeps its slate.
+    return if (face == TileFace.ABSENT) KeyLook(Color(com.wordocious.app.ui.TintMath.over(0xFF000000.toInt(), 0.22f, t.faceMid.toArgb())), Color.White)
+    else KeyLook(t.faceMid, Color.White)
 }
 
 /** A key filled in a fixed color (Codebreaker's settled letters). */

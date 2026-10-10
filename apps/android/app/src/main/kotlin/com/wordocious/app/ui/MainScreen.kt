@@ -202,8 +202,9 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                         )
                     }
                 }
-                Text(
-                    tab.label, fontSize = 11.sp, maxLines = 1, modifier = Modifier.clearAndSetSemantics { },
+                // Founder 10-10 (readability): "Leaderboard" lost its "d" at a 1.3x font scale on a narrow phone; it now steps down to fit.
+                FitText(
+                    tab.label, fontSize = 11.sp, modifier = Modifier.clearAndSetSemantics { }, minScale = 0.7f,
                     fontWeight = if (active) FontWeight.Black else FontWeight.ExtraBold,
                     color = if (active) (if (WTheme.season?.card != null) Color(0xFFFDBA74) else Color(0xFF6D28D9))
                         else if (WTheme.isDark) WTheme.textMuted else Color(0xFF8A78AD),
