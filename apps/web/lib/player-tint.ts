@@ -1,4 +1,5 @@
 import { AVATAR_BACKDROPS, avatarColorHex, resolveAvatar, type AvatarSource } from '@wordle-duel/core';
+import type { HeadlinePaletteSpec } from '@/lib/live-headline';
 
 // Founder 10-09: a person's name wears their own color, drawn from their mascot's backdrop (the Friends action menu's
 // title in the bubble lettering). Mirrors iOS PlayerTint.nameColor and Android playerNameColor; keep the three in step.
@@ -53,4 +54,19 @@ export function nameColorHex(bg: string | null | undefined, bodyColorId: string)
 export function playerNameColor(src: AvatarSource): string {
   const c = resolveAvatar(src).config;
   return nameColorHex(c.bg, c.color);
+}
+
+/** The player's secondary color (their pattern color in the mascot maker): the glow behind their podium name. */
+export function secondaryColorHex(patternColorId: string | null | undefined): string {
+  return avatarColorHex(patternColorId ?? 'purple');
+}
+
+/**
+ * The bubble lettering on a podium plate: purple letters + numbers with a white outline on a pale plate; white letters + gold
+ * numbers (dark outline) on a dark one. Mirrors iOS PlayerTint.platePalette and Android PlaqueInk.palette.
+ */
+export function platePaletteSpec(lightInk: boolean): HeadlinePaletteSpec {
+  return lightInk
+    ? { top: '#FFFFFF', bottom: '#EDE9FE', deep: '#3B0764', nameTop: '#FFFFFF', nameBottom: '#EDE9FE', numberTop: '#FFE07A', numberBottom: '#F5A524', rim: '#4C1D95' }
+    : { top: '#A855F7', bottom: '#6D28D9', deep: '#3B0764', nameTop: '#A855F7', nameBottom: '#6D28D9', numberTop: '#A855F7', numberBottom: '#6D28D9', rim: '#FFFFFF' };
 }

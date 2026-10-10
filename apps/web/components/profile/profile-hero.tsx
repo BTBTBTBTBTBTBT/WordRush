@@ -132,7 +132,7 @@ export function ProfileIdentity({ profile, friendsSince, isFriend, children }: {
     <div className="flex flex-col items-center gap-1.5 text-center">
       <div className="flex items-center justify-center gap-2 w-full" style={{ maxWidth: 360 }}>
         <div className="min-w-0 flex-1">
-          <BubbleText text={profile.username.toUpperCase()} accent={accent} maxSize={38} minSize={20} level={1} />
+          <BubbleText text={profile.username.toUpperCase()} accent={accent} maxSize={38} minSize={20} level={1} calm />
         </div>
         {isFriend && <FriendshipBadge />}
       </div>

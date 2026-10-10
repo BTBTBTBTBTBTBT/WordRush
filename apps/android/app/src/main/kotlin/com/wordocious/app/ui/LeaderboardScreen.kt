@@ -149,7 +149,8 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     var fetchedEntries by remember { mutableStateOf(seedBoard?.entries ?: emptyList()) }
     var yesterday by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var yesterdaySweep by remember { mutableStateOf<List<LeaderboardService.SweepEntry>>(emptyList()) }
-    var showYesterday by remember { mutableStateOf(false) }
+    // Founder 10-09: Yesterday opens with its podium showing; minimizing folds the whole thing to its header.
+    var showYesterday by remember { mutableStateOf(true) }
     // Yesterday's rows in hand are not for the current mode/filter yet (no cached copy) —
     // the card shows a blank body rather than the previous mode's podium or "No results".
     var yesterdayPending by remember { mutableStateOf(true) }
@@ -604,8 +605,9 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        if (!isSweep && userId != null) FriendsSegment(friendsOnly) { selectFriendsOnly(it) }
+                        // Founder 10-09: a smaller switch, sitting quietly on the RIGHT beside share.
                         Box(Modifier.weight(1f))
+                        if (!isSweep && userId != null) FriendsSegment(friendsOnly) { selectFriendsOnly(it) }
                         val canShare = if (isSweep) !loading && sweepEntries.isNotEmpty() else !boardLoading && entries.isNotEmpty()
                         if (canShare) {
                             SoftControl(
@@ -786,15 +788,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 }
             }
             item(key = "result-gap") { Spacer(Modifier.height(LB_CARD_GAP)) }
-            // §2.2 Your board for this mode (the replay, collapsible), tinted, under the result.
-            if (!isSweep) {
-                item(key = "completed-$selectedMode") {
-                    // BJ7: under the rank row the card reads YOUR BOARD (no duplicate solve line).
-                    androidx.compose.runtime.CompositionLocalProvider(
-                        com.wordocious.app.ui.game.LocalCompletedUnderRank provides (userRank != null),
-                    ) { com.wordocious.app.ui.game.CompletedDailyBoard(selectedMode) }
-                }
-            }
+            // Founder 10-09: the Completed Today dropdown is gone (the strip shows your rank + points; View board opens your finished board).
             item(key = "yesterday") {
                 // Founder 10-09: Yesterday sits UNDER today's last player and the Completed Today line (not in the stage): a small
                 // copy of the podium (top three + stats + glows); tap to open everyone else.
@@ -999,7 +993,7 @@ internal fun LbSectionLabel(text: String, modifier: Modifier = Modifier) = LbBoa
 /** Everyone | Friends (§207 toggle) as the tinted segmented control. */
 @Composable
 private fun FriendsSegment(friendsOnly: Boolean, onChange: (Boolean) -> Unit) =
-    SoftSegment(listOf(false to "Everyone", true to "Friends"), friendsOnly, onChange)
+    SoftSegment(listOf(false to "Everyone", true to "Friends"), friendsOnly, onChange, small = true)
 
 /**
  * The play row (FINISH_SPEC C2, compressed by AS4): ONE compact tinted row in the game's

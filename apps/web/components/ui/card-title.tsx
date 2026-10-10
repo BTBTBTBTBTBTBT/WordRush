@@ -9,7 +9,7 @@ import { BubbleText } from '@/components/ui/bubble-text';
 export function CardTitle({ children, color = '#7c3aed', maxSize = 19, className = '' }: { children: string; color?: string; maxSize?: number; className?: string }) {
   return (
     <div className={`min-w-0 flex-1 ${className}`} style={{ maxWidth: 240 }}>
-      <BubbleText text={children.toUpperCase()} accent={color} align="left" maxSize={maxSize} minSize={12} level={3} />
+      <BubbleText text={children.toUpperCase()} accent={color} align="left" maxSize={maxSize} minSize={12} level={3} calm />
     </div>
   );
 }
@@ -18,7 +18,7 @@ export function CardTitle({ children, color = '#7c3aed', maxSize = 19, className
 export function BubbleCount({ value, color }: { value: number; color: string }) {
   return (
     <div style={{ width: 44 }} className="mx-auto">
-      <BubbleText text={String(value)} accent={color} maxSize={20} minSize={12} slotWidth={44} level={3} />
+      <BubbleText text={String(value)} accent={color} maxSize={20} minSize={12} slotWidth={44} level={3} calm />
     </div>
   );
 }

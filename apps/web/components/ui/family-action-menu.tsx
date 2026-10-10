@@ -141,7 +141,7 @@ export function FamilyActionMenu({ title, subtitle, avatar, actions, onClose, la
           {avatar}
           <div className="min-w-0 flex-1" role="heading" aria-level={2}>
             {titleColor ? (
-              <BubbleText text={title.toUpperCase()} accent={titleColor} maxSize={26} minSize={15} align="left" />
+              <BubbleText text={title.toUpperCase()} accent={titleColor} maxSize={26} minSize={15} align="left" calm />
             ) : (
               <div className="font-black truncate" style={{ fontSize: 19, color: headingInk, lineHeight: 1.15 }}>{title}</div>
             )}

@@ -12,6 +12,10 @@ export interface HeadlinePaletteSpec {
   /** Names: the accent gradient. */
   nameTop: string;
   nameBottom: string;
+  /** Founder 10-09: numbers' own fill (default: the gold soft-number tint) and the atlas glyph rim (default: the warm rim). */
+  numberTop?: string;
+  numberBottom?: string;
+  rim?: string;
 }
 
 /** The thin gold outline every palette shares. */

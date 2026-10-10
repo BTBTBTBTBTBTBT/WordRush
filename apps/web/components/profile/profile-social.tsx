@@ -90,7 +90,7 @@ function CardTitle({ children }: { children: ReactNode }) {
   if (typeof children === 'string') {
     return (
       <div className="min-w-0" style={{ maxWidth: 240 }}>
-        <BubbleText text={children.toUpperCase()} accent={sectionTitleColor(children)} align="left" maxSize={20} minSize={13} level={3} />
+        <BubbleText text={children.toUpperCase()} accent={sectionTitleColor(children)} align="left" maxSize={20} minSize={13} level={3} calm />
       </div>
     );
   }

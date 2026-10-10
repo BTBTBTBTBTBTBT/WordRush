@@ -30,6 +30,8 @@ import { levelTier as coreLevelTier, levelTierLabel } from '@wordle-duel/core';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
+import { BubbleOneLine } from '@/components/ui/bubble-text';
+import { playerNameColor } from '@/lib/player-tint';
 import dynamic from 'next/dynamic';
 const ProStats = dynamic(() => import('@/components/profile/pro-stats').then(m => m.ProStats), { ssr: false });
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
@@ -496,11 +498,15 @@ export default function StatsPage() {
             </button>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 min-w-0">
-                {(profile as any).accent_color ? (
-                  <h1 className="text-2xl font-black truncate leading-tight" style={{ color: accentHex }}>{profile.username}</h1>
-                ) : (
-                  <h1 className="text-2xl font-black truncate leading-tight text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">{profile.username}</h1>
-                )}
+                {/* Founder 10-09: your name in the bubble lettering, in your own color (your backdrop), one line, shrinks to fit. */}
+                <h1 className="m-0 flex-1 min-w-0" aria-label={profile.username}>
+                  <BubbleOneLine
+                    text={(profile.username ?? '').toUpperCase()}
+                    accent={playerNameColor({ username: profile.username, avatarUrl: (profile as any).avatar_url, config: (profile as any).avatar_config, castId: (profile as any).avatar_cast_id, frame: (profile as any).avatar_frame, accentHex: (profile as any).accent_color })}
+                    size={24}
+                    align="left"
+                  />
+                </h1>
               </div>
               {memberSince && (
                 <p className="text-[11px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Playing since {memberSince}</p>

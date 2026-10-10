@@ -55,7 +55,7 @@ export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN, unit =
       {(!untitled || best) && (
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0" style={{ maxWidth: 200 }}>
-            {!untitled && <BubbleText text={noun.many.toUpperCase()} accent={CAST_COLORS.I} align="left" maxSize={20} minSize={13} level={3} />}
+            {!untitled && <BubbleText text={noun.many.toUpperCase()} accent={CAST_COLORS.I} align="left" maxSize={20} minSize={13} level={3} calm />}
           </div>
           {best && <span className="text-[10px] font-black" style={{ color: accentColor ?? '#7C3AED' }}>Best {best}</span>}
         </div>

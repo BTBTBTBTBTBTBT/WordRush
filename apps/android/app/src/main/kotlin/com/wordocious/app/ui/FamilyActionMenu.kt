@@ -164,7 +164,7 @@ fun FamilyActionMenu(
                     if (titleColor != null) {
                         BubbleText(
                             title.uppercase(), ThemeKit.accentPalette(titleColor), maxSize = 26, minSize = 15,
-                            sound = false, align = androidx.compose.ui.text.style.TextAlign.Start,
+                            sound = false, align = androidx.compose.ui.text.style.TextAlign.Start, animated = false,
                         )
                     } else {
                         androidx.compose.material3.Text(

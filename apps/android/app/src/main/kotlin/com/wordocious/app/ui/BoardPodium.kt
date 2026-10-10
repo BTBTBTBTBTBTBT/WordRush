@@ -246,7 +246,7 @@ fun BoardPodium(
     stageSpot?.let { PodiumStageCard(it, it.place) { stageSpot = null } }
     // 2.8 item 40: the steps are fixed-height art, so huge system text is capped at 1.3x here (reflow lives on the rows below)
     CappedFontScale {
-    Box(modifier.fillMaxWidth().then(if (bare) Modifier else Modifier.podiumStage(accent, dark)).padding(start = 10.dp, end = 10.dp, top = 8.dp)) {
+    Box(modifier.fillMaxWidth().then(if (bare) Modifier else Modifier.podiumStage(accent, dark)).padding(start = 10.dp, end = 10.dp, top = if (bare) 2.dp else 8.dp)) {
     PodiumFloor(Modifier.align(Alignment.BottomCenter))
     Row(
         Modifier.fillMaxWidth().padding(bottom = PodiumArt.FLOOR_RISE),
@@ -281,6 +281,14 @@ fun BoardPodium(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 if (s != null) {
+                    // Founder 10-09: the name rides ABOVE the head in the bubble lettering (their color, one line, glow in their
+                    // secondary color); the plaque below holds the numbers. Close to the head: standing figures pull it down 18 dp
+                    // (the winner only 4 dp so it stays above the crown), a photo tile 2 dp.
+                    PodiumNameAbove(
+                        s.name, s.userId, s.username ?: s.name, size = if (compact) 14f else (if (place == 1) 19f else 16f),
+                        pull = if (stands) (if (place == 1) 4.dp else 18.dp) else 2.dp,
+                        avatarUrl = s.avatarUrl, config = s.config, castId = s.castId, frame = s.frame, accentHex = s.accentHex,
+                    )
                     // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step (2x, no tile, posed by place).
                     if (stands) {
                         Box(
@@ -315,21 +323,10 @@ fun BoardPodium(
                         s.userId, s.username ?: s.name, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
                         frame = s.frame, accentHex = s.accentHex,
                     ) { ink ->
-                        Text(
-                            s.name, fontSize = if (compact) 12.sp else 13.sp, fontWeight = FontWeight.Black,
-                            color = ink.heading,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                        )
-                        // Points stay the headline (#1 a touch larger), then ONE muted detail line,
-                        // shrink-to-fit, never wrapping into the pedestal.
-                        SoftNumber(s.points, if (compact) (if (place == 1) 12.5.sp else 11.sp) else (if (place == 1) 14.5.sp else 13.sp), color = ink.muted)
+                        // Points stay the headline (#1 a touch larger), then ONE detail line, both in the bubble lettering on the plate's palette.
+                        BubbleOneLine(s.points.uppercase(), ink.palette, (if (compact) 14f else 17f) + (if (place == 1) 2f else 0f))
                         s.detail?.takeIf { it.isNotEmpty() }?.let { d ->
-                            FitText(
-                                d, if (compact) 9.sp else 10.sp, Modifier.fillMaxWidth().padding(top = 0.dp).offset(y = (-2).dp),
-                                color = ink.muted.copy(alpha = if (place == 1) 1f else 0.9f),
-                                fontWeight = if (place == 1) FontWeight.ExtraBold else FontWeight.Bold,
-                                textAlign = TextAlign.Center, minScale = 0.6f,
-                            )
+                            BubbleOneLine(d.uppercase(), ink.palette, if (compact) 10f else 11.5f, minScale = 0.55f)
                         }
                     }
                     // Friends board: the taunt bell stays reachable for friends on the podium.
@@ -472,14 +469,20 @@ private fun PodiumStageCard(spot: BoardPodiumSpot, place: Int, onDismiss: () -> 
             Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(if (dark) WTheme.surface else Color.White),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            DressStage(posed, initial, photoUrl = resolved.photoUrl, height = 250.dp, mascotSize = 160.dp, mascotDescription = A11yLabels.mascot(false, spot.name)) {
+            DressStage(posed, initial, photoUrl = resolved.photoUrl, height = 250.dp, mascotSize = 160.dp, mascotDescription = A11yLabels.mascot(false, spot.name),
+                glow = listOf(Color(0xFFFCD34D), Color(0xFFE2E8F0), Color(0xFFFB923C))[place.coerceIn(1, 3) - 1]) {
                 StageCloseButton(label = "Close", modifier = Modifier.align(Alignment.TopEnd).padding(8.dp), onClick = onDismiss)
             }
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(spot.name, fontSize = 20.sp, fontWeight = FontWeight.Black, color = if (dark) WTheme.text else FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                SoftNumber(spot.points, 15.sp)
+                // Founder 10-09 ("no more plain text anywhere"): the name and the points in the bubble lettering, the name in the
+                // player's own color (their backdrop), and View profile as the family cast button.
+                BubbleText(
+                    spot.name.uppercase(), ThemeKit.accentPalette(coreHexColor(com.wordocious.core.PlayerTint.nameHex(resolved.config))),
+                    maxSize = 30, minSize = 18, animated = false,
+                )
+                BubbleText(spot.points.uppercase(), ThemeKit.accentPalette(Color(0xFFF5B82E)), maxSize = 22, minSize = 14, animated = false)
                 spot.onClick?.let { go ->
-                    QuietButton("View profile", { onDismiss(); go() }, Modifier.padding(top = 6.dp), size = CandySize.SMALL)
+                    CastButton("View profile", { onDismiss(); go() }, Modifier.padding(top = 6.dp), color = CastColor.PURPLE, size = CastSize.M)
                 }
             }
         }

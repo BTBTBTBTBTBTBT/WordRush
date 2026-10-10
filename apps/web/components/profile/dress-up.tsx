@@ -282,9 +282,11 @@ export function warmDressArt() {
  * The Stage: the player's backdrop, soft curtains at the sides, a spotlight, the podium (ChatGPT stage set)
  * and the living mascot (or the framed photo) standing on it. `children` sit on top (the header row).
  */
-export function DressStage({ config, initial, photo, height = 300, mascotSize = 176, hopToken = 0, curtains = true, bulbs = false, children, rounded = true }: {
+export function DressStage({ config, initial, photo, height = 300, mascotSize = 176, hopToken = 0, curtains = true, bulbs = false, children, rounded = true, glow }: {
   config: AvatarConfig; initial: string; photo?: React.ReactNode; height?: number; mascotSize?: number; hopToken?: number;
   curtains?: boolean; bulbs?: boolean; children?: React.ReactNode; rounded?: boolean;
+  /** Founder 10-09: a soft halo (hex) behind the figure; the podium Stage card glows in the place's metal. */
+  glow?: string;
 }) {
   const podiumW = Math.min(232, mascotSize * 1.34);
   const podiumH = podiumW * (241 / 555);
@@ -300,6 +302,15 @@ export function DressStage({ config, initial, photo, height = 300, mascotSize = 
       {bulbs && <StageArt name="art-dress-bulbs" width={280} className="absolute top-1.5 left-1/2 -translate-x-1/2" />}
       <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center" style={{ bottom: 10 }}>
         <StageArt name="art-dress-podium" width={podiumW} />
+        {glow && (
+          <span
+            aria-hidden="true" className="absolute left-1/2 pointer-events-none"
+            style={{
+              width: mascotSize * 1.5, height: mascotSize * 1.35, marginLeft: -(mascotSize * 0.75), bottom: podiumH * 0.42 + mascotSize * 0.05, borderRadius: '50%',
+              background: `radial-gradient(ellipse at 50% 50%, ${glow}bf 0%, ${glow}47 50%, ${glow}00 100%)`, filter: 'blur(10px)',
+            }}
+          />
+        )}
         <div className="absolute left-1/2 -translate-x-1/2 flex justify-center" style={{ bottom: podiumH * 0.42 }}>
           {photo ?? <LiveMascot config={config} initial={initial} size={mascotSize} hopToken={hopToken} />}
         </div>

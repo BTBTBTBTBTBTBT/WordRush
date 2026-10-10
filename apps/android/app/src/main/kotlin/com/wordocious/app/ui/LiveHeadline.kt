@@ -93,6 +93,8 @@ object HeadlineTokens {
 data class HeadlinePalette(
     val top: Color, val bottom: Color, val deep: Color, val nameTop: Color, val nameBottom: Color,
     val outline: Color = Color(0xFFF5C542),
+    /** Founder 10-09: numbers' own fill (null = the gold soft-number tint) and the glyph rim (null = the atlas's warm rim). */
+    val numberTop: Color? = null, val numberBottom: Color? = null, val rim: Color? = null,
 ) {
     companion object {
         /** Home banner: purple → magenta. */
@@ -119,7 +121,7 @@ private val OUTLINE_CREAM = Color(0xFFFFF7D6)
 private val NUMBER_TOP = Color(0xFFFFE9A3)
 private val NUMBER_BOTTOM = Color(0xFFF59E0B)
 private const val NUMBER_SCALE = 1.12f
-private const val POP_STAGGER_MS = 25
+private const val POP_STAGGER_MS = 30
 private const val POP_MS = 260
 private const val SWEEP_PERIOD_MS = 6000
 private const val SWEEP_MS = 900
@@ -151,6 +153,8 @@ fun LiveHeadline(
     maxLines: Int = 2,
     /** The pop's tiny tick (off for a layer that is laid out but not shown). */
     sound: Boolean = true,
+    /** Founder 10-09: false = appears whole (labels, names, numbers); only headlines pop letter by letter. */
+    pops: Boolean = true,
 ) {
     val measurer = rememberTextMeasurer(cacheSize = 4)
     val fontResolver = androidx.compose.ui.platform.LocalFontFamilyResolver.current
@@ -173,7 +177,7 @@ fun LiveHeadline(
         }
         val n = art.glyphs.size
         val total = if (n == 0) 0 else (n - 1) * POP_STAGGER_MS + POP_MS
-        val still = reduced || calm
+        val still = reduced || calm || !pops
         val pop = remember { Animatable(Float.MAX_VALUE) }
         LaunchedEffect(text) {
             if (still || n == 0) { pop.snapTo(Float.MAX_VALUE); return@LaunchedEffect }

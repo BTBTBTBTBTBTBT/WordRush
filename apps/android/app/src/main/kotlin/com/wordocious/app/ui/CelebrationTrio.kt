@@ -1,5 +1,12 @@
 package com.wordocious.app.ui
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.StartOffset
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,8 +16,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -25,44 +34,39 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.wordocious.app.R
 import com.wordocious.app.ui.theme.WTheme
-import kotlin.math.PI
-import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.sin
 
 /**
  * Founder 10-09 (iOS CelebrationTrio): the Flawless banner's celebrating cast, alive. Three cheer poses (D, O, I) on one floor
- * under a small bunting, each bouncing, swaying and squashing on its own offset beat; the bunting sways a touch from its
- * center and four gold sparkles twinkle. Reduce Motion / Battery Saver: the same scene, still. Transform + alpha only, read in
- * graphicsLayer so a frame never recomposes the tree.
+ * under a small bunting that hangs still; each figure hops (stretched at the top, squashed on the landing) with a slower
+ * side-to-side sway on top, on its own offset beat, and four gold sparkles twinkle. Every move is a platform-native continuous
+ * animation (rememberInfiniteTransition, read in graphicsLayer so a frame never recomposes the tree), started a beat after the
+ * first layout. Reduce Motion / Battery Saver: the same scene, still.
  */
 @Composable
 internal fun CelebrationTrio(height: Dp, modifier: Modifier = Modifier) {
     val still = WTheme.reducedMotion || WTheme.calmMotion
-    val time = remember { mutableFloatStateOf(0f) }
+    // Start the loops a beat AFTER the first layout, so the figures hop in place instead of swimming while the size settles.
+    var started by remember { mutableStateOf(false) }
     LaunchedEffect(still) {
-        if (still) { time.floatValue = 0f; return@LaunchedEffect }
-        while (true) androidx.compose.runtime.withFrameNanos { time.floatValue = (it / 1_000_000_000.0 % 100_000.0).toFloat() }
+        started = false
+        if (!still) { kotlinx.coroutines.delay(200); started = true }
     }
+    val inf = rememberInfiniteTransition(label = "trio")
     BoxWithConstraints(modifier.fillMaxSize().clearAndSetSemantics { }) {
         val w = maxWidth
         val h = height
-        val fig = min(h.value * 0.74f, w.value / 3.6f).dp
-        val bunting = min(w.value * 0.40f, 150f).dp
+        val fig = min(h.value * 0.66f, w.value / 3.6f).dp
+        val bunting = min(w.value * 0.36f, 136f).dp
         val casts = listOf(R.drawable.art_pose_d_cheer, R.drawable.art_pose_o2_cheer, R.drawable.art_pose_i_cheer)
-        // the bunting, swaying a touch from its top center
+        // the bunting hangs still (only the cast celebrates), centered at 9% of the height
         Image(
             artPainter(R.drawable.age_bunting, bunting), contentDescription = null, contentScale = ContentScale.Fit,
-            modifier = Modifier.offset(x = (w - bunting) / 2, y = h * 0.17f - h * 0.15f).width(bunting).height(h * 0.30f)
-                .graphicsLayer {
-                    transformOrigin = TransformOrigin(0.5f, 0f)
-                    rotationZ = if (still) 0f else (sin(time.floatValue * 1.3f) * 1.6f)
-                },
+            modifier = Modifier.offset(x = (w - bunting) / 2, y = h * 0.09f - h * 0.10f).width(bunting).height(h * 0.20f),
         )
         // one shared floor shadow
         androidx.compose.foundation.layout.Box(
-            Modifier.offset(x = (w - fig * 3.2f) / 2, y = h - 13.dp).size(fig * 3.2f, 14.dp).drawBehind {
+            Modifier.offset(x = (w - fig * 3.2f) / 2, y = h - 25.dp).size(fig * 3.2f, 14.dp).drawBehind {
                 drawOval(
                     Brush.radialGradient(
                         listOf(Color(0xFF2E1065).copy(alpha = 0.28f), Color(0xFF2E1065).copy(alpha = 0f)),
@@ -72,24 +76,31 @@ internal fun CelebrationTrio(height: Dp, modifier: Modifier = Modifier) {
                 )
             },
         )
-        casts.forEachIndexed { i, res ->
-            val phase = i * 0.9f
+        val casts3 = casts
+        casts3.forEachIndexed { i, res ->
+            val delayMs = i * 180
+            // hop: 0 = on the ground (stretched wide and low), 1 = at the top; 0.42 s each way
+            val hop by inf.animateFloat(
+                0f, 1f, infiniteRepeatable(tween(420, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(delayMs)),
+                label = "hop$i",
+            )
+            // sway: -4 to 4 degrees over 0.95 s each way, starting twice as late as the hop
+            val sway by inf.animateFloat(
+                -4f, 4f, infiniteRepeatable(tween(950, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(delayMs * 2)),
+                label = "sway$i",
+            )
             val cx = (w - fig) / 2 + fig * 0.95f * (i - 1)
             Image(
                 artPainter(res, fig), contentDescription = null, contentScale = ContentScale.Fit,
-                modifier = Modifier.offset(x = cx, y = h - fig - 4.dp).size(fig).graphicsLayer {
-                    if (!still) {
-                        val t = time.floatValue
-                        val beat = ((t * 2.2f + phase) % (2f * PI.toFloat()))
-                        val up = max(0f, sin(beat))                         // 0..1 hop
-                        val squash = 1f - 0.06f * max(0f, -sin(beat))        // squash on the landing
-                        transformOrigin = TransformOrigin(0.5f, 1f)
-                        scaleX = 2f - squash
-                        scaleY = squash
-                        rotationZ = sin(t * 1.7f + phase) * 4f
-                        translationY = -up * fig.toPx() * 0.08f
+                modifier = Modifier.offset(x = cx, y = h - fig - 16.dp).size(fig).graphicsLayer {
+                    transformOrigin = TransformOrigin(0.5f, 1f)
+                    if (started) {
+                        scaleX = 1.04f - 0.07f * hop
+                        scaleY = 0.95f + 0.08f * hop
+                        translationY = -hop * fig.toPx() * 0.09f
+                        rotationZ = sway
                     } else {
-                        transformOrigin = TransformOrigin(0.5f, 1f)
+                        scaleX = 1.04f; scaleY = 0.95f; rotationZ = -4f
                     }
                 },
             )
@@ -97,10 +108,21 @@ internal fun CelebrationTrio(height: Dp, modifier: Modifier = Modifier) {
         val xs = floatArrayOf(0.22f, 0.78f, 0.35f, 0.66f)
         val ys = floatArrayOf(0.30f, 0.26f, 0.12f, 0.10f)
         for (k in 0 until 4) {
+            val twinkle by inf.animateFloat(
+                0f, 1f, infiniteRepeatable(tween(800 + k * 170, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(k * 250)),
+                label = "spark$k",
+            )
             GoldSparkle(
                 9.dp,
                 Modifier.offset(x = w * xs[k] - 4.5.dp, y = h * ys[k] - 4.5.dp).graphicsLayer {
-                    alpha = if (still) 0.8f else (0.35f + 0.65f * abs(sin(time.floatValue * 1.9f + k)))
+                    if (still) {
+                        alpha = 0.8f
+                    } else {
+                        val t = if (started) twinkle else 0f
+                        alpha = 0.3f + 0.7f * t
+                        val sc = 0.8f + 0.35f * t
+                        scaleX = sc; scaleY = sc
+                    }
                 },
             )
         }

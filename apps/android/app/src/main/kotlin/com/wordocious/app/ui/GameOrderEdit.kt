@@ -24,6 +24,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.shadow
@@ -192,11 +196,27 @@ fun Modifier.reorderTile(state: GameOrderEditState, id: String, section: GameOrd
 @Composable
 fun GameOrderPencil(state: GameOrderEditState, section: GameOrderSection, modifier: Modifier = Modifier) {
     if (!GameOrderStore.canEdit || state.editing == section) return
-    HelperButton(
-        text = null, onClick = { state.editing = section }, modifier = modifier,
-        icon = FamIcon.PENCIL, circle = true,
-        contentDescription = if (section == GameOrderSection.DAILIES) "Reorder Dailies" else "Reorder Puzzles",
-    )
+    // Founder 10-09 ("brown ... an eyesore"): a quiet frosted coin with the soft clay shuffle mark, not the season helper pill:
+    // present, but it never competes with the section art. 30 dp coin, 44 dp hit area, 80% opacity.
+    val dark = com.wordocious.app.ui.theme.WTheme.isDark
+    val ink = if (dark) androidx.compose.ui.graphics.Color(0xFFC4B5FD) else androidx.compose.ui.graphics.Color(0xFF7C3AED)
+    val fill = if (dark) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.10f) else androidx.compose.ui.graphics.Color(0xFF7C3AED).copy(alpha = 0.08f)
+    val hair = if (dark) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.16f) else androidx.compose.ui.graphics.Color(0xFF7C3AED).copy(alpha = 0.14f)
+    androidx.compose.foundation.layout.Box(
+        modifier.size(44.dp).alpha(0.8f)
+            .squishClickable(
+                label = if (section == GameOrderSection.DAILIES) "Reorder Dailies" else "Reorder Puzzles",
+                role = androidx.compose.ui.semantics.Role.Button,
+            ) { state.editing = section },
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.compose.foundation.layout.Box(
+            Modifier.size(30.dp)
+                .background(fill, androidx.compose.foundation.shape.CircleShape)
+                .border(1.dp, hair, androidx.compose.foundation.shape.CircleShape),
+            contentAlignment = Alignment.Center,
+        ) { FamIconImage(FamIcon.SHUFFLE, ink, 15.dp) }
+    }
 }
 
 /** The family Done / Reset bar shown under a title while its list is being reordered. */

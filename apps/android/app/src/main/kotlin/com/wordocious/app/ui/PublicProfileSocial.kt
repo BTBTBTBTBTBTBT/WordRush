@@ -109,7 +109,7 @@ private fun CardTitle(text: String, accent: Color = SOCIAL_PURPLE) {
     // color; composite captions ("YOU vs NAME") keep the quiet caps line.
     val hex = com.wordocious.core.StatsProfile.SECTION_TITLE_COLORS[text]
     if (hex != null) {
-        BubbleText(text, ThemeKit.accentPalette(coreHexColor(hex)), Modifier.widthIn(max = 240.dp), maxSize = 20, minSize = 13, align = androidx.compose.ui.text.style.TextAlign.Start)
+        BubbleText(text, ThemeKit.accentPalette(coreHexColor(hex)), Modifier.widthIn(max = 240.dp), maxSize = 20, minSize = 13, align = androidx.compose.ui.text.style.TextAlign.Start, animated = false)
     } else FinishLabel(text, color = darkenInk(accent))
 }
 

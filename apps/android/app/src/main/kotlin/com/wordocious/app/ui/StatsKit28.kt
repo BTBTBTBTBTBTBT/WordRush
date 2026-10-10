@@ -262,7 +262,12 @@ fun HeadToHeadSection(records: StatsProfile.PocketRecords?, onOpenProfile: (Stri
                     PlayerAvatar(f.username, 40.dp, userId = f.id, avatarUrl = f.avatarUrl, config = f.avatarConfig, castId = f.avatarCastId, frame = f.avatarFrame)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Text(f.username, fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.text else FinishInk.heading, maxLines = 1, modifier = Modifier.weight(1f))
+                            // Founder 10-09: the friend's name in the bubble lettering, in their own color; one line, shrinks to fit.
+                            BubbleOneLine(
+                                f.username.uppercase(),
+                                rememberPlayerNamePalette(f.id, f.username, f.avatarUrl, f.avatarConfig, f.avatarCastId, f.avatarFrame),
+                                16f, Modifier.weight(1f), align = androidx.compose.ui.text.style.TextAlign.Start,
+                            )
                             SoftNumber("$wins–$losses", 16.sp)
                         }
                         Text(StatsProfile.headToHeadLine(vs, pocket), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted, maxLines = 1)

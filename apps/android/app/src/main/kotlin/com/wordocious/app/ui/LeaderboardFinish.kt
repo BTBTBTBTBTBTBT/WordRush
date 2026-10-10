@@ -106,9 +106,11 @@ internal fun LbBoardLabel(text: String, modifier: Modifier = Modifier) {
  * lift; every segment squishes (A9). Announced as tabs with their selected state.
  */
 @Composable
-internal fun <T> SoftSegment(options: List<Pair<T, String>>, selected: T, onChange: (T) -> Unit) {
+internal fun <T> SoftSegment(options: List<Pair<T, String>>, selected: T, onChange: (T) -> Unit, small: Boolean = false) {
     // The button family: every two-way switch is the candy segmented (frosted track + glossy purple thumb).
-    CandySegmentedToggle(options, selected, onChange, height = 34.dp, width = 168.dp)
+    // Founder 10-09: `small` = a quiet switch that sits beside another control (Leaderboard's Everyone | Friends): 26 dp, 11 sp labels.
+    if (small) CandySegmentedToggle(options, selected, onChange, height = 26.dp, width = 148.dp, fontSize = 11.sp)
+    else CandySegmentedToggle(options, selected, onChange, height = 34.dp, width = 168.dp)
 }
 
 /** A row's rank number (mockup `.lrow .n`: 15 / 900 #8a78ad, a 28 dp column; medal tints for 1–3). */

@@ -96,7 +96,7 @@ fun ProfileIdentityBlock(
     } else ThemeKit.accentPalette(ProfileAccent.color(accentHex))
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            BubbleText(username.uppercase(), palette, Modifier.widthIn(max = 320.dp), maxSize = 38, minSize = 20)
+            BubbleText(username.uppercase(), palette, Modifier.widthIn(max = 320.dp), maxSize = 38, minSize = 20, animated = false)
             if (isFriend) FriendshipBadgeView()
         }
         if (isFriend) {

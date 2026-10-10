@@ -108,9 +108,13 @@ export function useReorder({ ids, pinned, editing, onEnterEdit, onMove, canEdit 
  * The pencil glyph built into a section title (the title art stays centered; the pencil sits at its
  * trailing edge in a tinted family circle). Hidden while editing (the Done bar takes over).
  */
-export function TitlePencil({ onClick, label, tint = '#7c3aed' }: { onClick: () => void; label: string; tint?: string }) {
+export function TitlePencil({ onClick, label }: { onClick: () => void; label: string; tint?: string }) {
+  // Founder 10-09 ("an eyesore"): a quiet frosted coin with the soft clay shuffle mark, not the season helper pill: present, but it
+  // never competes with the section art. 30px coin, 44px hit area, 80% opacity (iOS GameOrderTitleAccessory).
   return (
-    <HelperButton circle tint={tint} icon={<FamIcon name="pencil" size={16} />} aria-label={label} onClick={onClick} className="order-pencil" />
+    <button type="button" data-squish aria-label={label} onClick={onClick} className="order-pencil order-coin">
+      <span aria-hidden="true" className="order-coin-face"><FamIcon name="shuffle" size={15} ink="var(--order-coin-ink)" /></span>
+    </button>
   );
 }
 

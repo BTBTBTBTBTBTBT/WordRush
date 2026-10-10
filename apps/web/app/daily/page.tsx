@@ -22,7 +22,6 @@ import { PAGE_SCENES, artSrc } from '@/lib/art';
 import { preloadMascotArt } from '@/components/avatar/mascot-avatar';
 import { GameArt } from '@/components/ui/game-art';
 import { GameTileGlyph } from '@/components/ui/game-tile';
-import { SoftCompletedCards } from '@/components/game/collapsible-completed-card';
 import {
   BoardCard, BoardRow, CompactResultRow, DisclosureHeader, LB_GOLD, RowBadge, SECTION_LABEL, SWEEP_BADGE_COL, SegmentedPill, SweepBadge,
 } from '@/components/leaderboard/board-rows';
@@ -65,7 +64,6 @@ import {
   shareYesterdayPodiumCard,
   shareYesterdaySweepPodiumCard,
 } from '@/lib/leaderboard-share-flow';
-import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 import { SweepModeDots, sweepStatsText } from '@/components/leaderboard/sweep-mode-dots';
 import { PageBackground } from '@/components/ui/page-background';
 import { fetchFriendsBoard, fetchModeBoard, fetchSweepBoard, lbCache, modeBoardKey, sweepBoardKey, sweepCache } from '@/lib/leaderboard-cache';
@@ -153,7 +151,8 @@ export default function DailyPage() {
   const [countState, setPlayerCount] = useState(0);
   const [loadingState, setLoading] = useState(true);
   const [boardFor, setBoardFor] = useState<string | null>(null);
-  const [showYesterday, setShowYesterday] = useState(false);
+  // Founder 10-09: Yesterday opens with its podium showing; minimizing folds the whole thing to its header.
+  const [showYesterday, setShowYesterday] = useState(true);
   // §223: per-user mode detail behind the sweep dot strips + guess/hint totals.
   const [sweepDetailsState, setSweepDetails] = useState<Map<string, SweepDetails>>(new Map());
   // §248: current flawless streaks for FLAWLESS rows — "FLAWLESS ×4" pills.
@@ -718,7 +717,7 @@ export default function DailyPage() {
       points: labels.get(entry.composite_score) ?? formatScore(entry.composite_score),
       badge: <WinLossBadge won={entry.completed} size={15} />,
       nameSuffix: weekCrown(entry.user_id),
-      extra: <span className="text-[10px] font-bold text-center leading-tight" style={{ color: 'var(--color-text-secondary)' }}>{lbStatsText(entry)}</span>,
+      detail: lbStatsText(entry),
       // Friends board: the taunt bell stays reachable for friends on the podium.
       action: friendsOnly && user && !me ? tauntButton(entry) : undefined,
     };
@@ -830,18 +829,18 @@ export default function DailyPage() {
             </div>
 
             {/* the podium's header line: Everyone | Friends and share */}
-            <div className="flex items-center justify-between gap-2 px-3" style={{ minHeight: 34 }}>
-              <div className="flex items-center">
-                {!isSweep && user && (
-                  <SegmentedPill
-                    label="Everyone or Friends"
-                    accent={color}
-                    value={friendsOnly}
-                    onChange={setFriendsOnly}
-                    options={[[false, 'Everyone'], [true, 'Friends']] as const}
-                  />
-                )}
-              </div>
+            {/* Founder 10-09: a smaller Everyone | Friends switch, on the RIGHT beside share. */}
+            <div className="flex items-center justify-end gap-2 px-3" style={{ minHeight: 34 }}>
+              {!isSweep && user && (
+                <SegmentedPill
+                  label="Everyone or Friends"
+                  accent={color}
+                  value={friendsOnly}
+                  onChange={setFriendsOnly}
+                  options={[[false, 'Everyone'], [true, 'Friends']] as const}
+                  small
+                />
+              )}
               {!boardLoading && (isSweep ? sweepLeaderboard.length > 0 : leaderboard.length > 0) && (
                 <HeaderGlyph
                   icon="share"
@@ -929,12 +928,7 @@ export default function DailyPage() {
         </div>
 
         <div>
-        {/* Your finished board (§254), collapsible — per-mode only; Sweep has no board. */}
-        {!isSweep && (
-          <SoftCompletedCards underRank={showResult}>
-            <CompletedDailyBoard modeId={selectedMode} />
-          </SoftCompletedCards>
-        )}
+        {/* Founder 10-09: the Completed Today dropdown is gone (the strip shows your rank + points; View board opens your finished board). */}
         {/* Yesterday (founder 10-09): UNDER today's last player and the Completed Today line (not in the stage) — a small copy of the podium; tap to open everyone else. */}
         <YesterdayLedge
           places={isSweep ? ySweepPodium : yLbPodium}
