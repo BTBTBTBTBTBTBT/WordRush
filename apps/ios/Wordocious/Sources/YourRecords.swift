@@ -218,7 +218,7 @@ struct SweepRecordsCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
                     ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: 32)
-                    Text("Daily Sweeps").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                    CardTitle("Daily Sweeps", color: sweepAccent)
                 }
                 if sweep.hasData {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
@@ -286,7 +286,7 @@ struct PuzzleSweepsCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
                     ModeIconView(icon: .game("more", .symbol("square.grid.2x2")), accent: accent, box: 32)
-                    Text("Puzzles Sweeps").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                    CardTitle("Puzzles Sweeps", color: accent)
                 }
                 if totals.sweepDays > 0 {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
@@ -319,7 +319,7 @@ struct WordOfTheDayRecordCard: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 10) {
                         ModeIconView(icon: .symbol("character.book.closed.fill"), accent: accent, box: 32)
-                        Text("Word of the Day").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                        CardTitle("Word of the Day", color: accent)
                     }
                     let pct = Int((Double(record.right) / Double(max(1, record.answered)) * 100).rounded())
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 6) {
@@ -351,7 +351,7 @@ struct GameRecordsCard: View {
         RecordCardShell(bar: [accent, accent.opacity(0.53)]) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("Your Records").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                    CardTitle("Your Records", color: accent)
                     Spacer()
                     if !held.isEmpty {
                         HStack(spacing: 3) {
@@ -411,8 +411,8 @@ struct RecordsHeldRow: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
-                FinishLabel("Medals", color: Color(hex: 0xA2560C))
-                HStack(spacing: 10) {
+                CardTitle("Medals", color: Color(hex: 0xF59E0B), maxSize: 17)
+                HStack(spacing: 4) {
                     medalTally("gold", auth.profile?.goldMedals ?? 0, "gold", fallback: "crown.fill", gold)
                     medalTally("silver", auth.profile?.silverMedals ?? 0, "silver", fallback: "medal.fill", Color(hex: 0x9CA3AF))
                     medalTally("bronze", auth.profile?.bronzeMedals ?? 0, "bronze", fallback: "medal.fill", Color(hex: 0xB45309))
@@ -427,7 +427,7 @@ struct RecordsHeldRow: View {
                 if let onOpenRecords { onOpenRecords() } else { showRecords = true }
             } label: {
                 VStack(alignment: .leading, spacing: 6) {
-                    FinishLabel("Global records", color: Color(hex: 0x6D28D9))
+                    CardTitle("Global records", color: Color(hex: 0x7C3AED), maxSize: 17)
                     HStack(spacing: 4) {
                         MedalArt(kind: "trophy", size: 20, fallbackSymbol: "star.fill", fallbackColor: gold)
                             .opacity(recordsHeld.isEmpty ? 0.5 : 1)
@@ -448,10 +448,14 @@ struct RecordsHeldRow: View {
 
     /// One medal count: the glossy medal art + a soft number.
     private func medalTally(_ kind: String, _ count: Int, _ label: String, fallback: String, _ color: Color) -> some View {
-        HStack(spacing: 4) {
-            MedalArt(kind: kind, size: 20, fallbackSymbol: fallback, fallbackColor: color)
-            Text("\(count)").softNumber(15)
+        // Founder 10-09: the medal count reads big, in the bubble numbers (it was a small plain number).
+        VStack(spacing: 2) {
+            MedalArt(kind: kind, size: 28, fallbackSymbol: fallback, fallbackColor: color)
+            BubbleTextView(text: "\(count)", palette: .accent(color), maxSize: 20, minSize: 12, slotWidth: 44,
+                           animated: false)
+                .frame(width: 44)
         }
+        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(count) \(label)")
     }
@@ -484,7 +488,7 @@ struct TrophyShelf: View {
         return RecordCardShell(bar: [Color(hex: 0xFBBF24), gold]) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    FinishLabel("Your trophy shelf", color: Color(hex: 0xA2560C))
+                    CardTitle("Your trophy shelf", color: Color(hex: 0xF59E0B), maxSize: 17)
                     Spacer()
                     Button {
                         guard !sharingShelf else { return }

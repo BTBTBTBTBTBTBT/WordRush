@@ -4,10 +4,10 @@
 // correctly and a secret achievement unlocks (shown only once earned). Long-press again → back to normal laughs.
 // Pure; pinned across TS / Swift / Kotlin by musical-cast-fixtures.json.
 //
-// Behind the musicalCast flag: ON in debug builds, OFF in release until the founder approves.
+// Behind the musicalCast flag: ON in debug builds, ON in release too (founder 10-09: the tunes ship in 2.8).
 
 /** The flag: on in debug (web dev, iOS DEBUG, Android BuildConfig.DEBUG), off in release. */
-export const MUSICAL_CAST_FLAG = { debug: true, release: false } as const;
+export const MUSICAL_CAST_FLAG = { debug: true, release: true } as const;
 
 export function musicalCastEnabled(isDebugBuild: boolean): boolean {
   return isDebugBuild ? MUSICAL_CAST_FLAG.debug : MUSICAL_CAST_FLAG.release;

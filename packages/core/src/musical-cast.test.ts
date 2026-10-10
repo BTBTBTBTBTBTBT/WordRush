@@ -14,7 +14,7 @@ const idFor = (midi: number) => MUSICAL_CAST_IDS[MUSICAL_SCALE.indexOf(midi as (
 
 describe('the flag', () => {
   it('on in debug, off in release', () => {
-    expect(MUSICAL_CAST_FLAG).toEqual({ debug: true, release: false });
+    expect(MUSICAL_CAST_FLAG).toEqual({ debug: true, release: true });
     expect(musicalCastEnabled(true)).toBe(true);
     expect(musicalCastEnabled(false)).toBe(false);
   });

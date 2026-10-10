@@ -7,10 +7,10 @@ import Foundation
 /// Long-press again → back to normal laughs. Pure; pinned across TS / Swift / Kotlin by musical-cast-fixtures.json
 /// (MusicalCastTests).
 ///
-/// Behind the musicalCast flag: ON in debug builds, OFF in release until the founder approves.
+/// Behind the musicalCast flag: ON in debug builds, ON in release too (founder 10-09: the tunes ship in 2.8).
 public enum MusicalCast {
     /// The flag: on in debug (web dev, iOS DEBUG, Android BuildConfig.DEBUG), off in release.
-    public static let flag: (debug: Bool, release: Bool) = (debug: true, release: false)
+    public static let flag: (debug: Bool, release: Bool) = (debug: true, release: true)
 
     public static func enabled(isDebugBuild: Bool) -> Bool {
         isDebugBuild ? flag.debug : flag.release

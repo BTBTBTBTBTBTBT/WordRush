@@ -122,7 +122,15 @@ struct HomeBannerView: View {
             // §G4: the wide sweep / flawless art across the banner under the headline,
             // the whole cast in it fully visible (never cropped).
             if let art = momentArt {
-                Image(art).resizable().interpolation(.high).scaledToFit()
+                Group {
+                    // Founder 10-09: on a Flawless day the celebrating trio is ALIVE (each bounces, sways and squashes on its
+                    // own beat under a swaying bunting, sparkles twinkling) instead of one flat picture.
+                    if moment == .flawless && slots.showsMomentArt {
+                        CelebrationTrio(cast: ["d", "o2", "i"]).frame(height: 104)
+                    } else {
+                        Image(art).resizable().interpolation(.high).scaledToFit()
+                    }
+                }
                     .frame(maxWidth: .infinity, maxHeight: 104)
                     .opacity(slots.showsMomentArt ? 1 : 0)
                     // §Z: Unlimited keeps the slot — U in her loop fills it instead.
@@ -184,7 +192,7 @@ struct HomeBannerView: View {
         // the app header now (AppHeaderView `share`), so the card mirrors on its center line.
         card
             .overlay(alignment: .top) {
-                HomeHostMascot(size: Self.hostSize)
+                HomeHostMascot(size: Self.hostSize, celebrates: moment != nil && slots.showsMomentArt)
                     .offset(y: -Self.hostRise)
                     // §A7: during the celebration art (which carries W) a W host steps aside. BJ6 fix:
                     // only when there IS art showing — `showsMomentArt` alone is true on every Daily
@@ -825,5 +833,56 @@ extension Color {
     var onSeasonCard: Color {
         guard let look = SeasonKit.surfaces, look.dark else { return self }
         return mixed(over: .white, 0.55)
+    }
+}
+
+
+/// Founder 10-09: the Flawless banner's celebrating cast, alive — three cheer poses on one floor under the bunting,
+/// each bouncing / swaying / squashing on its own offset beat; the bunting sways and gold sparkles twinkle.
+/// Reduce Motion / Low Power: the same scene, still.
+struct CelebrationTrio: View {
+    let cast: [String]
+    @Environment(\.accessibilityReduceMotion) private var envReduce
+    private var still: Bool { envReduce || Theme.reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled }
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: still)) { ctx in
+            let t = still ? 0 : ctx.date.timeIntervalSinceReferenceDate
+            GeometryReader { g in
+                let h = g.size.height, w = g.size.width
+                let fig = min(h * 0.74, w / 3.6)
+                ZStack {
+                    // the bunting, swaying a touch from its center
+                    Image("age-bunting").resizable().scaledToFit()
+                        .frame(width: min(w * 0.40, 150), height: h * 0.30)
+                        .rotationEffect(.degrees(sin(t * 1.3) * 1.6), anchor: .top)
+                        .position(x: w / 2, y: h * 0.17)
+                    // one shared floor shadow
+                    Ellipse().fill(RadialGradient(colors: [Color(hex: 0x2E1065).opacity(0.28), .clear], center: .center,
+                                                  startRadius: 0, endRadius: fig * 1.6))
+                        .frame(width: fig * 3.2, height: 14)
+                        .position(x: w / 2, y: h - 6)
+                    ForEach(Array(cast.enumerated()), id: \.offset) { i, id in
+                        let phase = Double(i) * 0.9
+                        let beat = (t * 2.2 + phase).truncatingRemainder(dividingBy: .pi * 2)
+                        let up = max(0, sin(beat))                       // 0…1 hop
+                        let squash = 1 - 0.06 * max(0, -sin(beat))        // squash on the landing
+                        Image("art-pose-\(id)-cheer").resizable().interpolation(.high).scaledToFit()
+                            .frame(width: fig, height: fig)
+                            .scaleEffect(x: 2 - squash, y: squash, anchor: .bottom)
+                            .rotationEffect(.degrees(sin(t * 1.7 + phase) * 4), anchor: .bottom)
+                            .offset(y: -up * fig * 0.08)
+                            .position(x: w / 2 + CGFloat(i - 1) * fig * 0.95, y: h - fig / 2 - 4)
+                    }
+                    ForEach(0..<4, id: \.self) { k in
+                        let xs: [CGFloat] = [0.22, 0.78, 0.35, 0.66], ys: [CGFloat] = [0.30, 0.26, 0.12, 0.10]
+                        GoldSparkle(size: 9)
+                            .opacity(still ? 0.8 : 0.35 + 0.65 * abs(sin(t * 1.9 + Double(k))))
+                            .position(x: w * xs[k], y: h * ys[k])
+                    }
+                }
+            }
+        }
+        .accessibilityHidden(true)
     }
 }

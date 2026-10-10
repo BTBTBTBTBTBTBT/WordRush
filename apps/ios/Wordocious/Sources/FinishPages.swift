@@ -125,6 +125,26 @@ struct FinishLabel: View {
     }
 }
 
+/// Founder 10-09: a card's title in the Wordocious bubble lettering (Word of the Day, Medals, Your trophy shelf ...),
+/// never plain text. Small, leading, tinted in the card's color.
+struct CardTitle: View {
+    let text: String
+    var color: Color = Color(hex: 0x7C3AED)
+    var maxSize: CGFloat = 19
+
+    init(_ text: String, color: Color = Color(hex: 0x7C3AED), maxSize: CGFloat = 19) {
+        self.text = text
+        self.color = color
+        self.maxSize = maxSize
+    }
+
+    var body: some View {
+        BubbleTextView(text: text.uppercased(), palette: .accent(color), maxSize: maxSize, minSize: 12, animated: false,
+                       alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
 // MARK: - Soft segmented toggle
 
 /// The soft two- (or more-) option toggle (mockup `.seg`): a tinted track, the

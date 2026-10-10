@@ -119,11 +119,15 @@ export function OwnMascot({ size, wizardHat = false, lean = 0, onTap, hopKey = 0
  * The compact "Your board" button = today's VIEW BOARD: the family cast button, small, in the board's game color
  * (founder 10-09: the art pill read as ugly; the button wears the game's own color). Default gold.
  */
-export function YourBoardButton({ onClick, label = 'Your board', accent }: { onClick: () => void; label?: string; accent?: string }) {
+export function YourBoardButton({ onClick, label = 'View board', accent }: { onClick: () => void; label?: string; accent?: string }) {
+  // Founder 10-09: reads "View board" and sits smaller (the small cast pill at 80%, like iOS / Android).
   return (
-    <CastButton color={accent ? castColorForAccent(accent) : 'gold'} size="sm" onClick={onClick} aria-label={label} className="shrink-0">
-      {label}
-    </CastButton>
+    <span className="inline-flex shrink-0" style={{ width: 84, height: 26, alignItems: 'center', justifyContent: 'center' }}>
+      <CastButton color={accent ? castColorForAccent(accent) : 'gold'} size="sm" onClick={onClick} aria-label={label}
+        className="shrink-0" style={{ width: 104, transform: 'scale(0.8)', flex: 'none' }}>
+        {label}
+      </CastButton>
+    </span>
   );
 }
 

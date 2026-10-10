@@ -29,9 +29,9 @@ class MusicalCastFixtureTest {
     private val f: JsonObject by lazy { Json.parseToJsonElement(loadFixture("musical-cast-fixtures.json")).jsonObject }
     private fun ints(o: JsonObject, k: String) = o[k]!!.jsonArray.map { it.jsonPrimitive.int }
 
-    @Test fun flag_on_in_debug_off_in_release() {
+    @Test fun flag_on_in_debug_and_release() {
         assertTrue(MusicalCast.enabled(true))
-        assertFalse(MusicalCast.enabled(false))
+        assertTrue(MusicalCast.enabled(false))
     }
 
     @Test fun scale_timing_gap() {

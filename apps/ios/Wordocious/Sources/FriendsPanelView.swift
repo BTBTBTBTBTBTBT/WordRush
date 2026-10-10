@@ -676,7 +676,13 @@ struct FriendsPanelView: View {
                     onStartGame: { k in if let f { quickPlay = QuickPlay(friend: f, kind: k) } },
                     onToggleTheirs: { toggleTheirTurn(c.friendId) },
                     onProfile: { profileTarget = f?.id ?? opp?.id ?? c.friendId },
-                    onMenu: menu)
+                    onMenu: menu,
+                    onResign: { g in
+                        Task {
+                            _ = await FriendlyGamesService.resign(g.id)
+                            await FriendlyGamesService.load()
+                        }
+                    })
             }
             allFriendsBlock(layout.rest, friends: friends, slackers: slackers, openByDefault: layout.cards.isEmpty)
         }
@@ -736,7 +742,9 @@ struct FriendsPanelView: View {
                         } label: {
                             CandyLabel(title: "Nudge all", symbol: "bell.fill")
                         }
-                        .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: false))
+                        .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: true))
+                        .environment(\.castCapScale, 0.78)
+                        .frame(width: Self.actionPillWidth)
                         .accessibilityLabel("Nudge all who haven't played")
                     }
                     .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 4)
@@ -798,11 +806,17 @@ struct FriendsPanelView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 5) {
                         Text("@\(f.username)").font(Brand.font(14, .black))
-                            .foregroundStyle(FriendsInk.heading).lineLimit(1)
+                            .foregroundStyle(FriendsInk.heading).lineLimit(1).minimumScaleFactor(0.8)
                         // §V3: the tier badge + level beside the name.
                         if f.level > 0 { LevelBadge(level: f.level, size: 16) }
                         // §216: the week's leader wears the crown.
                         if f.id == crownId { Icon3D(.crown, size: 15, label: "This week's leader") }
+                    }
+                    // Founder 10-09: the NEW / friendversary chips ride the second line (they squeezed the name into
+                    // "@O…" and wrapped "30 DAYS" into a circle).
+                    HStack(spacing: 6) {
+                        Text(line).font(Brand.font(11, .bold))
+                            .foregroundStyle(online ? FriendsKit.green : FriendsInk.rowSub).lineLimit(1)
                         if isNewFriend(f) {
                             Text("NEW").font(Brand.font(8, .black))
                                 .foregroundStyle(FriendsKit.solid)
@@ -822,11 +836,11 @@ struct FriendsPanelView: View {
                                 .foregroundStyle(FriendsKit.solid)
                                 .padding(.horizontal, 5).padding(.vertical, 2)
                                 .friendsChip(FriendsKit.solid)
+                                .fixedSize()
                         }
                     }
-                    Text(line).font(Brand.font(11, .bold))
-                        .foregroundStyle(online ? FriendsKit.green : FriendsInk.rowSub).lineLimit(1)
                 }
+                .layoutPriority(1)
                 Spacer(minLength: 4)
                 if let n = f.friendStreak, n > 0 {
                     HStack(spacing: 2) {
@@ -873,11 +887,7 @@ struct FriendsPanelView: View {
             rows.append(FamilyMenuAction(id: "gift", title: "Gift a shield", icon: .art("icon3d-shield"),
                                          tint: FamilyMenuInk.teal, disabled: gifting != nil) { giftShield(f) })
         }
-        // Wave 3: Resign / Decline lives here (not inside the game): one row per game going with them.
-        for g in FriendlyGamesService.active where g.opponent.id.caseInsensitiveCompare(f.id) == .orderedSame {
-            rows.append(FamilyMenuAction(id: "resign-\(g.id)", title: "Resign \(g.title)", icon: .clay("flag"), danger: true,
-                                         accessibility: "Resign \(g.title) against \(f.username)") { resignTarget = g })
-        }
+        // Founder 10-09: Resign lives on each game tile now (a small flag), not as rows here.
         rows.append(FamilyMenuAction(id: "unfriend", title: "Unfriend", icon: .clay("xmark"), danger: true,
                                      accessibility: "Unfriend \(f.username)") { unfriendTarget = f })
         return FamilyActionMenuModel(
@@ -892,13 +902,9 @@ struct FriendsPanelView: View {
         let games = FriendlyGamesService.active.filter { $0.opponent.id.caseInsensitiveCompare(id) == .orderedSame }
         let opp = games.first?.opponent
         let name = opp?.username ?? "Player"
-        var rows: [FamilyMenuAction] = [
+        let rows: [FamilyMenuAction] = [
             FamilyMenuAction(id: "profile", title: "View profile", icon: .clay("eye")) { profileTarget = id },
         ]
-        for g in games {
-            rows.append(FamilyMenuAction(id: "resign-\(g.id)", title: "Resign \(g.title)", icon: .clay("flag"), danger: true,
-                                         accessibility: "Resign \(g.title) against \(name)") { resignTarget = g })
-        }
         return FamilyActionMenuModel(
             title: name, subtitle: nil,
             avatar: AnyView(AvatarView(url: opp?.avatarUrl, username: name, size: 44, emoji: opp?.avatarEmoji,
@@ -909,21 +915,30 @@ struct FriendsPanelView: View {
     /// On now → Play (quick-play sheet); played today → Challenge (the free
     /// live VS challenge); hasn't played → Nudge (the taunt picker).
     /// §C4 / §A8: chunky small candy buttons — Play / Challenge purple, Nudge amber.
-    @ViewBuilder private func actionPill(_ f: FriendsService.FriendProfile, online: Bool) -> some View {
+    private func actionPill(_ f: FriendsService.FriendProfile, online: Bool) -> some View {
+        // Founder 10-09: Play / Challenge / Nudge are ONE width with ONE letter height down the list (they were sized
+        // to their words and Challenge squeezed the names).
+        actionPillButton(f, online: online)
+            .environment(\.castCapScale, 0.78)
+            .frame(width: Self.actionPillWidth)
+    }
+    static let actionPillWidth: CGFloat = 96
+
+    @ViewBuilder private func actionPillButton(_ f: FriendsService.FriendProfile, online: Bool) -> some View {
         if online {
             Button { quickPlay = QuickPlay(friend: f, kind: nil) } label: { CandyLabel(title: "Play") }
-                .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
+                .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: true))
                 .accessibilityLabel("Play with \(f.username)")
         } else if (f.playedToday ?? 0) > 0 {
             Button { challenge(f) } label: {
                 CandyLabel(title: challenging == f.id ? "Sending…" : "Challenge")
             }
-            .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
+            .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: true))
             .disabled(challenging != nil)
             .accessibilityLabel("Challenge \(f.username) to a VS Battle")
         } else {
             Button { tauntTarget = f } label: { CandyLabel(title: "Nudge") }
-                .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: false))
+                .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: true))
                 .accessibilityLabel("Nudge \(f.username)")
         }
     }

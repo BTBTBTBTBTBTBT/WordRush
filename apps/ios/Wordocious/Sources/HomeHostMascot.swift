@@ -28,6 +28,9 @@ struct HomeHostMascot: View {
     /// 2.8 item 13: the Stats card reuses the host standing free, without Home's one-time wave or invite bubble.
     var showsInvite: Bool = true
     var waves: Bool = true
+    /// Founder 10-09: on a Flawless / Sweep day the host shows off over the headline (a backflip, a twirl, a
+    /// bounce, in turn, every few seconds) like the celebrating cast below it, instead of standing still.
+    var celebrates: Bool = false
 
     @ObservedObject private var directory = AvatarDirectory.shared
     @ObservedObject private var mascots = MascotLooks.shared
@@ -38,6 +41,9 @@ struct HomeHostMascot: View {
     private static var wavedThisLaunch = false
     @State private var waveAngle: Double = 0
     @State private var hop: CGFloat = 0
+    @State private var flip: Double = 0
+    @State private var twirl: Double = 0
+    @State private var squash: CGFloat = 1
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -57,6 +63,9 @@ struct HomeHostMascot: View {
             }
             .frame(width: size, height: size, alignment: .bottom)
             .animation(.easeInOut(duration: HostLookRules.crossfadeSeconds), value: choice)
+            .scaleEffect(x: 2 - squash, y: squash, anchor: .bottom)
+            .rotation3DEffect(.degrees(twirl), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
+            .rotationEffect(.degrees(flip))
             .rotationEffect(.degrees(waveAngle), anchor: .bottom)
             .offset(y: hop)
             // The invite host is a button; YOUR living mascot answers a tap (founder 10-09: hop + its sound); the cast
@@ -70,6 +79,7 @@ struct HomeHostMascot: View {
         .animation(.easeInOut(duration: HostLookRules.crossfadeSeconds), value: directory.ownHostInvite() != nil)
         .onAppear { if waves { waveOnce() } }
         .onAppear { DressUp.prewarm() }
+        .task(id: celebrates) { await showOff() }
     }
 
     /// Door 2 (founder 10-05): "Make me yours!" beside the plain host; tap → the Dressing Room,
@@ -166,6 +176,49 @@ struct HomeHostMascot: View {
     /// FINISH_SPEC BJ6 (founder: "loads instantly"): decode W's wave pose off main at launch so
     /// the host never pops in (the cap, sparkles and confetti are code-drawn shapes).
     static func prewarm() { ArtThumbs.prewarm([(wPose, HomeBannerView.hostSize)]) }
+
+    /// The celebration loop: one trick every ~4.5 s while `celebrates` (transform only; off under reduce motion).
+    private func showOff() async {
+        guard celebrates, !Motion.calm(envReduceMotion) else { return }
+        try? await Task.sleep(nanoseconds: 1_600_000_000)
+        var n = 0
+        while !Task.isCancelled && celebrates {
+            await trick(n % 3)
+            n += 1
+            try? await Task.sleep(nanoseconds: 4_500_000_000)
+        }
+    }
+
+    private func wait(_ s: Double) async { try? await Task.sleep(nanoseconds: UInt64(s * 1_000_000_000)) }
+
+    @MainActor private func trick(_ kind: Int) async {
+        // Crouch, launch, the move in the air, land with a squash, settle.
+        withAnimation(.easeOut(duration: 0.12)) { squash = 0.86 }
+        await wait(0.12)
+        let air = kind == 2 ? 0.26 : 0.5
+        let rise: CGFloat = kind == 2 ? -14 : -size * 0.34
+        withAnimation(.easeOut(duration: air / 2)) { hop = rise; squash = 1.06 }
+        switch kind {
+        case 0: withAnimation(.easeInOut(duration: air)) { flip = -360 }        // backflip
+        case 1: withAnimation(.easeInOut(duration: air)) { twirl = 360 }        // twirl
+        default: withAnimation(.easeInOut(duration: air / 2)) { waveAngle = 9 } // happy bounce
+        }
+        await wait(air / 2)
+        withAnimation(.easeIn(duration: air / 2)) { hop = 0; squash = 1; if kind == 2 { waveAngle = -9 } }
+        await wait(air / 2)
+        withAnimation(.easeOut(duration: 0.1)) { squash = 0.88 }
+        await wait(0.1)
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.55)) { squash = 1; waveAngle = 0 }
+        // Wind the turn back to 0 unseen (360 = 0), so the next trick starts clean.
+        var t = Transaction(); t.disablesAnimations = true
+        withTransaction(t) { flip = 0; twirl = 0 }
+        if kind == 2 {
+            await wait(0.18)
+            withAnimation(.easeOut(duration: 0.13)) { hop = -9 }
+            await wait(0.13)
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { hop = 0 }
+        }
+    }
 
     private func waveOnce() {
         guard !Self.wavedThisLaunch else { return }

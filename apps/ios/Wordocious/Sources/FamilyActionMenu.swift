@@ -32,23 +32,32 @@ struct FamilyMenuAction: Identifiable {
 }
 
 enum FamilyMenuInk {
-    static let sheet = Color(hex: 0xF4F0FF)   // the picker's lavender (option 1)
+    // Founder 10-09 ("hideous, needs to match the aesthetic"): the sheet follows the season. Off season it is the
+    // picker's lavender; under a dark season (Halloween) it is the season's night glass with light ink, like the cards.
+    static var night: Bool { FriendsInk.dark }
+    static var sheet: Color { night ? (FriendsInk.nightCard ?? Color(hex: 0x1C0F30)) : Color(hex: 0xF4F0FF) }
     static let purple = Color(hex: 0x7C3AED)
     static let pink = Color(hex: 0xDB2777)
     static let amber = Color(hex: 0xD97706)
     static let teal = Color(hex: 0x0D9488)
     /// The family danger tint (the same pink as a confirming Remove friend).
     static let danger = pink
-    /// Fixed light inks (web / Android parity): the menu is always the light lavender sheet,
-    /// so its text never takes a dark season's light ink (FriendsInk flips under Haunted glass).
-    static let heading = Color(hex: 0x3B1F6E)
-    static let sub = Color(hex: 0x7A6A95)
-    static let rowHeight: CGFloat = 58
+    static var heading: Color { night ? FriendsInk.heading : Color(hex: 0x3B1F6E) }
+    static var sub: Color { night ? FriendsInk.rowSub : Color(hex: 0x7A6A95) }
+    /// Founder 10-09: the actions sit two across as candy tiles (not a tall list); danger rows are one quiet line under them.
+    static let tileHeight: CGFloat = 54
+    static let dangerHeight: CGFloat = 40
     static let rowGap: CGFloat = 8
 
-    /// The sheet height for a header + `rows` rows (grabber, header, rows, bottom air).
-    static func height(rows: Int) -> CGFloat {
-        13 + 14 + 42 + 14 + CGFloat(rows) * rowHeight + CGFloat(max(0, rows - 1)) * rowGap + 10
+    /// The sheet height for a header + this menu's tiles and danger lines (grabber, header, grid, bottom air).
+    static func height(_ m: FamilyActionMenuModel) -> CGFloat {
+        let plain = m.actions.filter { !$0.danger }.count
+        let danger = m.actions.count - plain
+        let rows = (plain + 1) / 2
+        var h: CGFloat = 13 + 14 + 42 + 14
+        h += CGFloat(rows) * tileHeight + CGFloat(max(0, rows - 1)) * rowGap
+        if danger > 0 { h += 6 + CGFloat(danger) * dangerHeight }
+        return h + 16
     }
 }
 
@@ -66,6 +75,8 @@ struct FamilyActionMenu: View {
     let close: () -> Void
 
     var body: some View {
+        let plain = model.actions.filter { !$0.danger }
+        let danger = model.actions.filter(\.danger)
         VStack(spacing: 14) {
             Capsule().fill(FriendsInk.pink.wash(0.35)).frame(width: 40, height: 5).padding(.top, 8)
                 .accessibilityHidden(true)
@@ -84,48 +95,77 @@ struct FamilyActionMenu: View {
                 FamilyCloseButton(size: 28, label: "Close menu", action: close)
             }
             .frame(height: 56 - 14)
-            VStack(spacing: FamilyMenuInk.rowGap) {
-                ForEach(model.actions) { a in row(a) }
+            VStack(spacing: 6) {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: FamilyMenuInk.rowGap),
+                                    GridItem(.flexible(), spacing: FamilyMenuInk.rowGap)],
+                          spacing: FamilyMenuInk.rowGap) {
+                    ForEach(plain) { a in tile(a) }
+                }
+                ForEach(danger) { a in dangerLine(a) }
             }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
-        .environment(\.colorScheme, .light)
+        .environment(\.colorScheme, FamilyMenuInk.night ? .dark : .light)
     }
 
-    private func row(_ a: FamilyMenuAction) -> some View {
-        let tint = a.danger ? FamilyMenuInk.danger : a.tint
-        let ink = FamilyInk.helperInk(tint, dark: false)
-        return Button { pick(a) } label: {
-            HStack(spacing: 12) {
-                ZStack {
-                    FamilyPillSkin(fill: FamilyInk.helperFill(tint, dark: false, pressed: false), height: 40)
-                        .frame(width: 40, height: 40)
-                    switch a.icon {
-                    case .clay(let name):
-                        if let ui = FamilyArt.shared.image("art-fam-ic-\(name)") {
-                            Image(uiImage: ui).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
-                                .frame(width: 22, height: 22).colorMultiply(ink)
-                        }
-                    case .art(let name):
-                        Image(name).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
-                            .frame(width: 28, height: 28)
-                    case .symbol(let symbol):
-                        FamilyIcon(symbol: symbol, size: 22, ink: ink)
-                    }
+    @ViewBuilder private func coin(_ a: FamilyMenuAction, tint: Color, ink: Color, size: CGFloat) -> some View {
+        ZStack {
+            FamilyPillSkin(fill: FamilyInk.helperFill(tint, dark: false, pressed: false), height: size)
+                .frame(width: size, height: size)
+            switch a.icon {
+            case .clay(let name):
+                if let ui = FamilyArt.shared.image("art-fam-ic-\(name)") {
+                    Image(uiImage: ui).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+                        .frame(width: size * 0.55, height: size * 0.55).colorMultiply(ink)
                 }
-                .accessibilityHidden(true)
-                Text(a.title).font(Brand.font(17, .black))
-                    .foregroundStyle(a.danger ? ink : FamilyMenuInk.heading)
-                    .lineLimit(1).minimumScaleFactor(0.8)
+            case .art(let name):
+                Image(name).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+                    .frame(width: size * 0.7, height: size * 0.7)
+            case .symbol(let symbol):
+                FamilyIcon(symbol: symbol, size: size * 0.55, ink: ink)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func tile(_ a: FamilyMenuAction) -> some View {
+        let ink = FamilyInk.helperInk(a.tint, dark: false)
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        return Button { pick(a) } label: {
+            HStack(spacing: 9) {
+                coin(a, tint: a.tint, ink: ink, size: 36)
+                Text(a.title).font(Brand.font(14.5, .black))
+                    .foregroundStyle(FamilyMenuInk.heading)
+                    .lineLimit(1).minimumScaleFactor(0.75)
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 10)
-            .frame(height: FamilyMenuInk.rowHeight)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(a.danger ? tint.mixed(over: .white, 0.10) : Color.white.opacity(0.78)))
-            .shadow(color: tint.opacity(0.10), radius: 6, y: 2)
-            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .padding(.horizontal, 9)
+            .frame(height: FamilyMenuInk.tileHeight)
+            .background(shape.fill(FamilyMenuInk.night ? a.tint.opacity(0.20) : Color.white.opacity(0.80)))
+            .overlay(shape.strokeBorder(a.tint.opacity(FamilyMenuInk.night ? 0.35 : 0), lineWidth: 1))
+            .shadow(color: a.tint.opacity(FamilyMenuInk.night ? 0.25 : 0.10), radius: 6, y: 2)
+            .contentShape(shape)
+        }
+        .buttonStyle(.squish)
+        .disabled(a.disabled)
+        .opacity(a.disabled ? 0.5 : 1)
+        .accessibilityLabel(a.accessibility ?? a.title)
+    }
+
+    /// Unfriend / Remove: one quiet centered line in the danger pink under the tiles (never a big red row).
+    private func dangerLine(_ a: FamilyMenuAction) -> some View {
+        let ink = FamilyInk.helperInk(FamilyMenuInk.danger, dark: false)
+        return Button { pick(a) } label: {
+            HStack(spacing: 7) {
+                coin(a, tint: FamilyMenuInk.danger, ink: ink, size: 26)
+                Text(a.title).font(Brand.font(14, .black))
+                    .foregroundStyle(FamilyMenuInk.night ? Color(hex: 0xF9A8D4) : ink)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: FamilyMenuInk.dangerHeight)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.squish)
         .disabled(a.disabled)
@@ -153,7 +193,7 @@ private struct FamilyActionMenuModifier<Item: Identifiable>: ViewModifier {
                 item = nil
             }, close: { item = nil })
             .background(FamilyMenuInk.sheet.ignoresSafeArea())
-            .presentationDetents([.height(FamilyMenuInk.height(rows: m.actions.count))])
+            .presentationDetents([.height(FamilyMenuInk.height(m))])
             .presentationDragIndicator(.hidden)
             .modifier(FamilyMenuSheetChrome())
         }

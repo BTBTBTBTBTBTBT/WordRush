@@ -62,11 +62,11 @@ final class MusicalCastTests: XCTestCase {
         try JSONDecoder().decode(F.self, from: fixtureData("musical-cast-fixtures"))
     }
 
-    func testFlagIsOnInDebugOffInRelease() {
+    func testFlagIsOnInDebugAndRelease() {
         XCTAssertTrue(MusicalCast.flag.debug)
-        XCTAssertFalse(MusicalCast.flag.release)
+        XCTAssertTrue(MusicalCast.flag.release)
         XCTAssertTrue(MusicalCast.enabled(isDebugBuild: true))
-        XCTAssertFalse(MusicalCast.enabled(isDebugBuild: false))
+        XCTAssertTrue(MusicalCast.enabled(isDebugBuild: false))
     }
 
     func testScaleAndTiming() throws {

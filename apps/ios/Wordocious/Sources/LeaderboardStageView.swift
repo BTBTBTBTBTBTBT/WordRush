@@ -167,7 +167,7 @@ struct StageTitleRow: View {
 
 /// The compact "Your board" pill (`art-lb-btn-yourboard`, label drawn live) = today's VIEW BOARD.
 struct YourBoardPill: View {
-    var label = "Your board"
+    var label = "View board"
     /// The board's game color (founder 10-09: the button wears the game's own color).
     var accent: Color = Color(hex: 0xF5B82E)
     let action: () -> Void
@@ -192,9 +192,13 @@ struct YourBoardPill: View {
 
     var body: some View {
         // Founder 10-09 ("the your board buttons are ugly"): the family candy button in the game's color, not the art pill.
-        Button { Haptics.light(); action() } label: { CandyLabel(title: label).frame(width: 96) }
-            .buttonStyle(CastButtonStyle(color: Self.castColor(for: accent), size: .small, fullWidth: false))
-        .accessibilityLabel(label)
+        // Founder 10-09: "View board" (not "Your board"), and smaller: the small cast pill drawn at 80%.
+        Button { Haptics.light(); action() } label: { CandyLabel(title: label) }
+            .buttonStyle(CastButtonStyle(color: Self.castColor(for: accent), size: .small, fullWidth: true))
+            .frame(width: 104)
+            .scaleEffect(0.8)
+            .frame(width: 84, height: 26)
+            .accessibilityLabel(label)
     }
 }
 

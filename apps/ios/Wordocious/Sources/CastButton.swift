@@ -322,9 +322,11 @@ struct CastLabelView: View {
     /// < 1 shrinks the cap (the two-line subtitle variant).
     var capScale: CGFloat = 1
     @Environment(\.displayScale) private var scale
+    /// A list of equal-width pills sets one smaller cap for all (founder 10-09: Play / Challenge / Nudge rows).
+    @Environment(\.castCapScale) private var envCap
 
     var body: some View {
-        let cap = CastLabels.capHeight(ink.height * capScale, scale: scale)
+        let cap = CastLabels.capHeight(ink.height * capScale * envCap, scale: scale)
         if let hit = CastLabels.lookup(title),
            let ui = CastArt.shared.label(hit.slug, height: cap, scale: scale) {
             let w = ui.size.width
@@ -502,3 +504,12 @@ private struct CastShowcaseBoard: View {
     }
 }
 #endif
+
+private struct CastCapScaleKey: EnvironmentKey { static let defaultValue: CGFloat = 1 }
+extension EnvironmentValues {
+    /// Scales every cast label's cap below it (equal-width pill lists that must share one letter height).
+    var castCapScale: CGFloat {
+        get { self[CastCapScaleKey.self] }
+        set { self[CastCapScaleKey.self] = newValue }
+    }
+}

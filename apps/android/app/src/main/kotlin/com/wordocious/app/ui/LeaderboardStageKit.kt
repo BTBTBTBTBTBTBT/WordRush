@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
@@ -230,8 +231,14 @@ private fun ResetLine() {
  * (founder 10-09: the art pill read as ugly; the button wears the game's own color). [accent] null = gold.
  */
 @Composable
-internal fun YourBoardPill(onClick: () -> Unit, label: String = "Your board", accent: Color? = null) {
-    CastButton(text = label, onClick = onClick, color = accent?.let { castColorForAccent(it.red, it.green, it.blue) } ?: CastColor.GOLD, size = CastSize.S)
+internal fun YourBoardPill(onClick: () -> Unit, label: String = "View board", accent: Color? = null) {
+    // Founder 10-09: reads "View board" and sits smaller (the small cast pill at 80%, like iOS / web).
+    Box(Modifier.size(width = 84.dp, height = 26.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.requiredWidth(104.dp).graphicsLayer { scaleX = 0.8f; scaleY = 0.8f }) {
+            CastButton(text = label, onClick = onClick, color = accent?.let { castColorForAccent(it.red, it.green, it.blue) } ?: CastColor.GOLD,
+                size = CastSize.S, modifier = Modifier.fillMaxWidth())
+        }
+    }
 }
 
 /**

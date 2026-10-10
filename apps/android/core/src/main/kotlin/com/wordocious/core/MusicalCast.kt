@@ -55,7 +55,7 @@ object MusicalTiming {
 object MusicalCast {
     /** The flag: on in debug, off in release. */
     const val FLAG_DEBUG = true
-    const val FLAG_RELEASE = false
+    const val FLAG_RELEASE = true
 
     fun enabled(isDebugBuild: Boolean): Boolean = if (isDebugBuild) FLAG_DEBUG else FLAG_RELEASE
 
