@@ -96,7 +96,7 @@ object FriendCards {
                 "Their word"
             } else {
                 val last = (state as? ChainState)?.words?.lastOrNull()
-                if (last != null && last.word.isNotEmpty()) "${last.word.last().uppercaseChar()}…" else "Any word"
+                if (last != null && last.word.isNotEmpty()) "Starts ${last.word.last().uppercaseChar()}" else "Any word"
             }
         }
     }

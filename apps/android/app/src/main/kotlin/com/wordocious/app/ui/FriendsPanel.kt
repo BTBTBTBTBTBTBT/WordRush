@@ -258,10 +258,19 @@ fun FriendsScreen(
         // K1: the note as a notice card — springs in, squishes, taps or swipes away.
         FriendsNotice(note, onDismiss = { note = null })
 
-        // 9f: the branded Invites row and ONE obvious "Have a code?" button (both hide themselves when
-        // branded_invites is off). Accepting hands the code to the same DeepLinkRouter state the app links use,
-        // so MainScreen opens the private match / the race exactly like a tapped link.
-        val inviteUriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+        // 2.8 TestFlight (founder): the page LEADS with THIS WEEK'S RACE podium, right under the cast header;
+        // Today's Race (the banner) follows it, then INVITES and the friends.
+        if (friends.isNotEmpty()) WeeklyRaceSection(version, onOpenProfile)
+
+        // 2. The Friends banner (the race, told once: the pills; the countdown small in its header)
+        FriendsBannerView(
+            friends = friends, rows = raceRows, nowMs = now,
+            onRace = { if (friends.isNotEmpty()) showRace = true },
+        )
+
+        // 9f: the branded Invites row (hides itself when branded_invites is off). "Have a code?" is a small quiet
+        // pill in the ADD A FRIEND header now (it no longer leads the page). Accepting hands the code to the same
+        // DeepLinkRouter state the app links use, so MainScreen opens the private match / the race exactly like a tapped link.
         InvitesRow(onAccept = { item ->
             if (item.variant == com.wordocious.core.InviteRowItem.Variant.RACE) {
                 com.wordocious.app.data.DeepLinkRouter.vsChallenge.value = item.code
@@ -269,19 +278,6 @@ fun FriendsScreen(
                 runCatching { com.wordocious.core.GameMode.valueOf(item.gameMode) }.getOrNull()?.let { com.wordocious.app.data.DeepLinkRouter.vsInvite.value = it to item.code }
             }
         })
-        HaveACodeButton(color = CandyColor.PINK, onResolved = { r ->
-            when (r) {
-                is HaveACodeResult.Race -> com.wordocious.app.data.DeepLinkRouter.vsChallenge.value = r.code
-                is HaveACodeResult.Live -> com.wordocious.app.data.DeepLinkRouter.vsInvite.value = r.mode to r.code
-                is HaveACodeResult.Friend -> inviteUriHandler.openUri("https://wordocious.com/join/${r.code}")
-            }
-        })
-
-        // 2. The Friends banner (the race, told once: the pills; the countdown small in its header)
-        FriendsBannerView(
-            friends = friends, rows = raceRows, nowMs = now,
-            onRace = { if (friends.isNotEmpty()) showRace = true },
-        )
 
         // 4. One card per friend (item 9 / 9e): online friends first, each with their living mascot, the games
         // waiting on you as a strip of tiles (tap = straight into that game); their-turn games collapse.
@@ -314,9 +310,6 @@ fun FriendsScreen(
                 }
             }
         }
-
-        // 6. THIS WEEK'S RACE
-        if (friends.isNotEmpty()) WeeklyRaceSection(version, onOpenProfile)
 
         // T3: NEW FRIENDS! — the high-five, both avatars, Challenge them / See friends.
         newFriend?.let { nf ->
@@ -1129,7 +1122,19 @@ private fun AddFriendSection(
         }
     }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        FriendsLabel("ADD A FRIEND", Modifier.padding(start = 4.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            FriendsLabel("ADD A FRIEND", Modifier.padding(start = 4.dp))
+            Spacer(Modifier.weight(1f))
+            // The small secondary entry (it used to be a full-width hero at the top of the page).
+            val inviteUriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+            HaveACodeButton(color = CandyColor.PINK, quiet = true, onResolved = { r ->
+                when (r) {
+                    is HaveACodeResult.Race -> com.wordocious.app.data.DeepLinkRouter.vsChallenge.value = r.code
+                    is HaveACodeResult.Live -> com.wordocious.app.data.DeepLinkRouter.vsInvite.value = r.mode to r.code
+                    is HaveACodeResult.Friend -> inviteUriHandler.openUri("https://wordocious.com/join/${r.code}")
+                }
+            })
+        }
         // T1: the request went out — I tossing the envelope, INVITE SENT!, the friend on a
         // glossy pill, "Send another" (back to the field) and "Done".
         if (sentTo != null) {

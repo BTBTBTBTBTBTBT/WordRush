@@ -162,10 +162,13 @@ private fun TileCell(t: GameTile, quiet: Boolean, modifier: Modifier, onClick: (
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         FriendlyGameIcon(t.kind, 48.dp)
+        // The word shrinks to fit its cell (never an ellipsis: "E…" read as a clipped tile); the iOS minimumScaleFactor.
+        var size by remember(t.word) { mutableStateOf(10.5f) }
         Text(
-            t.word, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold,
+            t.word, fontSize = size.sp, fontWeight = FontWeight.ExtraBold,
             color = if (quiet) FriendsPink.muted else FriendsPink.heading,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+            maxLines = 1, softWrap = false, overflow = TextOverflow.Clip, textAlign = TextAlign.Center,
+            onTextLayout = { if (it.hasVisualOverflow && size > 7f) size -= 0.5f },
         )
     }
 }

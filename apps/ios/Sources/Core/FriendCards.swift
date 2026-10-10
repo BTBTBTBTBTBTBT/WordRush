@@ -107,7 +107,7 @@ public enum FriendCards {
         case .chain:
             if !yourTurn { return "Their word" }
             if case .chain(let c) = state, let last = c.words.last?.word.last {
-                return "\(String(last).uppercased())…"
+                return "Starts \(String(last).uppercased())"
             }
             return "Any word"
         }

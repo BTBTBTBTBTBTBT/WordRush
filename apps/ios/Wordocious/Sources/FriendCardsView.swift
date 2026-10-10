@@ -118,6 +118,8 @@ struct FriendCardView: View {
 
     // MARK: Game tiles
 
+    /// Up to four tiles share one row; five or six wrap into a three-across grid so no tile is ever
+    /// sliced by the card edge (the old sideways scroller cut the fifth one mid-tile).
     @ViewBuilder private func strip(_ tiles: [GameTile], quiet: Bool) -> some View {
         if tiles.count <= 4 {
             HStack(spacing: 8) {
@@ -125,11 +127,8 @@ struct FriendCardView: View {
             }
             .frame(maxWidth: .infinity)
         } else {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(tiles) { t in tileButton(t, quiet: quiet).frame(width: 84) }
-                }
-                .padding(.horizontal, 1)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                ForEach(tiles) { t in tileButton(t, quiet: quiet) }
             }
         }
     }
@@ -142,7 +141,7 @@ struct FriendCardView: View {
                 gameArt(t.kind, size: 38)
                 Text(t.word).font(Brand.font(11, .black))
                     .foregroundStyle(quiet ? FriendsInk.rowSub : FriendsInk.heading)
-                    .lineLimit(1).minimumScaleFactor(0.7)
+                    .lineLimit(1).minimumScaleFactor(0.6)
             }
             .padding(.vertical, 8).padding(.horizontal, 6)
             .frame(maxWidth: .infinity)

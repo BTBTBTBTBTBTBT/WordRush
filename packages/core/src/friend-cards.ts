@@ -93,7 +93,7 @@ export function tileWord(kind: FriendlyKind, state: FriendlyState, me: Side, you
     case 'chain': {
       if (!yourTurn) return 'Their word';
       const last = state.kind === 'chain' ? state.words[state.words.length - 1] : undefined;
-      return last ? `${last.word[last.word.length - 1].toUpperCase()}…` : 'Any word';
+      return last ? `Starts ${last.word[last.word.length - 1].toUpperCase()}` : 'Any word';
     }
   }
 }
