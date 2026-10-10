@@ -54,6 +54,9 @@ const nextConfig = {
       // The bible route reads .bible.md (copied in by scripts/copy-bible.mjs
       // during `npm run build`) — same computed-path-at-runtime story as certs.
       '/api/admin/bible': ['./.bible.md'],
+      // Rich push pictures (founder 10-10: they never showed — the route read public/ files that weren't in the
+      // function bundle and 500'd): the sender's mascot parts, the crown, the game icons and the fallback mascot.
+      '/api/push/art/[kind]/[id]': ['./public/art/art-av-*', './public/art/art-badge-*', './public/art/game-*', './public/mascots/**'],
     },
     // Required on Next 13 so instrumentation.ts runs (Sentry server/edge init).
     instrumentationHook: true,

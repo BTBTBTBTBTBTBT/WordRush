@@ -6,6 +6,7 @@ import { getAdminSupabase } from '@/lib/supabase-admin';
 import { resolveRowAvatar } from '@/lib/avatar-cast';
 import { avatarInitial, mascotSvg, withAvatarId } from '@/lib/avatar-render';
 import { artSrc, badgeSrc } from '@/lib/art';
+import { fallbackMascotPng, inlineLocalImages } from '@/lib/push/art-inline';
 
 // Rich push images (FRIDAY-QUEUE item 34). Notification attachments must be PNG/JPEG (iOS refuses WebP) and
 // reachable without a session, so the sender's mascot and the game's art are rendered here as small PNGs:
@@ -19,8 +20,7 @@ const HEADERS = { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age
 const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 async function fallbackMascot(size: number): Promise<Buffer> {
-  const file = await readFile(path.join(process.cwd(), 'public', 'mascots', 'w.png'));
-  return sharp(file).resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
+  return fallbackMascotPng(size);
 }
 
 async function avatarPng(userId: string): Promise<Buffer> {
@@ -48,7 +48,8 @@ async function avatarPng(userId: string): Promise<Buffer> {
     'push-av',
   ).replace('width="100%" height="100%"', 'width="256" height="256"');
   try {
-    return await sharp(Buffer.from(svg), { density: 144 }).resize(256, 256).png().toBuffer();
+    // The art is referenced by URL path; librsvg can't load paths (or WebP): inline every image as a PNG data URI.
+    return await sharp(Buffer.from(await inlineLocalImages(svg)), { density: 144 }).resize(256, 256).png().toBuffer();
   } catch {
     return fallbackMascot(256);
   }
