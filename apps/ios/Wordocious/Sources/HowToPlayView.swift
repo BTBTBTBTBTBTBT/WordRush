@@ -169,7 +169,10 @@ struct HowToPlayView: View {
             if let outro = s.outro { GuideParagraph(text: outro) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 2)
+        // Founder 10-10 ("hard to read with our theme"): every section sits on its own card (night glass in a dark
+        // season), so body text never lies on the wallpaper's scenery.
+        .padding(14)
+        .tintedCard(accent: accent, tint: 0.08, line: 0.22)
     }
 
     /// A section head in bubble lettering: the soft numeral, then the title (item 36).
@@ -179,7 +182,7 @@ struct HowToPlayView: View {
                 .frame(width: 42, height: 42)
                 .background(Circle().fill(GuideFamily.washFill(accent, 0.16)))
                 .accessibilityHidden(true)
-            BubbleTextView(text: title.uppercased(), palette: palette, maxSize: 24, minSize: 16, alignment: .leading)
+            BubbleTextView(text: title.uppercased(), palette: palette, maxSize: 24, minSize: 16, animated: false, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(n). \(title)")
