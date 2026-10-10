@@ -32,8 +32,12 @@ struct LeaderboardStageBackdrop: View {
                 .init(color: accent.opacity(LeaderboardStage.skyMid), location: 0.52),
                 .init(color: accent.opacity(LeaderboardStage.skyBottom), location: 1),
             ], startPoint: .top, endPoint: .bottom)
+            // Founder 10-09: the cloud bank ends ABOVE the WORDOCIOUS row (its edge hid the label): lifted, and its lower
+            // edge fades out instead of stopping under the text.
             Image("art-lb-clouds").resizable().scaledToFit()
-                .frame(maxWidth: .infinity).opacity(0.75).offset(y: -6)
+                .frame(maxWidth: .infinity).opacity(0.75).offset(y: -26)
+                .mask(LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.62),
+                                             .init(color: .clear, location: 0.92)], startPoint: .top, endPoint: .bottom))
                 .accessibilityHidden(true)
             VStack { Spacer(minLength: 0)
                 Image("art-lb-sunburst").resizable().scaledToFit()
@@ -167,18 +171,9 @@ struct YourBoardPill: View {
     let action: () -> Void
 
     var body: some View {
-        Button { Haptics.light(); action() } label: {
-            ZStack {
-                Image("art-lb-btn-yourboard").resizable().scaledToFit()
-                Text(label.uppercased())
-                    .font(Brand.font(11.5, .black)).tracking(0.3)
-                    .foregroundStyle(Color(hex: 0x4C1D95))
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                    .padding(.leading, 30).padding(.trailing, 8)
-            }
-            .frame(width: 112, height: 36)
-        }
-        .buttonStyle(.squishCard)
+        // Founder 10-09 ("the your board buttons are ugly"): the family candy button (gold), not the washed-out art pill.
+        Button { Haptics.light(); action() } label: { CandyLabel(title: label).frame(width: 96) }
+            .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: false))
         .accessibilityLabel(label)
     }
 }
