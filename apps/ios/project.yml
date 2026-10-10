@@ -183,6 +183,9 @@ targets:
       # which used to be duplicated into the extension. Regenerate it with
       # scripts/sync-widget-assets.sh after adding art the widget uses.
       - path: WordociousWidget/Assets.xcassets
+      # App Review pre-flight 10-10: required-reason API declarations (app-group UserDefaults).
+      - path: WordociousWidget/PrivacyInfo.xcprivacy
+        buildPhase: resources
       # BI13: the brand's Nunito for the widget's hero numbers and caps labels.
       - path: Wordocious/Resources/Nunito.ttf
         buildPhase: resources
