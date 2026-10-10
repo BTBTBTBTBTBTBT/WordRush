@@ -29,7 +29,9 @@ enum GuideFamily {
 extension View {
     /// The guide page's top card without its stroke: the accent ~10% → ~4% over warm
     /// cream (dark: a deep accent tint), the rainbow top bar and one soft shadow.
-    func guideHeroCard(_ accent: Color, radius: CGFloat = 28, bar: CGFloat = 8) -> some View {
+    /// `trim`: the Home cards' frosting cap (band + soft drips) in the rainbow instead of a flat stripe
+    /// (founder 10-09: the Word of the Day card on Home should match its neighbors' cap shape).
+    func guideHeroCard(_ accent: Color, radius: CGFloat = 28, bar: CGFloat = 8, trim: Bool = false) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         let dark = Theme.isDark
         return background {
@@ -42,8 +44,18 @@ extension View {
                                                        accent.mixed(over: GuideFamily.cream, 0.04)],
                                               startPoint: .top, endPoint: .bottom))
                 }
-                LinearGradient(colors: GuideFamily.rainbow, startPoint: .leading, endPoint: .trailing)
-                    .frame(height: bar)
+                if trim {
+                    ZStack {
+                        CardTrimShape().fill(LinearGradient(colors: GuideFamily.rainbow, startPoint: .leading, endPoint: .trailing))
+                        CardTrimShape().fill(LinearGradient(stops: [.init(color: .white.opacity(0.42), location: 0),
+                                                                    .init(color: .white.opacity(0), location: 0.6)],
+                                                            startPoint: .top, endPoint: .bottom))
+                    }
+                    .frame(height: CardTrimGeometry.band + CardTrimGeometry.drip)
+                } else {
+                    LinearGradient(colors: GuideFamily.rainbow, startPoint: .leading, endPoint: .trailing)
+                        .frame(height: bar)
+                }
             }
             .clipShape(shape)
             .background(shape.fill(dark ? Theme.surface : GuideFamily.cream)

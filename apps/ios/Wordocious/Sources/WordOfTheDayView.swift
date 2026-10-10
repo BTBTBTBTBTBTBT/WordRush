@@ -228,7 +228,7 @@ struct WordOfTheDayView: View {
         }
         .padding(.horizontal, 12).padding(.top, 14).padding(.bottom, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .guideHeroCard(Self.barColor, radius: 20)
+        .guideHeroCard(Self.barColor, radius: 20, trim: true)
     }
 
     private enum ChoiceState { case idle, right, wrong, faded }
@@ -338,7 +338,7 @@ struct WordOfTheDayView: View {
         }
         .padding(.horizontal, 12).padding(.top, 14).padding(.bottom, 12)
         .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
-        .guideHeroCard(Self.barColor, radius: 20)
+        .guideHeroCard(Self.barColor, radius: 20, trim: true)
     }
 
     // MARK: - Day-keyed UserDefaults cache (one fetch per day)
