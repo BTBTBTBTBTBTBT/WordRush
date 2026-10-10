@@ -17,6 +17,7 @@ import { isGameArtIcon, PAGE_SCENES } from '@/lib/art';
 import { BrandEmptyState } from '@/components/ui/brand-empty-state';
 import type { IconLike } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
+import { BubbleCount, CardTitle } from '@/components/ui/card-title';
 import { HeaderGlyph } from '@/components/ui/header-glyph';
 import { alphaHex, cardBarStyle, softBorder, softCard, softPill } from '@/lib/soft-surface';
 import { MedalArt, TrophyMedal } from '@/components/stats/medal-art';
@@ -171,7 +172,7 @@ export function SweepRecordsCard({ sweep, sweepRankToday, sweepRankAllTime }: Pi
         <div className="w-8 h-8 flex items-center justify-center flex-shrink-0" style={softPill(color, { radius: 10 })}>
           <Sparkles className="w-4 h-4" style={{ color }} />
         </div>
-        <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Daily Sweeps</div>
+        <CardTitle color={color}>Daily Sweeps</CardTitle>
       </div>
       {sweep && (sweep.sweepCount > 0 || sweep.flawlessCount > 0) ? (
         <div className="px-4 pb-3">
@@ -233,7 +234,7 @@ export function PuzzleSweepRecordsCard({ rec }: { rec: PuzzleRecords | null }) {
         <div className="w-8 h-8 flex items-center justify-center flex-shrink-0" style={softPill(color, { radius: 10 })}>
           <LayoutGrid className="w-4 h-4" style={{ color }} />
         </div>
-        <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Puzzles Sweeps</div>
+        <CardTitle color={color}>Puzzles Sweeps</CardTitle>
       </div>
       {rec && (rec.sweepDays > 0 || rec.flawlessDays > 0) ? (
         <div className="px-4 pb-3 grid grid-cols-2 gap-1">
@@ -263,7 +264,7 @@ export function WordQuizRecordCard({ rec }: { rec: { streak: number; best: numbe
         <div className="w-8 h-8 flex items-center justify-center flex-shrink-0" style={softPill(color, { radius: 10 })}>
           <BookOpen className="w-4 h-4" style={{ color }} />
         </div>
-        <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Word of the Day</div>
+        <CardTitle color={color}>Word of the Day</CardTitle>
       </div>
       <div className="px-4 pb-3 grid grid-cols-3 gap-1">
         <MyStatCell icon={Flame3D} value={`${rec.streak}`} label="Word Streak" color="#f97316" />
@@ -285,7 +286,7 @@ export function GameRecordsCard({ dbKey, my, recordsHeld, chases }: { dbKey: str
     <div className="overflow-hidden" style={card(color)}>
       <Bar accent={color} />
       <div className="flex items-center justify-between px-4 pt-3 pb-1">
-        <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>Your Records</div>
+        <CardTitle color={color}>Your Records</CardTitle>
         {held.length > 0 && (
           <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5" style={{ ...softPill('#f5a524', { bar: false }), color: '#b45309' }}>
             <Icon3D name="crown" size={14} /> {held.length} all-time record{held.length === 1 ? '' : 's'}
@@ -334,18 +335,22 @@ export function RecordsHeldRow({ recordsHeld }: { recordsHeld: AllTimeRecord[] }
     <div className="grid grid-cols-2 gap-3">
       <div className="overflow-hidden" style={card('#f5a524')}>
         <div className="px-4 py-3">
-          <div className="text-[10px] font-black uppercase tracking-wider mb-1.5 tint-ink" style={{ color: '#a2560c' }}>Medals</div>
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1"><MedalArt medal="gold" size={20} /><SoftNum size={15} className="soft-num-auto">{(profile as any)?.gold_medals ?? 0}</SoftNum></span>
-            <span className="flex items-center gap-1"><MedalArt medal="silver" size={20} /><SoftNum size={15} className="soft-num-auto">{(profile as any)?.silver_medals ?? 0}</SoftNum></span>
-            <span className="flex items-center gap-1"><MedalArt medal="bronze" size={20} /><SoftNum size={15} className="soft-num-auto">{(profile as any)?.bronze_medals ?? 0}</SoftNum></span>
+          <div className="mb-1.5"><CardTitle color="#f59e0b" maxSize={17}>Medals</CardTitle></div>
+          {/* Founder 10-09: the medal art (28) over its count in the bubble numbers, three across. */}
+          <div className="flex items-start gap-1">
+            {([['gold', (profile as any)?.gold_medals ?? 0, '#f5a524'], ['silver', (profile as any)?.silver_medals ?? 0, '#9ca3af'], ['bronze', (profile as any)?.bronze_medals ?? 0, '#b45309']] as const).map(([medal, count, tint]) => (
+              <span key={medal} role="img" aria-label={`${count} ${medal}`} className="flex flex-1 flex-col items-center gap-0.5">
+                <MedalArt medal={medal} size={28} />
+                <BubbleCount value={count} color={tint} />
+              </span>
+            ))}
           </div>
           <div className="text-[10px] font-bold mt-1.5" style={{ color: 'var(--color-text-muted)' }}>every medal is listed below</div>
         </div>
       </div>
       <Link href="/records" className="overflow-hidden block" style={card('#7c3aed')}>
         <div className="px-4 py-3">
-          <div className="text-[10px] font-black uppercase tracking-wider mb-1.5 tint-ink" style={{ color: '#6d28d9' }}>Global Records</div>
+          <div className="mb-1.5"><CardTitle color="#7c3aed" maxSize={17}>Global Records</CardTitle></div>
           <div className="flex items-center gap-1.5">
             <Star className="w-5 h-5" style={{ color: recordsHeld.length ? '#d97706' : 'var(--color-text-muted)' }} /><SoftNum size={24} className="soft-num-auto">{recordsHeld.length}</SoftNum>
           </div>
@@ -396,7 +401,7 @@ export function TrophyShelf({ recordsHeld }: { recordsHeld: AllTimeRecord[] }) {
       <Bar accent="#f5a524" gradient="linear-gradient(90deg, #fbbf24, #d97706)" />
       <div className="px-4 pt-1 pb-3">
         <div className="flex items-center justify-between">
-          <div className="text-[10px] font-black uppercase tracking-wider tint-ink" style={{ color: '#a2560c' }}>Your Trophy Shelf</div>
+          <CardTitle color="#f59e0b" maxSize={17}>Your Trophy Shelf</CardTitle>
           {/* A3: the bare 3D share icon. */}
           <HeaderGlyph icon="share" label="Share trophy shelf" onClick={shareShelf} disabled={sharing} size={20} style={{ opacity: sharing ? 0.4 : 1, marginRight: -10 }} />
         </div>
