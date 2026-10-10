@@ -565,8 +565,8 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         val lbListState = androidx.compose.foundation.lazy.rememberLazyListState()
         ScrollToTopOnReselect(lbListState) // AJ: a re-tap of Leaderboard scrolls to the top.
         LazyColumn(
-            state = lbListState, modifier = Modifier.fillMaxSize().padding(horizontal = LB_SIDE),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
+            state = lbListState, modifier = Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = LB_SIDE, end = LB_SIDE, bottom = TAB_CONTENT_BOTTOM_PAD), // AS3 (side padding is content padding so the stage can bleed to the screen edges)
         ) {
             // 11 + 11b (founder 10-07): the Leaderboard top is ONE living stage — the day's bubble title with your
             // mascot + the day's host, the game picker with no card, the selected-game strip (art · N today · YOUR
@@ -589,33 +589,18 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     StageTitleRow()
                     LeaderboardPicker(selected = selectedMode, onSelect = { selectMode(it) }, onOpenRecords = onOpenRecords, bare = true,
                         badge = { key -> if (key == SWEEP_ID) null else completions[key]?.completed })
-                    if (isSweep) {
-                        SweepStageStrip(sweepers = playerCount, rankLine = rankLine)
-                    } else {
-                        ModeStageStrip(
-                            modeId = selectedMode, players = playerCount,
-                            // iOS: cached completions answer instantly; the rank confirms.
-                            played = completions[selectedMode] != null || userRank != null,
-                            rankLine = rankLine, rank = userRank?.rank, friends = friendsOnly, onPlay = onPlay,
-                        )
-                    }
-                    // The podium's header line: Everyone | Friends (§207) left, the bare 3D share icon right.
-                    Row(
-                        Modifier.fillMaxWidth().heightIn(min = 34.dp).padding(horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        // Founder 10-09: a smaller switch, sitting quietly on the RIGHT beside share.
-                        Box(Modifier.weight(1f))
+                    // Founder 10-09: Everyone | Friends + share fold into the game strip as one right-hand cluster (no row of their own
+                    // above the podium); the share keeps its space at 0 opacity while there is nothing to share, so nothing shifts.
+                    val stageTrailing: @Composable () -> Unit = {
                         if (!isSweep && userId != null) FriendsSegment(friendsOnly) { selectFriendsOnly(it) }
                         val canShare = if (isSweep) !loading && sweepEntries.isNotEmpty() else !boardLoading && entries.isNotEmpty()
-                        if (canShare) {
+                        Box(Modifier.alpha(if (canShare) 1f else 0f)) {
                             SoftControl(
                                 Icon3DName.SHARE,
                                 contentDescription = if (isSweep) "Share sweep board" else "Share leaderboard",
                                 alpha = if (sharingLb) 0.4f else 1f,
                                 onClick = {
-                                    if (!sharingLb) {
+                                    if (canShare && !sharingLb) {
                                         sharingLb = true
                                         shareScope.launch {
                                             try {
@@ -632,6 +617,17 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 },
                             )
                         }
+                    }
+                    if (isSweep) {
+                        SweepStageStrip(sweepers = playerCount, rankLine = rankLine, trailing = stageTrailing)
+                    } else {
+                        ModeStageStrip(
+                            modeId = selectedMode, players = playerCount,
+                            // iOS: cached completions answer instantly; the rank confirms.
+                            played = completions[selectedMode] != null || userRank != null,
+                            rankLine = rankLine, rank = userRank?.rank, friends = friendsOnly, onPlay = onPlay,
+                            trailing = stageTrailing,
+                        )
                     }
                     // The podium (or its empty state) right under the strip: all three visible on a standard phone.
                     // Founder 10-09: ONE fixed podium height for every game (iOS stagePodiumHeight 300), incl. the loading and

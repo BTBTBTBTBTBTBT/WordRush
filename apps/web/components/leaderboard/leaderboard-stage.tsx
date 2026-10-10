@@ -18,28 +18,32 @@ import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
 // floor glow under it — all one layer, so a game switch sweeps the tint through title, strip and podium
 // together. Shared constants (host table, tint alphas, ledge step positions) live in core leaderboard-stage.ts.
 
-const LB_CLOUD_FADE = 'linear-gradient(to bottom, #000 0%, #000 62%, transparent 92%)';
+// Founder 10-09: the cloud bank fades in from the top and out above the date line (transparent -> opaque at 22% -> opaque at 60% -> transparent at 92%).
+const LB_CLOUD_FADE = 'linear-gradient(to bottom, transparent 0%, #000 22%, #000 60%, transparent 92%)';
+// The sky wash fades in over its first 60 px and out over its last 90 px, so the stage has no top or bottom edge.
+const LB_SKY_FADE = 'linear-gradient(to bottom, transparent 0, #000 60px, #000 calc(100% - 90px), transparent 100%)';
 const WHITE_FALLBACK = { ...castPreset('w'), display: 'mascot' as const };
 
-/** The one stage container + its continuous backdrop. Children stack above it. */
+/**
+ * The one stage container + its continuous backdrop. Children stack above it. Founder 10-09: the stage has NO card edge:
+ * no clip, no rounded corners. The sky wash runs 16 px past each side (to the screen edges), fading in over its first 60 px
+ * and out over its last 90 px; the cloud bank is drawn full bleed (16 px page bleed + 36 px each side) above the wash but behind
+ * the content, drifting side to side +-26 px on a 22 s ease-in-out loop (still under Reduce Motion), rising 6 px above the card.
+ * (The page column clips horizontal overflow, so the bleed never causes a sideways scroll.)
+ */
 export function LeaderboardStage({ accent, children, className = '' }: { accent: string; children: ReactNode; className?: string }) {
   return (
-    <section className={`lb-stage relative overflow-hidden ${className}`} style={{ borderRadius: 24, ['--lb-accent' as string]: accent } as CSSProperties}>
-      <div aria-hidden="true" className="absolute inset-0 pointer-events-none" style={{ zIndex: 0, transition: 'background 380ms ease' }}>
-        {/* the sky: the game's tint, strongest at the top, gone by the bottom */}
+    <section className={`lb-stage relative ${className}`} style={{ ['--lb-accent' as string]: accent } as CSSProperties}>
+      <div aria-hidden="true" className="absolute pointer-events-none overflow-hidden" style={{ zIndex: 0, top: 0, bottom: 0, left: -16, right: -16, transition: 'background 380ms ease' }}>
+        {/* the sky: the game's tint, strongest at the top, gone by the bottom; it fades in and out at the ends */}
         <div
           className="absolute inset-0"
           style={{
             background: `linear-gradient(to bottom, ${alphaHex(accent, STAGE_TINT.skyTop)} 0%, ${alphaHex(accent, STAGE_TINT.skyMid)} 52%, ${alphaHex(accent, STAGE_TINT.skyBottom)} 100%)`,
+            WebkitMaskImage: LB_SKY_FADE, maskImage: LB_SKY_FADE,
             transition: 'background 380ms ease',
           }}
         />
-        {/* clouds drifting across the very top */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={artSrc(STAGE_ART.clouds as ArtName)} alt="" width={420} height={149} decoding="async" draggable={false}
-          className="absolute select-none"
-          // The cloud bank ends ABOVE the WORDOCIOUS row (founder 10-09): lifted, and its lower edge fades out instead of stopping under the text.
-          style={{ top: -26, left: 0, width: '100%', height: 'auto', opacity: 0.75, WebkitMaskImage: LB_CLOUD_FADE, maskImage: LB_CLOUD_FADE }} />
         {/* the sunburst: white light fanning from behind the podium's first place */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={artSrc(STAGE_ART.sunburst as ArtName)} alt="" width={1200} height={600} decoding="async" draggable={false}
@@ -47,6 +51,11 @@ export function LeaderboardStage({ accent, children, className = '' }: { accent:
         {/* the floor glow under the steps */}
         <div className="absolute left-0 right-0" style={{ bottom: 0, height: 60, background: `radial-gradient(ellipse at 50% 100%, ${alphaHex(accent, STAGE_TINT.floorGlow)}, ${alphaHex(accent, 0)} 70%)`, transition: 'background 380ms ease' }} />
       </div>
+      {/* clouds: above the wash, behind the content, full bleed, drifting slowly (globals.css .lb-cloud-drift) */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={artSrc(STAGE_ART.clouds as ArtName)} alt="" width={420} height={149} decoding="async" draggable={false}
+        className="lb-cloud-drift absolute select-none pointer-events-none"
+        style={{ zIndex: 0, top: -6, left: -52, width: 'calc(100% + 104px)', height: 'auto', opacity: 0.85, WebkitMaskImage: LB_CLOUD_FADE, maskImage: LB_CLOUD_FADE }} />
       <div className="relative" style={{ zIndex: 1 }}>{children}</div>
     </section>
   );
