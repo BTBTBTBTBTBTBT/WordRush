@@ -43,6 +43,8 @@ const HARD_ROOTS = [
  * dictionary entries in a puzzle. Listed here so the exact-match sources do not
  * fail the build on them; remove a word from this list the day it is swapped.
  * Roots are never exempted.
+ * RULED 2026-10-10 (founder): "The milder words are fine to keep on the game" — these stay as answers. The constant
+ * keeps its name (content-check.test.ts parses it); treat it as the approved-mild list.
  */
 const PENDING_FOUNDER_CALL = new Set([
   'BOOZE', 'VOMIT', 'DRUNK', 'URINE', 'OPIUM', 'NAKED', 'SLAVE', 'SLANT',

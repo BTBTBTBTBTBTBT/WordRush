@@ -169,7 +169,7 @@ public func applySolutionSwaps3(_ pool: [String]) -> [String] {
 /// 2–3 and can start BEFORE them: its cutover is the day after the next
 /// coordinated store builds (2026-10-12). From then until the batch-2/3 date the
 /// pools deal batches 1 + 4. Not swapped: the answer-pool-hygiene
-/// PENDING_FOUNDER_CALL words (BOOZE, SLAVE, DAMNED…) — still the founder's call.
+/// PENDING_FOUNDER_CALL words (BOOZE, SLAVE, DAMNED…) — founder ruled 2026-10-10: kept as answers.
 /// Replacements: same length, common American words, guessable, not a current or
 /// legacy answer, not an earlier batch's key or replacement, not blocked, not British.
 /// The old words stay valid GUESSES.
