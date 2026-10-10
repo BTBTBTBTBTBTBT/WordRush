@@ -235,8 +235,7 @@ struct AchievementDetailSheet: View {
             .frame(height: 190)
             .accessibilityHidden(true)
             VStack(spacing: 6) {
-                Text(def.name).font(Brand.font(24, .black)).foregroundStyle(FinishInk.heading)
-                    .multilineTextAlignment(.center)
+                BubbleTextView(text: def.name.uppercased(), palette: .accent(FinishInk.purple), maxSize: 26, minSize: 16, animated: false)
                 Text(def.description).font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             }

@@ -605,8 +605,7 @@ struct StageTransitionOverlay: View {
 
                 VStack(spacing: 4) {
                     FinishLabel("Stage complete", color: Color(hex: 0xB45309))
-                    Text(completedName).font(Brand.font(17, .black)).foregroundStyle(FinishInk.heading)
-                        .lineLimit(1).minimumScaleFactor(0.7)
+                    BubbleOneLine(text: completedName.uppercased(), palette: .accent(FinishInk.purple), size: 19, minScale: 0.5)
                     // A small W badge per cleared stage.
                     if let c = clearedIndex {
                         HStack(spacing: 4) {
@@ -626,8 +625,7 @@ struct StageTransitionOverlay: View {
                     } else {
                         FinishLabel("Next up", color: Color(hex: 0xB45309))
                     }
-                    Text(n.name).font(Brand.font(26, .black)).foregroundStyle(FinishInk.heading)
-                        .lineLimit(1).minimumScaleFactor(0.6)
+                    BubbleOneLine(text: n.name.uppercased(), palette: .accent(FinishInk.purple), size: 28, minScale: 0.5)
                     // The stage's rule as a tinted pill.
                     Text("\(n.boards) board\(n.boards > 1 ? "s" : "") · \(n.guesses) guesses\(n.sequential ? " · sequential" : "")\(n.prefill ? " · pre-filled clues" : "")")
                         .font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.heading)

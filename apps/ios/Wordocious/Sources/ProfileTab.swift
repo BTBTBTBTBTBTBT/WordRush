@@ -1246,7 +1246,7 @@ struct ProfileTab: View {
             } else {
                 SymbolGlyph(icon, size: 14, color: color)
             }
-            Text(label).font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.heading)
+            BubbleLabel(label, color: color.bubbleInk, size: 13)
             Spacer()
             Text(shortMedalDate(m.day)).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
         }
@@ -1300,7 +1300,7 @@ struct ProfileTab: View {
                 let color = Color(hex: cat.color)
                 LazyVStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
-                        Text(cat.label.uppercased()).font(Brand.font(11, .black)).tracking(0.4).foregroundStyle(color)
+                        BubbleLabel(cat.label, color: color.bubbleInk, size: 13)
                         Text("\(n)/\(items.count)").font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
                     }
                     ForEach(Array(stride(from: 0, to: items.count, by: 3)), id: \.self) { i in

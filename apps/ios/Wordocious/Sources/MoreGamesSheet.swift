@@ -34,7 +34,7 @@ struct MoreModePickerSheet: View {
         HStack(spacing: 12) {
             ModeIconView(icon: m.icon, accent: m.accent, box: 40)
             VStack(alignment: .leading, spacing: 1) {
-                Text(m.title).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                BubbleLabel(m.title, color: m.accent.bubbleInk, size: 16)
                 Text(m.desc).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
             Spacer()

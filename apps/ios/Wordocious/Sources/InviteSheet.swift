@@ -64,7 +64,7 @@ struct InviteSheet: View {
                             } label: {
                                 HStack(spacing: 10) {
                                     ModeIconView(icon: selectedHome.icon, accent: selectedHome.accent, box: 30)
-                                    Text(modeLabel).font(Brand.font(16, .black)).foregroundStyle(FinishInk.heading)
+                                    BubbleLabel(modeLabel, color: selectedHome.accent.bubbleInk, size: 17)
                                     Spacer()
                                     Image(systemName: "chevron.down")
                                         .font(.system(size: 12, weight: .bold)).foregroundStyle(selectedHome.accent)
@@ -114,7 +114,7 @@ struct InviteSheet: View {
         } label: {
             HStack(spacing: 10) {
                 ModeIconView(icon: hm.icon, accent: hm.accent, box: 28)
-                Text(hm.title).font(Brand.font(14, .heavy)).foregroundStyle(FinishInk.heading)
+                BubbleLabel(hm.title, color: hm.accent.bubbleInk, size: 15)
                 Spacer()
                 if selected {
                     Image(systemName: "checkmark").font(.system(size: 12, weight: .black)).foregroundStyle(hm.accent)

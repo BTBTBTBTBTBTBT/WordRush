@@ -126,10 +126,8 @@ struct FriendsLabel: View {
     }
 
     var body: some View {
-        Text(text.uppercased())
-            .font(Brand.font(11, .black)).tracking(1.3)
-            .foregroundStyle(color)
-            .lineLimit(1).minimumScaleFactor(0.7)
+        // Founder rule 10-10: bubble lettering, hugging its text.
+        BubbleLabel(text, color: color, size: 13)
             .accessibilityAddTraits(.isHeader)
     }
 }
@@ -140,12 +138,10 @@ struct FriendsStatusChip: View {
     var accent: Color = FriendsInk.purple
 
     var body: some View {
-        Text(title.uppercased())
-            .font(Brand.font(10.5, .black)).tracking(0.6)
-            .foregroundStyle(Color.black.mixed(over: accent, 0.35))
+        BubbleLabel(title, color: Color.black.mixed(over: accent, 0.35), size: 12, minScale: 0.6, alignment: .center)
             .padding(.horizontal, 10).frame(minHeight: 26)
             .friendsChip(accent)
-            .lineLimit(1).fixedSize()
+            .fixedSize()
     }
 }
 

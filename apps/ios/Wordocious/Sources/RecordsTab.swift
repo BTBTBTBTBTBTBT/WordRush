@@ -228,7 +228,7 @@ struct AllTimeRecordsView: View {
         return LbBoardRow(rank: rank, userId: e.userId, username: e.username, avatarUrl: e.avatarUrl,
                           won: nil, points: "\(e.sweepCount)") {
             VStack(alignment: .leading, spacing: 1) {
-                LbRowName(name: e.username, isMe: isMe)
+                LbRowName(name: e.username, isMe: isMe, userId: e.userId)
                 LbRowSub(text: "\(e.sweepCount) sweep\(e.sweepCount == 1 ? "" : "s") · \(e.flawlessCount) flawless · \(formatShortTime(e.bestSweepTime))")
             }
         }
@@ -291,9 +291,10 @@ struct RecordStatCell: View {
                         .foregroundStyle(has ? accent : Theme.textMuted)
                 }
                 .frame(width: 28, height: 28)
-                Text(RecordCatalog.label(type, gameMode: record?.gameMode ?? gameMode).uppercased())
-                    .font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(FinishInk.secondary)
-                    .lineLimit(2, reservesSpace: true).minimumScaleFactor(0.8)
+                // Founder rule 10-10: the record's name is bubble lettering (wraps to two lines at most, shrinks to fit).
+                BubbleTextView(text: RecordCatalog.label(type, gameMode: record?.gameMode ?? gameMode).uppercased(),
+                               palette: .accent(has ? accent : Theme.textMuted), maxSize: 12, minSize: 8, animated: false, alignment: .leading)
+                    .frame(minHeight: 30, alignment: .topLeading)
                 Spacer(minLength: mine ? 16 : 0)
             }
             // §254: hints on the record, same wording as the leaderboard rows, set small.
@@ -306,8 +307,10 @@ struct RecordStatCell: View {
                 NavigationLink(value: record.holderId) {
                     HStack(spacing: 6) {
                         AvatarView(url: record.profiles.avatarUrl, username: record.holderUsername, size: 20)
-                        Text(record.holderUsername).font(Brand.font(12, .black)).lineLimit(1).minimumScaleFactor(0.7)
-                            .foregroundStyle(mine ? Color(hex: 0xD97706) : FinishInk.heading)
+                        BubbleOneLine(text: record.holderUsername.uppercased(),
+                                      palette: .accent(mine ? Color(hex: 0xD97706)
+                                                            : PlayerTint.nameColor(userId: record.holderId, username: record.holderUsername, onLight: !Theme.isDark)),
+                                      size: 13, minScale: 0.45, alignment: .leading)
                     }
                 }.buttonStyle(.squish)
             }
@@ -347,7 +350,7 @@ struct RecordsBoardRow: View {
                    avatarUrl: entry.profiles.avatarUrl, emoji: entry.profiles.avatarEmoji,
                    won: entry.completed, points: score) {
             VStack(alignment: .leading, spacing: 1) {
-                LbRowName(name: entry.username, isMe: isMe)
+                LbRowName(name: entry.username, isMe: isMe, userId: entry.userId)
                 LbRowSub(text: line)
             }
         }

@@ -288,8 +288,8 @@ struct RegionsView: View {
 
     private var header: some View {
         VStack(spacing: 4) {
-            Text("STARSWEEP").font(Brand.font(24, .black)).foregroundStyle(regionsAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.regions)
+            BubbleLabel("STARSWEEP", color: regionsAccent, size: 27, minScale: 0.5, alignment: .center)
+                .soloGameTitle(.regions)
             // FINISH_SPEC §B4: the status line under the title; numbers are soft numbers (§A2).
             HStack(spacing: 10) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").softNumber(13) }

@@ -60,15 +60,14 @@ struct InfoPage: View {
 
     private func contentSectionView(_ s: ContentService.ContentSection) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(s.heading).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+            CardTitle(s.heading, color: accent.bubbleInk, maxSize: 17)
             ForEach(Array((s.paragraphs ?? []).enumerated()), id: \.offset) { _, p in
                 Text(p).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary)
                     .lineSpacing(6).fixedSize(horizontal: false, vertical: true)
             }
             ForEach(s.items ?? []) { item in
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.heading).font(Brand.font(12, .black))
-                        .foregroundStyle(item.accent.flatMap { Color(hexString: $0) } ?? Theme.primary)
+                    BubbleLabel(item.heading, color: (item.accent.flatMap { Color(hexString: $0) } ?? Theme.primary).bubbleInk, size: 14)
                     Text(item.body).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary)
                         .lineSpacing(6).fixedSize(horizontal: false, vertical: true)
                 }
@@ -81,7 +80,7 @@ struct InfoPage: View {
 
     private func sectionView(_ s: InfoSection) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(s.heading).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+            CardTitle(s.heading, color: accent.bubbleInk, maxSize: 17)
             if let b = s.body {
                 Text(b).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary)
                     .lineSpacing(6).fixedSize(horizontal: false, vertical: true)

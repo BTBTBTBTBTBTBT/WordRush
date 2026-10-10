@@ -111,7 +111,7 @@ struct HelpView: View {
                 HStack(alignment: .top, spacing: 12) {
                     ModeIconView(icon: mode.icon, accent: mode.accent, box: 32)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(mode.title).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                        BubbleLabel(mode.title, color: mode.accent.bubbleInk, size: 15)
                         Text(content.helpDesc(forTitle: mode.title) ?? mode.desc).font(Brand.font(12, .semibold))
                             .foregroundStyle(FinishInk.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -133,8 +133,7 @@ struct HelpView: View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(Array(content.helpFaq.enumerated()), id: \.element.id) { i, item in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.q).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
-                        .fixedSize(horizontal: false, vertical: true)
+                    CardTitle(item.q, color: (i % 2 == 0 ? InfoPageStyle.purple : InfoPageStyle.pink).bubbleInk, maxSize: 15)
                     Text(item.a).font(Brand.font(12, .semibold)).foregroundStyle(FinishInk.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }

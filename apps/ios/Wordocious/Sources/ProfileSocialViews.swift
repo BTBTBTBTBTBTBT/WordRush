@@ -330,7 +330,7 @@ struct ArchetypeSheet: View {
             archetypeArt(info.key, size: 30, highlighted: highlighted)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(info.name).font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
+                    BubbleLabel(info.name, color: FinishInk.purple.bubbleInk, size: 15)
                     if highlighted {
                         Text(targetName).font(Brand.font(9, .black)).foregroundStyle(.white)
                             .padding(.horizontal, 6).padding(.vertical, 2)
@@ -834,7 +834,7 @@ struct PodiumScreen: View {
                             NavigationLink(value: e.userId) {
                                 HStack(spacing: 10) {
                                     MedalGlyph(type: e.medalType, size: 28)
-                                    Text(e.username).font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
+                                    BubbleLabel(e.username, color: PlayerTint.nameColor(userId: e.userId, username: e.username, onLight: !Theme.isDark), size: 15)
                                     Spacer()
                                 }
                                 .padding(12)

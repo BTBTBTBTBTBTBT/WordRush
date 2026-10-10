@@ -337,7 +337,7 @@ struct GuideSheet: View {
     /// §A1 / §C6: a guide section as a tinted card in the game's color with its top bar.
     private func section<C: View>(_ title: String, accent: Color, @ViewBuilder _ inner: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+            BubbleLabel(title, color: accent.bubbleInk, size: 15)
             inner()
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -38,7 +38,7 @@ struct NotificationPrefsToggles: View {
                 let on = prefs[c.key] != false
                 Toggle(isOn: Binding(get: { on }, set: { _ in toggle(c.key, prefs: prefs) })) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(c.label).font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
+                        BubbleLabel(c.label, color: FinishInk.purple.bubbleInk, size: 14)
                         Text(c.hint).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(1)
                     }
                 }

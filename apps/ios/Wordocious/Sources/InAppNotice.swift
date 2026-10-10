@@ -122,8 +122,8 @@ struct InAppNoticeOverlay: View {
             HStack(spacing: 10) {
                 PoseImage(n.pose.0, n.pose.1, height: 52)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(n.title).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
-                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                    BubbleTextView(text: n.title.uppercased(), palette: .accent(FinishInk.purple), maxSize: 16, minSize: 11, animated: false,
+                                   alignment: .leading)
                     if !n.body.isEmpty {
                         Text(n.body).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                             .lineLimit(3).fixedSize(horizontal: false, vertical: true)

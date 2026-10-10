@@ -119,9 +119,7 @@ struct HowToPlayView: View {
     private var hero: some View {
         VStack(spacing: 10) {
             GuideHostHero(host: .w, accent: GuideFamily.brand)
-            Text("How Wordocious works").font(Brand.font(22, .black)).foregroundStyle(FinishInk.heading)
-                .multilineTextAlignment(.center)
-                .accessibilityAddTraits(.isHeader)
+            BubbleTextView(text: "HOW WORDOCIOUS WORKS", palette: .accent(GuideFamily.brand), maxSize: 28, minSize: 18, animated: false)
             Text("Everything you need to know to get started").font(Brand.font(14, .bold))
                 .foregroundStyle(FinishInk.secondary).multilineTextAlignment(.center)
         }
@@ -150,7 +148,7 @@ struct HowToPlayView: View {
             }
 
             if let heading = s.tilesHeading {
-                Text(heading).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading).padding(.top, 2)
+                BubbleLabel(heading, color: GuideFamily.brand.bubbleInk, size: 15).padding(.top, 2)
             }
             if let tiles = s.tiles {
                 VStack(alignment: .leading, spacing: 10) {
@@ -211,7 +209,7 @@ struct HowToPlayView: View {
                         .accessibilityLabel(g.title)
                         .accessibilityAddTraits(.isHeader)
                 } else {
-                    Text(g.title).font(Brand.font(15, .black)).foregroundStyle(htpColor(g.accent))
+                    BubbleLabel(g.title, color: htpColor(g.accent).bubbleInk, size: 16)
                         .accessibilityAddTraits(.isHeader)
                 }
                 ForEach(g.lines.indices, id: \.self) { i in
@@ -250,8 +248,7 @@ struct HowToPlayView: View {
                 ModeIconView(icon: home.icon, accent: home.accent, box: 34)
             }
             VStack(alignment: .leading, spacing: 3) {
-                Text(m.name).font(Brand.font(14, .black)).foregroundStyle(htpColor(m.accent))
-                    .fixedSize(horizontal: false, vertical: true)
+                BubbleLabel(m.name, color: htpColor(m.accent).bubbleInk, size: 15)
                 Text(m.body).font(Brand.font(14, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
             }

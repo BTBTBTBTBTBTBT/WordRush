@@ -171,8 +171,8 @@ struct FriendsQuickPlaySheet: View {
                         .frame(maxWidth: 260, maxHeight: 30)
                         .accessibilityLabel("Who are you playing?").accessibilityAddTraits(.isHeader)
                 } else {
-                    Text("WHO ARE YOU PLAYING?").font(Brand.font(13, .black)).tracking(1.6)
-                        .foregroundStyle(FriendsInk.rowSub).accessibilityAddTraits(.isHeader)
+                    BubbleLabel("Who are you playing?", color: FriendsInk.bannerHead, size: 16, alignment: .center)
+                        .accessibilityAddTraits(.isHeader)
                 }
             }
             .padding(.top, 6)
@@ -195,8 +195,9 @@ struct FriendsQuickPlaySheet: View {
                     .shadow(color: st.online ? FriendsKit.green.opacity(0.55) : .clear, radius: 10)
                     .shadow(color: st.online ? FriendsKit.green.opacity(0.35) : .clear, radius: 4)
                     .padding(.bottom, 5)
-                Text(f.username).font(Brand.font(15, .black)).foregroundStyle(FriendsInk.heading)
-                    .lineLimit(1).truncationMode(.tail).minimumScaleFactor(0.8)
+                BubbleOneLine(text: f.username.uppercased(),
+                              palette: .accent(PlayerTint.nameColor(userId: f.id, username: f.username, onLight: !FriendsInk.dark)),
+                              size: 16, minScale: 0.45)
                 Text(st.text).font(Brand.font(12, .heavy))
                     .foregroundStyle(st.online ? FriendsKit.green : FriendsInk.rowSub).lineLimit(1)
             }
@@ -217,8 +218,9 @@ struct FriendsQuickPlaySheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 // BJ16: the LET'S PLAY! lettering; the friend's @name rides under it.
                 HeadingArtView(.letsplay, height: 28, maxWidth: 170, label: "Play with \(f.username)", alignment: .leading)
-                Text("@\(f.username)").font(Brand.font(14, .black)).foregroundStyle(FriendsInk.bannerHead)
-                    .lineLimit(1).minimumScaleFactor(0.7).accessibilityHidden(true)
+                BubbleLabel(f.username, color: PlayerTint.nameColor(userId: f.id, username: f.username, onLight: !FriendsInk.dark),
+                            size: 15, minScale: 0.45)
+                    .accessibilityHidden(true)
                 if let p = f.presenceLine() {
                     Text(p).font(Brand.font(12, .heavy)).foregroundStyle(online ? FriendsKit.green : FriendsInk.muted).lineLimit(1)
                 }
@@ -263,8 +265,7 @@ struct FriendsQuickPlaySheet: View {
     private func stakeStep(_ f: FriendsService.FriendProfile) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(spacing: 4) {
-                Text(FriendlyKind.coin.title.uppercased()).font(Brand.font(17, .black)).tracking(0.6)
-                    .foregroundStyle(FriendsInk.bannerHead)
+                BubbleLabel(FriendlyKind.coin.title, color: FriendsInk.bannerHead, size: 20, alignment: .center)
                 Text(FriendsKit.rules(.coin)).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.muted)
             }
             .frame(maxWidth: .infinity)

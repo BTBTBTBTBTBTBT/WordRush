@@ -181,8 +181,7 @@ struct InfoIntroCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(heading).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
-                .fixedSize(horizontal: false, vertical: true)
+            CardTitle(heading, color: InfoPageStyle.purple.bubbleInk, maxSize: 20)
             if let line {
                 Text(line).font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -229,7 +228,7 @@ struct MenuSheet: View {
                 .frame(width: 40, height: 40)
                 .background(RoundedRectangle(cornerRadius: 11).fill(d.accent.opacity(0.14)))
             VStack(alignment: .leading, spacing: 4) {
-                Text(d.title).font(Brand.font(15, .black)).textCase(.uppercase).foregroundStyle(FinishInk.heading)
+                BubbleLabel(d.title, color: d.accent.bubbleInk, size: 16)
                 Text(d.subtitle).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
                     .lineLimit(1).minimumScaleFactor(0.8)
             }
@@ -288,7 +287,7 @@ struct GuidesIndexView: View {
                     .frame(width: 40, height: 40).background(RoundedRectangle(cornerRadius: 11).fill(accent.opacity(0.12)))
             }
             VStack(alignment: .leading, spacing: 4) {
-                Text(g?.title ?? GuideService.slug(for: mode).capitalized).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                BubbleLabel(g?.title ?? GuideService.slug(for: mode).capitalized, color: accent.bubbleInk, size: 16)
                 if let tagline = g?.tagline {
                     Text(tagline).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(2).multilineTextAlignment(.leading)
                 }
@@ -479,8 +478,7 @@ struct WordsView: View {
             VStack(alignment: .leading, spacing: 6) {
                 // BI17: the intro as plain type (no bordered card).
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("EVERY WORD OF THE DAY").font(Brand.font(13, .black)).tracking(1.2)
-                        .foregroundStyle(GuideFamily.ink(GuideFamily.brand))
+                    BubbleLabel("Every word of the day", color: GuideFamily.ink(GuideFamily.brand).bubbleInk, size: 15)
                     Text("Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.")
                         .font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -510,7 +508,7 @@ struct WordsView: View {
             GlossyTile(face: .correct, letter: String(w.word.prefix(1)).uppercased(), width: 40)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
-                Text(w.word.uppercased()).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                BubbleLabel(w.word, color: FinishInk.purple.bubbleInk, size: 17)
                 Text(prettyDate(w.date)).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
             .padding(.top, 2)
@@ -589,7 +587,7 @@ struct WordDetailBody: View {
     }
 
     private func label(_ t: String) -> some View {
-        Text(t.uppercased()).font(Brand.font(13, .black)).tracking(1.2).foregroundStyle(FinishInk.heading)
+        BubbleLabel(t, color: InfoPageStyle.purple.bubbleInk, size: 15)
             .padding(.horizontal, 2)
             .accessibilityAddTraits(.isHeader)
     }

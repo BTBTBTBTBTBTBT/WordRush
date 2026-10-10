@@ -72,7 +72,7 @@ struct TitleShelvesView: View {
                             .frame(maxHeight: 30).padding(.horizontal, 2)
                             .accessibilityLabel("Pick your title")
                     } else {
-                        Text("PICK YOUR TITLE").font(Brand.font(20, .black)).foregroundStyle(Color(hex: 0xF5B82E))
+                        BubbleLabel("Pick your title", color: Color(hex: 0xF5B82E), size: 22, minScale: 0.5, alignment: .center)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -128,7 +128,7 @@ struct TitleShelvesView: View {
         HStack(spacing: 8) {
             LiveMascot(config: mascot, initial: initial, size: 78, hopToken: hop)
             VStack(alignment: .leading, spacing: 4) {
-                Text(username).font(Brand.font(20, .black)).foregroundStyle(accent).lineLimit(1).minimumScaleFactor(0.6)
+                BubbleLabel(username, color: accent, size: 22, minScale: 0.45)
                 let name = pick.flatMap { k in catalog.all.first { $0.key == k }?.name }
                 TitleRibbon(text: name ?? "No title", height: 26, maxWidth: 230, placeholder: name == nil)
                 Text(hint).font(Brand.font(11, .bold)).foregroundStyle(Theme.isDark ? Theme.textSecondary : Color(hex: 0x7A6AA6))

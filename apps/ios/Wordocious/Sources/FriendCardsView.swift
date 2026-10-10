@@ -77,8 +77,9 @@ struct FriendCardView: View {
                 HStack(spacing: 10) {
                     avatar
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(card.name).font(Brand.font(15, .black)).foregroundStyle(FriendsInk.heading)
-                            .lineLimit(1).minimumScaleFactor(0.8)
+                        BubbleOneLine(text: card.name.uppercased(),
+                                      palette: .accent(PlayerTint.nameColor(userId: card.friendId, username: card.name, onLight: !FriendsInk.dark)),
+                                      size: 16, minScale: 0.45, alignment: .leading)
                         if let p = card.presence {
                             HStack(spacing: 4) {
                                 Circle().fill(FriendsInk.online).frame(width: 7, height: 7)
@@ -87,8 +88,8 @@ struct FriendCardView: View {
                             }
                         }
                         if !card.headline.isEmpty {
-                            Text(card.headline).font(Brand.font(13, .black)).foregroundStyle(FriendsInk.bannerHead)
-                                .lineLimit(1).minimumScaleFactor(0.8)
+                            BubbleOneLine(text: card.headline.uppercased(), palette: .accent(FriendsInk.bannerHead), size: 13, minScale: 0.5,
+                                          alignment: .leading)
                         }
                     }
                     Spacer(minLength: 4)

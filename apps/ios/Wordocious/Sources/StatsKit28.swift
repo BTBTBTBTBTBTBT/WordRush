@@ -102,7 +102,7 @@ struct HeroStatsRow: View {
                         StatIconView(name: s.icon, size: 44)
                     }
                     Text(s.value).softNumber(20).lineLimit(1).minimumScaleFactor(0.55).padding(.top, 2)
-                    Text(s.label.uppercased()).font(Brand.font(9, .heavy)).tracking(0.5).foregroundStyle(FinishInk.secondary)
+                    BubbleOneLine(text: s.label.uppercased(), palette: .accent(FinishInk.deepPurple.bubbleInk), size: 10, minScale: 0.5)
                     Text(s.sub ?? " ").font(Brand.font(9, .heavy)).foregroundStyle(accent).lineLimit(1)
                 }
                 .frame(maxWidth: .infinity)
@@ -151,8 +151,7 @@ struct PocketGamesSection: View {
                     let k = records?.byKind.first { $0.kind == kind }
                     VStack(spacing: 2) {
                         FriendlyGameIcon(kind: kind, size: 40, glow: false, tinted: true)
-                        Text(kind.title).font(Brand.font(10, .black)).foregroundStyle(FinishInk.heading)
-                            .lineLimit(1).minimumScaleFactor(0.7)
+                        BubbleOneLine(text: kind.title.uppercased(), palette: .accent(FinishInk.deepPurple.bubbleInk), size: 11, minScale: 0.5)
                         Text(k.map { $0.record.played ? "\($0.wins)–\($0.losses)" : "—" } ?? "…").softNumber(14)
                         Text(Self.second(k)).font(Brand.font(9, .heavy)).foregroundStyle(FinishInk.secondary).lineLimit(1)
                     }

@@ -417,7 +417,7 @@ extension VSArt where Fallback == EmptyView {
 struct VSSectionLabel: View {
     let text: String
     var body: some View {
-        Text(text).font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(VsLobbyKit.label)
+        BubbleLabel(text, color: VsLobbyKit.ink, size: 13)
     }
 }
 

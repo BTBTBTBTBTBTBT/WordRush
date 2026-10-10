@@ -130,8 +130,9 @@ struct TodaysRaceCard: View {
                 AvatarView(url: me.avatarUrl, username: me.username, size: 32, accentHex: me.accentColor, emoji: me.avatarEmoji, pro: Wordocious.isProActive(me))
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text(r.me ? "You" : r.username).font(Brand.font(13, .black))
-                    .foregroundStyle(r.me ? Self.purple : FriendsInk.heading).lineLimit(1)
+                BubbleLabel(r.me ? "You" : r.username,
+                            color: r.me ? Self.purple : PlayerTint.nameColor(userId: r.id, username: r.username, onLight: !FriendsInk.dark),
+                            size: 15, minScale: 0.45)
                 if r.points > 0 {
                     HStack(spacing: 3) {
                         Text(r.points.formatted()).softNumber(12, color: VsLobbyKit.numberInk)

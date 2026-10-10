@@ -140,7 +140,7 @@ struct VSFriendPage: View {
             HStack(spacing: 12) {
                 AvatarView(url: f.avatar_url, username: f.username, size: 36, emoji: f.avatar_emoji)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("@\(f.username)").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.titleInk).lineLimit(1)
+                    BubbleLabel(f.username, color: VsLobbyKit.ink, size: 15, minScale: 0.45)
                     Text(h2hLine(f)).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk).lineLimit(1)
                 }
                 Spacer(minLength: 4)
@@ -205,7 +205,7 @@ struct VSFriendPage: View {
 
     private var liveTab: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("PLAY RIGHT NOW").font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.titleInk)
+            BubbleLabel("Play right now", color: VsLobbyKit.ink, size: 17)
             Text("You’re both online: send a private match link or an @username invite, and the match starts when they join.")
                 .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                 .fixedSize(horizontal: false, vertical: true)
@@ -218,7 +218,7 @@ struct VSFriendPage: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Icon3D(.crown, size: 20)
-                Text("SENDING CHALLENGES IS PRO").font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.titleInk)
+                BubbleLabel("Sending challenges is Pro", color: VsLobbyKit.purple, size: 15, minScale: 0.5)
             }
             Text("Answering a friend’s challenge is always free.")
                 .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)

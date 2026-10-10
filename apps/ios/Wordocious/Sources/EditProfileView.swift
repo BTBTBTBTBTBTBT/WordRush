@@ -273,7 +273,7 @@ struct EditProfileView: View {
     private func swatchSection<C: View>(_ title: String, hint: String? = nil, @ViewBuilder _ content: () -> C) -> some View {
         VStack(spacing: 6) {
             HStack(spacing: 4) {
-                Text(title).font(Brand.font(10, .black)).tracking(1.2).foregroundStyle(labelInk)
+                BubbleLabel(title, color: FinishInk.purple.bubbleInk, size: 12)
                 if let hint { Text("· \(hint)").font(Brand.font(10, .bold)).foregroundStyle(labelInk.opacity(0.8)) }
             }
             content()
@@ -406,7 +406,7 @@ struct EditProfileView: View {
             tapRow("FAVORITE", action: { showFavorite = true }) {
                 if let m = dailyModes.first(where: { $0.dbKey == favoriteMode }) {
                     ModeIconView(icon: m.icon, accent: m.accent, box: 22)
-                    Text(m.title).font(Brand.font(14, .heavy)).foregroundStyle(ink).lineLimit(1)
+                    BubbleLabel(m.title, color: ink, size: 15, minScale: 0.5)
                 } else {
                     Text("Pick a game").font(Brand.font(14, .bold)).foregroundStyle(labelInk)
                 }
@@ -445,7 +445,7 @@ struct EditProfileView: View {
 
     private func row<C: View>(_ label: String, @ViewBuilder _ content: () -> C) -> some View {
         HStack(spacing: 10) {
-            Text(label).font(Brand.font(10, .black)).tracking(1).foregroundStyle(labelInk)
+            BubbleOneLine(text: label.uppercased(), palette: .accent(FinishInk.purple.bubbleInk), size: 12, minScale: 0.5, alignment: .leading)
                 .frame(width: 84, alignment: .leading)
             content().frame(maxWidth: .infinity, alignment: .leading)
         }

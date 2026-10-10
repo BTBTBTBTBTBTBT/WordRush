@@ -117,10 +117,9 @@ struct FinishLabel: View {
     }
 
     var body: some View {
-        Text(text.uppercased())
-            .font(Brand.font(11, .black)).tracking(1.3)
-            .foregroundStyle(Theme.isDark ? Theme.textSecondary : color)
-            .lineLimit(1).minimumScaleFactor(0.7)
+        // Founder rule 10-10: no plain-text headings: the small card / section label is bubble lettering (hugs its text, shrinks
+        // only when the row is tighter than it).
+        BubbleLabel(text, color: Theme.isDark ? Color.white.mixed(over: color, 0.4) : color, size: 13)
             .accessibilityAddTraits(.isHeader)
     }
 }

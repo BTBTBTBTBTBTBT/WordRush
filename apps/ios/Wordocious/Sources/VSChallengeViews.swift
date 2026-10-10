@@ -262,7 +262,7 @@ struct VSChallengeSentView: View {
             VStack(spacing: 16) {
                 CastRow(size: 22).padding(.top, 10)   // founder 10-03: the cast spells the brand (no gradient text wordmark)
                 VStack(spacing: 12) {
-                    Text(headline).font(Brand.font(22, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
+                    BubbleTextView(text: headline.uppercased(), palette: .vs, maxSize: 26, minSize: 16, animated: false)
                     if let run = vm.sentRun {
                         Text(subline(run)).font(Brand.font(10.5, .heavy)).tracking(0.4).foregroundStyle(VsLobbyKit.purpleSub)
                             .multilineTextAlignment(.center)
@@ -436,7 +436,7 @@ struct VSChallengeRaceView: View {
         VStack(spacing: 10) {
             Image("swords").renderingMode(.template).resizable().scaledToFit()
                 .frame(width: 32, height: 32).foregroundStyle(VsLobbyKit.ink)
-            Text(title).font(Brand.font(17, .black)).foregroundStyle(VsLobbyKit.titleInk).multilineTextAlignment(.center)
+            BubbleTextView(text: title.uppercased(), palette: .vs, maxSize: 21, minSize: 14, animated: false)
             if let sub { Text(sub).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk).multilineTextAlignment(.center) }
             if !auth.isAuthenticated {
                 VSPrimaryButton(title: "SIGN IN") { showAuth = true }
@@ -452,7 +452,7 @@ struct VSChallengeRaceView: View {
         let target = c.run.solved ? "Solved in \(c.run.guesses) · \(VsLobby.vsClock(c.run.timeMs))" : "Not solved — just solve it"
         return VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("RACE @\(name.uppercased())’S RUN").font(Brand.font(16, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
+                BubbleOneLine(text: "RACE \(name.uppercased())'S RUN", palette: .vs, size: 18, minScale: 0.5, alignment: .leading)
                 HStack(spacing: 8) {
                     VSModeChip(mode: c.mode)
                     Spacer()
@@ -484,7 +484,7 @@ struct VSChallengeRaceView: View {
     private func mineCard(_ c: VsChallenge, _ sent: VsSentChallenge?) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top) {
-                Text("YOUR CHALLENGE").font(Brand.font(16, .black)).foregroundStyle(VsLobbyKit.titleInk)
+                BubbleLabel("Your challenge", palette: .vs, size: 18)
                 Spacer()
                 VSModeChip(mode: c.mode)
             }
@@ -501,7 +501,7 @@ struct VSChallengeRaceView: View {
                     ForEach(Array(results.enumerated()), id: \.offset) { i, r in
                         HStack(spacing: 8) {
                             VSInitialAvatar(name: r.username, size: 28)
-                            Text("@\(r.username)").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.titleInk)
+                            BubbleLabel(r.username, color: VsLobbyKit.ink, size: 15, minScale: 0.45)
                             Spacer()
                             if r.outcome == "win" || r.outcome == "loss" {
                                 // From YOUR side: "win" = you won (W), "loss" = they beat it (L).

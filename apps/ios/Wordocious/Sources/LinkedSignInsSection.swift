@@ -71,7 +71,7 @@ struct LinkedSignInsSection: View {
                 .frame(width: 20, height: 20)
                 .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(row.name).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                    BubbleLabel(row.name, color: FinishInk.purple.bubbleInk, size: 15)
                     Text(subtitle(linked, loaded: identities != nil))
                         .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(1).truncationMode(.middle)
                 }
