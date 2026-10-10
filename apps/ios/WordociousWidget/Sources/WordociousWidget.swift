@@ -888,64 +888,69 @@ struct MediumView: View {
     var body: some View {
         let hall = halloweenOn(snap, date)
         let dark = hall || (snap.theme?.dark ?? (scheme == .dark))
-        // Founder 10-10 ("beefier"): the mirror, rebuilt so the chips get the whole width. Top row: the DAILIES ring, the
-        // lettering, the PUZZLES ring. Middle: the 8 dailies (4×2) beside the 10 Puzzles (5×2), one big chip size, the
-        // dailies under their ring and the Puzzles under theirs. Bottom: the streak pair + next / countdown / points.
+        // Founder 10-10: two columns, each its own little stack — the ring centered over its group, a white label, the
+        // chips (DAILIES 4×2 | PUZZLES 5×2) — with a hairline between them and WORDOCIOUS centered in the gap between
+        // the rings. A finished group's ring glows gold. The info line runs along the bottom.
         GeometryReader { g in
             let hasPuzzles = !snap.puzzleModes.isEmpty
             let W: CGFloat = g.size.width, H: CGFloat = g.size.height
-            let gap: CGFloat = 4, middle: CGFloat = 12, bottom: CGFloat = 16, vGap: CGFloat = 5
+            let gap: CGFloat = 4, middle: CGFloat = 14, bottom: CGFloat = 16, label: CGFloat = 10, ring: CGFloat = 36
             let cols: CGFloat = hasPuzzles ? 9 : 4
             let byWidth: CGFloat = (W - (cols - (hasPuzzles ? 2 : 1)) * gap - (hasPuzzles ? middle : 0)) / cols
-            let ring: CGFloat = 38
-            // Founder 10-10: a white DAILIES / PUZZLES label over each group, a hairline between the groups.
-            let label: CGFloat = 10, labelGap: CGFloat = 3
-            let byHeight: CGFloat = (H - ring - bottom - 2 * vGap - gap - label - labelGap) / 2
-            let c: CGFloat = max(16, min(44, min(byWidth, byHeight)))
+            let byHeight: CGFloat = (H - ring - label - bottom - 4 * 3 - gap) / 2
+            let c: CGFloat = max(16, min(40, min(byWidth, byHeight)))
             let gridH: CGFloat = 2 * c + gap
+            let dW: CGFloat = 4 * c + 3 * gap
+            let pW: CGFloat = 5 * c + 4 * gap
+            let dDone = !snap.modes.isEmpty && snap.modes.allSatisfy(\.played)
+            let pDone = hasPuzzles && snap.puzzleModes.allSatisfy(\.played)
+            let gold = Color(widgetHex: "#f59e0b")
             VStack(spacing: 0) {
-                HStack(spacing: 0) {
-                    Link(destination: homeURL) {
-                        DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
-                            .frame(width: ring, height: ring)
-                    }
-                    Spacer(minLength: 4)
-                    Link(destination: homeURL) {
-                        WordmarkImage(size: .medium, halloween: hall, dark: dark, height: 15)
-                    }
-                    Spacer(minLength: 4)
-                    if hasPuzzles {
+                HStack(alignment: .top, spacing: 0) {
+                    // DAILIES column
+                    VStack(spacing: 3) {
                         Link(destination: homeURL) {
-                            DailyRing(modes: snap.puzzleModes, dark: dark, label: "PUZZLES")
+                            DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
                                 .frame(width: ring, height: ring)
+                                .shadow(color: dDone ? gold.opacity(0.85) : .clear, radius: dDone ? 7 : 0)
                         }
-                    } else {
-                        Color.clear.frame(width: ring, height: ring)
-                    }
-                }
-                .frame(height: ring)
-                Spacer(minLength: vGap)
-                HStack(spacing: 0) {
-                    VStack(alignment: .leading, spacing: labelGap) {
                         Caps(text: "DAILIES", color: .white).frame(height: label)
                         ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: c, spread: true)
-                            .frame(width: 4 * c + 3 * gap, height: gridH)
+                            .frame(width: dW, height: gridH)
                     }
+                    .frame(width: dW)
                     if hasPuzzles {
-                        Spacer(minLength: 0)
-                        // The separation: a soft hairline between the two groups.
-                        Capsule().fill(Color.white.opacity(0.18))
-                            .frame(width: 1.5, height: gridH + label + labelGap - 6)
-                        Spacer(minLength: 0)
-                        VStack(alignment: .trailing, spacing: labelGap) {
+                        // The middle: the hairline (WORDOCIOUS floats above it, between the rings — see the overlay).
+                        Capsule().fill(Color.white.opacity(0.18)).frame(width: 1.5)
+                            .padding(.top, ring + 4)
+                            .frame(width: max(middle, W - dW - pW))
+                        // PUZZLES column
+                        VStack(spacing: 3) {
+                            Link(destination: homeURL) {
+                                DailyRing(modes: snap.puzzleModes, dark: dark, label: "PUZZLES")
+                                    .frame(width: ring, height: ring)
+                                    .shadow(color: pDone ? gold.opacity(0.85) : .clear, radius: pDone ? 7 : 0)
+                            }
                             Caps(text: "PUZZLES", color: .white).frame(height: label)
                             ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, maxChip: c, spread: true)
-                                .frame(width: 5 * c + 4 * gap, height: gridH)
+                                .frame(width: pW, height: gridH)
                         }
+                        .frame(width: pW)
+                    } else {
+                        Spacer(minLength: 0)
                     }
                 }
-                .frame(height: gridH + label + labelGap)
-                Spacer(minLength: vGap)
+                .overlay(alignment: .topLeading) {
+                    // WORDOCIOUS centered in the gap between the two rings.
+                    let leftEdge: CGFloat = dW / 2 + ring / 2 + 6
+                    let rightEdge: CGFloat = W - pW / 2 - ring / 2 - 6
+                    Link(destination: homeURL) {
+                        WordmarkImage(size: .medium, halloween: hall, dark: dark, height: 12)
+                            .frame(width: max(40, rightEdge - leftEdge), height: ring)
+                    }
+                    .offset(x: leftEdge)
+                }
+                Spacer(minLength: 3)
                 Link(destination: homeURL) {
                     HStack(spacing: 8) {
                         StreakPair(snap: snap, size: bottom + 2)
