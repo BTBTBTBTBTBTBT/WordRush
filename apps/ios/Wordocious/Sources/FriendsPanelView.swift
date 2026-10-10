@@ -894,7 +894,8 @@ struct FriendsPanelView: View {
             title: f.username, subtitle: f.presenceLine() ?? FriendsKit.todayLine(f),
             avatar: AnyView(AvatarView(url: f.avatar_url, username: f.username, size: 44, emoji: f.avatar_emoji,
                                        castId: f.avatar_cast_id, frame: f.avatar_frame, userId: f.id, stroke: false)),
-            actions: rows)
+            actions: rows,
+            titleColor: PlayerTint.nameColor(userId: f.id, username: f.username))
     }
 
     /// The ⋯ menu for a card whose person is not in the friend list: View profile and one Resign row per game going.

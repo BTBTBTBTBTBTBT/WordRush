@@ -47,7 +47,12 @@ struct ProfileIdentityBlock: View {
     let friendsSince: String?
 
     var body: some View {
-        let palette: HeadlinePalette = ProfileAccent.isCustom(profile.accentColor) ? .accent(ProfileAccent.color(profile.accentColor)) : .home
+        // Founder 10-09: the name wears the player's mascot-maker backdrop color (Johnny's lemon → sunny gold), like their
+        // name on the friend menu; no backdrop picked → their custom accent, else the color from their body.
+        let cfg = PlayerTint.config(userId: profile.id, username: profile.username)
+        let palette: HeadlinePalette = AvatarCatalog.backdrop(cfg.bg) != nil || !ProfileAccent.isCustom(profile.accentColor)
+            ? .accent(PlayerTint.nameColor(userId: profile.id, username: profile.username))
+            : .accent(ProfileAccent.color(profile.accentColor))
         VStack(spacing: 4) {
             HStack(spacing: 8) {
                 BubbleTextView(text: profile.username.uppercased(), palette: palette, maxSize: 38, minSize: 20)

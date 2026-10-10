@@ -13,10 +13,10 @@ function play(ids: readonly string[], start: MelodyState = MELODY_START, t0 = 10
 const idFor = (midi: number) => MUSICAL_CAST_IDS[MUSICAL_SCALE.indexOf(midi as (typeof MUSICAL_SCALE)[number])];
 
 describe('the flag', () => {
-  it('on in debug, off in release', () => {
+  it('on in debug and release (founder 10-09: the tunes ship in 2.8)', () => {
     expect(MUSICAL_CAST_FLAG).toEqual({ debug: true, release: true });
     expect(musicalCastEnabled(true)).toBe(true);
-    expect(musicalCastEnabled(false)).toBe(false);
+    expect(musicalCastEnabled(false)).toBe(true);
   });
 });
 

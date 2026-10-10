@@ -45,16 +45,24 @@ enum FamilyMenuInk {
     static var heading: Color { night ? FriendsInk.heading : Color(hex: 0x3B1F6E) }
     static var sub: Color { night ? FriendsInk.rowSub : Color(hex: 0x7A6A95) }
     /// Founder 10-09: the actions sit two across as candy tiles (not a tall list); danger rows are one quiet line under them.
-    static let tileHeight: CGFloat = 54
+    static let tileHeight: CGFloat = 44
     static let dangerHeight: CGFloat = 40
-    static let rowGap: CGFloat = 8
+    static let rowGap: CGFloat = 10
 
     /// The sheet height for a header + this menu's tiles and danger lines (grabber, header, grid, bottom air).
+    /// A menu whose choices are sentences (React's quick notes) lists them one per row as speech bubbles, whole.
+    static func isNotes(_ m: FamilyActionMenuModel) -> Bool { m.actions.contains { !$0.danger && $0.title.count > 18 } }
+    static let noteHeight: CGFloat = 54
+
     static func height(_ m: FamilyActionMenuModel) -> CGFloat {
+        if isNotes(m) {
+            let n = CGFloat(m.actions.count)
+            return min(13 + 14 + 48 + 14 + n * noteHeight + max(0, n - 1) * rowGap + 24, 760)
+        }
         let plain = m.actions.filter { !$0.danger }.count
         let danger = m.actions.count - plain
         let rows = (plain + 1) / 2
-        var h: CGFloat = 13 + 14 + 42 + 14
+        var h: CGFloat = 13 + 14 + 48 + 14
         h += CGFloat(rows) * tileHeight + CGFloat(max(0, rows - 1)) * rowGap
         if danger > 0 { h += 6 + CGFloat(danger) * dangerHeight }
         return h + 16
@@ -67,6 +75,8 @@ struct FamilyActionMenuModel {
     var subtitle: String? = nil
     var avatar: AnyView? = nil
     let actions: [FamilyMenuAction]
+    /// Founder 10-09: a person's menu draws their name in the bubble lettering, in their own color (their backdrop).
+    var titleColor: Color? = nil
 }
 
 struct FamilyActionMenu: View {
@@ -83,8 +93,13 @@ struct FamilyActionMenu: View {
             HStack(spacing: 12) {
                 if let avatar = model.avatar { avatar }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(model.title).font(Brand.font(19, .black)).foregroundStyle(FamilyMenuInk.heading)
-                        .lineLimit(1).minimumScaleFactor(0.7)
+                    if let tc = model.titleColor {
+                        BubbleTextView(text: model.title.uppercased(), palette: .accent(tc), maxSize: 26, minSize: 15,
+                                       animated: false, alignment: .leading)
+                    } else {
+                        Text(model.title).font(Brand.font(19, .black)).foregroundStyle(FamilyMenuInk.heading)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                    }
                     if let s = model.subtitle {
                         Text(s).font(Brand.font(12, .heavy)).foregroundStyle(FamilyMenuInk.sub).lineLimit(1)
                     }
@@ -94,12 +109,23 @@ struct FamilyActionMenu: View {
                 Spacer(minLength: 8)
                 FamilyCloseButton(size: 28, label: "Close menu", action: close)
             }
-            .frame(height: 56 - 14)
+            .frame(height: 48)
             VStack(spacing: 6) {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: FamilyMenuInk.rowGap),
-                                    GridItem(.flexible(), spacing: FamilyMenuInk.rowGap)],
-                          spacing: FamilyMenuInk.rowGap) {
-                    ForEach(plain) { a in tile(a) }
+                if FamilyMenuInk.isNotes(model) {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: FamilyMenuInk.rowGap) { ForEach(plain) { a in note(a) } }
+                            .padding(.bottom, 8)
+                    }
+                } else {
+                // Two across; an odd last one takes the whole row (never a lone half-width button).
+                VStack(spacing: FamilyMenuInk.rowGap) {
+                    ForEach(Array(stride(from: 0, to: plain.count, by: 2)), id: \.self) { i in
+                        HStack(spacing: FamilyMenuInk.rowGap) {
+                            tile(plain[i])
+                            if i + 1 < plain.count { tile(plain[i + 1]) }
+                        }
+                    }
+                }
                 }
                 ForEach(danger) { a in dangerLine(a) }
             }
@@ -129,27 +155,66 @@ struct FamilyActionMenu: View {
         .accessibilityHidden(true)
     }
 
+    /// Founder 10-09 ("why do these still look so ugly"): each action is the family candy button (the ADD A FRIEND look) in
+    /// its own color, two across, with its icon in white clay or full-color art. No boxes.
     private func tile(_ a: FamilyMenuAction) -> some View {
-        let ink = FamilyInk.helperInk(a.tint, dark: false)
-        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
-        return Button { pick(a) } label: {
-            HStack(spacing: 9) {
-                coin(a, tint: a.tint, ink: ink, size: 36)
-                Text(a.title).font(Brand.font(14.5, .black))
-                    .foregroundStyle(FamilyMenuInk.heading)
-                    .lineLimit(1).minimumScaleFactor(0.75)
-                Spacer(minLength: 0)
+        Button { pick(a) } label: {
+            CandyLabel(title: a.title) {
+                switch a.icon {
+                case .clay(let name):
+                    if let ui = FamilyArt.shared.image("art-fam-ic-\(name)") {
+                        Image(uiImage: ui).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+                            .frame(width: 16, height: 16)
+                    }
+                case .art(let name):
+                    Image(name).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                case .symbol(let symbol):
+                    Image(systemName: symbol).font(.system(size: 13, weight: .black)).foregroundStyle(.white)
+                }
             }
-            .padding(.horizontal, 9)
-            .frame(height: FamilyMenuInk.tileHeight)
-            .background(shape.fill(FamilyMenuInk.night ? a.tint.opacity(0.20) : Color.white.opacity(0.80)))
-            .overlay(shape.strokeBorder(a.tint.opacity(FamilyMenuInk.night ? 0.35 : 0), lineWidth: 1))
-            .shadow(color: a.tint.opacity(FamilyMenuInk.night ? 0.25 : 0.10), radius: 6, y: 2)
+        }
+        .buttonStyle(CastButtonStyle(color: YourBoardPill.castColor(for: a.tint), size: .medium, fullWidth: true))
+        .environment(\.castCapScale, 0.82)
+        .disabled(a.disabled)
+        .accessibilityLabel(a.accessibility ?? a.title)
+    }
+
+    /// A quick note as a speech bubble from you: the whole sentence (two lines at most), its icon in a candy coin, a little
+    /// tail on the left. Tap sends it.
+    private func note(_ a: FamilyMenuAction) -> some View {
+        let ink = FamilyInk.helperInk(a.tint, dark: false)
+        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+        return Button { pick(a) } label: {
+            HStack(spacing: 10) {
+                coin(a, tint: a.tint, ink: ink, size: 32)
+                Text(a.title).font(Brand.font(14.5, .black))
+                    .foregroundStyle(FamilyMenuInk.night ? Color.white : FamilyMenuInk.heading)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2).minimumScaleFactor(0.85)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                Image(systemName: "paperplane.fill").font(.system(size: 13, weight: .black))
+                    .foregroundStyle(a.tint.opacity(FamilyMenuInk.night ? 0.9 : 0.7))
+            }
+            .padding(.leading, 10).padding(.trailing, 14)
+            .frame(height: FamilyMenuInk.noteHeight)
+            .background(
+                shape.fill(LinearGradient(colors: FamilyMenuInk.night
+                                            ? [a.tint.opacity(0.42), a.tint.opacity(0.26)]
+                                            : [Color.white, a.tint.opacity(0.10).mixed(over: .white, 0.9)],
+                                          startPoint: .top, endPoint: .bottom))
+                    .overlay(alignment: .bottomLeading) {
+                        BubbleTail().fill(FamilyMenuInk.night ? a.tint.opacity(0.26) : Color.white)
+                            .frame(width: 14, height: 10).offset(x: 18, y: 8)
+                    }
+            )
+            .shadow(color: a.tint.opacity(0.25), radius: 6, y: 3)
+            .padding(.bottom, 6)
             .contentShape(shape)
         }
-        .buttonStyle(.squish)
+        .buttonStyle(.squishCard)
         .disabled(a.disabled)
-        .opacity(a.disabled ? 0.5 : 1)
         .accessibilityLabel(a.accessibility ?? a.title)
     }
 
@@ -167,7 +232,7 @@ struct FamilyActionMenu: View {
             .frame(height: FamilyMenuInk.dangerHeight)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.squish)
+        .buttonStyle(.squishCard)
         .disabled(a.disabled)
         .opacity(a.disabled ? 0.5 : 1)
         .accessibilityLabel(a.accessibility ?? a.title)
@@ -225,3 +290,15 @@ struct FamilyMenuToken: Identifiable { let id: String }
 /// `-storeShot friendmenu|profilemenu`: StoreDemoDriver opens a menu through this (object = "friend" / "profile").
 enum FamilyActionMenuDemo { static let open = Notification.Name("FamilyActionMenuDemo.open") }
 #endif
+
+/// The speech bubble's little tail (a soft triangle pointing down-left).
+private struct BubbleTail: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
+        p.addQuadCurve(to: CGPoint(x: r.minX + 1, y: r.maxY), control: CGPoint(x: r.midX + 1, y: r.midY))
+        p.closeSubpath()
+        return p
+    }
+}

@@ -518,29 +518,31 @@ struct PodiumView: View {
             let stands = PodiumFigure.standsFull(e)
             // Name, points and detail: on a standing podium they ride on a soft plaque that overlaps the step's top edge.
             // A light-only card turns dark under a dark season surface (Halloween night): the ink follows the card then.
-            let lightInk = lightOnly && SeasonKit.surfaces?.dark != true
+            // Founder 10-09: the plaque wears the player's own mascot-maker backdrop (fill) and frame (border); the ink
+            // follows the fill's brightness so the stats read on any backdrop.
+            let plate = PlayerTint.plate(userId: e.id, username: e.username)
             let plaque = VStack(spacing: 2) {
                 Text(e.name)
                     .font(Brand.font(compact ? 12 : 13, .black))
-                    .foregroundStyle(lightInk ? FinishInk.title : FinishInk.heading)
+                    .foregroundStyle(plate.heading)
                     .lineLimit(1).minimumScaleFactor(0.7)
                 // Points stay the headline number (#1 a touch larger), then one muted
                 // detail line (single line, shrink-to-fit, never wraps into the step).
                 Text(e.value)
                     .font(Brand.font((compact ? 11 : 12) + (first ? 1.5 : 0), .heavy)).monospacedDigit()
-                    .foregroundStyle(lightInk ? FinishInk.muted : FinishInk.secondary)
+                    .foregroundStyle(plate.muted)
                     .lineLimit(1).minimumScaleFactor(0.7)
                 // Two parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
                 ForEach(Array(FriendCards.raceBadgeLines(e.badge).enumerated()), id: \.offset) { _, line in
                     Text(line)
                         .font(Brand.font(compact ? 8.5 : 9.5, .black)).tracking(0.4).monospacedDigit()
-                        .foregroundStyle(Color(hex: 0xF5B82E))
+                        .foregroundStyle(plate.badge)
                         .lineLimit(1).minimumScaleFactor(0.55)
                 }
                 if let d = e.detail, !d.isEmpty {
                     Text(d)
                         .font(Brand.font(compact ? 9 : 10, first ? .heavy : .bold)).monospacedDigit()
-                        .foregroundStyle((lightInk ? FinishInk.muted : FinishInk.secondary).opacity(first ? 0.95 : 0.8))
+                        .foregroundStyle(plate.muted.opacity(first ? 1 : 0.9))
                         .lineLimit(1).minimumScaleFactor(0.6)
                 }
             }
@@ -551,15 +553,15 @@ struct PodiumView: View {
                 // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step full-body (no tile), 2x the old size,
                 // posed by place (1st cheers, 2nd claps, 3rd waves); photo players keep the framed tile.
                 PodiumFigure(entry: e, place: place, tone: tone, size: avatar, compact: compact)
-                if stands {
-                    plaque
-                        .padding(.horizontal, 10).padding(.vertical, 4)
-                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Theme.isDark ? Theme.surface.opacity(0.8) : Color.white.opacity(0.72)))
-                        // sits fully ABOVE the step (it used to overlap the step's top by 12 pt and cover its top face)
-                } else {
-                    plaque.padding(.top, 0)
-                }
+                // Sits fully ABOVE the step (it used to overlap the step's top by 12 pt and cover its top face).
+                let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+                plaque
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(shape.fill(LinearGradient(colors: plate.fill.count > 1 ? plate.fill : [plate.fill.first ?? .white, plate.fill.first ?? .white],
+                                                          startPoint: .topLeading, endPoint: .bottomTrailing)))
+                    .overlay(shape.strokeBorder(LinearGradient(colors: plate.border.count > 1 ? plate.border : [plate.border.first ?? .clear, plate.border.first ?? .clear],
+                                                               startPoint: .top, endPoint: .bottom), lineWidth: plate.borderWidth))
+                    .shadow(color: .black.opacity(0.18), radius: 3, y: 2)
             }
             VStack(spacing: 4) {
                 Group {
@@ -1060,5 +1062,91 @@ struct PodiumStageCard: View {
         .background(Theme.isDark ? Theme.surface : Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .accessibilityElement(children: .contain)
+    }
+}
+
+// MARK: - A player's own colors (founder 10-09)
+
+/// A player's mascot-maker colors, for surfaces that wear them: the podium stat plates (their backdrop as the fill, their
+/// frame as the border, ink chosen for contrast so the stats always read) and their name in the bubble lettering.
+@MainActor
+enum PlayerTint {
+    nonisolated struct Plate {
+        let fill: [Color]
+        let border: [Color]
+        let borderWidth: CGFloat
+        /// True = light (white) ink on a dark fill; false = the dark purple ink on a light fill.
+        let lightInk: Bool
+        var heading: Color { lightInk ? .white : Color(hex: 0x2A1650) }
+        var muted: Color { lightInk ? Color.white.opacity(0.82) : Color(hex: 0x5B4B7A) }
+        /// The gold highlight (FLAWLESS / streak): bright gold on dark, deep amber on light.
+        var badge: Color { lightInk ? Color(hex: 0xF5B82E) : Color(hex: 0xB45309) }
+    }
+
+    /// The player's resolved mascot config (their saved look, a worn cast hero's, or the seeded default).
+    static func config(userId: String?, username: String) -> AvatarConfig {
+        AvatarDirectory.shared.look(username: username, userId: userId, url: nil, castId: nil, frame: nil,
+                                    mascot: nil, accentHex: nil, lookup: true).resolved.config
+    }
+
+    /// The backdrop's colors ("auto" = a light tint of the body color, as the avatar tile draws it).
+    static func backdropHexes(_ c: AvatarConfig) -> [String] {
+        if let b = AvatarCatalog.backdrop(c.bg) {
+            // A pattern reads as its base color (+ a whisper of its accent): the pattern itself would fight the text.
+            return b.kind == .pattern ? [b.colors[0], mix(b.colors[0], b.colors[1], 0.3)] : b.colors
+        }
+        return [mix(AvatarCatalog.color(c.color).hex, "#ffffff", 0.78)]
+    }
+
+    /// The frame's metal as a border gradient; "none" = a deeper shade of the fill so every plate has an edge.
+    static func frameHexes(_ frame: String, fill: [String]) -> (colors: [String], width: CGFloat) {
+        switch frame {
+        case "bronze": return (["#F0B27A", "#B45309"], 2.5)
+        case "silver": return (["#F8FAFC", "#94A3B8"], 2.5)
+        case "gold": return (["#FDE68A", "#D97706"], 2.5)
+        case "platinum": return (["#E0F2FE", "#64748B"], 2.5)
+        case "diamond": return (["#A5F3FC", "#818CF8", "#F0ABFC"], 2.5)
+        case "pro": return (["#F5B82E", "#EC4899", "#8B5CF6"], 2.5)
+        default: return ([mix(fill[0], "#000000", 0.28)], 1.5)
+        }
+    }
+
+    static func plate(userId: String?, username: String) -> Plate {
+        let c = config(userId: userId, username: username)
+        let fill = backdropHexes(c)
+        let edge = frameHexes(c.frame, fill: fill)
+        let lum = fill.map(luminance).reduce(0, +) / Double(max(1, fill.count))
+        return Plate(fill: fill.compactMap { Color(hexString: $0) }, border: edge.colors.compactMap { Color(hexString: $0) },
+                     borderWidth: edge.width, lightInk: lum < 0.42)
+    }
+
+    /// A vivid version of the player's backdrop color, for their name in the bubble lettering (lemon → a sunny gold).
+    static func nameColor(userId: String?, username: String) -> Color {
+        let c = config(userId: userId, username: username)
+        let hex = AvatarCatalog.backdrop(c.bg)?.colors.last ?? AvatarCatalog.color(c.color).hex
+        guard let base = Color(hexString: hex) else { return Color(hex: 0x7C3AED) }
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(base).getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        if s < 0.12 { return Color(hex: 0x8B5CF6) }   // a grey / white backdrop: the brand purple
+        return Color(hue: h, saturation: max(s, 0.78), brightness: max(b, 0.92))
+    }
+
+    private static func rgb(_ hex: String) -> (Double, Double, Double) {
+        var s = hex; if s.hasPrefix("#") { s.removeFirst() }
+        let v = Int(s, radix: 16) ?? 0
+        return (Double((v >> 16) & 0xff) / 255, Double((v >> 8) & 0xff) / 255, Double(v & 0xff) / 255)
+    }
+
+    static func mix(_ a: String, _ b: String, _ t: Double) -> String {
+        let x = rgb(a), y = rgb(b)
+        func c(_ p: Double, _ q: Double) -> Int { Int(((p + (q - p) * t) * 255).rounded()) }
+        return String(format: "#%02x%02x%02x", c(x.0, y.0), c(x.1, y.1), c(x.2, y.2))
+    }
+
+    /// WCAG relative luminance (0 black … 1 white).
+    static func luminance(_ hex: String) -> Double {
+        func lin(_ v: Double) -> Double { v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
+        let (r, g, b) = rgb(hex)
+        return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
     }
 }
