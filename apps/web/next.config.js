@@ -56,10 +56,18 @@ const nextConfig = {
       '/api/admin/bible': ['./.bible.md'],
       // Rich push pictures (founder 10-10: they never showed — the route read public/ files that weren't in the
       // function bundle and 500'd): the sender's mascot parts, the crown, the game icons and the fallback mascot.
-      '/api/push/art/[kind]/[id]': ['./public/art/art-av-*', './public/art/art-badge-*', './public/art/game-*', './public/mascots/**'],
+      // sharp loads its native build through a dynamic require the tracer can't follow: include the platform
+      // packages (linux-x64 on Vercel; darwin here, so a local build proves the patterns) and sharp's own @img links.
+      '/api/push/art/[kind]/[id]': ['./public/art/art-av-*', './public/art/art-badge-*', './public/art/game-*', './public/mascots/**',
+        '../../node_modules/.pnpm/sharp@*/node_modules/@img/**',
+        '../../node_modules/.pnpm/@img+sharp-linux-x64@*/**', '../../node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/**',
+        '../../node_modules/.pnpm/@img+sharp-darwin-arm64@*/**', '../../node_modules/.pnpm/@img+sharp-libvips-darwin-arm64@*/**'],
     },
     // Required on Next 13 so instrumentation.ts runs (Sentry server/edge init).
     instrumentationHook: true,
+    // Founder 10-10 (rich push pictures 500'd: "Could not load the 'sharp' module using the linux-x64 runtime"):
+    // bundled by webpack, sharp lost its native binaries; loaded from node_modules, the tracer includes them.
+    serverComponentsExternalPackages: ['sharp'],
   },
   // Disable source maps in production to reduce bundle size
   productionBrowserSourceMaps: false,
