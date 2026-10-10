@@ -91,13 +91,13 @@ function skinBorder(name: string, h: number): string {
   return `url(${artSrc(name)}) 0 ${right} 0 ${left} fill / 0 ${(right * k).toFixed(2)}px 0 ${(left * k).toFixed(2)}px / 0 stretch`;
 }
 
-function castVars(c: CastColor, s: CastSize): CSSProperties {
+function castVars(c: CastColor, s: CastSize, capScale = 1): CSSProperties {
   const h = HEIGHT[s];
   const base = `art-btn-${c}-${s}`;
   return {
     ['--cast-h' as string]: `${h}px`,
     ['--cast-pad' as string]: `${Math.max(0.6 * h, (14 * h) / 44)}px`,
-    ['--cast-cap' as string]: `${Math.round(h * 0.42 * 3) / 3}px`,
+    ['--cast-cap' as string]: `${Math.round(h * 0.42 * capScale * 3) / 3}px`,
     ['--cast-deep' as string]: CAST_DEEP[c],
     ['--cast-skin' as string]: skinBorder(base, h),
     ['--cast-skin-p' as string]: skinBorder(`${base}-pressed`, h),
@@ -148,18 +148,20 @@ interface CastLook {
   icon?: ReactNode;
   trailing?: ReactNode;
   block?: boolean;
+  /** Scales the label's cap height (< 1 = smaller letters): a list of equal-width pills sets one smaller cap for all (founder 10-09). */
+  capScale?: number;
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
 }
 
-function look({ color, screen, size, block, className = '', style }: CastLook) {
+function look({ color, screen, size, block, capScale, className = '', style }: CastLook) {
   const c = castOf(color, screen);
   const s = sizeOf(size);
   return {
     c,
     className: `cast cast-${s}${block ? ' cast-block' : ''} ${className}`.trim(),
-    style: { ...castVars(c, s), ...style },
+    style: { ...castVars(c, s, capScale), ...style },
   };
 }
 
@@ -175,8 +177,8 @@ function Inner({ icon, trailing, children, c }: CastLook & { c: CastColor }) {
 }
 
 /** FINISH_SPEC BJ15 a cast-color <button>. */
-export function CastButton({ color, screen, size, icon, trailing, block, className, style, children, type = 'button', ...rest }: CastLook & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'color' | 'style' | 'className' | 'children'>) {
-  const l = look({ color, screen, size, block, className, style });
+export function CastButton({ color, screen, size, icon, trailing, block, capScale, className, style, children, type = 'button', ...rest }: CastLook & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'color' | 'style' | 'className' | 'children'>) {
+  const l = look({ color, screen, size, block, capScale, className, style });
   return (
     <button type={type} {...rest} className={l.className} style={l.style}>
       <Inner icon={icon} trailing={trailing} c={l.c}>{children}</Inner>
@@ -185,11 +187,11 @@ export function CastButton({ color, screen, size, icon, trailing, block, classNa
 }
 
 /** FINISH_SPEC BJ15 a cast-color link (`native` = a plain <a>, a full document load). */
-export function CastLink({ href, native = false, color, screen, size, icon, trailing, block, className, style, children, ...rest }: CastLook & {
+export function CastLink({ href, native = false, color, screen, size, icon, trailing, block, capScale, className, style, children, ...rest }: CastLook & {
   href: string;
   native?: boolean;
 } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'color' | 'style' | 'className' | 'children' | 'href'>) {
-  const l = look({ color, screen, size, block, className, style });
+  const l = look({ color, screen, size, block, capScale, className, style });
   const inner = <Inner icon={icon} trailing={trailing} c={l.c}>{children}</Inner>;
   if (native) return <a href={href} {...rest} className={l.className} style={l.style}>{inner}</a>;
   return <Link href={href} {...rest} className={l.className} style={l.style}>{inner}</Link>;
