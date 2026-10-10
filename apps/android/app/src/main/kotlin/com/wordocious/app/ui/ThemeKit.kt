@@ -34,6 +34,7 @@ import com.wordocious.app.data.FlagsService
 import com.wordocious.app.ui.theme.WTheme
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.flow.first
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.floor
@@ -179,16 +180,32 @@ object ThemeKit {
     private fun trim(context: Context): Double =
         if ((context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager)?.isLowRamDevice == true) 0.5 else 1.0
 
-    /** A ~30 fps seconds clock for the wallpaper, or 0 forever when it should stand still / is switched off. */
+    /**
+     * The wallpaper's clock (ms), ~24 fps, or 0 forever when it should stand still / is switched off.
+     * Founder 10-10 (smoothness): every tick redraws the whole window behind the page, so the clock stands down
+     * while the page scrolls, while its tab is hidden (a game or another tab covers it) and for a beat after a page
+     * opens or a scroll ends; the paused time is cut out of the clock, so the bats resume where they stopped.
+     */
     @Composable
     fun rememberClock(enabled: Boolean): State<Long> {
         val clock = remember { mutableLongStateOf(0L) }
         val on = enabled && FlagsService.isLive("living_wallpapers") && !WTheme.reducedMotion
+        val hidden = LocalTabHidden.current
+        val scrolling = LocalScrollActive.current
         LaunchedEffect(on) {
             if (!on) { clock.longValue = 0L; return@LaunchedEffect }
             var last = 0L
+            var skew = 0L
+            // a page just opened: let it settle (its entrance + first layout) before the wallpaper moves
+            kotlinx.coroutines.delay(500)
             while (true) {
-                withFrameNanos { n -> if (n - last >= 33_000_000L) { last = n; clock.longValue = n / 1_000_000L } }
+                if (hidden.value || scrolling.value) {
+                    val from = withFrameNanos { it }
+                    androidx.compose.runtime.snapshotFlow { hidden.value || scrolling.value }.first { !it }
+                    kotlinx.coroutines.delay(250)
+                    skew += withFrameNanos { it } - from
+                }
+                withFrameNanos { n -> if (n - last >= 41_000_000L) { last = n; clock.longValue = ((n - skew) / 1_000_000L).coerceAtLeast(1L) } }
             }
         }
         return clock

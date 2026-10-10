@@ -125,7 +125,10 @@ internal fun LeaderboardStageCard(accent: Color, content: @Composable ColumnScop
         }
         // The cloud bank: the page bleed + 36 dp each side, 85%, lifted 6 dp, drifting +-26 dp; its vertical mask as above.
         val still = WTheme.reducedMotion
-        val drift = if (still) 0f else {
+        // Founder 10-10 (smoothness): the drift is read in the graphicsLayer (it used to be read right here, which
+        // recomposed this whole stage every frame), and the loop stands down while the tab is covered / hidden.
+        val coveredTab = LocalTabHidden.current.value
+        val drift: androidx.compose.runtime.State<Float> = if (still || coveredTab) remember { androidx.compose.runtime.mutableFloatStateOf(0f) } else {
             val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "lb-cloud-drift")
             t.animateFloat(
                 initialValue = -26f, targetValue = 26f,
@@ -134,7 +137,7 @@ internal fun LeaderboardStageCard(accent: Color, content: @Composable ColumnScop
                     androidx.compose.animation.core.RepeatMode.Reverse,
                 ),
                 label = "lb-cloud-drift",
-            ).value
+            )
         }
         Image(
             painterResource(R.drawable.art_lb_clouds), null,
@@ -145,7 +148,7 @@ internal fun LeaderboardStageCard(accent: Color, content: @Composable ColumnScop
                     layout(constraints.maxWidth, p.height) { p.place(-extra / 2, 0) }
                 }
                 .offset(y = (-6).dp)
-                .graphicsLayer { translationX = drift.dp.toPx(); alpha = 0.85f; compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+                .graphicsLayer { translationX = drift.value.dp.toPx(); alpha = 0.85f; compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
                 .drawWithContent {
                     drawContent()
                     drawRect(

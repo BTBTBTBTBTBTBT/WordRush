@@ -54,7 +54,8 @@ internal fun CelebrationTrio(
     tempo: Float = 0.42f,
     swayDegrees: Float = 4f,
 ) {
-    val still = WTheme.reducedMotion || WTheme.calmMotion
+    // Founder 10-10 (smoothness): also still while the tab is covered / hidden (every tab stays composed under a game).
+    val still = WTheme.reducedMotion || WTheme.calmMotion || LocalTabHidden.current.value
     // Start the loops a beat AFTER the first layout, so the figures hop in place instead of swimming while the size settles.
     var started by remember { mutableStateOf(false) }
     LaunchedEffect(still) {

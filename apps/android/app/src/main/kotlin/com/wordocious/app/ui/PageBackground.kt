@@ -237,7 +237,9 @@ private fun Modifier.wallpaperBackground(
     val themeId = remember(WTheme.palette) { com.wordocious.app.data.ThemeChoiceRules.fromStored(com.wordocious.app.data.ThemePref.current()) }
     val themeWall = if (menu && season == null && !(alwaysLight && themeId == "dark")) ThemeKit.wallLook(themeId, false) else null
     val ambientOn = menu && com.wordocious.app.data.FlagsService.isLive("living_wallpapers")
-    val clock = ThemeKit.rememberClock(ambientOn)
+    // Founder 10-10 (smoothness): a theme with no drifting things (and no season) never ticks the clock.
+    val moving = ambientOn && (season != null || (ThemeKit.entry(themeId)?.ambient?.count ?: 0) > 0)
+    val clock = ThemeKit.rememberClock(moving)
     val tiles = if (seasonal != null || themeWall != null) null else tiles
     // Season surfaces: the season wall is the finished backdrop (a dark-tone wall is already night
     // art) — no dark dim, no top wash (iOS ArtKit parity). The contrast veil still applies.

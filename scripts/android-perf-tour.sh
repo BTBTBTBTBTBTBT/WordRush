@@ -49,7 +49,13 @@ dump() { $ADB shell uiautomator dump /sdcard/_ui.xml >/dev/null 2>&1; $ADB shell
 
 # "x y" of the first node whose text or content-desc contains $1 (empty if absent).
 find_xy() {
-  local b; b=$(dump | tr '<' '\n' | grep -i -- "$1" | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+  # uiautomator's dump fails while an animation runs ("could not get idle state"): retry before giving up.
+  local b try
+  for try in 1 2 3 4; do
+    b=$(dump | tr '<' '\n' | grep -i -- "$1" | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+    [ -n "$b" ] && break
+    sleep 0.5
+  done
   [ -z "$b" ] && return 1
   local x1 y1 x2 y2; read -r x1 y1 x2 y2 <<< "$(echo "$b" | grep -o '[0-9]\+' | tr '\n' ' ')"
   echo "$(( (x1 + x2) / 2 )) $(( (y1 + y2) / 2 ))"
