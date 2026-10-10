@@ -214,7 +214,7 @@ struct LeaderboardTab: View {
         let played = completions.byMode[mode.rawValue] != nil || userRank != nil
         // Founder 10-09: two rows, each with its control on the right — [game · N today] [Everyone | Friends · share],
         // then [your rank line] [View board] — one compact cluster, so the podium below gets the stage.
-        return VStack(alignment: .leading, spacing: 6) {
+        return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 if titleArt == nil, let m { ModeIconView(icon: m.icon, accent: m.accent, box: 28) }
                 if let titleArt {
@@ -260,11 +260,11 @@ struct LeaderboardTab: View {
                     .lineLimit(1).minimumScaleFactor(0.6)
                 if let r = userRank { rankDelta(r, friends: friendsOnly) }
                 Spacer(minLength: 4)
+                // Founder 10-09: Play (not played yet) and View board are the same glossy candy pill as the switch above.
                 if played {
                     YourBoardPill(accent: stageAccent) { openMyBoard(played: true) }
                 } else {
-                    Button { openMyBoard(played: false) } label: { CandyLabel(title: "Play", symbol: "play.fill") }
-                        .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                    YourBoardPill(label: "Play", symbol: "play.fill", accent: stageAccent) { openMyBoard(played: false) }
                         .layoutPriority(2)
                 }
             }

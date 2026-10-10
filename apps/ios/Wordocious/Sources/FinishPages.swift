@@ -505,7 +505,7 @@ struct PodiumView: View {
                 .frame(height: Self.floorRise * 2 + 4)
                 .accessibilityHidden(true)
         }
-        .padding(.horizontal, 10).padding(.top, stage == nil ? 2 : 8)
+        .padding(.horizontal, 10).padding(.top, stage == nil ? 0 : 8)
         .background { if let stage { PodiumStage(accent: stage) } }
         .softSheet(item: $stageTarget) { t in
             PodiumStageCard(entry: t.entry, place: t.place, onProfile: onTap.map { tap in { tap(t.entry) } })
@@ -515,7 +515,8 @@ struct PodiumView: View {
 
     private func stepHeight(_ tone: Int) -> CGFloat {
         let t = min(max(tone, 1), 3) - 1
-        return compact ? [62, 46, 34][t] : [74, 54, 40][t]
+        // Founder 10-09: slightly lower steps so the bigger figures still fit the stage without scrolling.
+        return compact ? [62, 46, 34][t] : [64, 47, 35][t]
     }
 
     @ViewBuilder private func column(place: Int) -> some View {
@@ -523,7 +524,8 @@ struct PodiumView: View {
             let e = entries[place - 1]
             let tone = min(e.rank ?? place, 3)
             let first = tone == 1
-            let avatar: CGFloat = compact ? (first ? 48 : 40) : (first ? 54 : 44)
+            // Founder 10-09: the stage podium's figures a size up to fill the room the controls gave back.
+            let avatar: CGFloat = compact ? (first ? 48 : 40) : (first ? 60 : 51)
             let stands = PodiumFigure.standsFull(e)
             // Name, points and detail: on a standing podium they ride on a soft plaque that overlaps the step's top edge.
             // A light-only card turns dark under a dark season surface (Halloween night): the ink follows the card then.
@@ -565,7 +567,7 @@ struct PodiumView: View {
                     }
                     .padding(.horizontal, -10)
                     // Founder 10-09: closer to the top of the head (the standing figure's box carries headroom).
-                    .padding(.bottom, stands ? (place == 1 ? -4 : -18) : -2)
+                    .padding(.bottom, stands ? (place == 1 ? -10 : -18) : -2)
                     .zIndex(2)
                 // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step full-body (no tile), 2x the old size,
                 // posed by place (1st cheers, 2nd claps, 3rd waves); photo players keep the framed tile.

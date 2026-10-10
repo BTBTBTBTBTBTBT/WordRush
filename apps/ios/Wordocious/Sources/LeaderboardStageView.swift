@@ -156,10 +156,14 @@ struct StageTitleRow: View {
                         .accessibilityHidden(false)
                         .accessibilityLabel("Your mascot")
                         .accessibilityAddTraits(.isButton)
-                    BubbleOneLine(text: line2, palette: .leaderboard, size: 42)
-                        .id(taps)
-                        .frame(maxWidth: .infinity)
-                        .padding(.bottom, 14)
+                    // Founder 10-09: the date + reset clock sit right under the second line, centered between the mascots.
+                    VStack(spacing: 2) {
+                        BubbleOneLine(text: line2, palette: .leaderboard, size: 42)
+                            .id(taps)
+                        dateLine
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 6)
                     ArtThumbs.image("art-pose-\(host.castId)-\(host.pose)", points: 90)
                         .resizable().interpolation(.high).scaledToFit()
                         .frame(width: 72, height: 72)
@@ -169,15 +173,6 @@ struct StageTitleRow: View {
                 }
                 .frame(minHeight: 70)
                 .padding(.top, -25)
-                // Ticks once a second for the reset clock; the date flips at local midnight.
-                TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                    let date = ctx.date.formatted(.dateTime.month(.abbreviated).day()).uppercased()
-                    // Founder 10-09: the cloud fades out above this line now, so on a dark theme it takes a warm light ink.
-                    Text("\(date) · RESETS IN \(LeaderboardBannerView.resetClock())")
-                        .font(Brand.font(10.5, .black)).tracking(0.6).monospacedDigit()
-                        .foregroundStyle(Theme.isDark ? Color(hex: 0xFDE68A).opacity(0.92) : Self.ink)
-                        .lineLimit(1).minimumScaleFactor(0.7)
-                }
             }
             .padding(.horizontal, 10).padding(.top, 8)
             // Founder 10-09: the title's cloud bank glows from behind (a warm gold light), so it reads as lit, not pasted.
@@ -194,9 +189,24 @@ struct StageTitleRow: View {
     }
 }
 
+extension StageTitleRow {
+    /// The date + reset clock, ticking once a second (the date flips at local midnight); on the cloud, the warm dark ink.
+    var dateLine: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+            let date = ctx.date.formatted(.dateTime.month(.abbreviated).day()).uppercased()
+            Text("\(date) · RESETS IN \(LeaderboardBannerView.resetClock())")
+                .font(Brand.font(10.5, .black)).tracking(0.6).monospacedDigit()
+                .foregroundStyle(Color(hex: 0x8A4A12))
+                .lineLimit(1).minimumScaleFactor(0.7)
+        }
+    }
+}
+
 /// The compact "Your board" pill (`art-lb-btn-yourboard`, label drawn live) = today's VIEW BOARD.
 struct YourBoardPill: View {
     var label = "View board"
+    /// The glyph before the label (View board: the ranked list; Play: the play triangle).
+    var symbol = "list.number"
     /// The board's game color (founder 10-09: the button wears the game's own color).
     var accent: Color = Color(hex: 0xF5B82E)
     let action: () -> Void
@@ -221,13 +231,22 @@ struct YourBoardPill: View {
 
     var body: some View {
         // Founder 10-09 ("the your board buttons are ugly"): the family candy button in the game's color, not the art pill.
-        // Founder 10-09: "View board" (not "Your board"), and smaller: the small cast pill drawn at 80%.
-        Button { Haptics.light(); action() } label: { CandyLabel(title: label) }
-            .buttonStyle(CastButtonStyle(color: Self.castColor(for: accent), size: .small, fullWidth: true))
-            .frame(width: 104)
-            .scaleEffect(0.8)
-            .frame(width: 84, height: 26)
-            .accessibilityLabel(label)
+        // Founder 10-09: View board wears the SAME glossy candy thumb as the selected half of the Everyone | Friends switch
+        // right above it (26 pt, white Nunito Black, a small board glyph), so the cluster reads as one family of controls.
+        Button { Haptics.light(); action() } label: {
+            HStack(spacing: 5) {
+                Image(systemName: symbol).font(.system(size: 10, weight: .black))
+                Text(label.uppercased()).font(Brand.font(11, .black)).tracking(0.3)
+            }
+            .foregroundStyle(CandyToggleInk.on)
+            .shadow(color: Color(hex: 0x4C1D95).opacity(0.45), radius: 0, x: 0, y: 1)
+            .padding(.horizontal, 13)
+            .frame(height: 26)
+            .background(CandyPill(sprite: .thumbOn))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.squish)
+        .accessibilityLabel(label)
     }
 }
 
