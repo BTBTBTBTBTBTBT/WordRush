@@ -404,7 +404,7 @@ private struct DailyChip: View {
                     .fill(dark ? shade(mode.colorHex, 0.45).opacity(0.17) : Color(widgetHex: mode.colorHex).opacity(0.15))
                 if let icon = gameIconAsset(mode.key) {
                     Image(icon).resizable().interpolation(.high).scaledToFit()
-                        .frame(width: size * 0.7, height: size * 0.7)
+                        .frame(width: size * 0.8, height: size * 0.8)
                 } else {
                     Text(mode.iconText ?? mode.glyph)
                         .font(WType.black(size * 0.36)).minimumScaleFactor(0.5).lineLimit(1)
@@ -888,49 +888,52 @@ struct MediumView: View {
     var body: some View {
         let hall = halloweenOn(snap, date)
         let dark = hall || (snap.theme?.dark ?? (scheme == .dark))
-        // Founder 10-10: the large widget's mirrored bands, scaled down and spread edge to edge. WORDOCIOUS on top; the
-        // DAILIES band (ring left, 8 chips right) over the PUZZLES band (10 chips left, ring right), one chip size;
-        // the streak pair + next / countdown / points along the bottom, as on the large.
+        // Founder 10-10 ("beefier"): the mirror, rebuilt so the chips get the whole width. Top row: the DAILIES ring, the
+        // lettering, the PUZZLES ring. Middle: the 8 dailies (4×2) beside the 10 Puzzles (5×2), one big chip size, the
+        // dailies under their ring and the Puzzles under theirs. Bottom: the streak pair + next / countdown / points.
         GeometryReader { g in
             let hasPuzzles = !snap.puzzleModes.isEmpty
-            let gap: CGFloat = 4, ringGap: CGFloat = 10, mark: CGFloat = 12, bottom: CGFloat = 18
-            let bands: CGFloat = hasPuzzles ? 2 : 1
-            let free = g.size.height - mark - bottom
-            // Three even gaps (under the lettering, between the bands, above the bottom line) of at least 4.
-            let c = max(16, min(34, (free - 3 * 5 - bands * gap) / (2 * bands)))
-            let ring = 2 * c + gap
-            let even = max(4, (free - bands * ring) / (hasPuzzles ? 3 : 2))
+            let W: CGFloat = g.size.width, H: CGFloat = g.size.height
+            let gap: CGFloat = 4, middle: CGFloat = 12, bottom: CGFloat = 16, vGap: CGFloat = 5
+            let cols: CGFloat = hasPuzzles ? 9 : 4
+            let byWidth: CGFloat = (W - (cols - (hasPuzzles ? 2 : 1)) * gap - (hasPuzzles ? middle : 0)) / cols
+            let ring: CGFloat = 38
+            let byHeight: CGFloat = (H - ring - bottom - 2 * vGap - gap) / 2
+            let c: CGFloat = max(16, min(44, min(byWidth, byHeight)))
+            let gridH: CGFloat = 2 * c + gap
             VStack(spacing: 0) {
-                Link(destination: homeURL) {
-                    WordmarkImage(size: .medium, halloween: hall, dark: dark, height: mark)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(height: mark)
-                Spacer().frame(height: even)
                 HStack(spacing: 0) {
                     Link(destination: homeURL) {
                         DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
                             .frame(width: ring, height: ring)
                     }
-                    Spacer().frame(width: ringGap)
-                    ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: c, spread: true)
-                        .frame(height: ring)
-                }
-                .frame(height: ring)
-                if hasPuzzles {
-                    Spacer().frame(height: even)
-                    HStack(spacing: 0) {
-                        ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, maxChip: c, spread: true)
-                            .frame(height: ring)
-                        Spacer().frame(width: ringGap)
+                    Spacer(minLength: 4)
+                    Link(destination: homeURL) {
+                        WordmarkImage(size: .medium, halloween: hall, dark: dark, height: 15)
+                    }
+                    Spacer(minLength: 4)
+                    if hasPuzzles {
                         Link(destination: homeURL) {
                             DailyRing(modes: snap.puzzleModes, dark: dark, label: "PUZZLES")
                                 .frame(width: ring, height: ring)
                         }
+                    } else {
+                        Color.clear.frame(width: ring, height: ring)
                     }
-                    .frame(height: ring)
                 }
-                Spacer().frame(height: even)
+                .frame(height: ring)
+                Spacer(minLength: vGap)
+                HStack(spacing: 0) {
+                    ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: c, spread: true)
+                        .frame(width: 4 * c + 3 * gap, height: gridH)
+                    if hasPuzzles {
+                        Spacer(minLength: middle)
+                        ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, maxChip: c, spread: true)
+                            .frame(width: 5 * c + 4 * gap, height: gridH)
+                    }
+                }
+                .frame(height: gridH)
+                Spacer(minLength: vGap)
                 Link(destination: homeURL) {
                     HStack(spacing: 8) {
                         StreakPair(snap: snap, size: bottom + 2)
@@ -939,8 +942,10 @@ struct MediumView: View {
                     .frame(height: bottom)
                 }
             }
-            .frame(width: g.size.width, height: g.size.height, alignment: .top)
+            .frame(width: W, height: H)
         }
+        // Founder 10-10 ("beefier"): the medium reaches into the system margin so the chips are as big as they can be.
+        .padding(.horizontal, -8).padding(.vertical, -6)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(widgetPhrase(snap, date))
         // Anywhere not on a chip: the next daily, else (all done) Home — never a dead tap.
@@ -1111,6 +1116,8 @@ struct WidgetBackdrop: View {
     /// Founder 10-10: on the medium / large layouts the content reaches every corner, so the motif sits smaller and
     /// fainter (it read on top of NEXT / DAY STREAK).
     var subtle = false
+    /// The medium fills every corner (rings in both top corners): no motif there.
+    var motif = true
 
     private static let motifs: [(name: String, alignment: Alignment, w: CGFloat, opacity: Double)] = [
         ("widget-halloween-moon-bats", .topTrailing, 70, 0.55),
@@ -1127,8 +1134,10 @@ struct WidgetBackdrop: View {
             ZStack(alignment: m.alignment) {
                 LinearGradient(colors: [Color(widgetHex: "#000000"), Color(widgetHex: "#1f1004"), Color(widgetHex: "#3a1a05")],
                                startPoint: .top, endPoint: .bottom)
-                Image(m.name).resizable().interpolation(.high).scaledToFit()
-                    .frame(width: subtle ? m.w * 0.7 : m.w).opacity(subtle ? m.opacity * 0.35 : m.opacity)
+                if motif {
+                    Image(m.name).resizable().interpolation(.high).scaledToFit()
+                        .frame(width: subtle ? m.w * 0.7 : m.w).opacity(subtle ? m.opacity * 0.35 : m.opacity)
+                }
             }
             .accessibilityHidden(true)
         } else if let skin {
@@ -1187,13 +1196,13 @@ private struct BackdropModifier: ViewModifier {
             // The system content margins pad the views; lock-screen accessories tint
             // themselves, so they get no background.
             content.containerBackground(for: .widget) {
-                if accessory { Color.clear } else { WidgetBackdrop(halloween: halloween, date: date, skin: skin, subtle: true) }
+                if accessory { Color.clear } else { WidgetBackdrop(halloween: halloween, date: date, skin: skin, subtle: true, motif: family != .systemMedium) }
             }
         } else if accessory {
             content
         } else {
             // iOS 16 has no content margins: the same 16 pt by hand.
-            content.padding(16).background(WidgetBackdrop(halloween: halloween, date: date, skin: skin, subtle: true))
+            content.padding(16).background(WidgetBackdrop(halloween: halloween, date: date, skin: skin, subtle: true, motif: family != .systemMedium))
         }
     }
 }
