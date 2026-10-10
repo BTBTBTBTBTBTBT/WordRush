@@ -203,6 +203,10 @@ const main = async () => {
     return;
   }
 
+  // WARNING (2026-10-10): this commit ALSO sends every change pending in Play Console (an unsent production draft,
+  // a listing edit) for review — managed publishing is off, so an approved production draft then goes LIVE. 2.8's
+  // pulled 211 draft was re-sent this way. Never leave a production draft sitting in the console while uploading here:
+  // create the production release only at submit time.
   await api(token, 'POST', `${API}/applications/${PACKAGE}/edits/${edit.id}:commit`);
   console.log(`Committed. ${versionCode} (${versionName}) is live on ${track}.`);
 };
