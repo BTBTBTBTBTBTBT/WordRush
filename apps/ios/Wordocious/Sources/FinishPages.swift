@@ -306,28 +306,49 @@ struct GamePickerCard<Header: View>: View {
 
     private func tile(_ m: HomeMode) -> some View {
         let key = m.dbKey ?? m.id
-        let on = selection == key
-        return Button { Haptics.tap(); onSelect(key) } label: {
-            PickerTile(accent: m.accent, selected: on, result: results[key]) { side in
-                if let art = m.icon.gameArt {
-                    GameArtImage(asset: art, size: side * 0.74)
-                } else {
-                    ModeIconView(icon: m.icon, accent: m.accent, box: side * 0.6)
-                }
-            }
-        }
-        .buttonStyle(.squish)
-        .accessibilityLabel(m.title)
-        .accessibilityValue(results[key].map { $0 ? "Won today" : "Lost today" } ?? "")
-        .accessibilityAddTraits(on ? .isSelected : [])
+        return EquatablePickerTile(key: key, title: m.title, accent: m.accent, icon: m.icon,
+                                   selected: selection == key, result: results[key], announcesResult: true, onSelect: onSelect)
+            .equatable()
     }
 
     /// §C2b: the Daily Sweep as the 9th WORDOCIOUS tile (the glossy 3D broom).
     private var sweepTile: some View {
-        let on = selection == GamePicker.sweep
-        return Button { Haptics.tap(); onSelect(GamePicker.sweep) } label: {
-            PickerTile(accent: GamePicker.sweepAccent, selected: on, result: sweepResult) { side in
-                if ArtAsset.exists("game-sweep") {
+        EquatablePickerTile(key: GamePicker.sweep, title: "Daily Sweep", accent: GamePicker.sweepAccent, icon: nil,
+                            selected: selection == GamePicker.sweep, result: sweepResult, announcesResult: false, onSelect: onSelect)
+            .equatable()
+    }
+}
+
+/// One picker tile as an equality boundary (founder 10-10, smoothness): a game switch changes the selection ring on TWO of
+/// the ~20 tiles, so only those two re-render (the rest used to rebuild their GeometryReader, chrome and art on every
+/// pass of the tab). `onSelect` is kept out of `==` (it only forwards the tap); a theme change still re-evaluates.
+struct EquatablePickerTile: View, Equatable {
+    let key: String
+    let title: String
+    let accent: Color
+    /// nil = the Sweep tile (the glossy broom).
+    let icon: ModeIconKind?
+    let selected: Bool
+    let result: Bool?
+    /// The game tiles announce "Won / Lost today"; the Sweep tile never did.
+    let announcesResult: Bool
+    let onSelect: (String) -> Void
+    @ObservedObject private var theme = ThemeManager.shared
+
+    static func == (a: EquatablePickerTile, b: EquatablePickerTile) -> Bool {
+        a.key == b.key && a.title == b.title && a.accent == b.accent && a.selected == b.selected && a.result == b.result
+    }
+
+    var body: some View {
+        Button { Haptics.tap(); onSelect(key) } label: {
+            PickerTile(accent: accent, selected: selected, result: result) { side in
+                if let icon {
+                    if let art = icon.gameArt {
+                        GameArtImage(asset: art, size: side * 0.74)
+                    } else {
+                        ModeIconView(icon: icon, accent: accent, box: side * 0.6)
+                    }
+                } else if ArtAsset.exists("game-sweep") {
                     GameArtImage(asset: "game-sweep", size: side * 0.74)
                 } else {
                     Image("broom").renderingMode(.template).resizable().scaledToFit()
@@ -337,8 +358,9 @@ struct GamePickerCard<Header: View>: View {
             }
         }
         .buttonStyle(.squish)
-        .accessibilityLabel("Daily Sweep")
-        .accessibilityAddTraits(on ? .isSelected : [])
+        .accessibilityLabel(title)
+        .accessibilityValue(announcesResult ? (result.map { $0 ? "Won today" : "Lost today" } ?? "") : "")
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 

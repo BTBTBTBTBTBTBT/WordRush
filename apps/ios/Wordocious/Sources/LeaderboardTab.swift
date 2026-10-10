@@ -456,46 +456,22 @@ struct LeaderboardTab: View {
     /// Founder 10-09: Yesterday sits UNDER today's last player (it used to split the podium from today's rows):
     /// a small copy of the podium (top three + stats + glows), tap to open everyone else.
     @ViewBuilder private var modeYesterdayBlock: some View {
-        // The stage's base: Yesterday's top three on the ledge; tap to expand the full list in place.
-        let yRanks = yesterday.indices.map { LeaderboardService.competitionRank(yesterday, $0) }
-        let yLayout = PodiumLayout.layout(yRanks)
-        StageYesterdayLedge(
-            minis: yesterday.prefix(yLayout.filled).enumerated().map { podiumEntry($1, rank: yRanks[$0], labels: yLbScoreLabels) },
-            open: $showYesterday, loading: yesterdayKnown == nil,
-            share: {
-                // Settled-podium share — only with rows.
-                if !yesterday.isEmpty {
-                    shareIcon(busy: sharingPodium, label: "Share yesterday's podium") {
-                        guard !sharingPodium else { return }
-                        sharingPodium = true
-                        Task {
-                            await LeaderboardShareFlow.sharePodium(
-                                mode: mode, playType: "solo",
-                                top3: yesterday, userId: auth.profile?.id,
-                                friends: friendsOnly)
-                            sharingPodium = false
-                        }
-                    }
-                }
-            },
-            expanded: {
-                if yesterdayKnown == nil {
-                    boardSkeleton
-                } else if yesterday.isEmpty {
-                    BrandEmptyState(title: "Quiet yesterday", line: "No results from yesterday. Today's board is wide open.",
-                                    scene: .asleep, artHeight: 90)
-                        .lbCard()
-                } else {
-                    // Full daily rows (founder ask, Aug 11): profile links, guesses + time detail, W/L badge.
-                    VStack(spacing: 0) {
-                        ForEach(Array(yesterday.enumerated().dropFirst(yLayout.filled)), id: \.element.id) { idx, entry in
-                            row(rank: yRanks[idx], entry: entry, scoreLabels: yLbScoreLabels)
-                                .stripedRow(idx - yLayout.filled, accent: LbStyle.gold)
-                        }
-                    }
-                    .lbCard()
+        // Smoothness pass 4: an equality boundary over plain values (see LeaderboardBlocks.swift).
+        EquatableYesterdayBlock(
+            yesterday: yesterday, known: yesterdayKnown != nil, open: $showYesterday, sharing: sharingPodium,
+            maker: rowMaker(labels: yLbScoreLabels), labels: yLbScoreLabels,
+            onShare: {
+                guard !sharingPodium else { return }
+                sharingPodium = true
+                Task {
+                    await LeaderboardShareFlow.sharePodium(
+                        mode: mode, playType: "solo",
+                        top3: yesterday, userId: auth.profile?.id,
+                        friends: friendsOnly)
+                    sharingPodium = false
                 }
             })
+            .equatable()
     }
 
     @ViewBuilder private var sweepYesterdayBlock: some View {
@@ -611,52 +587,20 @@ struct LeaderboardTab: View {
     }
 
     /// Ranks 4+ (plus your neighborhood and the friends' ghost rows), then the daily-only note and your finished board.
+    /// Smoothness pass 4: an equality boundary over plain values (see LeaderboardBlocks.swift), so the tab's several body
+    /// passes per game switch rebuild none of the ~50 rows unless a row's content changed.
     @ViewBuilder private var modeRanksBlock: some View {
-        if !loading {
-            if entries.isEmpty {
-                if friendsOnly && !ghostFriends.isEmpty {
-                    // Nobody's played yet — the friends list still renders as ghost rows so the board feels alive (and tauntable).
-                    VStack(spacing: 0) {
-                        ForEach(Array(ghostFriends.enumerated()), id: \.element.id) { idx, f in
-                            ghostRow(f).stripedRow(idx, accent: LbStyle.gold)
-                        }
-                    }
-                    .lbCard()
-                }
-            } else {
-                let ranks = entries.indices.map { LeaderboardService.competitionRank(entries, $0) }
-                let start = PodiumLayout.layout(ranks).filled
-                let shown = entries.count - start
-                let windowCount = rankWindow?.entries.count ?? 0
-                if shown > 0 || rankWindow != nil || (friendsOnly && !ghostFriends.isEmpty) {
-                    VStack(spacing: 0) {
-                        ForEach(Array(entries.enumerated().dropFirst(start)), id: \.element.id) { idx, entry in
-                            row(rank: ranks[idx], entry: entry)
-                                .stripedRow(idx - start, accent: LbStyle.gold)
-                        }
-                        // "Your neighborhood" — rows around the user's rank when they placed past the top 50 (web daily page parity).
-                        if let win = rankWindow {
-                            Text("···").font(Brand.font(15, .black)).foregroundStyle(FinishInk.secondary)
-                                .frame(maxWidth: .infinity).padding(.vertical, 4)
-                                .accessibilityLabel("More players")
-                            ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, entry in
-                                row(rank: win.startRank + idx, entry: entry)
-                                    .stripedRow(shown + idx, accent: LbStyle.gold)
-                            }
-                        }
-                        // FRIENDS ghost rows — friends who haven't played this mode today, muted, with the taunt bell (§207).
-                        if friendsOnly {
-                            ForEach(Array(ghostFriends.enumerated()), id: \.element.id) { idx, f in
-                                ghostRow(f).stripedRow(shown + windowCount + idx, accent: LbStyle.gold)
-                            }
-                        }
-                    }
-                    .lbCard()
-                }
-            }
-        }
+        EquatableRanksBlock(entries: entries, rankWindow: rankWindow, ghosts: friendsOnly ? ghostFriends : [],
+                            loading: loading, maker: rowMaker(labels: lbScoreLabels))
+            .equatable()
         // Founder 10-09: the "Daily games only" note and the Completed Today dropdown are gone (the strip already shows
         // your rank + points and View board opens your finished board).
+    }
+
+    /// The row factory for the boards below the stage (plain values + the taunt hand-off).
+    private func rowMaker(labels: [Double: String]) -> LbRowMaker {
+        LbRowMaker(mode: mode, friendsOnly: friendsOnly, meId: auth.profile?.id, crownId: crownId, labels: labels,
+                   onTaunt: { tauntTarget = $0 })
     }
 
     /// One podium place from a board row (tie-aware points). BJ5: the row's photo + look —
@@ -735,42 +679,6 @@ struct LeaderboardTab: View {
                        currentRank: r.rank)
     }
 
-    /// One board row (§C2a): rank, letter-tile avatar, name over the detail line, the
-    /// W / L badge in its own column left of the points (soft number).
-    private func row(rank: Int, entry: LeaderboardEntry, scoreLabels: [Double: String]? = nil) -> some View {
-        let isMe = entry.userId == auth.profile?.id
-        // §212: photo → emoji → initial, left of every username — the
-        // boards wear faces, not just names (web lbAvatar parity).
-        // Doug's Aug-16 feedback: name on top, stats underneath, points alone on the right.
-        return LbBoardRow(rank: rank, userId: entry.userId, username: entry.username,
-                          avatarUrl: entry.profiles.avatarUrl, emoji: entry.profiles.avatarEmoji,
-                          won: entry.completed,
-                          points: (scoreLabels ?? lbScoreLabels)[entry.compositeScore] ?? formatScore(entry.compositeScore)) {
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 4) {
-                    LbRowName(name: entry.username, isMe: isMe)
-                    if entry.userId == crownId { Icon3D(.crown, size: 15, label: "This week's leader") }
-                }
-                LbRowSub(text: detail(entry))
-            }
-        } trailing: {
-            // Friends board: one-tap canned taunt on any friend's row (§207).
-            if friendsOnly && !isMe {
-                Button {
-                    tauntTarget = .init(id: entry.userId, username: entry.username,
-                                        avatar_url: entry.profiles.avatarUrl, level: 0,
-                                        since: nil, requestedAt: nil)
-                } label: {
-                    Icon3D(.bell, size: 18) // ART_SPEC §5
-                        .frame(width: 30, height: 34).contentShape(Rectangle())
-                }
-                .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23: the family round icon, compact (row-sized)
-                .accessibilityLabel("Taunt \(entry.username)")
-            }
-        }
-        .youRow(isMe)
-    }
-
     /// §216: on the FRIENDS board, the week's points leader wears the crown.
     private var crownId: String? {
         guard friendsOnly else { return nil }
@@ -791,25 +699,6 @@ struct LeaderboardTab: View {
         return FriendsService.friends.filter { f in
             !entries.contains { $0.userId == f.id } && !ModerationService.isBlocked(f.id)
         }
-    }
-
-    /// One ghost row (§C2a shell, no rank / points), muted, with the taunt bell.
-    private func ghostRow(_ f: FriendsService.FriendProfile) -> some View {
-        LbBoardRow(rank: nil, userId: f.id, username: f.username, avatarUrl: f.avatar_url) {
-            VStack(alignment: .leading, spacing: 1) {
-                LbRowName(name: f.username)
-                LbRowSub(text: "Hasn't played yet")
-            }
-        } trailing: {
-            Button { tauntTarget = f } label: {
-                Icon3D(.bell, size: 18) // ART_SPEC §5
-                    .frame(width: 30, height: 34).contentShape(Rectangle())
-            }
-            .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23: the family round icon, compact (row-sized)
-            .accessibilityLabel("Nudge \(f.username)")
-        }
-        .padding(.horizontal, 4)
-        .opacity(0.55)
     }
 
     /// Canned-taunt picker (§207): fixed phrases, one per friend per day. The phrases
@@ -966,14 +855,35 @@ struct LeaderboardTab: View {
         let key = LeaderboardCache.key(mode: mode, userId: auth.profile?.id) + (friendsOnly ? ":friends" : "")
         if let cached = LeaderboardCache.shared[key] {
             let (rows, n, mineRank) = withMine(cached.entries, cached.playerCount)
-            entries = rows; playerCount = n
-            userRank = cached.userRank ?? mineRank ?? rowsRank(rows, n)
-            rankWindow = cached.rankWindow; loading = false
+            setBoard(rows: rows, count: n, rank: cached.userRank ?? mineRank ?? rowsRank(rows, n),
+                     window: .some(cached.rankWindow), loading: false)
         } else {
             let seeded = withMine([], 0)
-            entries = seeded.0; playerCount = seeded.1; userRank = seeded.2; rankWindow = nil
-            loading = seeded.0.isEmpty
+            setBoard(rows: seeded.0, count: seeded.1, rank: seeded.2, window: .some(nil), loading: seeded.0.isEmpty)
         }
+    }
+
+    // Founder 10-10 (smoothness pass 4): a @State write ALWAYS invalidates the tab, even with the same value, and a game
+    // switch paints the board 2-3 times with identical content (the tap's cached paint, load()'s first line, the revalidate
+    // landing the rows the cache already held). Each of these writes only what changed, so a repeat costs no body pass.
+    private func setBoard(rows: [LeaderboardEntry], count: Int, rank: (rank: Int, total: Int)?,
+                          window: (startRank: Int, entries: [LeaderboardEntry])??, loading l: Bool) {
+        if lbRowsSignature(rows) != lbRowsSignature(entries) { entries = rows }
+        if playerCount != count { playerCount = count }
+        setRank(rank)
+        if let window { setWindow(window) }
+        if loading != l { loading = l }
+    }
+
+    private func setRank(_ r: (rank: Int, total: Int)?) {
+        if let a = r, let b = userRank { if a.rank != b.rank || a.total != b.total { userRank = r } }
+        else if (r == nil) != (userRank == nil) { userRank = r }
+    }
+
+    private func setWindow(_ w: (startRank: Int, entries: [LeaderboardEntry])?) {
+        if let a = w, let b = rankWindow {
+            if a.startRank != b.startRank || lbRowsSignature(a.entries) != lbRowsSignature(b.entries) { rankWindow = w }
+        } else if (w == nil) != (rankWindow == nil) { rankWindow = w }
     }
 
     /// The player's rank read off the rows in hand when they're on the list — the same
@@ -1017,15 +927,11 @@ struct LeaderboardTab: View {
             guard !Task.isCancelled else { return }
             guard let fetched = fetchedOpt else { loading = false; return }
             let (shown, shownCount, _) = withMine(fetched, fetched.count)
-            entries = shown
-            playerCount = shownCount
-            loading = false
             // §217: exact (score, time) ties share the rank on the friends board too.
             let rank: (rank: Int, total: Int)? = fetched
                 .firstIndex { $0.userId == uid }
                 .map { (rank: LeaderboardService.competitionRank(fetched, $0), total: fetched.count) }
-            userRank = rank
-            rankWindow = nil
+            setBoard(rows: shown, count: shownCount, rank: rank, window: .some(nil), loading: false)
             LeaderboardCache.shared[cacheKey] = .init(
                 entries: fetched, playerCount: fetched.count, userRank: rank, rankWindow: nil)
             return
@@ -1047,24 +953,21 @@ struct LeaderboardTab: View {
         // its own instead of holding the whole list behind its extra queries.
         // A result recorded a moment ago may not be in them yet: keep the player's own row.
         let (shown, shownCount, mineRank) = withMine(fetched, count)
-        entries = shown
-        playerCount = shownCount
-        loading = false
         // The banner lands WITH the rows when the player is on them (the rank query only refines it).
-        if userRank == nil { userRank = mineRank ?? rowsRank(shown, shownCount) }
+        setBoard(rows: shown, count: shownCount, rank: userRank ?? mineRank ?? rowsRank(shown, shownCount), window: nil, loading: false)
 
         var rank: (rank: Int, total: Int)? = nil
         var win: (startRank: Int, entries: [LeaderboardEntry])? = nil
         if let uid = auth.profile?.id {
             rank = await LeaderboardService.userRank(gameMode: mode, userId: uid, topEntries: fetched)
             guard !Task.isCancelled else { return }
-            userRank = rank ?? mineRank
+            setRank(rank ?? mineRank)
             // Ranked past the visible list → also fetch the rows around them.
             if let r = rank, r.rank > 50 {
                 win = await LeaderboardService.fetchRankWindow(gameMode: mode, userRank: r.rank)
                 guard !Task.isCancelled else { return }
             }
-            rankWindow = win
+            setWindow(win)
         }
         LeaderboardCache.shared[cacheKey] = .init(entries: fetched, playerCount: count, userRank: rank, rankWindow: win)
     }
@@ -1099,6 +1002,7 @@ struct LeaderboardTab: View {
         // .task(id:) cancels this on a mode switch — don't let the previous
         // mode's slow response overwrite the new mode's podium.
         guard !Task.isCancelled else { return }
+        if let known = yesterdayByKey[key], lbRowsSignature(known) == lbRowsSignature(rows) { return }   // same board: no pass
         yesterdayByKey[key] = rows
     }
 
