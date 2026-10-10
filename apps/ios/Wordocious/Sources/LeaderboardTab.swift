@@ -170,7 +170,7 @@ struct LeaderboardTab: View {
 
     /// The stage's tint: the selected game's accent (the Sweep's gold on the Sweep board).
     /// The stage podium's fixed height (tallest case: 1st with crown + three-line plaques), so switching games never shifts.
-    static let stagePodiumHeight: CGFloat = 300
+    static let stagePodiumHeight: CGFloat = 240
     private var stageAccent: Color { isSweep ? GamePicker.sweepAccent : ModeStyle.accent(mode) }
 
     /// Opens today's solved board (the old VIEW BOARD) or the daily to play, exactly as before.

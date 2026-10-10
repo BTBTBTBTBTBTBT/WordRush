@@ -184,3 +184,39 @@ private struct BubbleGlyphPop: ViewModifier {
             }
     }
 }
+
+/// One line of bubble lettering that never wraps: drawn at `size`, shrunk to fit its slot (a podium name like
+/// BEANANDBUCKWHEAT stays one word instead of breaking mid-word).
+struct BubbleOneLine: View {
+    let text: String
+    var palette: HeadlinePalette = .home
+    var size: CGFloat
+    var minScale: CGFloat = 0.45
+
+    @State private var natural: CGFloat = 0
+
+    var body: some View {
+        GeometryReader { g in
+            let s = natural > 0 ? max(minScale, min(1, g.size.width / natural)) : 1
+            BubbleLineView(text: text, palette: palette, size: size * s, animated: false)
+                .fixedSize()
+                .frame(width: g.size.width, height: g.size.height)
+        }
+        .frame(height: size * 1.3)
+        .background {
+            // The natural width at full size, measured once off screen.
+            BubbleLineView(text: text, palette: palette, size: size, animated: false)
+                .fixedSize()
+                .hidden()
+                .background(GeometryReader { p in Color.clear.preference(key: BubbleOneLineWidthKey.self, value: p.size.width) })
+        }
+        .onPreferenceChange(BubbleOneLineWidthKey.self) { natural = $0 }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
+    }
+}
+
+private struct BubbleOneLineWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}

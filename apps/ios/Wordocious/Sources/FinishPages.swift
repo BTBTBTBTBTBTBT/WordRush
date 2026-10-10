@@ -496,7 +496,7 @@ struct PodiumView: View {
                 .frame(height: Self.floorRise * 2 + 4)
                 .accessibilityHidden(true)
         }
-        .padding(.horizontal, 10).padding(.top, stage == nil ? 12 : 8)
+        .padding(.horizontal, 10).padding(.top, stage == nil ? 2 : 8)
         .background { if let stage { PodiumStage(accent: stage) } }
         .softSheet(item: $stageTarget) { t in
             PodiumStageCard(entry: t.entry, place: t.place, onProfile: onTap.map { tap in { tap(t.entry) } })
@@ -521,17 +521,15 @@ struct PodiumView: View {
             // Founder 10-09: the plaque wears the player's own mascot-maker backdrop (fill) and frame (border); the ink
             // follows the fill's brightness so the stats read on any backdrop.
             let plate = PlayerTint.plate(userId: e.id, username: e.username)
+            // Founder 10-09: the name rides ABOVE the player's head in the bubble lettering (their own color, one line, never
+            // broken mid-word); the plaque under them holds the numbers, in the bubble numerals too.
+            let nameAbove = BubbleOneLine(text: e.name.uppercased(),
+                                          palette: .accent(PlayerTint.nameColor(userId: e.id, username: e.username)),
+                                          size: compact ? 14 : (first ? 19 : 16))
+            let ink = PlayerTint.platePalette(lightInk: plate.lightInk)
             let plaque = VStack(spacing: 2) {
-                Text(e.name)
-                    .font(Brand.font(compact ? 12 : 13, .black))
-                    .foregroundStyle(plate.heading)
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                // Points stay the headline number (#1 a touch larger), then one muted
-                // detail line (single line, shrink-to-fit, never wraps into the step).
-                Text(e.value)
-                    .font(Brand.font((compact ? 11 : 12) + (first ? 1.5 : 0), .heavy)).monospacedDigit()
-                    .foregroundStyle(plate.muted)
-                    .lineLimit(1).minimumScaleFactor(0.7)
+                // Points stay the headline number (#1 a touch larger), then the detail line, both in the bubble font.
+                BubbleOneLine(text: e.value.uppercased(), palette: ink, size: (compact ? 14 : 17) + (first ? 2 : 0))
                 // Two parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
                 ForEach(Array(FriendCards.raceBadgeLines(e.badge).enumerated()), id: \.offset) { _, line in
                     Text(line)
@@ -540,16 +538,14 @@ struct PodiumView: View {
                         .lineLimit(1).minimumScaleFactor(0.55)
                 }
                 if let d = e.detail, !d.isEmpty {
-                    Text(d)
-                        .font(Brand.font(compact ? 9 : 10, first ? .heavy : .bold)).monospacedDigit()
-                        .foregroundStyle(plate.muted.opacity(first ? 1 : 0.9))
-                        .lineLimit(1).minimumScaleFactor(0.6)
+                    BubbleOneLine(text: d.uppercased(), palette: ink, size: compact ? 10 : 11.5, minScale: 0.55)
                 }
             }
             let content = VStack(spacing: 4) {
                 if place == 1 && !stands {
                     Icon3D(.crown, size: compact ? 24 : 26).padding(.bottom, -8).zIndex(1)
                 }
+                nameAbove.padding(.horizontal, -10).zIndex(2)
                 // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step full-body (no tile), 2x the old size,
                 // posed by place (1st cheers, 2nd claps, 3rd waves); photo players keep the framed tile.
                 PodiumFigure(entry: e, place: place, tone: tone, size: avatar, compact: compact)
@@ -1125,14 +1121,27 @@ enum PlayerTint {
     }
 
     /// A vivid version of the player's backdrop color, for their name in the bubble lettering (lemon → a sunny gold).
-    static func nameColor(userId: String?, username: String) -> Color {
+    /// The bubble lettering on a plate: purple letters + numbers on a pale plate, white letters + gold numbers on a dark one.
+    static func platePalette(lightInk: Bool) -> HeadlinePalette {
+        lightInk
+            ? HeadlinePalette(top: .white, bottom: Color(hex: 0xEDE9FE), deep: Color(hex: 0x3B0764), outline: Color(hex: 0x4C1D95),
+                              nameTop: .white, nameBottom: Color(hex: 0xEDE9FE),
+                              numberTop: Color(hex: 0xFFE07A), numberBottom: Color(hex: 0xF5A524))
+            : HeadlinePalette(top: Color(hex: 0xA855F7), bottom: Color(hex: 0x6D28D9), deep: Color(hex: 0x3B0764), outline: .white,
+                              nameTop: Color(hex: 0xA855F7), nameBottom: Color(hex: 0x6D28D9),
+                              numberTop: Color(hex: 0xA855F7), numberBottom: Color(hex: 0x6D28D9))
+    }
+
+    static func nameColor(userId: String?, username: String, onLight: Bool = false) -> Color {
         let c = config(userId: userId, username: username)
         let hex = AvatarCatalog.backdrop(c.bg)?.colors.last ?? AvatarCatalog.color(c.color).hex
         guard let base = Color(hexString: hex) else { return Color(hex: 0x7C3AED) }
         var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         UIColor(base).getHue(&h, saturation: &s, brightness: &b, alpha: &a)
         if s < 0.12 { return Color(hex: 0x8B5CF6) }   // a grey / white backdrop: the brand purple
-        return Color(hue: h, saturation: max(s, 0.78), brightness: max(b, 0.92))
+        // On a pale surface (a lemon plate) the name deepens (sunny gold → amber) so it never fades into its own backdrop.
+        return onLight ? Color(hue: h, saturation: max(s, 0.9), brightness: 0.72)
+                       : Color(hue: h, saturation: max(s, 0.78), brightness: max(b, 0.92))
     }
 
     private static func rgb(_ hex: String) -> (Double, Double, Double) {
