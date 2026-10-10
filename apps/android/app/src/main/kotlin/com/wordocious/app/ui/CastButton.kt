@@ -187,6 +187,8 @@ fun CastButton(
     leading: (@Composable () -> Unit)? = null,
     /** BJ15 round 2: a small live line under the label art, inside the same height (the share candy's countdown). */
     subtitle: String? = null,
+    /** Founder 10-09: scales the label's cap height (< 1 = smaller letters); a list of equal-width pills sets one smaller cap for all. */
+    capScale: Float = 1f,
 ) {
     val c = color ?: LocalCastColor.current
     val context = LocalContext.current
@@ -229,7 +231,7 @@ fun CastButton(
         ) {
             leading?.invoke()
             if (subtitle == null) {
-                CastLabel(text, c, size)
+                CastLabel(text, c, size, capScale = capScale)
             } else {
                 androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CastLabel(text, c, size, capScale = 0.78f)

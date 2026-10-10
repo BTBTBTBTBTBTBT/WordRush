@@ -165,9 +165,8 @@ fun FriendsScreen(
     var challenging by remember { mutableStateOf<String?>(null) }
     var quickPlay by remember { mutableStateOf<QuickPlayRequest?>(null) }
     var showRace by remember { mutableStateOf(false) }
-    // 2.8 wave 3 (item 9): the friend ⋯ / long-press family menu, and the resign confirm it opens.
+    // 2.8 wave 3 (item 9): the friend ⋯ / long-press family menu. Founder 10-09: Resign lives on each game tile (a flag).
     var menuFriend by remember { mutableStateOf<FriendsService.FriendProfile?>(null) }
-    var resignTarget by remember { mutableStateOf<FriendlyGamesService.GameView?>(null) }
     val scope = rememberCoroutineScope()
     val addRequester = remember { BringIntoViewRequester() }
     val addFocus = remember { FocusRequester() }
@@ -283,6 +282,7 @@ fun FriendsScreen(
             onOpenGame = onOpenGame,
             onPlayWith = { quickPlay = QuickPlayRequest(it.id) },
             onMenu = { menuFriend = it },
+            onResign = { id -> scope.launch { FriendlyGamesService.resign(id); FriendlyGamesService.load() } },
         )
 
         // 5. PLAY WITH FRIENDS
@@ -406,11 +406,10 @@ fun FriendsScreen(
         }
     }
 
-    // The friend ⋯ / long-press family menu (profile, play a game, taunt, challenge, gift, resign a game, unfriend).
+    // The friend ⋯ / long-press family menu (profile, play a game, taunt, challenge, gift, unfriend).
     menuFriend?.let { f ->
         FriendMenuHost(
             f = f, nowMs = now, canGift = (myProfile?.streakShields ?: 0) > 0, challengingId = challenging,
-            games = games.filter { it.opponent.id == f.id },
             isFriend = friends.any { it.id == f.id },
             onDismiss = { menuFriend = null },
             onOpenProfile = onOpenProfile,
@@ -418,29 +417,7 @@ fun FriendsScreen(
             onTaunt = { tauntTarget = it },
             onChallenge = { challenge(it) },
             onUnfriend = { unfriendTarget = it },
-            onResign = { resignTarget = it },
             onNote = { note = it },
-        )
-    }
-
-    // Resign confirm: Resign lives here now, not inside the game (item 9).
-    resignTarget?.let { g ->
-        AlertDialog(
-            modifier = com.wordocious.app.ui.PopupWidth,
-            onDismissRequest = { resignTarget = null },
-            containerColor = FRIENDS_SHEET,
-            title = { Text("Resign ${g.title}?", fontWeight = FontWeight.Black, fontFamily = Nunito, color = FriendsPink.heading) },
-            text = { Text("${g.opponent.username} wins this game. You can start another any time.", fontFamily = Nunito, fontWeight = FontWeight.Bold, color = FriendsPink.muted) },
-            confirmButton = {
-                CastButton("Resign", onClick = {
-                    val id = g.id
-                    resignTarget = null
-                    scope.launch { FriendlyGamesService.resign(id); FriendlyGamesService.load() }
-                }, color = CastColor.PINK, size = CastSize.M)
-            },
-            dismissButton = {
-                CastButton("Keep playing", onClick = { resignTarget = null }, color = CastColor.SLATE, size = CastSize.M)
-            },
         )
     }
 
@@ -954,6 +931,7 @@ private fun YourFriendsSection(
                         }
                     },
                     color = CastColor.GOLD, size = CastSize.S,
+                    modifier = Modifier.width(ACTION_PILL_WIDTH), fill = true, capScale = ACTION_PILL_CAP,
                     contentDescription = "Nudge all who haven't played",
                 )
             }
@@ -997,37 +975,51 @@ private fun YourFriendsSection(
                         FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 36.dp, online = on, userId = f.id)
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                // Founder 10-09: the name may shrink to 0.8 before it ellipsizes (the chips moved to the line below).
+                                var nameSize by remember(f.id) { mutableStateOf(14f) }
                                 Text(
                                     buildAnnotatedString {
                                         append("@${f.username}")
                                         if (f.id == crownId) { append(" "); appendIcon3D(Icon3DName.CROWN) }
                                     },
-                                    fontSize = 14.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
+                                    fontSize = nameSize.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
                                     maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
                                     inlineContent = icon3DInline(),
+                                    onTextLayout = { if (it.hasVisualOverflow && nameSize > 14f * 0.8f) nameSize -= 0.5f },
                                 )
                                 if ((f.flawlessStreak ?: 0) >= 2) MiniChip("×${f.flawlessStreak}", Color(0xFFB45309), Color(0xFFF59E0B), Icon3DName.TROPHY)
-                                friendversary(f)?.let { MiniChip("$it DAYS", FriendsPink.solid, FriendsPink.solid, art = GlyphArt.SPARKLES) }
-                                if (isNewFriend(f)) MiniChip("NEW", PURPLE, PURPLE)
                             }
                             val line = presenceLine(f.lastSeenMs, f.activity, nowMs)
                                 ?: if (played > 0) "$played/$sweepSize today" else "Hasn't played today"
-                            Text(
-                                line, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                                color = if (on) FriendsPink.green else if (com.wordocious.app.ui.vs.vsDarkSeason) FriendsPink.muted else Color(0xFF7A6A95), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                            )
+                            // Founder 10-09: the NEW / friendversary chips ride the second line next to the presence line
+                            // (they squeezed the name into "@O…" and wrapped "30 DAYS"); they are fixed size and never wrap.
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                    line, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                                    color = if (on) FriendsPink.green else if (com.wordocious.app.ui.vs.vsDarkSeason) FriendsPink.muted else Color(0xFF7A6A95),
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                                )
+                                friendversary(f)?.let { MiniChip("$it DAYS", FriendsPink.solid, FriendsPink.solid, art = GlyphArt.SPARKLES) }
+                                if (isNewFriend(f)) MiniChip("NEW", PURPLE, PURPLE)
+                            }
                         }
                         (f.friendStreak ?: 0).takeIf { it > 0 }?.let { Box(Modifier.heightIn(min = 34.dp), contentAlignment = Alignment.Center) { FlameCount("$it") } }
-                        // C4: chunky candy actions — Play / Challenge purple, Nudge amber.
+                        // C4: chunky candy actions — Play / Challenge pink, Nudge gold. Founder 10-09: ONE width and ONE letter height down the list.
                         when {
-                            on -> CastButton("Play", onClick = { onPlay(f) }, color = CastColor.PINK, size = CastSize.S, contentDescription = "Play with ${f.username}")
+                            on -> CastButton(
+                                "Play", onClick = { onPlay(f) }, modifier = Modifier.width(ACTION_PILL_WIDTH), color = CastColor.PINK, size = CastSize.S,
+                                fill = true, capScale = ACTION_PILL_CAP, contentDescription = "Play with ${f.username}",
+                            )
                             played > 0 || (f.todayPoints ?: 0) > 0 -> CastButton(
                                 if (challengingId == f.id) "Sending…" else "Challenge",
-                                onClick = { onChallenge(f) },
-                                color = CastColor.PINK, size = CastSize.S,
+                                onClick = { onChallenge(f) }, modifier = Modifier.width(ACTION_PILL_WIDTH),
+                                color = CastColor.PINK, size = CastSize.S, fill = true, capScale = ACTION_PILL_CAP,
                                 enabled = challengingId == null, contentDescription = "Challenge ${f.username}",
                             )
-                            else -> CastButton("Nudge", onClick = { onTaunt(f) }, color = CastColor.GOLD, size = CastSize.S, contentDescription = "Nudge ${f.username}")
+                            else -> CastButton(
+                                "Nudge", onClick = { onTaunt(f) }, modifier = Modifier.width(ACTION_PILL_WIDTH), color = CastColor.GOLD, size = CastSize.S,
+                                fill = true, capScale = ACTION_PILL_CAP, contentDescription = "Nudge ${f.username}",
+                            )
                         }
                     }
                 }
@@ -1038,8 +1030,8 @@ private fun YourFriendsSection(
 
 /**
  * The friend family action menu (founder 10-05: no plain-text menus; iOS order), hosted by the Friends screen so
- * a friend card's ⋯ and a list row's long-press open the same sheet. 2.8 wave 3: "Resign <game>" (danger) for each
- * game in play with this friend lives HERE; the in-game Leave dialog no longer resigns.
+ * a friend card's ⋯ and a list row's long-press open the same sheet. Founder 10-09: Resign lives on each game tile now
+ * (a small flag with an in-tile confirm), not as rows here.
  */
 @Composable
 private fun FriendMenuHost(
@@ -1047,7 +1039,6 @@ private fun FriendMenuHost(
     nowMs: Long,
     canGift: Boolean,
     challengingId: String?,
-    games: List<FriendlyGamesService.GameView>,
     isFriend: Boolean,
     onDismiss: () -> Unit,
     onOpenProfile: (String) -> Unit,
@@ -1055,7 +1046,6 @@ private fun FriendMenuHost(
     onTaunt: (FriendsService.FriendProfile) -> Unit,
     onChallenge: (FriendsService.FriendProfile) -> Unit,
     onUnfriend: (FriendsService.FriendProfile) -> Unit,
-    onResign: (FriendlyGamesService.GameView) -> Unit,
     onNote: (String) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -1067,16 +1057,17 @@ private fun FriendMenuHost(
             ?: if (played > 0) "$played/$sweepSize today" else "Hasn't played today",
         avatar = { FriendAvatar44(f) },
         onDismiss = onDismiss,
+        // Founder 10-09: the name in the bubble lettering, in their own color (their backdrop).
+        titleColor = run {
+            val cfg = com.wordocious.app.data.PlayerAvatars.resolve(
+                com.wordocious.app.data.AvatarFields(f.id, f.username, f.avatarUrl, f.avatarConfig, f.avatarCastId, f.avatarFrame, null),
+            ).config
+            Color(com.wordocious.app.ui.friends.FriendCardCopy.nameColorArgb(cfg.bg, cfg.color))
+        },
         actions = buildList {
             add(FamilyMenuAction("profile", "View profile", FamilyMenuIcon.Clay(FamIcon.EYE)) { onOpenProfile(f.id) })
-            // Someone not on the friend list (a game left over with them): only View profile and the Resign rows apply.
-            if (!isFriend) {
-                games.forEach { g ->
-                    add(FamilyMenuAction("resign-${g.id}", "Resign ${g.title}", FamilyMenuIcon.Clay(FamIcon.FLAG), danger = true,
-                        contentDescription = "Resign ${g.title} against ${f.username}") { onResign(g) })
-                }
-                return@buildList
-            }
+            // Someone not on the friend list (a game left over with them): only View profile applies (Resign is on the tile).
+            if (!isFriend) return@buildList
             add(FamilyMenuAction("play", "Play a game", FamilyMenuIcon.Clay(FamIcon.PLAY), FamilyMenuInk.PINK) { onPlay(f) })
             add(FamilyMenuAction("taunt", "Taunt", FamilyMenuIcon.Art(Icon3DName.BELL.res), FamilyMenuInk.AMBER,
                 contentDescription = "Taunt ${f.username}") { onTaunt(f) })
@@ -1095,15 +1086,15 @@ private fun FriendMenuHost(
                     }
                 })
             }
-            games.forEach { g ->
-                add(FamilyMenuAction("resign-${g.id}", "Resign ${g.title}", FamilyMenuIcon.Clay(FamIcon.FLAG), danger = true,
-                    contentDescription = "Resign ${g.title} against ${f.username}") { onResign(g) })
-            }
             add(FamilyMenuAction("unfriend", "Unfriend", FamilyMenuIcon.Clay(FamIcon.XMARK), danger = true,
                 contentDescription = "Unfriend ${f.username}") { onUnfriend(f) })
         },
     )
 }
+
+/** Founder 10-09: the All friends row action (Play / Challenge / Nudge / Nudge all): one width, one letter height (iOS actionPillWidth / castCapScale 0.78). */
+private val ACTION_PILL_WIDTH = 96.dp
+private const val ACTION_PILL_CAP = 0.78f
 
 /** The gift note's marker: the note row swaps it for the 3D shield. */
 private const val SHIELD_NOTE = com.wordocious.app.ui.friends.FRIENDS_SHIELD_NOTE
@@ -1117,7 +1108,7 @@ private fun MiniChip(text: String, ink: Color, tint: Color, icon3d: Icon3DName? 
     ) {
         if (icon3d != null) Icon3D(icon3d, 11.dp)
         if (art != null) GlyphArtImage(art, 11.dp)
-        Text(text, fontSize = 8.sp, fontWeight = FontWeight.Black, color = ink, fontFamily = Nunito, maxLines = 1)
+        Text(text, fontSize = 8.sp, fontWeight = FontWeight.Black, color = ink, fontFamily = Nunito, maxLines = 1, softWrap = false)
     }
 }
 
