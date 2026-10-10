@@ -52,9 +52,21 @@ enum WidgetAvatarSnapshot {
         case .w:
             break
         case .mascot(let config):
-            let view = MascotCutout(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username), size: side)
+            let initial = AvatarCatalog.initial(AuthService.shared.profile?.username)
+            let view = MascotCutout(config: config, initial: initial, size: side)
             png = render(view, side: side)
             file = WidgetAvatar.mascotFile
+            // Founder 10-10: one still per pose, so the widget's mascot changes pose through the day.
+            if LivingMascotView.canAnimate(config) {
+                for pose in WidgetAvatar.poses {
+                    guard !Task.isCancelled, let u = url(WidgetAvatar.poseFile(pose)) else { continue }
+                    var c = config; c.pose = pose
+                    let posed = LivingMascotView(config: c, initial: initial, size: side, cutout: true, interactive: false, own: false)
+                    if let data = render(posed, side: side), (try? Data(contentsOf: u)) != data {
+                        try? data.write(to: u, options: .atomic)
+                    }
+                }
+            }
         case .photo:
             guard let p = AuthService.shared.profile, let s = p.avatarUrl, let u = URL(string: s) else { break }
             // Load first: AvatarView paints a cached photo on its first frame (else its mascot stand-in).
@@ -76,6 +88,15 @@ enum WidgetAvatarSnapshot {
             } else if FileManager.default.fileExists(atPath: u.path) {
                 try? FileManager.default.removeItem(at: u)
                 changed = true
+            }
+        }
+        // Not a mascot any more: the pose stills go too.
+        if file != WidgetAvatar.mascotFile {
+            for pose in WidgetAvatar.poses {
+                if let u = url(WidgetAvatar.poseFile(pose)), FileManager.default.fileExists(atPath: u.path) {
+                    try? FileManager.default.removeItem(at: u)
+                    changed = true
+                }
             }
         }
         if changed { WidgetCenter.shared.reloadAllTimelines() }

@@ -715,8 +715,12 @@ private struct CastPeek: View {
 /// app-group container — a mascot cutout or a framed photo; nil (→ W / the cast) when absent.
 enum OwnLook {
     struct Look { let image: UIImage; let photo: Bool }
-    static var load: () -> Look? = {
+    static var load: () -> Look? = { at(Date()) }
+    /// Founder 10-10: the posed still for this hour (wave / cheer / flex / jump), else the plain look.
+    static func at(_ date: Date) -> Look? {
         guard let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) else { return nil }
+        let pose = WidgetAvatar.poseFile(WidgetAvatar.pose(hour: Calendar.current.component(.hour, from: date)))
+        if let img = UIImage(contentsOfFile: dir.appendingPathComponent(pose).path) { return Look(image: img, photo: false) }
         for (name, photo) in [(WidgetAvatar.mascotFile, false), (WidgetAvatar.photoFile, true)] {
             if let img = UIImage(contentsOfFile: dir.appendingPathComponent(name).path) { return Look(image: img, photo: photo) }
         }
@@ -839,37 +843,55 @@ struct SmallView: View {
     var body: some View {
         let hall = halloweenOn(snap, date)
         let dark = hall || (snap.theme?.dark ?? (scheme == .dark))
-        // Founder 10-10: the large widget's look, distilled: WORDOCIOUS, the DAILIES and PUZZLES rings side by side,
-        // then the streak pair (left) mirrored by the live countdown (right). The chips are the small size's sacrifice.
+        // Founder 10-10: the medium / large look, distilled. Top: your mascot + WORDOCIOUS / TODAY'S DAILIES. Middle: the
+        // DAILIES and PUZZLES rings side by side (gold glow when finished). Bottom: the streak pair · the live countdown.
         GeometryReader { g in
             let hasPuzzles = !snap.puzzleModes.isEmpty
-            let mark: CGFloat = 13
-            let bottom: CGFloat = 30
-            let ring = max(40, min((g.size.width - 8) / (hasPuzzles ? 2 : 1), g.size.height - mark - bottom - 12))
+            let W: CGFloat = g.size.width, H: CGFloat = g.size.height
+            let top: CGFloat = 34, bottom: CGFloat = 22, vGap: CGFloat = 5
+            let ring: CGFloat = max(40, min((W - 8) / (hasPuzzles ? 2 : 1), H - top - bottom - 2 * vGap))
+            let dDone = !snap.modes.isEmpty && snap.modes.allSatisfy(\.played)
+            let pDone = hasPuzzles && snap.puzzleModes.allSatisfy(\.played)
+            let gold = Color(widgetHex: "#f59e0b")
             VStack(spacing: 0) {
-                WordmarkImage(size: .small, halloween: hall, dark: dark, height: mark)
-                Spacer(minLength: 4)
+                HStack(spacing: 6) {
+                    HeaderHost(date: date, own: OwnLook.at(date), seasonOn: snap.seasonHalloween != false)
+                        .frame(width: top, height: top)
+                    VStack(alignment: .leading, spacing: 2) {
+                        WordmarkImage(size: .small, halloween: hall, dark: dark, height: 12)
+                        Image("widget-headline-\(hall ? "halloween-orange" : "normal")")
+                            .resizable().interpolation(.high).scaledToFit().frame(height: 7)
+                            .accessibilityLabel("Today's dailies")
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(height: top)
+                Spacer(minLength: vGap)
                 HStack(spacing: 8) {
                     DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
                         .frame(width: ring, height: ring)
+                        .shadow(color: dDone ? gold.opacity(0.85) : .clear, radius: dDone ? 7 : 0)
                     if hasPuzzles {
                         DailyRing(modes: snap.puzzleModes, dark: dark, label: "PUZZLES")
                             .frame(width: ring, height: ring)
+                            .shadow(color: pDone ? gold.opacity(0.85) : .clear, radius: pDone ? 7 : 0)
                     }
                 }
-                Spacer(minLength: 4)
+                Spacer(minLength: vGap)
                 HStack(spacing: 4) {
-                    StreakPair(snap: snap, size: bottom - 2)
+                    StreakPair(snap: snap, size: bottom)
                     Spacer(minLength: 2)
                     // The gold clock sprite (night art 10-03) leads the live countdown.
                     Image("art-badge-icon-clock-sprite").resizable().interpolation(.high)
                         .frame(width: 11, height: 11).accessibilityHidden(true)
-                    CapsTimer(date: date, color: WInk.label(dark).opacity(0.8), width: 50)
+                    CapsTimer(date: date, color: WInk.number(dark), width: 52)
                 }
                 .frame(height: bottom)
             }
-            .frame(width: g.size.width, height: g.size.height)
+            .frame(width: W, height: H)
         }
+        // Like the medium: reach into the system margin so the rings can be as big as possible.
+        .padding(-6)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(widgetPhrase(snap, date))
         // The one tap a small widget gets: Home (founder 10-05: "I find myself just clicking home
@@ -922,7 +944,7 @@ struct MediumView: View {
                     let mLeft: CGFloat = ring + 6
                     let mRight: CGFloat = hasPuzzles ? pX - 6 : W * 0.6
                     Link(destination: homeURL) {
-                        HeaderHost(date: date, own: OwnLook.load(), seasonOn: snap.seasonHalloween != false)
+                        HeaderHost(date: date, own: OwnLook.at(date), seasonOn: snap.seasonHalloween != false)
                             .frame(width: min(headerH, mRight - mLeft), height: headerH)
                     }
                     .frame(width: max(0, mRight - mLeft), height: headerH)
@@ -1005,7 +1027,7 @@ struct LargeView: View {
                         // BI13c: the player's own look heads the large widget (W for guests / no look).
                         // ~1.5× the old 42 pt, standing just over the header baseline like the Home host:
                         // the figure overflows upward into the top margin, so the layout keeps its 42 pt row.
-                        HeaderHost(date: date, own: OwnLook.load(), seasonOn: snap.seasonHalloween != false)
+                        HeaderHost(date: date, own: OwnLook.at(date), seasonOn: snap.seasonHalloween != false)
                             .frame(width: 60, height: 60, alignment: .bottom)
                             .offset(y: 5)
                             .frame(width: 60, height: 42, alignment: .bottom)
@@ -1228,13 +1250,13 @@ private struct BackdropModifier: ViewModifier {
             // The system content margins pad the views; lock-screen accessories tint
             // themselves, so they get no background.
             content.containerBackground(for: .widget) {
-                if accessory { Color.clear } else { WidgetBackdrop(halloween: halloween, date: date, skin: skin, subtle: true, motif: family != .systemMedium) }
+                if accessory { Color.clear } else { WidgetBackdrop(halloween: halloween, date: date, skin: skin, subtle: true, motif: family == .systemLarge) }
             }
         } else if accessory {
             content
         } else {
             // iOS 16 has no content margins: the same 16 pt by hand.
-            content.padding(16).background(WidgetBackdrop(halloween: halloween, date: date, skin: skin, subtle: true, motif: family != .systemMedium))
+            content.padding(16).background(WidgetBackdrop(halloween: halloween, date: date, skin: skin, subtle: true, motif: family == .systemLarge))
         }
     }
 }

@@ -181,5 +181,10 @@ public enum WidgetCast {
 public enum WidgetAvatar {
     public static let mascotFile = "widget-avatar-mascot.png"
     public static let photoFile = "widget-avatar-photo.png"
+    /// Founder 10-10: the widgets' mascot changes pose each hour (widgets can't animate): one still per pose.
+    public static let poses = ["wave", "cheer", "flex", "jump"]
+    public static func poseFile(_ pose: String) -> String { "widget-avatar-mascot-\(pose).png" }
+    /// The pose shown in a given hour (cycles through `poses`).
+    public static func pose(hour: Int) -> String { poses[((hour % poses.count) + poses.count) % poses.count] }
     public static let side: Int = 256
 }
