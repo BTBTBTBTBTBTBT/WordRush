@@ -71,6 +71,14 @@ enum LaunchGate {
 @MainActor
 enum IntroArt {
     private(set) static var images: [MascotID: UIImage] = [:]
+    /// The night wall behind an in-season intro, decoded off-main with the figures.
+    private(set) static var wall: UIImage?
+
+    /// The wall the intro draws behind the figures (nil = the plain lilac launch color).
+    static var wallName: String? {
+        guard CastSkin.season != nil, CastSkin.introSeasonOn else { return nil }
+        return SeasonKit.wall(PageTint.home.wallpaper, dark: true)
+    }
 
     static func image(_ m: MascotID) -> Image {
         if let ui = images[m] { return Image(uiImage: ui) }
@@ -79,6 +87,12 @@ enum IntroArt {
 
     static func prepare(timeout: Double) async {
         let names = Mascots.cast.map { ($0, CastSkin.introAssetName(for: $0)) }
+        let wallName = Self.wallName
+        // Founder 10-10 (smoothness): the wall decodes here, off the main thread, before the first intro frame.
+        let wallDecode = Task.detached(priority: .userInitiated) { () -> UIImage? in
+            guard let wallName, let ui = UIImage(named: wallName) else { return nil }
+            return ui.preparingForDisplay() ?? ui
+        }
         let decode = Task.detached(priority: .userInitiated) { () -> [(MascotID, UIImage)] in
             var out: [(MascotID, UIImage)] = []
             for (m, n) in names {
@@ -97,6 +111,7 @@ enum IntroArt {
             return first
         }
         if let done { for (m, ui) in done { images[m] = ui } }
+        wall = await wallDecode.value
     }
 }
 
@@ -221,9 +236,8 @@ private struct ColdStartIntro: View {
     /// its details land on the same pixels; otherwise the lilac launch color.
     @ViewBuilder
     private func backdropView(_ size: CGSize) -> some View {
-        if CastSkin.season != nil, CastSkin.introSeasonOn,
-           let wall = SeasonKit.wall(PageTint.home.wallpaper, dark: true) {
-            Image(wall)
+        if let wall = IntroArt.wallName {
+            (IntroArt.wall.map { Image(uiImage: $0) } ?? Image(wall))
                 .resizable()
                 .interpolation(.high)
                 .scaledToFill()
@@ -251,9 +265,12 @@ private struct ColdStartIntro: View {
                         .frame(width: Self.launchSize, height: Self.launchSize)
                         .position(x: size.width / 2, y: size.height / 2)
                 } else {
-                    TimelineView(.animation) { ctx in
-                        frame(t: ctx.date.timeIntervalSince(start) / Self.pace, size: size, safeTop: safeTop, origin: origin)
-                    }
+                    // Founder 10-10 (smoothness): the choreography is sampled once into Core Animation keyframes
+                    // (the same curves, 120 samples a second) and run by the render server: the main thread does
+                    // nothing per frame while it plays (the TimelineView version re-ran SwiftUI's render pass for
+                    // all ten figures every frame, 300+ ms of main time in a 2 s intro).
+                    IntroLayers(build: { plan(size: size, safeTop: safeTop, origin: origin) })
+                        .frame(width: size.width, height: size.height)
                 }
             }
             .opacity(fade)
@@ -273,6 +290,9 @@ private struct ColdStartIntro: View {
             await IntroSettle.wait(cap: 1.2)
             start = Date()
             ready = true
+            #if DEBUG
+            if PerfTour.requested { PerfMonitor.shared.begin("launch.choreo") }  // measurement only: splits the intro pre-roll from the choreography
+            #endif
             // The intro jingle (Sound Lab pick "Marimba Parade"): its first note is the W's pop,
             // its notes are cut to the choreography's beats. Animated intro only.
             if !still { SoundManager.shared.playIntro() }
@@ -338,25 +358,33 @@ private struct ColdStartIntro: View {
         }
     }
 
-    private func frame(t: Double, size: CGSize, safeTop: CGFloat, origin: CGPoint) -> some View {
+    /// The whole choreography sampled at 120 Hz: per figure the bottom-center point, the scale and the opacity.
+    private func plan(size: CGSize, safeTop: CGFloat, origin: CGPoint) -> IntroPlan {
         let s = LivingCastHeader.figure
         let mid = slots(width: size.width, bottom: size.height / 2 + s / 2)
         let header = targets(size: size, safeTop: safeTop, origin: origin)
-        // 1.20 → 1.55 s: the row glides up into the real header while the backdrop fades.
-        let glide = easeOut((t - 1.2) / 0.35)
-        let backdrop = 1 - ease((t - 1.15) / 0.4)
-        return ZStack {
-            backdropView(size).opacity(backdrop)
-            ForEach(0..<Mascots.cast.count, id: \.self) { i in
-                figure(i, t: t, s: s, mid: mid[i], header: header[i], glide: glide, size: size)
+        let end = Self.landing / Self.pace
+        let n = Int((end * 120).rounded(.up)) + 1
+        var figures = [[IntroPose]](repeating: [], count: Mascots.cast.count)
+        var backdrop: [Float] = []
+        for k in 0..<n {
+            let t = min(end, Double(k) / 120)
+            // 1.15 → 1.55 s: the backdrop fades out as the row glides up into the real header.
+            backdrop.append(Float(1 - ease((t - 1.15) / 0.4)))
+            let glide = easeOut((t - 1.2) / 0.35)
+            for i in 0..<Mascots.cast.count {
+                figures[i].append(pose(i, t: t, s: s, mid: mid[i], header: header[i], glide: glide, size: size))
             }
         }
+        let images: [UIImage?] = Mascots.cast.map { IntroArt.images[$0] ?? UIImage(named: CastSkin.introAssetName(for: $0)) }
+        return IntroPlan(size: size, duration: Self.landing, figures: figures, backdrop: backdrop, images: images,
+                         wall: IntroArt.wallName == nil ? nil : (IntroArt.wall ?? IntroArt.wallName.flatMap { UIImage(named: $0) }),
+                         color: UIColor(Self.background), figureSide: [s] + [CGFloat](repeating: s, count: Mascots.cast.count - 1),
+                         launchSide: Self.launchSize)
     }
 
-    @ViewBuilder
-    private func figure(_ i: Int, t: Double, s: CGFloat, mid: CGPoint, header: (center: CGPoint, side: CGFloat),
-                        glide: Double, size: CGSize) -> some View {
-        let m = Mascots.cast[i]
+    private func pose(_ i: Int, t: Double, s: CGFloat, mid: CGPoint, header: (center: CGPoint, side: CGFloat),
+                      glide: Double, size: CGSize) -> IntroPose {
         let rowPoint = CGPoint(x: mid.x + (header.center.x - mid.x) * glide, y: mid.y + (header.center.y - mid.y) * glide)
         let rowSide = s + (header.side - s) * glide
         if i == 0 {
@@ -369,29 +397,121 @@ private struct ColdStartIntro: View {
             let side = Self.launchSize + (rowSide - Self.launchSize) * k
             let center = CGPoint(x: size.width / 2 + (rowPoint.x - size.width / 2) * k,
                                  y: size.height / 2 + (rowPoint.y - size.height / 2) * k)
-            // §AU5: transforms + opacity only — a fixed frame, scaled and moved.
             let k0 = side / Self.launchSize
-            IntroArt.image(m).resizable().interpolation(.high).scaledToFit()
-                .frame(width: Self.launchSize, height: Self.launchSize)
-                .scaleEffect(x: CGFloat(bounce.sx) * k0, y: CGFloat(bounce.sy) * k0, anchor: .bottom)
-                .offset(x: center.x - size.width / 2,
-                        y: center.y - size.height / 2 + CGFloat(bounce.ty) * side - (Self.launchSize - side) / 2)
-                .opacity(min(1, max(0, t) / 0.12))
+            let dx = center.x - size.width / 2
+            let dy = center.y - size.height / 2 + CGFloat(bounce.ty) * side - (Self.launchSize - side) / 2
+            // The frame is launchSize square, centered, scaled about its bottom center, then offset.
+            return IntroPose(x: size.width / 2 + dx, y: size.height / 2 + Self.launchSize / 2 + dy,
+                             sx: CGFloat(bounce.sx) * k0, sy: CGFloat(bounce.sy) * k0, alpha: CGFloat(min(1, max(0, t) / 0.12)))
+        }
+        // The other nine pop in, 60 ms apart, with a spring.
+        let start = 0.42 + Double(i - 1) * 0.06
+        let p = (t - start) / 0.3
+        // Never a zero (singular) scale.
+        let pop = p <= 0 ? CastPose(sx: 0.2, sy: 0.2)
+            : Keyframes.sample([(0, CastPose(sx: 0.2, sy: 0.2)), (0.6, CastPose(sx: 1.12, sy: 1.12)), (1, .identity)],
+                               at: min(1, p), easing: CubicBezier(0.3, 1.4, 0.5, 1))
+        let k1 = rowSide / s
+        let dx = rowPoint.x - size.width / 2
+        let dy = rowPoint.y - size.height / 2 - (s - rowSide) / 2
+        return IntroPose(x: size.width / 2 + dx, y: size.height / 2 + s / 2 + dy,
+                         sx: CGFloat(pop.sx) * k1, sy: CGFloat(pop.sy) * k1, alpha: p <= 0 ? 0 : 1)
+    }
+}
+
+/// One figure at one instant: the bottom-center point of its frame (overlay coordinates), its scale about that point,
+/// its opacity.
+struct IntroPose { var x: CGFloat; var y: CGFloat; var sx: CGFloat; var sy: CGFloat; var alpha: CGFloat }
+
+struct IntroPlan {
+    let size: CGSize
+    let duration: Double
+    let figures: [[IntroPose]]
+    let backdrop: [Float]
+    let images: [UIImage?]
+    let wall: UIImage?
+    let color: UIColor
+    let figureSide: [CGFloat]
+    let launchSide: CGFloat
+}
+
+/// The intro's figures + backdrop as layers: one set of sampled keyframe animations, then the render server plays them.
+private struct IntroLayers: UIViewRepresentable {
+    let build: () -> IntroPlan
+
+    func makeUIView(context: Context) -> IntroLayersView { IntroLayersView(plan: build()) }
+    func updateUIView(_ v: IntroLayersView, context: Context) {}
+}
+
+private final class IntroLayersView: UIView {
+    private let plan: IntroPlan
+    private var started = false
+
+    init(plan: IntroPlan) {
+        self.plan = plan
+        super.init(frame: CGRect(origin: .zero, size: plan.size))
+        isUserInteractionEnabled = false
+        backgroundColor = .clear
+        let scale = UIScreen.main.scale
+
+        let back = CALayer()
+        back.frame = CGRect(origin: .zero, size: plan.size)
+        back.masksToBounds = true
+        if let wall = plan.wall {
+            back.contents = wall.cgImage
+            back.contentsGravity = .resizeAspectFill
         } else {
-            // The other nine pop in, 60 ms apart, with a spring.
-            let start = 0.42 + Double(i - 1) * 0.06
-            let p = (t - start) / 0.3
-            // Perf audit: never a zero (singular) scale — SwiftUI logs a warning per frame per figure.
-            let pop = p <= 0 ? CastPose(sx: 0.2, sy: 0.2)
-                : Keyframes.sample([(0, CastPose(sx: 0.2, sy: 0.2)), (0.6, CastPose(sx: 1.12, sy: 1.12)), (1, .identity)],
-                                   at: min(1, p), easing: CubicBezier(0.3, 1.4, 0.5, 1))
-            // §AU5: transforms + opacity only — a fixed frame, scaled and moved.
-            let k1 = rowSide / s
-            IntroArt.image(m).resizable().interpolation(.high).scaledToFit()
-                .frame(width: s, height: s)
-                .scaleEffect(x: CGFloat(pop.sx) * k1, y: CGFloat(pop.sy) * k1, anchor: .bottom)
-                .offset(x: rowPoint.x - size.width / 2, y: rowPoint.y - size.height / 2 - (s - rowSide) / 2)
-                .opacity(p <= 0 ? 0 : 1)
+            back.backgroundColor = plan.color.cgColor
+        }
+        back.contentsScale = scale
+        back.opacity = plan.backdrop.first ?? 1
+        back.name = "back"
+        layer.addSublayer(back)
+
+        for (i, samples) in plan.figures.enumerated() {
+            let side = i == 0 ? plan.launchSide : plan.figureSide[i]
+            let l = CALayer()
+            l.name = "fig\(i)"
+            l.bounds = CGRect(x: 0, y: 0, width: side, height: side)
+            l.anchorPoint = CGPoint(x: 0.5, y: 1)
+            l.contents = plan.images[i]?.cgImage
+            l.contentsGravity = .resizeAspect
+            l.contentsScale = scale
+            l.minificationFilter = .trilinear
+            l.magnificationFilter = .linear
+            if let p = samples.first {
+                l.position = CGPoint(x: p.x, y: p.y)
+                l.transform = CATransform3DMakeScale(p.sx, p.sy, 1)
+                l.opacity = Float(p.alpha)
+            }
+            layer.addSublayer(l)
+        }
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        guard window != nil, !started else { return }
+        started = true
+        let begin = CACurrentMediaTime()
+        func add(_ l: CALayer, _ key: String, _ values: [Any]) {
+            let a = CAKeyframeAnimation(keyPath: key)
+            a.values = values
+            a.calculationMode = .linear
+            a.duration = plan.duration
+            a.beginTime = begin
+            a.fillMode = .both
+            a.isRemovedOnCompletion = false
+            l.add(a, forKey: key)
+        }
+        for l in layer.sublayers ?? [] {
+            if l.name == "back" { add(l, "opacity", plan.backdrop); continue }
+            guard let name = l.name, name.hasPrefix("fig"), let i = Int(name.dropFirst(3)) else { continue }
+            let f = plan.figures[i]
+            add(l, "position", f.map { NSValue(cgPoint: CGPoint(x: $0.x, y: $0.y)) })
+            add(l, "transform.scale.x", f.map { Float($0.sx) })
+            add(l, "transform.scale.y", f.map { Float($0.sy) })
+            add(l, "opacity", f.map { Float($0.alpha) })
         }
     }
 }
