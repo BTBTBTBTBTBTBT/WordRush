@@ -121,7 +121,7 @@ final class GameTransition {
     /// one-time pop (the overlay already shows it settled — a pop under it would jump).
     private(set) static var headerHandoff = false
     /// How long the page takes to fade in over the growing shell.
-    static let pageFadeIn: Double = 0.16
+    static let pageFadeIn: Double = 0.06
 
     /// Put the overlay up and commit the whole open (lift → grow) to the render
     /// server. Call right before presenting the cover (next run-loop turn).
