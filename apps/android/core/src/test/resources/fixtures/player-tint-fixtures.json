@@ -1,0 +1,260 @@
+{
+  "cases": [
+    {
+      "bg": "auto",
+      "frame": "none",
+      "color": "purple",
+      "bodyHex": "#7c3aed",
+      "plate": {
+        "fill": [
+          "#e2d4fb"
+        ],
+        "border": [
+          "#a399b5"
+        ],
+        "borderWidth": 1.5,
+        "lightInk": false
+      },
+      "nameHex": "#7834ed"
+    },
+    {
+      "bg": "auto",
+      "frame": "gold",
+      "color": "sky",
+      "bodyHex": "#0ea5e9",
+      "plate": {
+        "fill": [
+          "#caebfa"
+        ],
+        "border": [
+          "#FDE68A",
+          "#D97706"
+        ],
+        "borderWidth": 2.5,
+        "lightInk": false
+      },
+      "nameHex": "#0ea6eb"
+    },
+    {
+      "bg": "lemon",
+      "frame": "bronze",
+      "color": "red",
+      "bodyHex": "#ef4444",
+      "plate": {
+        "fill": [
+          "#fef9c3"
+        ],
+        "border": [
+          "#F0B27A",
+          "#B45309"
+        ],
+        "borderWidth": 2.5,
+        "lightInk": false
+      },
+      "nameHex": "#feed38"
+    },
+    {
+      "bg": "night",
+      "frame": "diamond",
+      "color": "amber",
+      "bodyHex": "#f5a524",
+      "plate": {
+        "fill": [
+          "#1e1b4b"
+        ],
+        "border": [
+          "#A5F3FC",
+          "#818CF8",
+          "#F0ABFC"
+        ],
+        "borderWidth": 2.5,
+        "lightInk": true
+      },
+      "nameHex": "#3f34eb"
+    },
+    {
+      "bg": "sunset",
+      "frame": "silver",
+      "color": "blue",
+      "bodyHex": "#2563eb",
+      "plate": {
+        "fill": [
+          "#fb923c",
+          "#ec4899"
+        ],
+        "border": [
+          "#F8FAFC",
+          "#94A3B8"
+        ],
+        "borderWidth": 2.5,
+        "lightInk": true
+      },
+      "nameHex": "#ec348f"
+    },
+    {
+      "bg": "ocean",
+      "frame": "platinum",
+      "color": "green",
+      "bodyHex": "#22c55e",
+      "plate": {
+        "fill": [
+          "#0ea5e9",
+          "#1e40af"
+        ],
+        "border": [
+          "#E0F2FE",
+          "#64748B"
+        ],
+        "borderWidth": 2.5,
+        "lightInk": true
+      },
+      "nameHex": "#2856eb"
+    },
+    {
+      "bg": "aurora",
+      "frame": "pro",
+      "color": "pink",
+      "bodyHex": "#ec4899",
+      "plate": {
+        "fill": [
+          "#34d399",
+          "#8b5cf6",
+          "#0ea5e9"
+        ],
+        "border": [
+          "#F5B82E",
+          "#EC4899",
+          "#8B5CF6"
+        ],
+        "borderWidth": 2.5,
+        "lightInk": true
+      },
+      "nameHex": "#0ea6eb"
+    },
+    {
+      "bg": "galaxy",
+      "frame": "none",
+      "color": "teal",
+      "bodyHex": "#0d9488",
+      "plate": {
+        "fill": [
+          "#4c1d95",
+          "#815992"
+        ],
+        "border": [
+          "#37156b"
+        ],
+        "borderWidth": 1.5,
+        "lightInk": true
+      },
+      "nameHex": "#fdd638"
+    },
+    {
+      "bg": "polka",
+      "frame": "gold",
+      "color": "orange",
+      "bodyHex": "#f97316",
+      "plate": {
+        "fill": [
+          "#fce7f3",
+          "#fac4e1"
+        ],
+        "border": [
+          "#FDE68A",
+          "#D97706"
+        ],
+        "borderWidth": 2.5,
+        "lightInk": false
+      },
+      "nameHex": "#f43699"
+    },
+    {
+      "bg": "confetti",
+      "frame": "none",
+      "color": "violet",
+      "bodyHex": "#8b5cf6",
+      "plate": {
+        "fill": [
+          "#fff7ed",
+          "#f9c3d4"
+        ],
+        "border": [
+          "#b8b2ab"
+        ],
+        "borderWidth": 1.5,
+        "lightInk": false
+      },
+      "nameHex": "#f5a524"
+    },
+    {
+      "bg": "cloud",
+      "frame": "silver",
+      "color": "white",
+      "bodyHex": "#f8fafc",
+      "plate": {
+        "fill": [
+          "#f1f5f9"
+        ],
+        "border": [
+          "#F8FAFC",
+          "#94A3B8"
+        ],
+        "borderWidth": 2.5,
+        "lightInk": false
+      },
+      "nameHex": "#8B5CF6"
+    },
+    {
+      "bg": "mystery",
+      "frame": "bogus",
+      "color": "nope",
+      "bodyHex": "#7c3aed",
+      "plate": {
+        "fill": [
+          "#e2d4fb"
+        ],
+        "border": [
+          "#a399b5"
+        ],
+        "borderWidth": 1.5,
+        "lightInk": false
+      },
+      "nameHex": "#7834ed"
+    },
+    {
+      "bg": "auto",
+      "frame": "none",
+      "color": "charcoal",
+      "bodyHex": "#374151",
+      "plate": {
+        "fill": [
+          "#d3d5d9"
+        ],
+        "border": [
+          "#98999c"
+        ],
+        "borderWidth": 1.5,
+        "lightInk": false
+      },
+      "nameHex": "#347aeb"
+    },
+    {
+      "bg": "mint",
+      "frame": "bronze",
+      "color": "slate",
+      "bodyHex": "#64748b",
+      "plate": {
+        "fill": [
+          "#dcfce7"
+        ],
+        "border": [
+          "#F0B27A",
+          "#B45309"
+        ],
+        "borderWidth": 2.5,
+        "lightInk": false
+      },
+      "nameHex": "#37fc7b"
+    }
+  ]
+}
