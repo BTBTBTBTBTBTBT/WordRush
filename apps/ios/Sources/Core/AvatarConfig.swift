@@ -426,7 +426,7 @@ public enum AvatarCatalog {
         out.brows = pick(r["brows"], brows, fallback.brows)
         out.extra = pick(r["extra"], extras, fallback.extra)
         // 10-06 poses: a known pose id is kept (unknown / non-strings fall back), written only when not "none"
-        out.pose = pick(r["pose"], AvatarPose.ids, fallback.pose)
+        out.pose = pick(r["pose"], AvatarPose.pickerIds, AvatarPose.pickerIds.contains(fallback.pose) ? fallback.pose : "none")
         return out
     }
 

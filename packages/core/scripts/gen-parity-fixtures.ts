@@ -830,7 +830,7 @@ export function renderAvatarConfigFixtures() {
     { head: 'pumpkinhat', neck: 'batwings', wrap: 'vampirecollar', held: 'candypail', pet: 'ghost' },
     { head: 'mummywrap', neck: 'cattail', pet: 'blackcat' },
     // 10-06 poses: known ids kept (written only when not 'none'), unknown → none
-    { pose: 'wave' }, { pose: 'hug', body: 'star' }, { pose: 'moonwalk' }, { pose: 'none' }, { pose: 7 },
+    { pose: 'wave' }, { pose: 'jump', body: 'star' }, { pose: 'moonwalk' }, { pose: 'none' }, { pose: 7 },
   ].map((raw) => ({ raw, result: validateAvatar(raw, fb) }));
   const pro = [true, false].flatMap((isPro) => [
     { isPro, input: { ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, result: enforceAvatarPro({ ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, isPro) },
@@ -904,12 +904,12 @@ export function renderAvatarPoseFixtures() {
   const layouts = [
     { body: 'classic', pose: 'wave', held: 'mug', feet: 'sneakers', pet: 'kitten', head: 'cowboy' },
     { body: 'star', pose: 'cheer', held: 'balloon', neck: 'scarf' },
-    { body: 'bean', pose: 'hug', wrap: 'belt', brows: 'happy' },
+    { body: 'bean', pose: 'cheer', wrap: 'belt', brows: 'happy' },
     { body: 'mini', pose: 'jump', feet: 'boots', head: 'crown' },
-    { body: 'tall', pose: 'sit', held: 'book', neck: 'backpack' },
+    { body: 'tall', pose: 'jump', held: 'book', neck: 'backpack' },
     { body: 'hex', pose: 'flex', head: 'party', face: 'roundglasses' },
-    { body: 'cloud', pose: 'shrug', neck: 'cape', held: 'umbrella' },
-    { body: 'chunky', pose: 'hips', wrap: 'apron', held: 'spatula' },
+    { body: 'cloud', pose: 'flex', neck: 'cape', held: 'umbrella' },
+    { body: 'chunky', pose: 'wave', wrap: 'apron', held: 'spatula' },
   ].map((o) => {
     const config = mk(o);
     return {

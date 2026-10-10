@@ -259,7 +259,9 @@ class AvatarPoseFixtureTest {
         assertEquals("none", v("""{"pose":"moonwalk"}""").pose)
         assertEquals("none", v("""{"pose":7}""").pose)
         assertFalse(avatarToJson(v("""{"pose":"none"}""")).containsKey("pose"))
-        assertEquals(JsonPrimitive("hug"), avatarToJson(v("""{"pose":"hug","body":"star"}"""))["pose"])
+        assertEquals(JsonPrimitive("jump"), avatarToJson(v("""{"pose":"jump","body":"star"}"""))["pose"])
+        // Founder 10-09 trim: a saved pose the picker no longer offers reads as standing.
+        assertFalse(avatarToJson(v("""{"pose":"hug","body":"star"}""")).containsKey("pose"))
         assertFalse(avatarToJson(fb).containsKey("pose"))
     }
 

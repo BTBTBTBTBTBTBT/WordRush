@@ -1936,7 +1936,7 @@
     },
     {
       "raw": {
-        "pose": "hug",
+        "pose": "jump",
         "body": "star"
       },
       "result": {
@@ -1952,6 +1952,7 @@
         "head": "none",
         "face": "none",
         "neck": "none",
+        "pose": "jump",
         "accColor": "default",
         "frame": "none",
         "bg": "auto",

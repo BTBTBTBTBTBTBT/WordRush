@@ -250,9 +250,13 @@ final class AvatarPoseTests: XCTestCase {
         var c = fb
         XCTAssertNil(c.jsonObject["pose"])   // written only when set: older configs stay byte-identical
         XCTAssertFalse(String(decoding: try JSONEncoder().encode(c), as: UTF8.self).contains("pose"))
+        c.pose = "jump"
+        XCTAssertEqual(c.jsonObject["pose"] as? String, "jump")
+        XCTAssertEqual(try JSONDecoder().decode(AvatarConfig.self, from: JSONEncoder().encode(c)).pose, "jump")
+        XCTAssertEqual(AvatarCatalog.validate(raw: AvatarConfigRaw(c), fallback: fb).pose, "jump")
+        // Founder 10-09 trim: a saved pose the picker no longer offers reads as standing.
         c.pose = "hug"
-        XCTAssertEqual(c.jsonObject["pose"] as? String, "hug")
-        XCTAssertEqual(try JSONDecoder().decode(AvatarConfig.self, from: JSONEncoder().encode(c)).pose, "hug")
-        XCTAssertEqual(AvatarCatalog.validate(raw: AvatarConfigRaw(c), fallback: fb).pose, "hug")
+        XCTAssertEqual(try JSONDecoder().decode(AvatarConfig.self, from: JSONEncoder().encode(c)).pose, "none")
+        XCTAssertEqual(AvatarCatalog.validate(raw: AvatarConfigRaw(c), fallback: fb).pose, "none")
     }
 }
