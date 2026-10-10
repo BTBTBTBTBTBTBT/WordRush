@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { CandyLink } from '@/components/ui/candy-button';
 import { PageBackground } from '@/components/ui/page-background';
+import { BRAND_ACCENT, softPill } from '@/lib/soft-surface';
+import { CastHeader } from '@/components/ui/cast-header';
 import { buildCopy, funShareTitle, MODE_ROUTE, parseLeaderboardShare, type SP } from '@/lib/share-page-copy';
 import LiveBoardSection from '@/components/share/live-board-section';
 import { GetAppBadges } from '@/components/share/get-app-badges';
@@ -102,13 +104,11 @@ export default function SharePage(
           as share-attributed on the admin Marketing page. Client-only, so
           social scrapers fetching the unfurl never register as visits. */}
       <ShareLandingBeacon mode={mode} />
-      <h1
-        className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500"
-        style={{ textAlign: 'center' }}
-      >
-        WORDOCIOUS
-      </h1>
-      <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)', textAlign: 'center' }}>
+      {/* 2.8: the live WORDOCIOUS cast row (as on Home), in place of the old gradient-text wordmark. */}
+      <h1 className="sr-only">Wordocious</h1>
+      <div style={{ width: '100%', maxWidth: 'min(92vw, 480px)' }}><CastHeader ground /></div>
+      {/* on a soft pill, so the line reads on the season's night wall too */}
+      <p className="text-sm font-black px-4 pt-2.5 pb-2" style={{ ...softPill(BRAND_ACCENT), color: 'var(--color-text)', textAlign: 'center' }}>
         {stats ? `${modeDisp} · ${stats}` : modeDisp}
       </p>
 

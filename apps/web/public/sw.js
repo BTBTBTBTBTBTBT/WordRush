@@ -5,8 +5,18 @@ const BANKS_CACHE = 'wordocious-banks-v1';
 const BANKS_CACHE_MAX = 400;
 const OFFLINE_URL = '/offline.html';
 
+// 2.8: the art the offline page draws (wall, cast banner, R unplugged) is precached with it and served when the
+// network fails, so the page looks right with no connection.
+const OFFLINE_ASSETS = [
+  '/art/art-wall-home.webp',
+  '/art/art-wall-home-wide.webp',
+  '/art/art-scene-r-unplugged.webp',
+  '/email/email-header.png',
+];
+
 const PRECACHE_URLS = [
   OFFLINE_URL,
+  ...OFFLINE_ASSETS,
   '/manifest.json',
   '/favicon.ico',
   '/icon-192.png',
@@ -82,6 +92,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (event.request.method === 'GET' && url.origin === self.location.origin && url.pathname.startsWith('/banks/')) {
     event.respondWith(bankResponse(event.request).catch(() => fetch(event.request)));
+    return;
+  }
+  if (event.request.method === 'GET' && url.origin === self.location.origin && OFFLINE_ASSETS.includes(url.pathname)) {
+    // network first (art updates reach everyone), the precached copy only when the network is down
+    event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
     return;
   }
   if (event.request.mode !== 'navigate') return;

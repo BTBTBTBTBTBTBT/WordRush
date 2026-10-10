@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { softBackground } from '@/lib/soft-surface';
+import { CastHeader } from '@/components/ui/cast-header';
+import { PageBackground } from '@/components/ui/page-background';
 import { AgeGate } from './age-gate';
 
 // Signed-out-only screens load as their own chunks (founder, 2026-09-29): a
@@ -99,32 +100,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       return <DailyLanding />;
     }
     return (
-      <div
-        className="fixed inset-0 flex flex-col"
-        style={{ background: softBackground('#7c3aed', 0.06) }}
-      >
-        {/* Mimic AppHeader height so content doesn't shift (two rows since HEADER_SPEC §1) */}
-        <div
-          className="flex items-center justify-center px-4"
-          style={{
-            height: '98px',
-            borderBottom: '1.5px solid rgba(124, 58, 237, 0.18)',
-            background: softBackground('#7c3aed', 0.1),
-          }}
-        >
-          <h1
-            className="text-base font-black tracking-tight"
-            style={{
-              background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            WORDOCIOUS
-          </h1>
-        </div>
+      <PageBackground tint="home" className="fixed inset-0 flex flex-col">
+        {/* 2.8: the page wall + the live WORDOCIOUS cast row, as on Home (no gradient-text wordmark). */}
+        <h1 className="sr-only">Wordocious</h1>
+        <div className="px-4 pt-3 w-full max-w-sm mx-auto"><CastHeader ground /></div>
         {/* Skeleton placeholders that match the home page layout */}
-        <div className="px-4 pt-2 space-y-2 animate-pulse" style={{ opacity: 0.4 }}>
+        <div className="px-4 pt-2 space-y-2 animate-pulse w-full max-w-sm mx-auto" style={{ opacity: 0.4 }}>
           {/* Hero banner skeleton */}
           <div style={{ height: '68px', background: 'rgba(124, 58, 237, 0.16)', borderRadius: '14px' }} />
           {/* Section header skeleton */}
@@ -136,7 +117,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             ))}
           </div>
         </div>
-      </div>
+      </PageBackground>
     );
   }
 

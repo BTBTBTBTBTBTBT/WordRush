@@ -6,15 +6,14 @@ import { Suspense } from 'react';
 import { Lock } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
-import { CandyButton } from '@/components/ui/candy-button';
-import { barCard, softInput, softNotice } from '@/components/ui/soft-popup';
-import { softBackground } from '@/lib/soft-surface';
-import { HeadingArt } from '@/components/ui/heading-art';
+import { CastButton } from '@/components/ui/cast-button';
+import { softInput, softNotice } from '@/components/ui/soft-popup';
+import { FIELD_LABEL, UtilityCard, UtilityPage } from '@/components/ui/utility-page';
 
 // Recovery landing for the password-reset email. Supabase links here either
 // with ?code= (PKCE) or with tokens in the URL hash (implicit); we handle both:
 // exchangeCodeForSession for the former, detectSessionInUrl covers the latter.
-// Styling mirrors login-screen.tsx exactly — same card, fields, btn-3d CTA.
+// 2.8 look: the shared utility shell (wall + cast row + soft card), like the sign-in screen.
 function ResetPasswordInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,113 +87,83 @@ function ResetPasswordInner() {
     setTimeout(() => router.replace('/'), 1500);
   };
 
+  // 2.8 look (founder 10-09): the page wall + the live cast row + one soft card (components/ui/utility-page.tsx).
+  if (!ready) {
+    return (
+      <UtilityPage>
+        <UtilityCard pose="art-pose-u-meditate" title="One moment" line="Checking your reset link…" busy />
+      </UtilityPage>
+    );
+  }
+  if (linkError) {
+    return (
+      <UtilityPage>
+        <UtilityCard pose="art-pose-r-sleepwalk" title="Link expired" notice={{ kind: 'error', text: linkError }}>
+          <CastButton color="purple" size="lg" block type="button" onClick={() => router.replace('/')}>
+            Go to Home
+          </CastButton>
+        </UtilityCard>
+      </UtilityPage>
+    );
+  }
+  if (done) {
+    return (
+      <UtilityPage>
+        <UtilityCard pose="art-pose-d-victory" title="Password updated" notice={{ kind: 'success', text: 'Password updated! Taking you to the game...' }} busy />
+      </UtilityPage>
+    );
+  }
   return (
-    <div
-      className="fixed inset-0 flex flex-col items-center justify-center px-6"
-      style={{ background: softBackground('#7c3aed', 0.07) }}
-    >
-      <div className="w-full max-w-sm space-y-6">
-        {/* Branding — identical to LoginScreen */}
-        <div className="text-center space-y-2">
-          <h1
-            className="text-3xl font-black tracking-tight"
-            style={{
-              background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            WORDOCIOUS
-          </h1>
-          <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            Daily Word Games
-          </p>
-        </div>
+    <UtilityPage>
+      <UtilityCard pose="art-pose-d-eureka" artSize={88} heading="newpassword" title="Set a New Password">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-extrabold flex items-center gap-1.5" style={FIELD_LABEL}>
+              <Lock className="w-3.5 h-3.5" />
+              New Password
+            </label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              autoFocus
+              className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
+              style={softInput()}
+            />
+          </div>
 
-        <div
-          className="p-6 space-y-4"
-          style={barCard()}
-        >
-          {/* BJ16: the NEW PASSWORD lettering. */}
-          <HeadingArt slug="newpassword" as="h2" label="Set a New Password" height={40} />
+          <div className="space-y-1.5">
+            <label className="text-xs font-extrabold flex items-center gap-1.5" style={FIELD_LABEL}>
+              <Lock className="w-3.5 h-3.5" />
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              required
+              minLength={6}
+              className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
+              style={softInput()}
+            />
+          </div>
 
-          {!ready ? (
-            <p className="text-xs font-bold text-center py-4" style={{ color: 'var(--color-text-muted)' }}>
-              Checking your reset link...
-            </p>
-          ) : linkError ? (
-            <div className="space-y-3">
-              <div
-                className="p-3 rounded-xl text-xs font-bold"
-                style={softNotice('error')}
-              >
-                {linkError}
-              </div>
-              <CandyButton color="purple" size="lg" block type="button" onClick={() => router.replace('/')}>
-                Back to Wordocious
-              </CandyButton>
+          {error && (
+            <div className="p-3 rounded-xl text-xs font-bold" role="alert" style={softNotice('error')}>
+              {error}
             </div>
-          ) : done ? (
-            <div
-              className="p-3 rounded-xl text-xs font-bold text-center"
-              style={softNotice('success')}
-            >
-              Password updated! Taking you to the game...
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
-                  <Lock className="w-3.5 h-3.5" />
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  autoFocus
-                  className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
-                  style={softInput()}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
-                  <Lock className="w-3.5 h-3.5" />
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  required
-                  minLength={6}
-                  className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
-                  style={softInput()}
-                />
-              </div>
-
-              {error && (
-                <div
-                  className="p-3 rounded-xl text-xs font-bold"
-                  style={softNotice('error')}
-                >
-                  {error}
-                </div>
-              )}
-
-              <CandyButton color="purple" size="lg" block type="submit" disabled={loading}>
-                {loading ? 'Saving...' : 'Save New Password'}
-              </CandyButton>
-            </form>
           )}
-        </div>
-      </div>
-    </div>
+
+          <CastButton color="purple" size="lg" block type="submit" disabled={loading}>
+            {loading ? 'Saving...' : 'Save New Password'}
+          </CastButton>
+        </form>
+      </UtilityCard>
+    </UtilityPage>
   );
 }
 

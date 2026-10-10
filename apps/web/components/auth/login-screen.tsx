@@ -9,7 +9,7 @@ import { validateUsername } from '@wordle-duel/core';
 import { CandyButton } from '@/components/ui/candy-button';
 import { CastButton, TextLink, TextLinkA } from '@/components/ui/cast-button';
 import { barCard, softInput, softNotice } from '@/components/ui/soft-popup';
-import { softBackground } from '@/lib/soft-surface';
+import { PageBackground } from '@/components/ui/page-background';
 import { HeadingArt } from '@/components/ui/heading-art';
 import { AgeGateForSignUp } from './age-gate';
 
@@ -112,9 +112,9 @@ function LoginScreenForm() {
   };
 
   return (
-    <div
+    <PageBackground
+      tint="home"
       className="fixed inset-0 flex flex-col items-center overflow-y-auto px-6 py-6"
-      style={{ background: softBackground('#7c3aed', 0.07) }}
     >
       {/* my-auto centers the column and lets it scroll when the WELCOME! art makes it taller than a short screen. */}
       <div className="w-full max-w-sm space-y-6 my-auto">
@@ -315,6 +315,6 @@ function LoginScreenForm() {
           </Link>
         </div>
       </div>
-    </div>
+    </PageBackground>
   );
 }
