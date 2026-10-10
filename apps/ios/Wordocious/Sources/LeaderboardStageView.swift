@@ -139,13 +139,24 @@ struct StageTitleRow: View {
                 // Ticks once a second for the reset clock; the date flips at local midnight.
                 TimelineView(.periodic(from: .now, by: 1)) { ctx in
                     let date = ctx.date.formatted(.dateTime.month(.abbreviated).day()).uppercased()
+                    // It sits on the pale clouds in every theme (Halloween night too): always the dark warm ink.
                     Text("\(date) · RESETS IN \(LeaderboardBannerView.resetClock())")
                         .font(Brand.font(10.5, .black)).tracking(0.6).monospacedDigit()
-                        .foregroundStyle(Theme.isDark ? Theme.textSecondary : Self.ink)
+                        .foregroundStyle(Self.ink)
                         .lineLimit(1).minimumScaleFactor(0.7)
                 }
             }
             .padding(.horizontal, 10).padding(.top, 8)
+            // Founder 10-09: the title's cloud bank glows from behind (a warm gold light), so it reads as lit, not pasted.
+            .background(alignment: .center) {
+                RadialGradient(colors: [Color(hex: 0xFFD978).opacity(0.62), Color(hex: 0xFFB04A).opacity(0.22), .clear],
+                               center: .center, startRadius: 4, endRadius: 210)
+                    .scaleEffect(x: 1.25, y: 0.75)
+                    .blur(radius: 10)
+                    .padding(-24)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
         }
     }
 }

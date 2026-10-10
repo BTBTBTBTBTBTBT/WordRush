@@ -144,7 +144,23 @@ internal fun StageTitleRow() {
     val ctx = LocalContext.current
     val propRes = remember(prop) { ctx.resources.getIdentifier(prop.art.replace('-', '_'), "drawable", ctx.packageName) }
     val hostRes = remember(host) { ctx.resources.getIdentifier("art_pose_${host.castId}_${host.pose}", "drawable", ctx.packageName) }
-    Column(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    // Founder 10-09: the title's cloud bank glows from behind (a warm gold light), so it reads as lit, not pasted.
+    Column(
+        Modifier.fillMaxWidth()
+            .drawBehind {
+                val r = size.maxDimension * 0.62f
+                drawOval(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        listOf(androidx.compose.ui.graphics.Color(0x9EFFD978), androidx.compose.ui.graphics.Color(0x38FFB04A), androidx.compose.ui.graphics.Color.Transparent),
+                        center = center, radius = r,
+                    ),
+                    topLeft = androidx.compose.ui.geometry.Offset(center.x - r * 1.1f, center.y - r * 0.62f),
+                    size = androidx.compose.ui.geometry.Size(r * 2.2f, r * 1.24f),
+                )
+            }
+            .padding(start = 10.dp, end = 10.dp, top = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Box(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().height(76.dp).semantics(mergeDescendants = true) { contentDescription = titleCaseLabel(title); heading() },
@@ -192,7 +208,8 @@ private fun ResetLine() {
     }
     Text(
         "$lead · RESETS IN ${formatCountdown(secs)}", fontSize = 10.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
-        color = if (WTheme.isDark) WTheme.textSecondary else LB_LABEL, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        // It sits on the pale clouds in every theme (Halloween night too): always the dark warm ink.
+        color = LB_LABEL, maxLines = 1, overflow = TextOverflow.Ellipsis,
     )
 }
 

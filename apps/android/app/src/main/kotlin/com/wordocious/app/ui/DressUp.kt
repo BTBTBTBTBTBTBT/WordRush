@@ -156,7 +156,7 @@ object DressUp {
         BuilderTab.EXTRAS -> R.drawable.art_dress_tab_extras
         BuilderTab.BACKDROP -> R.drawable.art_dress_tab_backdrop
         BuilderTab.FRAME -> R.drawable.art_dress_tab_frame
-        BuilderTab.SEASON -> R.drawable.art_dress_tab_hats   // the room draws the season's first hat instead
+        BuilderTab.SEASON -> R.drawable.art_dress_tab_halloween   // the season's own tab icon (the pumpkin)
     }
 
     /** The room's tabs, all visible in one row (Cheeks joins Nose, presets sit on the stage). */

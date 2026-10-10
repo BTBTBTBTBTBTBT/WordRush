@@ -147,7 +147,7 @@ fun DressingRoom(
                         contentAlignment = Alignment.Center,
                     ) {
                         val first = shelf.firstOrNull()
-                        val seasonIcon = if (t == BuilderTab.SEASON && first != null) MascotComposer.drawableId(ctx, "art_av_acc_${first.id}") else 0
+                        val seasonIcon = if (t == BuilderTab.SEASON) MascotComposer.drawableId(ctx, "art_dress_tab_${season ?: "halloween"}") else 0
                         StageArt(if (seasonIcon != 0) seasonIcon else DressUp.tabArt(t), 24.dp)
                         if (t !in seen && (t == BuilderTab.HATS || t == BuilderTab.EXTRAS)) Box(Modifier.align(Alignment.TopEnd).size(7.dp).clip(CircleShape).background(Color(0xFFEC4899)))
                     }

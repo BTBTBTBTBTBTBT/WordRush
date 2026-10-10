@@ -122,7 +122,8 @@ export function StageTitle({ today }: { today: string | null }) {
   // Tapping your mascot: it hops and the title letters bounce again (the title re-mounts, replaying its pop).
   const [taps, setTaps] = useState(0);
   return (
-    <div style={{ padding: '10px 10px 0' }}>
+    // Founder 10-09: the title's cloud bank glows from behind (a warm gold light), so it reads as lit, not pasted.
+    <div style={{ padding: '10px 10px 0', backgroundImage: 'radial-gradient(ellipse 62% 58% at 50% 55%, rgba(255,217,120,0.62), rgba(255,176,74,0.22) 55%, rgba(255,176,74,0) 78%)' }}>
       <h1 className="relative m-0 flex items-end justify-between gap-1" style={{ minHeight: 76 }} aria-label={title || 'Leaderboard'}>
         {/* the weekday's prop floats beside the title with its own little motion */}
         {prop && (
@@ -143,7 +144,7 @@ export function StageTitle({ today }: { today: string | null }) {
         </span>
         {host ? <Host castId={host.castId} pose={host.pose} size={66} flip /> : <span style={{ width: 66 }} />}
       </h1>
-      <div className="text-center font-extrabold lb-gold-ink" style={{ fontSize: 10.5, letterSpacing: 0.6, marginTop: 1 }}>
+      <div className="text-center font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.6, marginTop: 1, color: '#8A4A12' /* on the pale clouds in every theme */ }}>
         <ResetLine lead={date} />
       </div>
     </div>

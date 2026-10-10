@@ -435,8 +435,10 @@ struct MascotBuilderView: View {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 .fill(on ? Color.white : Color.white.opacity(Theme.isDark ? 0.08 : 0.55))
                                 .shadow(color: Color(hex: 0x7C3AED).opacity(on ? 0.3 : 0), radius: 6, y: 3)
-                            if t == .season, let first = MascotSeasonal.shelf.first {
-                                StageArt("art-av-acc-\(first.id)", height: 24)   // the season's first hat (the pumpkin)
+                            if t == .season {
+                                // The season's own tab icon (art-dress-tab-<season>; the pumpkin for Halloween). The shelf
+                                // now leads with the season bodies, which have no accessory art to borrow.
+                                StageArt("art-dress-tab-\(MascotSeasonal.season ?? "halloween")", height: 24)
                             } else if t == .pose {
                                 // no tab art yet: the player's own mascot, waving
                                 MascotPoseThumb(config: config, pose: "wave", initial: initial, size: 30)   // > 28 pt: small mascots never pose

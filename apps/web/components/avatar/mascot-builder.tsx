@@ -336,7 +336,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
         </DressStage>
         <div className="flex px-1.5 pt-2 pb-1" role="tablist" aria-label="Mascot parts">
           {season && shelf.length > 0 && (() => {
-            // The season's shelf, first (its first hat is the tab icon: the pumpkin for Halloween).
+            // The season's shelf, first; its tab icon is art-dress-tab-<season> (the pumpkin for Halloween).
             const on = tab === 'season';
             const label = season.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
             return (
@@ -344,7 +344,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
                 className="flex-1 min-w-0 flex flex-col items-center border-0 bg-transparent p-0 cursor-pointer">
                 <span className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: on ? '#ffffff' : 'rgba(255,255,255,0.55)', boxShadow: on ? '0 4px 14px rgba(249,115,22,0.4)' : undefined }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={artSrc(avatarOptionArt(shelf[0].field as BuilderField, shelf[0].id))} alt="" aria-hidden="true" draggable={false} style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                  <img src={`/art/art-dress-tab-${season}.webp`} alt="" aria-hidden="true" draggable={false} style={{ width: 24, height: 24, objectFit: 'contain' }} />
                 </span>
                 <span className="dr-tab-label text-[8.5px] font-black whitespace-nowrap tracking-[-0.25px]" data-on={on} data-season="true">{label}</span>
               </button>
