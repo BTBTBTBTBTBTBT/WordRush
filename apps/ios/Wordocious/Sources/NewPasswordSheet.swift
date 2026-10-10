@@ -19,10 +19,20 @@ struct NewPasswordSheet: View {
             ZStack {
                 PageBackground(tint: .home)
                 VStack(spacing: 16) {
-                    Wordmark(size: 26).padding(.top, 8)
+                    // Founder 10-09: the live cast row, not the old gradient text wordmark.
+                    LivingCastHeader(pro: false).padding(.top, 4)
                     // §G5: the form sits on a tinted card (§A1) with candy CTA (§A8).
                     VStack(spacing: 16) {
-                        HeadingArtView(.newpassword, height: 40, label: "Set a New Password")   // BJ16
+                        // The title in the house bubble lettering with D beside it (one composed header, not a
+                        // floating pose under the card).
+                        HStack(alignment: .center, spacing: 6) {
+                            BubbleTextView(text: done ? "ALL SET!" : "NEW PASSWORD", palette: .home, maxSize: 30, minSize: 18)
+                                .frame(maxWidth: .infinity)
+                                .accessibilityLabel(done ? "All set" : "Set a new password")
+                                .accessibilityAddTraits(.isHeader)
+                            PoseImage(.d, done ? "cheer" : "notes", height: 64)
+                                .accessibilityHidden(true)
+                        }
 
                         if done {
                             G5Notice("Password updated — you're signed in!", tone: .success)
@@ -56,8 +66,6 @@ struct NewPasswordSheet: View {
                     .padding(18)
                     .tintedCard(accent: G5Accent.purple, bar: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xFBBF24)],
                                 radius: 20, barHeight: 8)
-                    // §A7: a cast pose where there's room (no page host here) — D with notes.
-                    PoseImage(.d, done ? "cheer" : "notes", height: 96)
                     Spacer()
                 }
                 .padding(24)

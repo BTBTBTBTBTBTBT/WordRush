@@ -58,12 +58,13 @@ fun NewPasswordDialog(onDone: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
           Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            CastPose(MascotId.D, "notes", 72.dp)
-            Text(
-                "WORDOCIOUS", fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
-                style = TextStyle(brush = Brush.horizontalGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd)), fontFamily = Nunito),
-            )
-            HeadingArt(Heading.NEWPASSWORD, height = 40.dp, contentDescription = "Set a New Password")   // BJ16
+            // Founder 10-09: the title in the house bubble lettering with D beside it (no old gradient-text wordmark).
+            androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.foundation.layout.Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    BubbleText(if (done) "ALL SET!" else "NEW PASSWORD", HeadlinePalette.HOME, maxSize = 30, minSize = 18)
+                }
+                CastPose(MascotId.D, if (done) "cheer" else "notes", 64.dp)
+            }
 
             if (done) {
                 // iOS holds this confirmation for 1.5s before dismissing the sheet.
