@@ -77,7 +77,9 @@ struct AppHeaderView: View {
                     // Guest — prominent Sign In entry (account tabs also prompt, but the
                     // Home header had no entry). Presents the sign-in sheet.
                     if auth.isGuest {
-                        Button { showAuth = true } label: { CandyLabel(title: "Sign In") }
+                        // A hugging pill gives the bubble lettering no width to fit against (it shrank to a speck):
+                        // give the label its own width.
+                        Button { showAuth = true } label: { CandyLabel(title: "Sign In").frame(width: 78) }
                             .buttonStyle(CastButtonStyle(size: .small, fullWidth: false))
                     }
                     if let share, share.visible {
