@@ -296,6 +296,23 @@ private enum WType {
 }
 
 /// A small-caps label: Nunito Black at the caps size, letter-spaced.
+/// Founder 10-10 ("DAY ST..."): beside the flame + trophy pair the label stacks DAY / STREAK on two lines (never truncated).
+private struct StreakLabel: View {
+    let stacked: Bool
+    let color: Color
+    var body: some View {
+        if stacked {
+            VStack(alignment: .leading, spacing: 0) {
+                Caps(text: "DAY", color: color)
+                Caps(text: "STREAK", color: color)
+            }
+            .fixedSize()
+        } else {
+            Caps(text: "DAY STREAK", color: color).fixedSize()
+        }
+    }
+}
+
 private struct Caps: View {
     let text: String
     let color: Color
@@ -831,7 +848,7 @@ struct SmallView: View {
                 HStack(spacing: 6) {
                     StreakPair(snap: snap, size: 32)
                     VStack(alignment: .leading, spacing: 3) {
-                        Caps(text: "DAY STREAK", color: WInk.number(dark))
+                        StreakLabel(stacked: snap.flawlessRun >= 2, color: WInk.number(dark))
                         // The gold clock sprite (night art 10-03) leads the live countdown.
                         HStack(spacing: 3) {
                             Image("art-badge-icon-clock-sprite").resizable().interpolation(.high)
@@ -881,7 +898,7 @@ struct MediumView: View {
                         Spacer(minLength: 0)
                         HStack(spacing: 4) {
                             StreakPair(snap: snap, size: 30)
-                            Caps(text: "DAY STREAK", color: WInk.number(dark))
+                            StreakLabel(stacked: snap.flawlessRun >= 2, color: WInk.number(dark))
                         }
                     }
                     .frame(width: left)
