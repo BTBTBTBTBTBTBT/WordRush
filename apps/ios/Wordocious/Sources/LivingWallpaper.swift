@@ -22,13 +22,14 @@ struct LivingWallpaper: View {
     @State private var appearGen = 0
     /// A game cover on top never fires onDisappear, so the wall also pauses while one is up.
     @ObservedObject private var chrome = ChromeVisibility.shared
+    @ObservedObject private var pageSwitch = PageSwitch.shared
 
     var body: some View {
         if flags.isLive("living_wallpapers") {
             let still = envReduce || Theme.reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled
                 || ProcessInfo.processInfo.thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue
             let trim = ProcessInfo.processInfo.thermalState == .fair ? 0.6 : 1.0
-            let running = !still && scenePhase == .active && onScreen && !chrome.bottomNavHidden
+            let running = !still && scenePhase == .active && onScreen && !chrome.bottomNavHidden && !pageSwitch.switching
             WallpaperLayers(theme: theme, season: season, trim: trim, still: still, running: running)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)

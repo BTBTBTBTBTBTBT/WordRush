@@ -93,6 +93,25 @@ enum ArtThumbs {
 
 /// Whether a tab page is scrolling right now (iOS 18+; always false before).
 @MainActor
+/// Founder 10-10 (smoothness, measured): a tab switch builds the new page while the old one slides away; ambient
+/// motion (the living wall, mascots, idle loops) holding still for that moment keeps the switch itself fluid.
+final class PageSwitch: ObservableObject {
+    static let shared = PageSwitch()
+    @Published private(set) var switching = false
+    private var gen = 0
+    private init() {}
+
+    func pulse(_ seconds: Double = 0.6) {
+        gen += 1
+        let g = gen
+        if !switching { switching = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { [weak self] in
+            guard let self, self.gen == g else { return }
+            self.switching = false
+        }
+    }
+}
+
 final class ScrollMotion: ObservableObject {
     static let shared = ScrollMotion()
     @Published private(set) var scrolling = false

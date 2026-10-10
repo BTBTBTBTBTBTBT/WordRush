@@ -292,6 +292,8 @@ struct RootTabView: View {
         // unlimited seed exactly like HomeView does (and remember it as the
         // mode's current unlimited game so Home resumes it if abandoned), then
         // present the same GameScreen/ProperNoundleView the home grid uses.
+        // Founder 10-10 (smoothness): ambient motion holds still while a tab switch builds and shows the new page.
+        .onChange(of: tab) { _ in PageSwitch.shared.pulse() }
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.openLeaderboard)) { note in
             guard HomeNav.handoffAllowed(note) else { return }   // BI10
             // §214: LeaderboardTab preselects the mode itself (same note);

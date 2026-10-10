@@ -93,7 +93,9 @@ struct LivingMascotView: View {
     @Environment(\.insideGameCover) private var insideGameCover
     @ObservedObject private var chrome = ChromeVisibility.shared
     @ObservedObject private var scroll = ScrollMotion.shared
+    @ObservedObject private var pageSwitch = PageSwitch.shared
     @State private var start = Date()
+    @State private var heldAt: Date?
     @State private var tapAt: Date?
     @State private var reaction: Reaction?
     @State private var pressing = false
@@ -116,7 +118,7 @@ struct LivingMascotView: View {
         let small = size <= MascotParts.smallSize
         let layout: AvatarLayout? = MascotParts.fit.map { LiveLayoutMemo.layout(shown, small: small, manifest: $0) }
         // Founder 10-10 (smoothness, measured: the 2.8 menus ran the main thread 88% busy): 30 fps is plenty for a
-        // breathing idle (a tap's hop runs at full rate), and the Canvas rasterizes off the main thread.
+        // breathing idle (a tap's hop runs at full rate).
         TimelineView(.animation(minimumInterval: tapAt == nil && reaction == nil ? 1.0 / 24.0 : nil, paused: paused(still))) { tl in
             drawFrame(at: tl.date, config: shown, layout: layout, still: still, small: small)
         }
@@ -148,6 +150,11 @@ struct LivingMascotView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) { if reaction == r { reaction = nil } }
         }
         .onChange(of: hopToken) { _ in hop(sound: false) }
+        // Founder 10-10 (smoothness): a pause (scroll, tab switch, cover) shifts the idle clock by its length, so the
+        // breathing resumes exactly where it stopped instead of jumping to a new phase.
+        .onChange(of: paused(Motion.calm(envReduce))) { held in
+            if held { heldAt = Date() } else if let a = heldAt { start = start.addingTimeInterval(Date().timeIntervalSince(a)); heldAt = nil }
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label ?? (own ? "Your mascot" : "Mascot"))
         .accessibilityAddTraits(interactive ? .isButton : [])
@@ -159,7 +166,7 @@ struct LivingMascotView: View {
     private func paused(_ still: Bool) -> Bool {
         guard visible else { return true }
         // Covered by a game (onDisappear never fires under a full-screen cover) or the page is scrolling: hold the frame.
-        if tapAt == nil && reaction == nil && ((chrome.bottomNavHidden && !insideGameCover) || scroll.scrolling) { return true }
+        if tapAt == nil && reaction == nil && ((chrome.bottomNavHidden && !insideGameCover) || scroll.scrolling || pageSwitch.switching) { return true }
         if still { return tapAt == nil }
         return !slot
     }
@@ -169,7 +176,7 @@ struct LivingMascotView: View {
         let live = transforms(at: date, layout: layout, still: still)
         if let fit = MascotParts.fit, let layout {
             if cutout {
-                Canvas(rendersAsynchronously: true) { ctx, _ in
+                Canvas { ctx, _ in   // synchronous on purpose: async Canvas layers allocate shared surfaces and the MAIN thread waits on the render server for them (a 3 s stall switching Leaderboard games, profiled 10-10)
                     MascotArtPainter.paint(ctx, side: size, layout: layout, config: c, initial: initial, small: small, live: live)
                 }
                 .frame(width: size, height: size)

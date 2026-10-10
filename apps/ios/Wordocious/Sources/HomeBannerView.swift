@@ -948,8 +948,10 @@ struct IdleLife: ViewModifier {
     @Environment(\.insideGameCover) private var insideGameCover
     @ObservedObject private var scroll = ScrollMotion.shared
     @ObservedObject private var chrome = ChromeVisibility.shared
+    @ObservedObject private var pageSwitch = PageSwitch.shared
     @State private var start = Date()
     @State private var live = false
+    @State private var heldAt: Date?
 
     /// 0...1...0 eased (cosine), `half` seconds each way; 0 before the start.
     private static func wave(_ t: Double, _ half: Double) -> CGFloat {
@@ -964,7 +966,7 @@ struct IdleLife: ViewModifier {
         // Founder 10-10 (smoothness, profiled): the old SwiftUI `.repeatForever` pair was interpolated on the main thread at
         // the display rate (60-120 fps) forever. The same hop + breathe + sway now comes from ONE 24 fps clock that also
         // holds still while the page scrolls or a game covers it.
-        let paused = still || !live || scroll.scrolling || (chrome.bottomNavHidden && !insideGameCover)
+        let paused = still || !live || scroll.scrolling || pageSwitch.switching || (chrome.bottomNavHidden && !insideGameCover)
         TimelineView(.animation(minimumInterval: 1.0 / 24.0, paused: paused)) { ctx in
             let t = ctx.date.timeIntervalSince(start) - delay
             let p = still ? 0 : Self.wave(t, period / 2)
@@ -979,6 +981,10 @@ struct IdleLife: ViewModifier {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { live = true }
         }
         .onDisappear { live = false }
+        // Founder 10-10: a pause shifts the clock by its length, so the bob resumes where it stopped (no pop).
+        .onChange(of: paused) { held in
+            if held { heldAt = Date() } else if let a = heldAt { start = start.addingTimeInterval(Date().timeIntervalSince(a)); heldAt = nil }
+        }
     }
 }
 
