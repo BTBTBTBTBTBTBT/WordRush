@@ -198,7 +198,10 @@ fun rememberPlayerNamePalette(
  */
 @Composable
 fun PlaqueDetail(detail: String, ink: PlaqueInk, compact: Boolean) {
-    detail.split("·").map { it.trim() }.filter { it.isNotEmpty() }.forEach { part ->
+    // At most two lines: the first part, then the rest ("8 GUESSES" / "48S · 4/4"), parity with iOS PodiumView.detailLines.
+    val parts = detail.split("·").map { it.trim() }.filter { it.isNotEmpty() }
+    val lines = if (parts.size <= 1) parts else listOf(parts.first(), parts.drop(1).joinToString(" · "))
+    lines.forEach { part ->
         FitText(
             part.uppercase(), fontSize = (if (compact) 10.5f else 12f).sp, color = ink.detail,
             fontWeight = FontWeight.ExtraBold, letterSpacing = 0.3.sp, minScale = 0.8f,

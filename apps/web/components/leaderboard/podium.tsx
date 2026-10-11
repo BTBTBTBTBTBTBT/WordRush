@@ -185,10 +185,10 @@ export function PodiumPlaque({ place, compact = false, first = false }: { place:
         </div>
         {place.badge}
       </div>
-      {/* Founder 10-10 (podium stats hard to read): one plain heavy line per detail part ("3 GUESSES" / "1M 14S")
-          instead of one bubble line allowed to shrink to 55%. */}
+      {/* Founder 10-10 (podium stats hard to read): plain heavy lines ("3 GUESSES" / "1M 14S") instead of one bubble
+          line allowed to shrink to 55%. */}
       {place.detail
-        ? place.detail.split('·').map((part) => part.trim()).filter(Boolean).map((part) => (
+        ? plaqueDetailLines(place.detail).map((part) => (
             <span key={part} className="font-extrabold whitespace-nowrap tabular-nums max-w-full overflow-hidden text-ellipsis"
               style={{ fontSize: compact ? 10.5 : 12, letterSpacing: '0.02em', lineHeight: 1.15, color: plate.lightInk ? '#ffffff' : '#2e1065' }}>
               {part.toUpperCase()}
@@ -369,4 +369,11 @@ export function Podium({ places, label = 'Top three', accent = STAGE_GOLD, bare 
       </div>
     </div>
   );
+}
+
+/** A plaque's detail ("3 guesses · 1m 14s · 4/4") as at most two lines: the first part, then the rest (parity: iOS
+ *  PodiumView.detailLines, Android PlaqueDetail). */
+export function plaqueDetailLines(detail: string): string[] {
+  const parts = detail.split('·').map((p) => p.trim()).filter(Boolean);
+  return parts.length <= 1 ? parts : [parts[0], parts.slice(1).join(' · ')];
 }

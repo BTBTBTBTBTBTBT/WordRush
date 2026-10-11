@@ -582,8 +582,16 @@ struct PodiumView: View {
                         .foregroundStyle(plate.badge)
                         .lineLimit(1).minimumScaleFactor(0.55)
                 }
+                // Founder 10-10 ("the stats for the podium winners are hard to read"): the detail was one bubble line allowed to
+                // shrink to 55% (~6 pt). Now plain heavy type that barely shrinks, at most two lines: the first part on top, the
+                // rest under it ("3 GUESSES" / "1M 14S", "8 GUESSES" / "48S · 4/4").
                 if let d = e.detail, !d.isEmpty {
-                    BubbleOneLine(text: d.uppercased(), palette: ink, size: compact ? 10 : 11.5, minScale: 0.55)
+                    ForEach(Array(Self.detailLines(d).enumerated()), id: \.offset) { _, line in
+                        Text(line.uppercased())
+                            .font(Brand.font(compact ? 10.5 : 12, .heavy)).tracking(0.3).monospacedDigit()
+                            .foregroundStyle(plate.lightInk ? Color.white : Color(hex: 0x2E1065))
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                    }
                 }
             }
             let content = VStack(spacing: 4) {
@@ -721,6 +729,15 @@ struct PodiumView: View {
 /// the podium's stage — one soft vertical wash in the board's accent, ONE static shape
 /// layer (faint sunburst rays fanning out from behind #1 plus a few tiny confetti dots),
 /// and a soft floor shadow under the steps. Static (drawn once), no blur, no outline.
+extension PodiumView {
+    /// A plaque's detail ("3 guesses · 1m 14s · 4/4") as at most two lines: the first part, then the rest.
+    static func detailLines(_ detail: String) -> [String] {
+        let parts = detail.split(separator: "·").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        guard let first = parts.first else { return [] }
+        return parts.count == 1 ? [first] : [first, parts.dropFirst().joined(separator: " · ")]
+    }
+}
+
 struct PodiumStage: View {
     let accent: Color
 
@@ -1194,9 +1211,10 @@ enum PlayerTint {
             ? HeadlinePalette(top: .white, bottom: Color(hex: 0xEDE9FE), deep: Color(hex: 0x3B0764), outline: Color(hex: 0x4C1D95),
                               nameTop: .white, nameBottom: Color(hex: 0xEDE9FE),
                               numberTop: Color(hex: 0xFFE07A), numberBottom: Color(hex: 0xF5A524))
-            : HeadlinePalette(top: Color(hex: 0xA855F7), bottom: Color(hex: 0x6D28D9), deep: Color(hex: 0x3B0764), outline: .white,
-                              nameTop: Color(hex: 0xA855F7), nameBottom: Color(hex: 0x6D28D9),
-                              numberTop: Color(hex: 0xA855F7), numberBottom: Color(hex: 0x6D28D9))
+            // Founder 10-10 (podium stats hard to read): deep violet on the pale plate (was a light-to-mid purple, ~3:1).
+            : HeadlinePalette(top: Color(hex: 0x7C3AED), bottom: Color(hex: 0x4C1D95), deep: Color(hex: 0x2E1065), outline: .white,
+                              nameTop: Color(hex: 0x7C3AED), nameBottom: Color(hex: 0x4C1D95),
+                              numberTop: Color(hex: 0x7C3AED), numberBottom: Color(hex: 0x4C1D95))
     }
 
     static func nameColor(userId: String?, username: String, onLight: Bool = false) -> Color {

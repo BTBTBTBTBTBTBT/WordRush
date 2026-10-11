@@ -245,10 +245,14 @@ private struct QuadrantKeyView: View, Equatable {
         let hasAny = !present.isEmpty
         let allAbsent = hasAny && present.allSatisfy { $0 == .absent }
         let fg: Color = hasAny ? .white : (Theme.isDark ? Color(hex: 0xEFE9FF) : FinishInk.softNumber)
+        // Founder 10-10 ("hard to tell which letters were used and wrong on the multi-board games"): a letter ruled out on
+        // every board is a dark, recessed key with a dimmed letter (it reads "dead" at a glance); a used letter's white
+        // glyph carries a tight dark halo so it reads over any mix of white / gold / purple / grey cells.
+        let halo = Color(hex: 0x1E1035)
         return Button(action: action) {
             ZStack {
                 if allAbsent {
-                    LinearGradient(colors: [TilePalette.slate.light, TilePalette.slate.base], startPoint: .top, endPoint: .bottom)
+                    Self.deadFill
                 } else {
                     VStack(spacing: 0) {
                         ForEach(0..<rowCount, id: \.self) { r in
@@ -263,7 +267,9 @@ private struct QuadrantKeyView: View, Equatable {
                 }
                 Text(letter).font(Brand.font(18, .black)).foregroundStyle(fg)
                     .lineLimit(1).minimumScaleFactor(0.5)   // §AB: fits its key at 200% text
-                    .shadow(color: hasAny ? .black.opacity(0.35) : .clear, radius: 1, x: 0, y: 1)
+                    .opacity(allAbsent ? 0.45 : 1)
+                    .shadow(color: hasAny && !allAbsent ? halo.opacity(0.9) : .clear, radius: 0.8, x: 0, y: 0)
+                    .shadow(color: hasAny && !allAbsent ? halo.opacity(0.6) : .clear, radius: 1.6, x: 0, y: 1)
             }
             .frame(maxWidth: .infinity).frame(height: height)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -284,6 +290,12 @@ private struct QuadrantKeyView: View, Equatable {
         return parts.joined(separator: ", ")
     }
 
+    /// A letter ruled out on every board: dark and flat, below every live key.
+    static var deadFill: some View {
+        LinearGradient(colors: Theme.isDark ? [Color(hex: 0x1D1834), Color(hex: 0x120F22)] : [Color(hex: 0x5F6A80), Color(hex: 0x485266)],
+                       startPoint: .top, endPoint: .bottom)
+    }
+
     static func quadColor(_ st: TileState?) -> some View {
         // Theme.correct/present are colorblind-aware — web's [data-colorblind]
         // overrides recolor the quadrant mini-cells too (they use the same
@@ -292,7 +304,9 @@ private struct QuadrantKeyView: View, Equatable {
         switch st {
         case .correct: c = AnyShapeStyle(LinearGradient(colors: [TilePalette.correct.light, TilePalette.correct.base], startPoint: .top, endPoint: .bottom))
         case .present, .hintUsed: c = AnyShapeStyle(LinearGradient(colors: [TilePalette.present.light, TilePalette.present.base], startPoint: .top, endPoint: .bottom))
-        case .absent: c = AnyShapeStyle(TilePalette.slate.base)
+        // Ruled out on this board: in the dark theme a near-black cell that sinks BELOW the unused cells (the slate read
+        // lighter than them there, so "wrong" looked lit); the light theme keeps the slate.
+        case .absent: c = AnyShapeStyle(Theme.isDark ? Color(hex: 0x17132A) : TilePalette.slate.base)
         default: c = AnyShapeStyle(Theme.isDark ? Color(hex: 0x3D355F) : Color(hex: 0xFBFAFF))
         }
         return Rectangle().fill(c).frame(maxWidth: .infinity, maxHeight: .infinity)
