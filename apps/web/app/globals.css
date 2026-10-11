@@ -1304,7 +1304,10 @@ html[data-season-tone="dark"] [data-page-tint="friends"] {
 [data-theme="dark"] .kkey { --k-face: #3d355f; --k-ink: #efe9ff; --k-del: #d8c8ff; }
 .kkey[data-s="correct"] { --k-face: var(--gt-c-base); --k-ink: #ffffff; }
 .kkey[data-s="present"] { --k-face: var(--gt-p-base); --k-ink: #ffffff; }
-.kkey[data-s="absent"] { --k-face: var(--gt-a-base); --k-ink: #eef1f6; }
+/* Founder 10-10 ("hard to tell which letters were used and wrong" — Six, Seven, every keyboard): a ruled-out letter is the dark,
+   recessed dead key with a dimmed letter, below the unplayed keys (the slate read brighter than them on the dark keyboard). */
+.kkey[data-s="absent"] { --k-face: #515b70; --k-ink: rgba(255, 255, 255, 0.45); }
+[data-theme="dark"] .kkey[data-s="absent"] { --k-face: #1a1630; }
 .kkey[data-s="blocked"] { --k-face: rgba(254, 226, 226, 0.9); --k-ink: rgba(220, 38, 38, 0.45); }
 .kkey-text { text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18); }
 /* Founder 10-10 (multi-board keyboards: hard to tell used + wrong letters): a letter ruled out on every board is a dark,

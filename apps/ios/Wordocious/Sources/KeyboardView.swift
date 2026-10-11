@@ -291,10 +291,7 @@ private struct QuadrantKeyView: View, Equatable {
     }
 
     /// A letter ruled out on every board: dark and flat, below every live key.
-    static var deadFill: some View {
-        LinearGradient(colors: Theme.isDark ? [Color(hex: 0x1D1834), Color(hex: 0x120F22)] : [Color(hex: 0x5F6A80), Color(hex: 0x485266)],
-                       startPoint: .top, endPoint: .bottom)
-    }
+    static var deadFill: some View { Rectangle().fill(KeyCap<EmptyView>.deadFace) }
 
     static func quadColor(_ st: TileState?) -> some View {
         // Theme.correct/present are colorblind-aware — web's [data-colorblind]

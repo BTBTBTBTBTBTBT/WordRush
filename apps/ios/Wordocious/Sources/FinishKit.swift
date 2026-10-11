@@ -992,12 +992,19 @@ struct KeyCap<Label: View>: View {
         case .correct: p = .correct
         case .present, .hintUsed: p = .present
         case .absent:
-            return (TilePalette.slate.edge,
-                    AnyShapeStyle(LinearGradient(colors: [TilePalette.slate.light, TilePalette.slate.base], startPoint: .top, endPoint: .bottom)),
-                    Color(hex: 0xEEF1F6))
+            // Founder 10-10 ("hard to tell which letters were used and wrong" — Six, Seven, every keyboard): a ruled-out
+            // letter is a dark, recessed key with a dimmed letter, BELOW the unplayed keys (the slate read brighter than
+            // them on the dark / Halloween keyboard). Same look as a multi-board key ruled out on every board.
+            return (Theme.isDark ? Color(hex: 0x0B0918) : Color(hex: 0x353D4D), Self.deadFace, Color.white.opacity(0.45))
         case .empty: return blank
         }
         return (p.edge, AnyShapeStyle(LinearGradient(colors: [p.light, p.base], startPoint: .top, endPoint: .bottom)), .white)
+    }
+
+    /// A ruled-out letter's key face (single- and multi-board keyboards).
+    static var deadFace: AnyShapeStyle {
+        AnyShapeStyle(LinearGradient(colors: Theme.isDark ? [Color(hex: 0x1D1834), Color(hex: 0x120F22)] : [Color(hex: 0x5F6A80), Color(hex: 0x485266)],
+                                     startPoint: .top, endPoint: .bottom))
     }
 
     /// An unplayed key: pearl (light) / deep lavender (dark) under the light map (button family §5).

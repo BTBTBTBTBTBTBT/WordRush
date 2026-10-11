@@ -173,8 +173,8 @@ private data class KeyLook(val fill: Color, val ink: Color)
 private val KEY_PLAIN = KeyLook(Color(0xFFFBFAFF), Color(0xFF3B1A78))
 private val KEY_PLAIN_DARK = KeyLook(Color(0xFF3D355F), Color(0xFFEFE9FF))
 /** A multi-board letter ruled out on every board (founder 10-10): dark and flat, below every live key. */
-private val KEY_DEAD = KeyLook(Color(0xFF515B70), Color.White)
-private val KEY_DEAD_DARK = KeyLook(Color(0xFF1A1630), Color.White)
+private val KEY_DEAD = KeyLook(Color(0xFF515B70), Color.White.copy(alpha = 0.45f))
+private val KEY_DEAD_DARK = KeyLook(Color(0xFF1A1630), Color.White.copy(alpha = 0.45f))
 
 /** A revealed key takes its tile's state color (the colorblind swap included). */
 private fun keyLookFor(state: TileState): KeyLook {
@@ -184,11 +184,12 @@ private fun keyLookFor(state: TileState): KeyLook {
         TileState.PRESENT, TileState.HINT_USED -> TileFace.PRESENT
         else -> TileFace.ABSENT
     }
+    // Founder 10-10 ("hard to tell which letters were used and wrong" — Six, Seven, every keyboard): a ruled-out letter is the
+    // dark, recessed dead key with a dimmed letter, BELOW the unplayed keys (the slate read brighter than them on the dark /
+    // Halloween keyboard). Parity: iOS KeyCap.deadFace, web .kkey[data-s="absent"].
+    if (face == TileFace.ABSENT) return if (WTheme.isDark) KEY_DEAD_DARK else KEY_DEAD
     val t = TileLooks.of(face, WTheme.colorblind)
-    // Founder 10-10 (readability): the key light map lifts the cap, so a not-in-word key at the tile's slate read ~2.6:1 under its
-    // letter; its fill is deepened 22% (white letter ~5:1 once the cap is drawn) while the board tile keeps its slate.
-    return if (face == TileFace.ABSENT) KeyLook(Color(com.wordocious.app.ui.TintMath.over(0xFF000000.toInt(), 0.22f, t.faceMid.toArgb())), Color.White)
-    else KeyLook(t.faceMid, Color.White)
+    return KeyLook(t.faceMid, Color.White)
 }
 
 /** A key filled in a fixed color (Codebreaker's settled letters). */
