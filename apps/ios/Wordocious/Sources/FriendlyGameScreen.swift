@@ -644,14 +644,29 @@ struct FriendlyGameScreen: View {
                 VStack(spacing: 6) {
                     Group {
                         if let hidden = PocketArt.rpsHidden {
-                            // Wave 3: their face-down hand (the shipped art). Founder 10-10: no "?" bubble ("it's ugly") — the art's
-                            // bubble was cut off at its top edge, so only the fist shows (bottom 63%, clipped); it rests faded while
-                            // they're still picking (so it never reads as a thrown Rock) and firms up once their pick is in.
-                            Image(hidden).resizable().interpolation(.high).scaledToFill()
-                                .frame(width: 92, height: 116, alignment: .bottom)
-                                .frame(width: 92, height: 74, alignment: .bottom)
-                                .clipped()
-                                .opacity(theirs != nil ? 1 : 0.45)
+                            // Founder 10-10: while they're picking, their hand cycles rock → paper → scissors (one cheap swap every
+                            // 0.42 s, no running animation; still under Reduce Motion); once their pick is in, the face-down fist
+                            // (the art's fist only — its "?" bubble was cut off and the founder dropped it).
+                            Group {
+                            if theirs == nil {
+                                if Theme.reduceMotion {
+                                    Image(PocketArt.rps(.rock)).resizable().interpolation(.high).scaledToFit()
+                                        .frame(width: 80, height: 80).opacity(0.6)
+                                } else {
+                                    TimelineView(.periodic(from: .now, by: 0.42)) { ctx in
+                                        let i = Int(ctx.date.timeIntervalSinceReferenceDate / 0.42) % RpsPick.allCases.count
+                                        Image(PocketArt.rps(RpsPick.allCases[i])).resizable().interpolation(.high).scaledToFit()
+                                            .frame(width: 80, height: 80)
+                                            .opacity(0.75)
+                                    }
+                                }
+                            } else {
+                                Image(hidden).resizable().interpolation(.high).scaledToFill()
+                                    .frame(width: 92, height: 116, alignment: .bottom)
+                                    .frame(width: 92, height: 74, alignment: .bottom)
+                                    .clipped()
+                            }
+                            }
                             .accessibilityElement(children: .ignore)
                             .accessibilityLabel(theirs != nil ? "\(themName)'s hand, face down" : "Waiting for \(themName)'s hand")
                         } else {
