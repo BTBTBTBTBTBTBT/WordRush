@@ -192,17 +192,27 @@ object ThemeKit {
      * opens or a scroll ends; the paused time is cut out of the clock, so the bats resume where they stopped.
      */
     @Composable
-    fun rememberClock(enabled: Boolean): State<Long> {
+    fun rememberClock(enabled: Boolean): State<Long> =
+        rememberPausableClock(enabled && FlagsService.isLive("living_wallpapers") && !WTheme.reducedMotion, settleMs = 500)
+
+    /**
+     * The shared ambient tick (ms, ~24 fps; 0 while [on] is false). Every instance fires on the SAME vsync frames (a
+     * global 41.7 ms grid keyed on the frame time, not a per-instance timer), so the wallpaper, the Home banner trio
+     * and a second page's wallpaper land in one rendered frame instead of staggered ones. Stands down while the tab
+     * is hidden / its page scrolls and for [settleMs] after a page opens or a scroll ends; paused time is cut out of
+     * the clock so motion resumes where it stopped. Read it inside a draw / graphicsLayer lambda, never in composition.
+     */
+    @Composable
+    fun rememberPausableClock(on: Boolean, settleMs: Long): State<Long> {
         val clock = remember { mutableLongStateOf(0L) }
-        val on = enabled && FlagsService.isLive("living_wallpapers") && !WTheme.reducedMotion
         val hidden = LocalTabHidden.current
         val scrolling = LocalScrollActive.current
         LaunchedEffect(on) {
             if (!on) { clock.longValue = 0L; return@LaunchedEffect }
-            var last = 0L
+            var lastBucket = -1L
             var skew = 0L
-            // a page just opened: let it settle (its entrance + first layout) before the wallpaper moves
-            kotlinx.coroutines.delay(500)
+            // a page just opened: let it settle (its entrance + first layout) before things move
+            kotlinx.coroutines.delay(settleMs)
             while (true) {
                 if (hidden.value || scrolling.value) {
                     val from = withFrameNanos { it }
@@ -210,11 +220,16 @@ object ThemeKit {
                     kotlinx.coroutines.delay(250)
                     skew += withFrameNanos { it } - from
                 }
-                withFrameNanos { n -> if (n - last >= 41_000_000L) { last = n; clock.longValue = ((n - skew) / 1_000_000L).coerceAtLeast(1L) } }
+                withFrameNanos { n ->
+                    val bucket = n / TICK_NANOS
+                    if (bucket != lastBucket) { lastBucket = bucket; clock.longValue = ((n - skew) / 1_000_000L).coerceAtLeast(1L) }
+                }
             }
         }
         return clock
     }
+
+    private const val TICK_NANOS = 41_666_667L
 
     // ── Drawing ─────────────────────────────────────────────────────────────────
 

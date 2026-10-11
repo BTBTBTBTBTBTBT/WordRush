@@ -7,7 +7,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -15,12 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -150,6 +154,34 @@ private object Wallpapers {
 }
 
 /**
+ * Founder 10-10 (smoothness): a season wall's STATIC layers (the wall art, aspect-filled and cropped to the window)
+ * pre-composited ONCE into a single window-sized bitmap, keyed by (art, window size), built off the main thread and drawn
+ * as one 1:1 image; only the moving sprites (stars, fog, bats, witch) are drawn live over it. Bounded by bytes so a few
+ * recent walls stay warm; never built for a hidden tab or a low-RAM device (the live path draws the same pixels).
+ */
+private object BakedWalls {
+    data class Key(@DrawableRes val res: Int, val w: Int, val h: Int)
+    private val cache = object : android.util.LruCache<Key, ImageBitmap>(32 * 1024 * 1024) {
+        override fun sizeOf(key: Key, value: ImageBitmap): Int = value.width * value.height * 4
+    }
+
+    fun peek(key: Key): ImageBitmap? = cache.get(key)
+
+    /** Composite [wall] (aspect-fill, centered) onto a [Key.w] x [Key.h] bitmap, exactly as the live path draws it. */
+    fun bake(key: Key, wall: ImageBitmap): ImageBitmap? = runCatching {
+        cache.get(key)?.let { return it }
+        val src = wall.asAndroidBitmap()
+        val scale = maxOf(key.w / src.width.toFloat(), key.h / src.height.toFloat())
+        val dw = src.width * scale; val dh = src.height * scale
+        val left = ((key.w - dw) / 2f).roundToInt(); val top = ((key.h - dh) / 2f).roundToInt()
+        val out = android.graphics.Bitmap.createBitmap(key.w, key.h, android.graphics.Bitmap.Config.ARGB_8888)
+        val paint = android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG)
+        android.graphics.Canvas(out).drawBitmap(src, null, android.graphics.Rect(left, top, left + dw.roundToInt(), top + dh.roundToInt()), paint)
+        out.asImageBitmap().also { cache.put(key, it) }
+    }.getOrNull()
+}
+
+/**
  * Perf (2026-10-02 measured audit): decode [res]'s wallpaper into the shared cache off the
  * main thread (a cold start decoded the 1179 × 2556 Home wallpaper inside the first frame's
  * composition — the single biggest main-thread slice of the launch).
@@ -247,6 +279,19 @@ private fun Modifier.wallpaperBackground(
     val highContrast = rememberHighContrast()
     var origin by remember { mutableStateOf(Offset.Zero) }
     var rootSize by remember { mutableStateOf(Size.Zero) }
+    // Founder 10-10: a season wall's static layers are one baked bitmap (see BakedWalls); the stars / fog / bats / witch stay live.
+    val tabHidden = com.wordocious.app.ui.LocalTabHidden.current.value
+    val bakeKey = if (moving && season != null && themeWall == null && tiles == null && wall != null && shown != null && !highContrast &&
+        rootSize.width >= 1f && rootSize.height >= 1f && !tabHidden &&
+        (context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as? android.app.ActivityManager)?.isLowRamDevice != true
+    ) BakedWalls.Key(shown, rootSize.width.roundToInt(), rootSize.height.roundToInt()) else null
+    var bakedVersion by remember { mutableIntStateOf(0) }
+    LaunchedEffect(bakeKey) {
+        if (bakeKey != null && wall != null && BakedWalls.peek(bakeKey) == null) {
+            val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { BakedWalls.bake(bakeKey, wall) }
+            if (ok != null) bakedVersion++
+        }
+    }
     val stops = if (isDark) dark else light
     this
         .onGloballyPositioned { c ->
@@ -254,12 +299,18 @@ private fun Modifier.wallpaperBackground(
             rootSize = c.findRootCoordinates().size.toSize()
         }
         .drawBehind {
+            bakedVersion // read: the redraw when the bake lands
             val root = if (rootSize.width > 0f && rootSize.height > 0f) rootSize else size
             if (themeWall != null) {
                 with(ThemeKit) { drawThemeWall(themeWall, origin, root) }
             } else if (wall == null || wall.width <= 0 || wall.height <= 0) {
                 // Fallback: the tint's gradient, top-left → bottom-right of the window.
                 drawRect(Brush.linearGradient(stops, start = -origin, end = Offset(root.width, root.height) - origin))
+            } else if (bakeKey != null && BakedWalls.peek(bakeKey) != null) {
+                val baked = BakedWalls.peek(bakeKey)!!
+                clipRect {
+                    drawImage(baked, dstOffset = IntOffset((-origin.x).roundToInt(), (-origin.y).roundToInt()), filterQuality = FilterQuality.None)
+                }
             } else {
                 val src = Size(wall.width.toFloat(), wall.height.toFloat())
                 val scale = ContentScale.Crop.computeScaleFactor(src, root)
@@ -297,6 +348,9 @@ private fun Modifier.wallpaperBackground(
                 if (isDark) drawRect(NIGHT, alpha = CONTRAST_VEIL_DARK) else drawRect(Color.White, alpha = CONTRAST_VEIL_LIGHT)
             }
         }
+        // Founder 10-10: the page's content gets its OWN layer under a ticking wallpaper, so a sprite tick re-records only the
+        // wall behind it (this node's draw-behind lands in the parent layer) and never the content above.
+        .then(if (moving) Modifier.graphicsLayer() else Modifier)
 }
 
 // ── §15 Game screens: a soft tint in the game's color ─────────────────────

@@ -54,15 +54,12 @@ internal fun CelebrationTrio(
     tempo: Float = 0.42f,
     swayDegrees: Float = 4f,
 ) {
-    // Founder 10-10 (smoothness): also still while the tab is covered / hidden (every tab stays composed under a game).
-    val still = WTheme.reducedMotion || WTheme.calmMotion || LocalTabHidden.current.value
-    // Start the loops a beat AFTER the first layout, so the figures hop in place instead of swimming while the size settles.
-    var started by remember { mutableStateOf(false) }
-    LaunchedEffect(still) {
-        started = false
-        if (!still) { kotlinx.coroutines.delay(200); started = true }
-    }
-    val inf = rememberInfiniteTransition(label = "trio")
+    // Founder 10-10 (smoothness): the loops run off ONE shared ~24 fps clock (ThemeKit.rememberPausableClock) instead of
+    // 60 Hz infinite transitions: it holds still while the page scrolls and while the tab is covered / hidden (every tab
+    // stays composed under a game), and starts a beat AFTER the first layout so the figures hop in place instead of
+    // swimming while the size settles. Reduce Motion / Battery Saver: the same scene, still.
+    val still = WTheme.reducedMotion || WTheme.calmMotion
+    val tick = ThemeKit.rememberPausableClock(!still, settleMs = 200)
     BoxWithConstraints(modifier.fillMaxSize().clearAndSetSemantics { }) {
         val w = maxWidth
         val h = height
@@ -88,21 +85,18 @@ internal fun CelebrationTrio(
         images.forEachIndexed { i, res ->
             val delayMs = i * 180
             // hop: 0 = on the ground (stretched wide and low), 1 = at the top; 0.42 s each way
-            val hop by inf.animateFloat(
-                0f, 1f, infiniteRepeatable(tween((tempo * 1000f).toInt(), easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(delayMs)),
-                label = "hop$i",
-            )
+
             // sway: -4 to 4 degrees over 0.95 s each way, starting twice as late as the hop
-            val sway by inf.animateFloat(
-                -swayDegrees, swayDegrees, infiniteRepeatable(tween((tempo * 2260f).toInt(), easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(delayMs * 2)),
-                label = "sway$i",
-            )
+
             val cx = (w - fig) / 2 + fig * 0.95f * (i - 1)
             Image(
                 artPainter(res, fig), contentDescription = null, contentScale = ContentScale.Fit,
                 modifier = Modifier.offset(x = cx, y = h - fig - 16.dp).size(fig).graphicsLayer {
                     transformOrigin = TransformOrigin(0.5f, 1f)
-                    if (started) {
+                    val t = tick.value
+                    if (t > 0L) {
+                        val hop = loop(t, (tempo * 1000f).toInt(), delayMs)
+                        val sway = -swayDegrees + 2f * swayDegrees * loop(t, (tempo * 2260f).toInt(), delayMs * 2)
                         scaleX = 1.04f - 0.07f * hop
                         scaleY = 0.95f + 0.08f * hop
                         translationY = -hop * fig.toPx() * 0.09f
@@ -116,17 +110,13 @@ internal fun CelebrationTrio(
         val xs = floatArrayOf(0.22f, 0.78f, 0.35f, 0.66f)
         val ys = floatArrayOf(0.30f, 0.26f, 0.12f, 0.10f)
         for (k in 0 until (if (sparkles) 4 else 0)) {
-            val twinkle by inf.animateFloat(
-                0f, 1f, infiniteRepeatable(tween(800 + k * 170, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(k * 250)),
-                label = "spark$k",
-            )
             GoldSparkle(
                 9.dp,
                 Modifier.offset(x = w * xs[k] - 4.5.dp, y = h * ys[k] - 4.5.dp).graphicsLayer {
                     if (still) {
                         alpha = 0.8f
                     } else {
-                        val t = if (started) twinkle else 0f
+                        val t = if (tick.value > 0L) loop(tick.value, 800 + k * 170, k * 250) else 0f
                         alpha = 0.3f + 0.7f * t
                         val sc = 0.8f + 0.35f * t
                         scaleX = sc; scaleY = sc
@@ -135,4 +125,16 @@ internal fun CelebrationTrio(
             )
         }
     }
+}
+
+/**
+ * One back-and-forth tween at clock time [t] (ms): 0 -> 1 over [durMs] with FastOutSlowIn, then back, starting
+ * [delayMs] after the clock starts (the old infiniteRepeatable(RepeatMode.Reverse, StartOffset) loop, by hand).
+ */
+private fun loop(t: Long, durMs: Int, delayMs: Int): Float {
+    val tt = t - delayMs
+    if (tt < 0L || durMs <= 0) return 0f
+    val m = (tt % (2L * durMs)).toInt()
+    val f = if (m < durMs) m / durMs.toFloat() else (2 * durMs - m) / durMs.toFloat()
+    return FastOutSlowInEasing.transform(f)
 }
