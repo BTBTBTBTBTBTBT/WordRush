@@ -172,10 +172,10 @@ object TileLooks {
         edge = c(0x8CD8C8F3), faceTop = c(0x9EFFFFFF), faceMid = c(0x9EFFFFFF), faceBottom = c(0x9EFFFFFF),
         ring = c(0x297C3AED), ringFrac = 0.033f, gloss = 0.35f, glyph = c(0xFF3B1A78), glyphShadow = Color.Transparent, glow = Color.Transparent,
     )
-    /** Dark mode's frosted glass (the dark wallpaper shows through). */
+    /** Dark mode's frosted glass, lifted (founder 10-10 audit, iOS GlossyTile .empty): white face .19 / edge .13, a brighter lilac ring .5, gloss .2. */
     val EMPTY_DARK = TileLook(
-        edge = c(0x24FFFFFF), faceTop = c(0x1FFFFFFF), faceMid = c(0x17FFFFFF), faceBottom = c(0x14FFFFFF),
-        ring = c(0x40A78BFA), ringFrac = 0.033f, gloss = 0.12f, glyph = c(0xFFF1EAFF), glyphShadow = Color.Transparent, glow = Color.Transparent,
+        edge = c(0x21FFFFFF), faceTop = c(0x30FFFFFF), faceMid = c(0x30FFFFFF), faceBottom = c(0x30FFFFFF),
+        ring = c(0x80B9A4FF), ringFrac = 0.033f, gloss = 0.2f, glyph = c(0xFFF1EAFF), glyphShadow = Color.Transparent, glow = Color.Transparent,
     )
     /** B1 typed: white face + purple border + dark purple letter. */
     val TYPED = TileLook(

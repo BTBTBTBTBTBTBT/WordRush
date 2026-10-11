@@ -102,6 +102,29 @@ object FriendlyGamesService {
         _recent.value = (o["recent"] as? JsonArray)?.mapNotNull { decodeGame(it) } ?: emptyList()
     }
 
+    /**
+     * DEBUG only (`--es dressDemo pocket-rps|pocket-ghost|pocket-chain`): one local game against "Doug" on my turn, so a pocket
+     * board can be checked on the emulator with no session. Returns its id; the screen finds it in [active].
+     */
+    fun debugSeed(kind: FriendlyKind): String {
+        if (!com.wordocious.app.BuildConfig.DEBUG) return ""
+        val state: FriendlyState = when (kind) {
+            FriendlyKind.GHOST -> com.wordocious.core.GhostState(fragment = "ST", letters = listOf(Side.B, Side.A), turn = Side.A)
+            FriendlyKind.CHAIN -> com.wordocious.core.ChainState(
+                words = listOf(com.wordocious.core.ChainWord(Side.A, "CRANE", 5), com.wordocious.core.ChainWord(Side.B, "EAGLE", 5)), turn = Side.A,
+            )
+            else -> com.wordocious.core.RpsState()
+        }
+        val now = java.time.Instant.now().toString()
+        val g = GameView(
+            id = "debug-pocket-${kind.raw}", kind = kind, title = kind.name, me = Side.A,
+            opponent = Opponent("5d0e0000-0000-4000-8000-000000000013", "Doug", null, null), state = state,
+            status = "active", yourTurn = true, result = null, line = "", answer = null, createdAt = now, updatedAt = now,
+        )
+        _active.value = listOf(g)
+        return g.id
+    }
+
     /** Fold a fresh copy of one game into the cached lists (badge + YOUR TURN stay current). */
     private fun fold(g: GameView) {
         val rest = _active.value.filterNot { it.id == g.id }

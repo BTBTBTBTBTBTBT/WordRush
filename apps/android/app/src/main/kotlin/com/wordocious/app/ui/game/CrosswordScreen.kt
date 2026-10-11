@@ -636,7 +636,13 @@ private fun CrosswordGrid(session: CrosswordSession, finished: Boolean, fitHeigh
 
 /** The active entry's faces: a soft lilac wash instead of frosted / white. */
 private val ACTIVE_EMPTY = TileLooks.EMPTY.copy(faceTop = Color(0xFFF4EEFF), faceMid = Color(0xFFEDE4FF), faceBottom = Color(0xFFE6DAFF), ring = Color(0x597C3AED))
-private val ACTIVE_EMPTY_DARK = TileLooks.EMPTY_DARK.copy(faceTop = Color(0x40A78BFA), faceMid = Color(0x33A78BFA), faceBottom = Color(0x2EA78BFA))
+/** Dark (founder 10-10 audit, iOS GlossyFace.cellEmpty): an open answer cell is a clean mid-lavender square against the purple board
+ *  (face B7A2F0, edge 7B5FD0, a lilac-white ring at 70%, deep violet ink); the active entry's open cells are a paler lavender. */
+private val CELL_OPEN_DARK = TileLooks.EMPTY_DARK.copy(
+    edge = Color(0xFF7B5FD0), faceTop = Color(0xFFB7A2F0), faceMid = Color(0xFFB7A2F0), faceBottom = Color(0xFFB7A2F0),
+    ring = Color(0xB3E4D9FF), ringFrac = 0.04f, gloss = 0.4f, glyph = Color(0xFF2E1065),
+)
+private val ACTIVE_EMPTY_DARK = CELL_OPEN_DARK.copy(faceTop = Color(0xFFE2D8FF), faceMid = Color(0xFFD9CCFF), faceBottom = Color(0xFFD0C1FB))
 private val ACTIVE_TYPED = TileLooks.TYPED.copy(faceTop = Color(0xFFF7F2FF), faceMid = Color(0xFFF1E9FF), faceBottom = Color(0xFFEBE0FF))
 
 /** The grid from a state alone: the game above, and the finished grid in the
@@ -672,7 +678,7 @@ internal fun CrosswordGrid(
             else (cell.value * 0.46f).coerceIn(if (small) 9f else 12f, 19f)
         // Doug 10-05 ("the numbers … seem a bit off": "5" jammed against a T): the clue number is a dp-sized
         // superscript (CrosswordCellSpec.NUMBER), so a large system font can't grow it into the letter.
-        val ns = with(androidx.compose.ui.platform.LocalDensity.current) { CrosswordCellSpec.numberDp(cell.value).dp.toSp() }
+        val ns = with(androidx.compose.ui.platform.LocalDensity.current) { (if (dark) maxOf(CrosswordCellSpec.numberDp(cell.value), cell.value * 0.28f) else CrosswordCellSpec.numberDp(cell.value)).dp.toSp() }
         GameTray(
             CROSSWORD_ACCENT, state = tray, corner = if (small) 14.dp else GameTrayStyle.CORNER,
             padding = androidx.compose.foundation.layout.PaddingValues(trayPad),
@@ -694,6 +700,7 @@ internal fun CrosswordGrid(
                                 locked -> TileLooks.CORRECT
                                 ch.isNotEmpty() -> if (inActive) ACTIVE_TYPED else TileLooks.TYPED
                                 inActive -> if (dark) ACTIVE_EMPTY_DARK else ACTIVE_EMPTY
+                                dark -> CELL_OPEN_DARK
                                 else -> TileLooks.of(TileFace.EMPTY, dark = dark)
                             }
                             CrosswordCell(ch, numbers[i], look, selected == i, wrong, shakeKey, cell, glyph, ns, interactive) { onSelect(i) }
@@ -721,7 +728,7 @@ private fun CrosswordCell(
                     // The cursor ring, just outside the tile.
                     val s2 = 2.dp.toPx()
                     drawRoundRect(
-                        CROSSWORD_ACCENT, Offset(-s2 * 1.5f, -s2 * 1.5f), Size(size.width + s2 * 3f, size.height + s2 * 3f),
+                        if (WTheme.isDark) Color(0xFFF3EEFF) else CROSSWORD_ACCENT, Offset(-s2 * 1.5f, -s2 * 1.5f), Size(size.width + s2 * 3f, size.height + s2 * 3f),
                         CornerRadius(size.minDimension * TILE_CORNER + s2 * 1.5f), style = Stroke(s2),
                     )
                 }
@@ -739,7 +746,10 @@ private fun CrosswordCell(
                 "$number", maxLines = 1, softWrap = false,
                 style = androidx.compose.ui.text.TextStyle(
                     fontSize = ns, lineHeight = ns, fontWeight = FontWeight.Black, fontFamily = Nunito,
-                    color = if (solid) Color.White.copy(alpha = 0.85f) else Color(0xFF6D28D9).copy(alpha = 0.72f),
+                    // Dark (founder 10-10 audit): bigger, in a bright ink: white on a colored cell, deep violet on the lavender open
+                    // cell, a strong violet on a typed one.
+                    color = if (com.wordocious.app.ui.theme.WTheme.isDark) (if (solid) Color.White else if (ch.isEmpty()) Color(0xFF2E1065) else Color(0xFF5B21B6))
+                        else if (solid) Color.White.copy(alpha = 0.85f) else Color(0xFF6D28D9).copy(alpha = 0.72f),
                     platformStyle = androidx.compose.ui.text.PlatformTextStyle(includeFontPadding = false),
                     lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
                         androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center, androidx.compose.ui.text.style.LineHeightStyle.Trim.Both,
@@ -827,7 +837,7 @@ private fun ActiveClueBar(session: CrosswordSession) {
     ) {
         NumberBadge("${e.n}${e.dir}", 24.dp, 11.sp)
         Text(e.clue, fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-        Icon(Icons.Filled.SwapHoriz, "Switch direction", tint = CROSSWORD_ACCENT, modifier = Modifier.size(16.dp))
+        Icon(Icons.Filled.SwapHoriz, "Switch direction", tint = if (WTheme.isDark) Color(0xFFDDD0FF) else CROSSWORD_ACCENT, modifier = Modifier.size(16.dp))
     }
 }
 
@@ -845,8 +855,10 @@ private fun CluesToggle(showing: Boolean, onClick: () -> Unit) {
             .semantics { contentDescription = if (showing) "Show the grid" else "Show all clues"; selected = showing },
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
     ) {
-        Icon(if (showing) Icons.Filled.GridOn else Icons.Filled.FormatListNumbered, null, tint = CROSSWORD_ACCENT, modifier = Modifier.size(17.dp))
-        Text(if (showing) "Grid" else "Clues", fontSize = 10.sp, lineHeight = 11.sp, fontWeight = FontWeight.Black, color = CROSSWORD_ACCENT, fontFamily = Nunito, maxLines = 1)
+        // Dark (founder 10-10 audit): the slate accent vanishes on the night chip, so icon + label read pale lavender.
+        val ink = if (WTheme.isDark) Color(0xFFEDE6FF) else CROSSWORD_ACCENT
+        Icon(if (showing) Icons.Filled.GridOn else Icons.Filled.FormatListNumbered, null, tint = ink, modifier = Modifier.size(17.dp))
+        Text(if (showing) "Grid" else "Clues", fontSize = 10.sp, lineHeight = 11.sp, fontWeight = FontWeight.Black, color = ink, fontFamily = Nunito, maxLines = 1)
     }
 }
 

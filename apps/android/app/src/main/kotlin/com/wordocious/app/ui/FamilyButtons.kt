@@ -232,7 +232,8 @@ internal data class HelperColors(val fill: Color, val fillPressed: Color, val in
 
 internal fun helperColors(tint: Color, dark: Boolean): HelperColors = if (dark) {
     val base = Color(0xFF231C40)
-    HelperColors(famMix(base, tint, 0.34f), famMix(base, tint, 0.42f), famMix(tint, Color.White, 0.65f))
+    // Founder 10-10 dark audit (iOS FamilyInk): stronger fill (.52 / .62) and a near-white ink (.9) so the pills read on the night boards.
+    HelperColors(famMix(base, tint, 0.52f), famMix(base, tint, 0.62f), famMix(tint, Color.White, 0.9f))
 } else {
     HelperColors(famMix(Color.White, tint, 0.20f), famMix(Color.White, tint, 0.27f), famMix(tint, Color.Black, 0.32f))
 }
@@ -245,14 +246,14 @@ fun CandyColor.helperTint(): Color = when (this) {
     CandyColor.PURPLE, CandyColor.PEACH -> Color(0xFF7C3AED)
 }
 
-/** Saturation .25 (the used / disabled look; the 50% alpha is the pill's). */
-internal fun famDesaturate(c: Color): Color {
+/** Saturation .25 (the used / disabled look; the 50% alpha is the pill's); dark keeps half the color (.5, with the pill at 72%). */
+internal fun famDesaturate(c: Color, keep: Float = 0.25f): Color {
     val g = 0.2126f * c.red + 0.7152f * c.green + 0.0722f * c.blue
-    fun ch(v: Float) = (g + (v - g) * 0.25f).coerceIn(0f, 1f)
+    fun ch(v: Float) = (g + (v - g) * keep).coerceIn(0f, 1f)
     return Color(ch(c.red), ch(c.green), ch(c.blue), c.alpha)
 }
 
-private fun HelperColors.spent(): HelperColors = HelperColors(famDesaturate(fill), famDesaturate(fillPressed), famDesaturate(ink))
+private fun HelperColors.spent(keep: Float = 0.25f): HelperColors = HelperColors(famDesaturate(fill, keep), famDesaturate(fillPressed, keep), famDesaturate(ink, keep))
 
 /**
  * The shared capsule: [fill] (pressed [fillPressed]) + the frost light map, squish .94 on press, the
@@ -296,7 +297,8 @@ private fun FamPill(
                 val s = 1f - 0.06f * press
                 scaleX = s; scaleY = s
                 if (used || !enabled) {
-                    alpha = 0.5f
+                    // Dark: a disabled / spent pill stays readable (72%) instead of dying at 50% (founder 10-10 audit).
+                    alpha = if (WTheme.isDark) 0.72f else 0.5f
                 }
             }
             .squishFeedback(interaction)
@@ -366,7 +368,7 @@ fun HelperButton(
     val spent = used || !enabled
     val c = remember(t, dark, selected, spent) {
         val base = if (selected) HelperColors(t, famMix(t, Color.Black, 0.15f), Color(InkContrast.onSolid(t.toArgb()))) else helperColors(t, dark)
-        if (spent) base.spent() else base
+        if (spent) base.spent(if (dark) 0.5f else 0.25f) else base
     }
     val art = icon ?: vector?.let { FamIcon.of(it) }
     FamPill(

@@ -403,7 +403,7 @@ private fun WordChips(session: SpyglassSession) {
                 Text(
                     if (visible) w else "•".repeat(w.length), fontSize = 14.sp, fontWeight = if (found) FontWeight.Black else FontWeight.Bold,
                     letterSpacing = if (visible) 0.sp else 2.sp,
-                    color = if (found) Color.White else if (visible) (if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading) else WTheme.textMuted,
+                    color = if (found) Color.White else if (visible) (if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading) else (if (WTheme.isDark) WTheme.text else WTheme.textMuted),
                     maxLines = 1, softWrap = false,
                 )
             }

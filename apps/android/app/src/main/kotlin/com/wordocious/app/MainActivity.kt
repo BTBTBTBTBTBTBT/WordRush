@@ -106,6 +106,23 @@ class MainActivity : ComponentActivity() {
             } })
             return
         }
+        // DEBUG only: `--es dressDemo pocket-rps|pocket-ghost|pocket-chain` shows that pocket game's board (local seed, my turn vs Doug).
+        intent?.getStringExtra("dressDemo")?.takeIf { com.wordocious.app.BuildConfig.DEBUG && it.startsWith("pocket-") }?.let { demo ->
+            val kind = com.wordocious.core.FriendlyKind.entries.firstOrNull { it.raw == demo.removePrefix("pocket-") } ?: com.wordocious.core.FriendlyKind.RPS
+            com.wordocious.app.ui.DressDemo.start(com.wordocious.app.ui.DressDoor.Stage)
+            com.wordocious.app.data.ThemePref.load()
+            val id = com.wordocious.app.data.FriendlyGamesService.debugSeed(kind)
+            setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent {
+                WordociousTheme {
+                    Surface(modifier = Modifier.fillMaxSize(), color = WTheme.bg) {
+                        Box(Modifier.fillMaxSize().navigationBarsPadding()) {
+                            com.wordocious.app.ui.friends.FriendlyGameScreen(id, onClose = { finish() }, onFriends = { finish() }, onOpenGame = {})
+                        }
+                    }
+                }
+            } })
+            return
+        }
         // DEBUG only: `--es dressDemo settings` shows Settings for the demo player as an admin (Season preview picker).
         if (com.wordocious.app.ui.DressDemo.isSettings(intent?.getStringExtra("dressDemo"))) {
             com.wordocious.app.ui.DressDemo.start(com.wordocious.app.ui.DressDoor.Stage, admin = true)

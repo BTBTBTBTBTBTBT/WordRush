@@ -592,6 +592,14 @@ private fun TileGrid(session: KindredSession, tileH: Dp) {
     }
 }
 
+/** Dark (founder 10-10 audit, iOS KindredTileGrid): a clean pale-lavender word card (like the Sudoku givens), not a dim
+ *  plum chip on the night tray: the words pop; the selected tile stays the glossy purple. */
+private val DARK_WORD_CARD = TileLook(
+    edge = Color(0xFF8D74D0), faceTop = Color(0xFFF7F2FF), faceMid = Color(0xFFEBE2FD), faceBottom = Color(0xFFDCCFFB),
+    ring = Color.White.copy(alpha = 0.55f), ringFrac = 0.025f, gloss = 0.35f, glyph = Color(0xFF2E1065),
+    glyphShadow = Color.Transparent, glow = GROUPS_ACCENT.copy(alpha = 0.5f),
+)
+
 @Composable
 private fun WordTile(word: String, tileH: Dp, selected: Boolean, ringed: Boolean, onTap: () -> Unit) {
     // The label scales with the tile (founder, 2026-09-28): normal words
@@ -610,7 +618,7 @@ private fun WordTile(word: String, tileH: Dp, selected: Boolean, ringed: Boolean
             .then(if (ringed) Modifier.border(2.dp, PAIR_RING, RoundedCornerShape(14.dp)).padding(3.dp) else Modifier.padding(3.dp)),
     ) {
         // J3 a glossy chip (tinted face, lip, gloss); selected = filled purple (the tier ramp's color).
-        val look = if (selected) TileLooks.CORRECT else tintedChipLook(GROUPS_ACCENT, WTheme.isDark)
+        val look = if (selected) TileLooks.CORRECT else if (WTheme.isDark) DARK_WORD_CARD else tintedChipLook(GROUPS_ACCENT, false)
         Box(
             Modifier.fillMaxSize()
                 .squishClickable(onClick = onTap)
@@ -644,10 +652,12 @@ private fun ProgressRail(s: GroupsState) {
             Modifier.clearAndSetSemantics { contentDescription = "$found of $GROUPS_TOTAL_BOARDS groups found" },
             horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Groups", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Text("$found of $GROUPS_TOTAL_BOARDS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            // Dark (founder 10-10 audit): bright rail text, and tier 4's near-black swatch reads white.
+            val railInk = if (WTheme.isDark) WTheme.text else WTheme.textMuted
+            Text("Groups", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = railInk)
+            Text("$found of $GROUPS_TOTAL_BOARDS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = railInk)
             for (tier in 1..GROUPS_TOTAL_BOARDS) {
-                val c = tierStyle(tier).bg
+                val c = if (WTheme.isDark && tier == 4) Color.White else tierStyle(tier).bg
                 val solved = s.solved.any { it.tier == tier }
                 Box(Modifier.size(10.dp).clip(CircleShape).then(if (solved) Modifier.background(c) else Modifier.border(1.5.dp, c, CircleShape)))
             }
@@ -660,9 +670,13 @@ private fun ProgressRail(s: GroupsState) {
 @Composable
 private fun MistakeDots(mistakes: Int) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("Mistakes left", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        val dark = WTheme.isDark
+        Text("Mistakes left", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (dark) WTheme.text else WTheme.textMuted)
         for (i in 0 until GROUPS_MAX_MISTAKES) {
-            Box(Modifier.size(10.dp).clip(CircleShape).background(if (i < GROUPS_MAX_MISTAKES - mistakes) GROUPS_ACCENT else com.wordocious.app.ui.accentLine(GROUPS_ACCENT)))
+            Box(Modifier.size(10.dp).clip(CircleShape).background(
+                if (i < GROUPS_MAX_MISTAKES - mistakes) (if (dark) Color(0xFFFB4F73) else GROUPS_ACCENT)
+                else if (dark) Color.White.copy(alpha = 0.22f) else com.wordocious.app.ui.accentLine(GROUPS_ACCENT),
+            ))
         }
     }
 }

@@ -109,6 +109,8 @@ import kotlinx.serialization.json.Json
 
 private val CRYPTOGRAM_ACCENT = Color(0xFF92400E)
 private val CRYPTOGRAM_WRONG = Color(0xFFDC2626)
+/** The brown accent as TEXT on the night board (dark): a bright amber, the brown vanishes there (founder 10-10 audit, iOS codebreakerInk). */
+private val cipherInk: Color get() = if (WTheme.isDark) Color(0xFFFCD34D) else CRYPTOGRAM_ACCENT
 
 /** Display titles for the shared holiday calendar keys (§20) — mirrors apps/web/lib/holidays.ts HOLIDAY_TITLES exactly. */
 private val HOLIDAY_TITLES = mapOf(
@@ -628,7 +630,7 @@ private fun CipherTile(plain: String, code: String, look: TileLook, selected: Bo
         }
         Text(
             code, fontSize = codeSp, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, lineHeight = codeSp * 1.1f,
-            color = if (selected) Color.White else if (dark) WTheme.textMuted else Color(0xFF7C2D12),
+            color = if (selected) Color.White else if (dark) WTheme.text else Color(0xFF7C2D12),
             modifier = Modifier.clip(RoundedCornerShape(50))
                 .background(if (selected) CRYPTOGRAM_ACCENT else com.wordocious.app.ui.accentWash(CRYPTOGRAM_ACCENT, 0.16f))
                 .padding(horizontal = 4.dp),
@@ -729,13 +731,13 @@ private fun FrequencyStrip(session: CodebreakerSession, chipSp: TextUnit = 11.sp
                     .padding(horizontal = 8.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                Text(c, fontSize = chipSp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = if (locked) CRYPTOGRAM_ACCENT else WTheme.textMuted)
-                Text("${freq[c]}", fontSize = chipSp, fontWeight = FontWeight.Bold, color = (if (locked) CRYPTOGRAM_ACCENT else WTheme.textMuted).copy(alpha = 0.7f))
+                Text(c, fontSize = chipSp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = if (locked) cipherInk else if (WTheme.isDark) WTheme.text else WTheme.textMuted)
+                Text("${freq[c]}", fontSize = chipSp, fontWeight = FontWeight.Bold, color = (if (locked) cipherInk else if (WTheme.isDark) WTheme.text else WTheme.textMuted).copy(alpha = if (WTheme.isDark) 0.85f else 0.7f))
                 // Founder 10-08: the "→X" slot is reserved from the start (a hidden "→W", the widest), so a letter
                 // landing never widens the chip, never re-wraps the strip and never shrinks the board above it.
                 Box(contentAlignment = Alignment.Center) {
                     Text("→W", fontSize = chipSp, fontWeight = FontWeight.Black, color = Color.Transparent, modifier = Modifier.clearAndSetSemantics {})
-                    if (!plain.isNullOrEmpty()) Text("→$plain", fontSize = chipSp, fontWeight = FontWeight.Black, color = if (locked) CRYPTOGRAM_ACCENT else WTheme.text)
+                    if (!plain.isNullOrEmpty()) Text("→$plain", fontSize = chipSp, fontWeight = FontWeight.Black, color = if (locked) cipherInk else WTheme.text)
                 }
             }
         }

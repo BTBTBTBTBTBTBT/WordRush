@@ -107,7 +107,7 @@ fun MultiBoardLayout(
                                 .then(
                                     when {
                                         isInvisible -> Modifier.alpha(0f)
-                                        isLocked -> Modifier.alpha(0.6f) // dim locked boards
+                                        isLocked -> Modifier.alpha(if (com.wordocious.app.ui.theme.WTheme.isDark) 0.82f else 0.6f) // dim locked boards (dark: stay readable, founder 10-10 audit)
                                         else -> Modifier
                                     },
                                 ),

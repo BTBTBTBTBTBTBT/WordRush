@@ -85,7 +85,7 @@ fun Modifier.gameTray(
     val season = WTheme.season?.takeIf { it.cardFill != null }
     val face = if (season != null) season.wash(tint, wash * 0.6f).copy(alpha = season.cardOpacity)
         else if (dark) Color(0xFF241A38).copy(alpha = 0.92f) else Color(GameTrayStyle.washArgb(tint, wash))
-    val line = if (dark) tint.copy(alpha = 0.45f) else Color(GameTrayStyle.washArgb(tint, GameTrayStyle.LINE))
+    val line = if (dark) tint.copy(alpha = 0.55f) else Color(GameTrayStyle.washArgb(tint, GameTrayStyle.LINE))
     val lip = if (dark) Color(0xFF120D1F) else Color(TintMath.over(0xFF000000.toInt(), GameTrayStyle.LIP_DARKEN, line.toArgb()))
     val ring = state == TrayState.ACTIVE
     val shape = RoundedCornerShape(corner)

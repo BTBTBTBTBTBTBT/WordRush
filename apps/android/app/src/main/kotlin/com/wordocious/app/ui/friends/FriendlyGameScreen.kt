@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -29,6 +30,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
@@ -386,13 +389,8 @@ fun FriendlyGameScreen(
                     avatar = { FriendFace(them, g.opponent.avatarUrl, g.opponent.avatarEmoji, 32.dp, online = theyOn) },
                 )
             }
-            // 9d: the YOUR TURN flag (shipped art) when the move is yours.
-            if (g.active && myTurn) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
-                    Image(painterResource(R.drawable.art_pocket_yourturn_flag), null, contentScale = ContentScale.Fit, modifier = Modifier.size(26.dp).clearAndSetSemantics { })
-                    Text("YOUR TURN", fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = FriendsPink.solid)
-                }
-            }
+            // 9d: YOUR TURN (founder 10-10: the blank lavender flag art read as a stray icon): a small gold capsule label.
+            if (g.active && myTurn) YourTurnLabel()
             // L: every pocket board sits in the shared game tray in the game's color (won = purple, lost = slate).
             val tray = when (g.result) { "win" -> TrayState.WON; "loss" -> TrayState.LOST; else -> TrayState.PLAYING }
             val reduce = WTheme.reducedMotion
@@ -581,7 +579,9 @@ private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean, prese
                     FriendlyGameIcon(g.kind, 24.dp)
                     Text(headlineFor(g), fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.2.em, color = DEEP, maxLines = 2)
                 }
-                Text(subLineFor(g, theyOn), fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = FriendsPink.mid)
+                // Founder 10-10 (the tiny line was hard to read): plain 12 sp heavy text, pink on the night card / raspberry on the day one.
+                Text(subLineFor(g, theyOn), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.3.sp,
+                    color = if (FriendsPink.dark) Color(0xFFF9A8D4) else Color(0xFFB0306F), maxLines = 2)
             }
             val turn = if (g.active) whoseTurn(g.state) else null
             Row(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
@@ -625,6 +625,31 @@ private fun ScoreSide(label: String, name: String, url: String?, emoji: String?,
     }
 }
 
+/** "YOUR TURN" over a pocket board while it is your move: a gold capsule (flag + words) that pops in once, then rests. */
+@Composable
+private fun YourTurnLabel() {
+    val reduce = WTheme.reducedMotion
+    val pop = remember { Animatable(if (reduce) 1f else 0f) }
+    LaunchedEffect(Unit) { if (!reduce) pop.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.65f, stiffness = 380f)) }
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        val shape = RoundedCornerShape(50)
+        Row(
+            Modifier
+                .graphicsLayer { val k = 0.7f + 0.3f * pop.value; scaleX = k; scaleY = k; alpha = pop.value.coerceIn(0f, 1f) }
+                .shadow(5.dp, shape, ambientColor = Color(0x59F59E0B), spotColor = Color(0x59F59E0B))
+                .clip(shape)
+                .background(Brush.verticalGradient(listOf(Color(0xFFFDE68A), Color(0xFFF5B82E))))
+                .border(1.dp, Color.White.copy(alpha = 0.55f), shape)
+                .padding(horizontal = 12.dp, vertical = 5.dp)
+                .semantics(mergeDescendants = true) { contentDescription = "Your turn" },
+            horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Flag, null, tint = Color(0xFF3B2300), modifier = Modifier.size(12.dp))
+            Text("YOUR TURN", fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, fontFamily = Nunito, color = Color(0xFF3B2300))
+        }
+    }
+}
+
 // ── Rock Paper Scissors ─────────────────────────────────────────────────────
 
 @Composable
@@ -632,11 +657,25 @@ private fun RpsBoard(s: RpsState, me: Side, them: String, enabled: Boolean, onPi
     val theirs = s.picks[me.other]
     val mine = s.picks[me]
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-        // Their pick, face down: the shipped fist with the "?" (dimmed until they have picked).
-        Image(
-            painterResource(R.drawable.art_pocket_rps_hidden), null, contentScale = ContentScale.Fit,
-            modifier = Modifier.size(104.dp, 118.dp).alpha(if (theirs == RpsPick.HIDDEN) 1f else 0.45f).clearAndSetSemantics { },
-        )
+        // Founder 10-10: while they are picking, their hand cycles rock, paper, scissors (the same art as the "Your pick" buttons, 80 dp
+        // at 75%; one cheap swap every 0.42 s from a periodic tick, no running animation; a still rock at 60% under Reduce Motion /
+        // animator scale 0). Once their pick is in: the face-down fist (the art's fist only, the bottom 63%, clipped; no "?" bubble).
+        if (theirs != RpsPick.HIDDEN) {
+            val still = WTheme.reducedMotion
+            var cycle by remember { mutableStateOf(0) }
+            if (!still) LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(420); cycle = (cycle + 1) % RpsPick.PLAYABLE.size } }
+            Image(
+                painterResource(rpsPiece(if (still) RpsPick.ROCK else RpsPick.PLAYABLE[cycle])), null, contentScale = ContentScale.Fit,
+                modifier = Modifier.size(80.dp).alpha(if (still) 0.6f else 0.75f).clearAndSetSemantics { },
+            )
+        } else {
+            Box(Modifier.size(92.dp, 74.dp).clipToBounds().clearAndSetSemantics { }, contentAlignment = Alignment.BottomCenter) {
+                Image(
+                    painterResource(R.drawable.art_pocket_rps_hidden), null, contentScale = ContentScale.Crop, alignment = Alignment.BottomCenter,
+                    modifier = Modifier.requiredSize(92.dp, 116.dp),
+                )
+            }
+        }
         if (theirs == RpsPick.HIDDEN) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, 14.dp)
