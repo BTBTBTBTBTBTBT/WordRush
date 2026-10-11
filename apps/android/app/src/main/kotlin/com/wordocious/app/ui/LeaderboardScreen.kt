@@ -1340,7 +1340,7 @@ internal fun Modifier.lbRowShell(isCurrentUser: Boolean, index: Int = 1): Modifi
 internal fun Modifier.lbRow(index: Int, isCurrentUser: Boolean, topRule: Boolean = index > 0): Modifier =
     lbStripedRow(index, isCurrentUser, topRule)
 
-/** The row's name: ONE Text (an AnnotatedString) for name + crown + " (you)" — as siblings, a
+/** The row's name: ONE Text (an AnnotatedString) for name + crown + " you" — as siblings, a
  *  squeezed row wrapped " (you)" one character per line (iOS `Text + Text` parity). */
 @Composable
 private fun LbRowName(name: String, isCurrentUser: Boolean, crown: Boolean = false) {
@@ -1350,7 +1350,8 @@ private fun LbRowName(name: String, isCurrentUser: Boolean, crown: Boolean = fal
             // §216: the week's leader wears the crown (friends board).
             if (crown) { append(" "); appendIcon3D(Icon3DName.CROWN) }
             if (isCurrentUser) {
-                withStyle(androidx.compose.ui.text.SpanStyle(color = Color(0xFFD97706))) { append(" (you)") }
+                // Founder 10-10: plain heavy names in the page heading ink; "you" rides after in amber (iOS LbRowName).
+                withStyle(androidx.compose.ui.text.SpanStyle(color = SurfaceInk.ink(0xB45309, 0xFCD34D), fontSize = 12.sp, fontWeight = FontWeight.Black)) { append(" you") }
             }
         },
         fontSize = 15.sp, fontWeight = FontWeight.Black, color = lbNameInk(),

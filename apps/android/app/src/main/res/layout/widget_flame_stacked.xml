@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Founder 10-10 (small widget: "streak info is hard to read ... make the trophy and flame a little smaller and put the
+     number underneath"; iOS StackedStreakPair): the flame and the flawless trophy a size down (22 dp, ~58% of the row) with
+     each number UNDER its icon in the widget's number ink - no number on the art. Same view ids as widget_flame so
+     applyStreak drives both; the trophy is GONE (no gap) until a flawless run of 2+. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_streak_pair"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="top">
+    <LinearLayout
+        android:id="@+id/w_flame_box"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+        <ImageView
+            android:id="@+id/w_flame"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/icon3d_flame"
+            android:importantForAccessibility="no"
+            android:contentDescription="@null" />
+        <TextView
+            android:id="@+id/w_streak"
+            style="@style/WidgetStackedNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/w_trophy_box"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:visibility="gone">
+        <ImageView
+            android:id="@+id/w_trophy"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/streak_trophy_3"
+            android:importantForAccessibility="no"
+            android:contentDescription="@null" />
+        <TextView
+            android:id="@+id/w_trophy_num"
+            style="@style/WidgetStackedNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2" />
+    </LinearLayout>
+</LinearLayout>

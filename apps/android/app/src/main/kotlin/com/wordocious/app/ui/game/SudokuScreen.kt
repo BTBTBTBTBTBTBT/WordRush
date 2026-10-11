@@ -427,7 +427,6 @@ fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, dig
     val selDigit = selected?.let { state.board[it] }?.takeIf { it != '0' }
     val density = LocalDensity.current
     val cellGap = 2.5.dp
-    val boxGap = 6.dp
 
     // FINISH_SPEC L: the board sits in the shared game tray (Sudocious accent; purple when
     // solved, slate when out of mistakes); the 3×3 boxes are set apart by soft darker
@@ -437,17 +436,20 @@ fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, dig
         SudokuStatus.LOST -> TrayState.LOST
         else -> TrayState.PLAYING
     }
-    val seam = if (WTheme.isDark) SUDOKU_ACCENT.copy(alpha = 0.35f) else GameTrayStyle.seam(GameTrayStyle.tint(SUDOKU_ACCENT, trayState))
-    Box(
+    // Founder 10-10 ("hard to see the separation of the 9 boards"): real gaps between the 3 x 3 boxes, max(5, cell * 0.16),
+    // with a bright seam down the middle (the old 35% seam vanished on the dark board). iOS SudokuBoardView.
+    val seam = if (WTheme.isDark) Color(0xFFC4B5FD).copy(alpha = 0.7f) else GameTrayStyle.seam(GameTrayStyle.tint(SUDOKU_ACCENT, trayState))
+    androidx.compose.foundation.layout.BoxWithConstraints(
         Modifier.fillMaxWidth().widthIn(max = 420.dp).aspectRatio(1f)
             .gameTray(SUDOKU_ACCENT, trayState, padding = androidx.compose.foundation.layout.PaddingValues(8.dp)),
     ) {
+        val boxGap = maxOf(5f, (maxWidth.value - 16f) / 9f * 0.16f).dp
         Column(
             Modifier.fillMaxSize().drawBehind {
                 val g = boxGap.toPx()
                 val bw = (size.width - 2 * g) / 3f
                 val bh = (size.height - 2 * g) / 3f
-                val sw = 2.dp.toPx()
+                val sw = maxOf(2f, boxGap.value * 0.38f).dp.toPx()
                 val cap = androidx.compose.ui.graphics.StrokeCap.Round
                 for (k in 1..2) {
                     val x = k * bw + (k - 0.5f) * g

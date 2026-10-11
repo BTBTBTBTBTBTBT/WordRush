@@ -13,7 +13,7 @@ class HomeCardTrimTest {
         assertEquals(30f, HomeCardSpec.ROW_ICON)
         assertEquals(18f, HomeCardSpec.NAME)
         assertEquals(13f, HomeCardSpec.DESC)
-        assertEquals(18f, HomeCardSpec.BADGE)
+        assertEquals(22f, HomeCardSpec.BADGE)
         // The card hugs the rows: band + top pad + name line + gap + icon row + bottom pad.
         val content = 21f + HomeCardSpec.DESC_GAP + HomeCardSpec.ROW_ICON
         assertTrue(CardTrimGeometry.BAND + HomeCardSpec.PAD_TOP + content + HomeCardSpec.PAD_BOTTOM <= HomeCardSpec.HEIGHT + 1f)
@@ -25,7 +25,7 @@ class HomeCardTrimTest {
         assertEquals(16.5f, HomeCardSpec.uniformNameSize(listOf(60f, 85f), 80f))   // 18 × 80/85 = 16.9 → 16.5
         assertEquals(13f, HomeCardSpec.uniformNameSize(listOf(60f, 200f), 80f))     // the floor
         assertEquals(18f, HomeCardSpec.uniformNameSize(emptyList(), 80f))
-        assertEquals(170f - 20f, HomeCardSpec.nameSlot(350f))
+        assertEquals(170f - 20f - 4f - 22f, HomeCardSpec.nameSlot(350f))
     }
 
     @Test fun longResultStaysOneLine() {

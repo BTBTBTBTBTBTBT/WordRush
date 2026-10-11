@@ -52,7 +52,7 @@ import com.wordocious.app.ui.tintedPill
 private data class PadLook(val lip: Color, val faceTop: Color, val faceBottom: Color, val ink: Color)
 
 private val PAD_PLAIN = PadLook(Color(0xFFCDB9F0), Color(0xF2FFFFFF), Color(0xE6FFFFFF), Color(0xFF3B1A78))
-private val PAD_PLAIN_DARK = PadLook(Color(0xFF4A3B6E), Color(0xFF3A2D5C), Color(0xFF33284F), Color(0xFFF1EAFF))
+private val PAD_PLAIN_DARK = PadLook(Color(0xFF4A3B6E), Color(0xFF3A2D5C), Color(0xFF33284F), Color(0xFFF5F0FF))
 /** Notes mode: the face takes a soft lilac wash so the pad reads as "pencil". */
 private val PAD_NOTES = PadLook(Color(0xFFB79BEA), Color(0xFFF3ECFF), Color(0xFFE9DDFF), Color(0xFF5B21B6))
 private val PAD_NOTES_DARK = PadLook(Color(0xFF5B4790), Color(0xFF45366E), Color(0xFF3D2F62), Color(0xFFE9DDFF))

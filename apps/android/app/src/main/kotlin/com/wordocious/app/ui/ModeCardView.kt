@@ -62,8 +62,10 @@ internal object HomeCardSpec {
     const val DESC = 13f
     const val PAD_X = 10f
     const val GAP = 10f
-    /** Today's W / L badge on the icon's top-trailing corner. */
-    const val BADGE = 18f
+    /** Today's W / L badge at the end of the name's line (founder 10-10: back on the title row). */
+    const val BADGE = 22f
+    /** Gap between the name and the badge slot. */
+    const val BADGE_GAP = 4f
     /** The bubble lettering runs wider than the plain-font measure (rim + tracking) — the shared size budgets for it (iOS parity). */
     const val BUBBLE_WIDTH = 1.12f
     /** BJ18: the grid-wide name size never drops below this; a name still wider than its slot at the floor shrinks on its own card. */
@@ -74,11 +76,14 @@ internal object HomeCardSpec {
     /** A card's subtitle stays ONE line: a long result takes the short form (web compactCardLine). */
     const val LINE_MAX = 16
 
-    /** The name's slot in a grid card: the card's full width less its insets (founder 10-10). */
+    /** The name's slot in a grid card: the card's full width less its insets and the W / L badge at the row's end (founder 10-10). */
     fun nameSlot(gridWidth: Float, columns: Int = 2): Float {
         val card = (gridWidth - GAP * maxOf(0, columns - 1)) / maxOf(1, columns)
-        return card - 2 * PAD_X
+        return card - 2 * PAD_X - BADGE_GAP - BADGE
     }
+
+    /** Name letter-spacing (sp), iOS tracking 0.4. */
+    const val NAME_TRACKING = 0.4f
 
     /**
      * FINISH_SPEC BJ18: ONE name size for a pair of cards — the largest (≤ [NAME], ≥ [NAME_UNIFORM_MIN], 0.5 steps) at which
@@ -142,12 +147,12 @@ internal fun CardNameSizeScope(titles: List<String>, columns: Int = 2, content: 
         val base = androidx.compose.material3.LocalTextStyle.current
         val slot = HomeCardSpec.nameSlot(maxWidth.value, columns)
         val sizes = androidx.compose.runtime.remember(titles, slot, capped, base, columns) {
-            val style = base.copy(fontSize = HomeCardSpec.NAME.sp, fontWeight = FontWeight.Black)
+            val style = base.copy(fontSize = HomeCardSpec.NAME.sp, fontWeight = FontWeight.Black, letterSpacing = HomeCardSpec.NAME_TRACKING.sp)
             val out = HashMap<String, Float>()
             titles.chunked(columns).forEach { row ->
                 // Widths in dp so they compare with the dp slot.
                 val widths = row.map {
-                    with(capped) { measurer.measure(it, style, maxLines = 1, softWrap = false, density = capped).size.width.toDp().value } * HomeCardSpec.BUBBLE_WIDTH
+                    with(capped) { measurer.measure(it.uppercase(), style, maxLines = 1, softWrap = false, density = capped).size.width.toDp().value } * HomeCardSpec.BUBBLE_WIDTH
                 }
                 val size = HomeCardSpec.uniformNameSize(widths, slot)
                 row.forEach { out[it] = size }
@@ -332,8 +337,8 @@ internal fun ModeCardView(
     ) {
         Column {
             CardTrim(if (isLocked) Color(0xFFD1D5DB) else card.accent, locked = isLocked)
-            // Founder 10-10 ("make the main titles a bit taller and more readable"): the name spans the card's full width
-            // on top (ONE size per grid row, LocalCardNameSizes); the icon (today's W / L on its corner) leads the subtitle
+            // Founder 10-10: the name in clean capitals across the card's top line (ONE size per grid row, LocalCardNameSizes)
+            // with today's W / L badge back at the row's end (slot reserved so names line up); the icon leads the subtitle
             // line under it. The card hugs it (80 dp with the trim).
             Column(
                 Modifier.fillMaxWidth().heightIn(min = MODE_CARD_MIN_HEIGHT - MODE_CARD_BAND)
@@ -341,15 +346,23 @@ internal fun ModeCardView(
                 verticalArrangement = Arrangement.spacedBy(HomeCardSpec.DESC_GAP.dp),
             ) {
                 // One line, shrink-to-fit (0.75), never wraps. BJ18: the row's ONE name size; FitText shrinks this card only
-                // as a last resort (a name still wider than the card at the uniform floor).
-                FitText(
-                    card.title, fontSize = (LocalCardNameSizes.current[card.title] ?: HomeCardSpec.NAME).sp, fontWeight = FontWeight.Black,
-                    color = if (isLocked) WTheme.textMuted else (WTheme.season?.onCard(card.accent) ?: card.accent), minScale = 0.75f,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 21.dp),
-                )
+                // as a last resort (a name still wider than its slot at the uniform floor). Plain capitals in the accent
+                // lifted for dark surfaces (iOS bubbleInk), no outline.
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(HomeCardSpec.BADGE_GAP.dp)) {
+                    FitText(
+                        card.title.uppercase(), fontSize = (LocalCardNameSizes.current[card.title] ?: HomeCardSpec.NAME).sp, fontWeight = FontWeight.Black,
+                        color = if (isLocked) WTheme.textMuted else SurfaceInk.lift(WTheme.season?.onCard(card.accent) ?: card.accent),
+                        minScale = 0.75f, letterSpacing = HomeCardSpec.NAME_TRACKING.sp,
+                        modifier = Modifier.weight(1f).heightIn(min = 21.dp),
+                    )
+                    Box(Modifier.size(HomeCardSpec.BADGE.dp), contentAlignment = Alignment.Center) {
+                        if (isDone && !unlimited) {
+                            ResultBadge(won = doneWon, size = HomeCardSpec.BADGE.dp, modifier = Modifier.requiredSize(HomeCardSpec.BADGE.dp))
+                        }
+                    }
+                }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // The glossy 3D game icon (ART_SPEC §3) on its own; the old glyph only as a fallback. Today's W / L sits on
-                    // its top-trailing corner.
+                    // The glossy 3D game icon (ART_SPEC §3) on its own; the old glyph only as a fallback.
                     Box(Modifier.size(MODE_CARD_ICON)) {
                         val art = gameArtRes(card.id)
                         if (art != null) {
@@ -361,12 +374,6 @@ internal fun ModeCardView(
                             Box(Modifier.size(MODE_CARD_ICON), contentAlignment = Alignment.Center) {
                                 ModeGlyph(card, card.accent, box = 26.dp)
                             }
-                        }
-                        if (isDone && !unlimited) {
-                            ResultBadge(
-                                won = doneWon, size = HomeCardSpec.BADGE.dp,
-                                modifier = Modifier.align(Alignment.TopEnd).offset(x = 7.dp, y = (-6).dp).requiredSize(HomeCardSpec.BADGE.dp),
-                            )
                         }
                     }
                     // Completed daily shows guesses · time; else the mode description (web parity).

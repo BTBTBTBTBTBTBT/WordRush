@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -60,11 +61,26 @@ object StarsweepPalette {
     )
     private const val NIGHT = 0xFF1E1730.toInt()
 
-    /** Region [g]'s pastel; dark mode = a deeper muted version over the night surface. */
-    fun pastel(g: Int, dark: Boolean): Color {
-        val base = PASTELS[Math.floorMod(g, PASTELS.size)]
-        return if (dark) Color(TintMath.over(base.toArgb(), 0.32f, NIGHT)) else base
-    }
+    /**
+     * Founder 10-10 ("Starsweep board is too dark ... too faded, needs to pop"): on a dark board a region carries much more of
+     * its own color over the night surface — face top 78%, face bottom 64%, lip 45% (they sat at ~32-40%). iOS StarsweepTone.
+     */
+    const val DARK_TOP = 0.78f
+    const val DARK_BOTTOM = 0.64f
+    const val DARK_LIP = 0.45f
+
+    private fun darkMix(g: Int, share: Float): Color =
+        Color(TintMath.over(PASTELS[Math.floorMod(g, PASTELS.size)].toArgb(), share, NIGHT))
+
+    /** Region [g]'s pastel (the face's bottom color); dark mode = the region's color at [DARK_BOTTOM] over the night surface. */
+    fun pastel(g: Int, dark: Boolean): Color =
+        if (dark) darkMix(g, DARK_BOTTOM) else PASTELS[Math.floorMod(g, PASTELS.size)]
+
+    /** Dark boards: the face's top color. */
+    fun darkFaceTop(g: Int): Color = darkMix(g, DARK_TOP)
+
+    /** Dark boards: the bottom lip. */
+    fun darkLip(g: Int): Color = darkMix(g, DARK_LIP)
 
     /** The tile's top (lighter) face color. */
     fun faceTop(c: Color): Color = Color(TintMath.over(0xFFFFFFFF.toInt(), 0.38f, c.toArgb()))
@@ -160,8 +176,9 @@ private fun StarsweepCell(
     val hinted = state.hintMask[i] == '1'
     val missing = revealSolution && mark != '*' && (state.solution[r] - '0') == c
     val pastel = StarsweepPalette.pastel(g, WTheme.isDark)
-    val top = StarsweepPalette.faceTop(pastel)
-    val lip = StarsweepPalette.lip(pastel)
+    val dark = WTheme.isDark
+    val top = if (dark) StarsweepPalette.darkFaceTop(g) else StarsweepPalette.faceTop(pastel)
+    val lip = if (dark) StarsweepPalette.darkLip(g) else StarsweepPalette.lip(pastel)
     val still = WTheme.reducedMotion
 
     // B3 motion, keyed on the mark's change: pop on placing, flip + glow on playing.
@@ -264,6 +281,19 @@ private fun StarsweepCell(
     ) {
         val art = starsweepArt(mark, wrong, missing)
         if (art != null) {
+            // Founder 10-10: the navy "placed" star vanished on the dark board; a soft FDE68A halo lifts it off the tile.
+            if (dark && mark == 'o') {
+                Image(
+                    painterResource(art), contentDescription = null,
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFFFDE68A), androidx.compose.ui.graphics.BlendMode.SrcIn),
+                    modifier = Modifier.fillMaxSize(0.78f).padding(bottom = 1.dp)
+                        .graphicsLayer {
+                            val s = pop.value * 1.16f
+                            scaleX = s; scaleY = s; alpha = 0.85f
+                        }
+                        .then(Modifier.blur(2.dp)),
+                )
+            }
             Image(
                 painterResource(art), contentDescription = null,
                 modifier = Modifier.fillMaxSize(0.78f).padding(bottom = 1.dp)

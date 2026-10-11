@@ -36,4 +36,12 @@
         <item name="android:shadowRadius">0.01</item>
         <item name="android:gravity">center</item>
     </style>
+
+    <!-- The small widget's stacked streak numbers (under the flame / trophy), in the widget's number ink. -->
+    <style name="WidgetStackedNumber" parent="WidgetCaps">
+        <item name="android:textColor">@color/widget_ink</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:gravity">center</item>
+    </style>
 </resources>

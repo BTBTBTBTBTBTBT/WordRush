@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -520,3 +522,33 @@ fun FriendsQuietText(
         Text(title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = tint, maxLines = 1, softWrap = false)
     }
 }
+
+/**
+ * A round icon button drawn as a gold OUTLINE (founder 10-10, Muddle: "the clue and hint buttons are dark and hard to read
+ * ... the same color as the gold tiles ... outlines instead of fills"): a 2 dp gold ring, a faint gold wash, the clay icon in
+ * gold. [size] is the visible circle (34 dp); the hit area is the circle itself (callers sit it in their own touch box).
+ * iOS GoldOutlineIconButton.
+ */
+@Composable
+fun GoldOutlineIconButton(
+    icon: FamIcon?,
+    fallback: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 34.dp,
+) {
+    RoundIconButton(onClick, contentDescription, modifier.requiredSize(size), tap = size, compact = true) {
+        Box(
+            Modifier.size(size).clip(CircleShape).background(GOLD_OUTLINE.copy(alpha = 0.10f))
+                .border(2.dp, GOLD_OUTLINE, CircleShape),
+            Alignment.Center,
+        ) {
+            if (icon != null) FamIconImage(icon, GOLD_OUTLINE, size * 0.5f)
+            else Icon(fallback, contentDescription = null, tint = GOLD_OUTLINE, modifier = Modifier.size(size * 0.5f))
+        }
+    }
+}
+
+/** The gold of the Muddle letter tiles' ring (iOS GoldOutlineIconButton.gold). */
+val GOLD_OUTLINE = Color(0xFFF5B82E)

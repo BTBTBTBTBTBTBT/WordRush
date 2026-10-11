@@ -457,6 +457,16 @@ class DailyWidgetProvider : AppWidgetProvider() {
             applyRing(context, views, snap, 62f)
             applyStreak(views, snap)
             applyChrome(context, views, snap, WordmarkSize.SMALL)
+            // The stacked streak numbers wear the widget's number ink (the season / theme skin's ink over a wall).
+            val numberInk = when {
+                halloweenOn(snap) -> 0xFFE9DDFF.toInt()
+                snap.theme?.let { themeBg(it.id) } != null -> hex(snap.theme!!.ink)
+                else -> null
+            }
+            for (id in intArrayOf(R.id.w_streak, R.id.w_trophy_num)) {
+                if (numberInk != null) views.setTextColor(id, numberInk)
+                else setTextColorRes(context, views, id, 0xFF3B1A78.toInt(), 0xFFE9DDFF.toInt(), R.color.widget_ink)
+            }
             // BI13b: the day's cast member in the mascot corner (sleepy R before the first
             // daily, a cheer on a sweep, S with a trophy on a milestone). BI13c: on a big day the
             // player's own look (cutout, or the framed photo whole) stands there instead.

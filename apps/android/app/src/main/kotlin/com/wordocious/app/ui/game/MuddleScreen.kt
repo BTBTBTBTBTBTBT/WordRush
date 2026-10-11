@@ -1119,24 +1119,19 @@ private fun FinalRow(
 }
 
 /**
- * I4 the in-row hint control (Letter = lightbulb, Solve = eye): a small round candy
- * button (A8) — amber bulb, purple eye — icon only, the label in the content
- * description. It sits in a 40 × hint-row touch box.
+ * I4 the in-row hint control (Letter = lightbulb, Solve = eye): a 34 dp gold OUTLINE circle
+ * (GoldOutlineIconButton) — icon only, the label in the content description. It sits in a
+ * 40 × hint-row touch box.
  */
 @Composable
 private fun HintCircle(icon: ImageVector, description: String, onClick: () -> Unit) {
-    val d = LocalMuddleSizes.current.hintCircle
+    // Founder 10-10: gold outlines (the gold letter tiles' color), not candy fills; 34 dp, the 2 dp ring may overhang the
+    // slim hint row by a dp or two.
     Box(Modifier.size(width = 40.dp, height = LocalMuddleSizes.current.hintRow), contentAlignment = Alignment.Center) {
-        com.wordocious.app.ui.CandyRoundButton(
-            contentDescription = description, onClick = onClick, diameter = d,
-            color = if (icon == Icons.Filled.Visibility) com.wordocious.app.ui.CandyColor.PURPLE else com.wordocious.app.ui.CandyColor.AMBER,
-            modifier = Modifier.padding(bottom = 2.dp),
-        ) {
-            // The helper circle: the family art when the icon has one, else the vector in the deep tint.
-            val art = com.wordocious.app.ui.FamIcon.of(icon)
-            if (art != null) com.wordocious.app.ui.FamIconImage(art, androidx.compose.material3.LocalContentColor.current, d * 0.56f)
-            else Icon(icon, contentDescription = null, tint = androidx.compose.material3.LocalContentColor.current, modifier = Modifier.size(d * 0.5f))
-        }
+        com.wordocious.app.ui.GoldOutlineIconButton(
+            icon = com.wordocious.app.ui.FamIcon.of(icon), fallback = icon,
+            contentDescription = description, onClick = onClick, size = 34.dp,
+        )
     }
 }
 
