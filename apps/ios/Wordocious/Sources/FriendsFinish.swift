@@ -354,59 +354,6 @@ private extension Color {
     var liftedOnDark: Color { FriendsInk.dark ? Color(hex: 0xF9A8D4) : self }
 }
 
-/// A row's one action as a quiet round icon: a soft wash in its color + the 3D art (44 pt hit area, 36 pt face).
-struct FriendsQuietAction: View {
-    enum Glyph { case art(String), clay(String) }
-    let glyph: Glyph
-    let tint: Color
-    let label: String
-    var disabled = false
-    let action: () -> Void
-    var body: some View {
-        Button(action: action) {
-            ZStack {
-                Circle().fill(tint.opacity(FriendsInk.dark ? 0.24 : 0.14))
-                switch glyph {
-                case .art(let name):
-                    Image(name).resizable().interpolation(.high).scaledToFit().frame(width: 21, height: 21)
-                case .clay(let name):
-                    if let ui = FamilyArt.shared.image("art-fam-ic-\(name)") {
-                        Image(uiImage: ui).resizable().interpolation(.high).scaledToFit().frame(width: 15, height: 15)
-                            .colorMultiply(tint)
-                    }
-                }
-            }
-            .frame(width: 36, height: 36)
-        }
-        .buttonStyle(RoundIconButtonStyle())
-        .disabled(disabled)
-        .opacity(disabled ? 0.5 : 1)
-        .accessibilityLabel(label)
-    }
-}
-
-/// A secondary action as quiet text with its small 3D icon (Nudge all, Add) — no candy fill.
-struct FriendsQuietText: View {
-    let title: String
-    let art: String
-    let tint: Color
-    let label: String
-    let action: () -> Void
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 5) {
-                Image(art).resizable().interpolation(.high).scaledToFit().frame(width: 16, height: 16)
-                Text(title).font(Brand.font(13, .heavy)).foregroundStyle(tint)
-            }
-            .padding(.horizontal, 10).frame(minHeight: 34)
-            .background(Capsule().fill(tint.opacity(FriendsInk.dark ? 0.16 : 0.10)))
-            .contentShape(Capsule())
-        }
-        .buttonStyle(.squish)
-        .accessibilityLabel(label)
-    }
-}
-
 enum FriendsQuietInk {
     static var gold: Color { FriendsInk.dark ? Color(hex: 0xFCD34D) : Color(hex: 0xB45309) }
     static var pink: Color { FriendsInk.dark ? Color(hex: 0xF9A8D4) : Color(hex: 0xBE185D) }

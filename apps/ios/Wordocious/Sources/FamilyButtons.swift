@@ -519,3 +519,65 @@ struct FamilyShowcaseBoard: View {
     }
 }
 #endif
+
+// MARK: - Quiet Friends actions (founder 10-10: the Friends page's candy pills were "loud and obnoxious")
+
+/// A row's one action as a quiet round icon: a soft wash in its color + the 3D art (44 pt hit area, 36 pt face).
+struct FriendsQuietAction: View {
+    enum Glyph { case art(String), clay(String) }
+    let glyph: Glyph
+    let tint: Color
+    let label: String
+    var disabled = false
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                Circle().fill(tint.opacity(FriendsInk.dark ? 0.24 : 0.14))
+                switch glyph {
+                case .art(let name):
+                    Image(name).resizable().interpolation(.high).scaledToFit().frame(width: 21, height: 21)
+                case .clay(let name):
+                    if let ui = FamilyArt.shared.image("art-fam-ic-\(name)") {
+                        Image(uiImage: ui).resizable().interpolation(.high).scaledToFit().frame(width: 15, height: 15)
+                            .colorMultiply(tint)
+                    }
+                }
+            }
+            .frame(width: 36, height: 36)
+        }
+        .buttonStyle(RoundIconButtonStyle())
+        .disabled(disabled)
+        .opacity(disabled ? 0.5 : 1)
+        .accessibilityLabel(label)
+    }
+}
+
+/// A secondary action as quiet text with its small 3D icon (Nudge all, Add) — no candy fill.
+struct FriendsQuietText: View {
+    let title: String
+    var art: String? = nil
+    /// An SF Symbol in place of the 3D art (Rematch's arrow).
+    var symbol: String? = nil
+    let tint: Color
+    let label: String
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                if let art {
+                    Image(art).resizable().interpolation(.high).scaledToFit().frame(width: 16, height: 16)
+                } else if let symbol {
+                    Image(systemName: symbol).font(.system(size: 12, weight: .black)).foregroundStyle(tint)
+                }
+                Text(title).font(Brand.font(13, .heavy)).foregroundStyle(tint)
+            }
+            .padding(.horizontal, 10).frame(minHeight: 34)
+            .background(Capsule().fill(tint.opacity(FriendsInk.dark ? 0.16 : 0.10)))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.squish)
+        .accessibilityLabel(label)
+    }
+}
+

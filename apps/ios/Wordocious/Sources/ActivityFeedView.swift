@@ -221,7 +221,8 @@ struct ActivityFeedView: View {
     /// pocket game (the Rematch reaction's quick play).
     @ViewBuilder private func action(_ e: FriendsService.FeedEvent) -> some View {
         if e.type == "game", e.friendlyKind != nil, onRematch != nil {
-            Button {
+            // Founder 10-10: a quiet text action (family FriendsQuietText), not a candy pill.
+            FriendsQuietText(title: "Rematch", symbol: "arrow.counterclockwise", tint: FriendsQuietInk.violet, label: "Rematch") {
                 let r = reactions[e.id] ?? .init(counts: [:], mine: [])
                 if r.mine.contains("rematch") {
                     // Already reacted: just open quick play again.
@@ -230,19 +231,7 @@ struct ActivityFeedView: View {
                 } else {
                     toggle(e, "rematch")
                 }
-            } label: {
-                // Founder 10-10: a quiet text action, not a candy pill.
-                HStack(spacing: 5) {
-                    Image(systemName: "arrow.counterclockwise").font(.system(size: 12, weight: .black))
-                    Text("Rematch").font(Brand.font(13, .heavy))
-                }
-                .foregroundStyle(FriendsQuietInk.violet)
-                .padding(.horizontal, 10).frame(minHeight: 34)
-                .background(Capsule().fill(FriendsQuietInk.violet.opacity(FriendsInk.dark ? 0.16 : 0.10)))
-                .contentShape(Capsule())
             }
-            .buttonStyle(.squish)
-            .accessibilityLabel("Rematch")
         }
         // FINISH_SPEC §AS5: no "View" button — tapping the row (or the avatar) opens
         // the player's profile, so the rows stay short.
