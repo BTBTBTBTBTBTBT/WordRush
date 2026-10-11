@@ -125,10 +125,7 @@ private fun FriendCardView(
                 }
             }
             Column(Modifier.weight(1f).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(
-                    card.name, fontSize = 16.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
+                FriendsName(card.name, size = 16f)
                 if (card.headline.isNotEmpty()) {
                     Text(card.headline, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = PocketNight.pinkInk(), maxLines = 1)
                 } else if (card.theirTurn.isEmpty()) {

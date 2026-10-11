@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MilitaryTech
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -186,7 +187,7 @@ fun ActivityFeed(
         Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             com.wordocious.app.ui.friends.FriendsLabel("MOMENTS")
             Spacer(Modifier.weight(1f))
-            com.wordocious.app.ui.friends.FriendsLabel("LAST 7 DAYS · DOUBLE-TAP OR HOLD TO REACT")
+            com.wordocious.app.ui.friends.FriendsCaption("Last 7 days · hold to react")
         }
         val list = events
         when {
@@ -336,7 +337,8 @@ private fun MomentRow(
         Column(
             Modifier.fillMaxWidth()
                 .pressSquish(interaction)
-                .friendsCard(16.dp, accent = accent, bar = accent, barHeight = 5.dp)
+                // Founder 10-10 ("the whole page is very busy"): no colored top bar per moment; the art keeps the color.
+                .friendsCard(16.dp, accent = accent)
                 .combinedClickable(
                     interactionSource = interaction,
                     indication = null,
@@ -377,7 +379,7 @@ private fun MomentRow(
                             when (score) {
                                 null -> {}
                                 "by resignation" -> Text("by resignation", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = INK_MUTED, fontFamily = Nunito)
-                                else -> Text(score, style = softNumberStyle(14.sp, FinishInk.softNumber), maxLines = 1)
+                                else -> Text(score, style = softNumberStyle(14.sp, com.wordocious.app.ui.vs.VsInk.softNumber), maxLines = 1)
                             }
                         }
                     } else {
@@ -415,12 +417,11 @@ private fun MomentRow(
                     }
                     Spacer(Modifier.weight(1f))
                     if (action != null) {
-                        CandyButton(
-                            action.first, onClick = action.second,
-                            color = if (action.first == "Rematch") CandyColor.PINK else CandyColor.PURPLE, size = CandySize.SMALL,
-                            icon = if (action.first == "Rematch") CandyIcon.PLAY else CandyIcon.EYE,
-                            contentDescription = if (action.first == "Rematch") "Rematch ${e.gameTitle ?: ""}" else "View ${e.username}'s profile",
-                        )
+                        // Founder 10-10: a quiet text action, not a candy pill.
+                        val violet = com.wordocious.app.ui.friends.FriendsQuietInk.violet
+                        FriendsQuietText(
+                            action.first, violet, "Rematch ${e.gameTitle ?: ""}".trim(), onClick = action.second,
+                        ) { Icon(Icons.Filled.Replay, null, tint = violet, modifier = Modifier.size(14.dp)) }
                     }
                 }
             }
@@ -444,6 +445,7 @@ private fun MomentRow(
 }
 
 /** Fixed-light feed inks (the Friends tab). */
-private val INK = Color(0xFF2A1650)
-private val INK_MUTED = Color(0xFF6F5F8F)
+/** The feed inks follow the Friends page (the night twin on a dark season card, so a moment reads there too). */
+private val INK: Color get() = com.wordocious.app.ui.friends.FriendsPink.heading
+private val INK_MUTED: Color get() = com.wordocious.app.ui.friends.FriendsPink.muted
 private val PINK = Color(0xFFEC4899)

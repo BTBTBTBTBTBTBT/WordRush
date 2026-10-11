@@ -109,7 +109,7 @@ fun ReactionCountChip(key: String, count: Int, mine: Boolean, accent: Color, ink
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         ReactionGlyph(key, 16.dp, ink, 11.sp)
-        Text("$count", style = softNumberStyle(12.sp, FinishInk.softNumber), maxLines = 1)
+        Text("$count", style = softNumberStyle(12.sp, com.wordocious.app.ui.vs.VsInk.softNumber), maxLines = 1)
     }
 }
 
@@ -193,7 +193,7 @@ fun ReactionTray(
                     horizontalArrangement = Arrangement.spacedBy(3.dp),
                 ) {
                     ReactionGlyph(key, 26.dp, ink, 13.sp)
-                    if (n > 0) Text("$n", style = softNumberStyle(12.sp, FinishInk.softNumber), maxLines = 1)
+                    if (n > 0) Text("$n", style = softNumberStyle(12.sp, com.wordocious.app.ui.vs.VsInk.softNumber), maxLines = 1)
                 }
             }
         }

@@ -21,6 +21,11 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -475,3 +480,43 @@ fun FamCloseGlyph(size: Dp = 22.dp) {
 @Composable
 fun RoundIconButton(icon: FamChrome, contentDescription: String, onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 28.dp) =
     RoundIconButton(icon.res, contentDescription, onClick, modifier, size)
+
+// ── Calm Friends page (founder 10-10; iOS FriendsQuietAction / FriendsQuietText) ──
+
+/** A row's one action as a quiet round icon: a soft wash of its color + the 3D art (44 dp hit area, 36 dp face). */
+@Composable
+fun FriendsQuietAction(
+    tint: Color,
+    label: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+    art: @Composable () -> Unit,
+) {
+    RoundIconButton(onClick, label, modifier.alpha(if (enabled) 1f else 0.5f), tap = 44.dp, enabled = enabled) {
+        Box(Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = if (com.wordocious.app.ui.friends.FriendsPink.dark) 0.24f else 0.14f)), Alignment.Center) { art() }
+    }
+}
+
+/** A secondary action as quiet text with its small 3D icon (Nudge all, Add, Rematch) on a soft capsule wash — no candy fill. */
+@Composable
+fun FriendsQuietText(
+    title: String,
+    tint: Color,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+) {
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
+    Row(
+        modifier.squishClickable(label = label, onClick = onClick)
+            .heightIn(min = 34.dp).clip(shape)
+            .background(tint.copy(alpha = if (com.wordocious.app.ui.friends.FriendsPink.dark) 0.16f else 0.10f))
+            .padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        icon()
+        Text(title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = tint, maxLines = 1, softWrap = false)
+    }
+}

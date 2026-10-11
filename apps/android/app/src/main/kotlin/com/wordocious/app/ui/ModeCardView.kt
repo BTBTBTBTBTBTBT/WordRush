@@ -44,23 +44,52 @@ import com.wordocious.app.ui.theme.WTheme
  * HomeCardSpec / CardTrimGeometry (keep the three in step).
  */
 internal object HomeCardSpec {
-    /** Founder 10-03 ("align at the tops"): band 9 + 7 + max(icon 40, 21 + 4 + 16) + 9. */
-    const val HEIGHT = 66f
+    /**
+     * Founder 10-10 ("make the main titles a bit taller and more readable … Crosswordocious I can barely read"): the name
+     * spans the card's full width on the top line; the icon (with today's W / L on its corner) leads the subtitle line
+     * under it — band 9 + 7 + name 21 + 4 + row icon 30 + 9 ≈ 80. (The old 66 dp row squeezed every name to the 13 sp
+     * floor and the long ones to ~7 sp.)
+     */
+    const val HEIGHT = 80f
+    /** The icon on the subtitle line. */
+    const val ROW_ICON = 30f
     const val RADIUS = 16f
     const val ICON = 40f
     const val PAD_TOP = 7f
     const val PAD_BOTTOM = 9f
     const val DESC_GAP = 4f
-    const val NAME = 17f
+    const val NAME = 18f
     const val DESC = 13f
     const val PAD_X = 10f
     const val GAP = 10f
-    const val BADGE = 22f
+    /** Today's W / L badge on the icon's top-trailing corner. */
+    const val BADGE = 18f
+    /** The bubble lettering runs wider than the plain-font measure (rim + tracking) — the shared size budgets for it (iOS parity). */
+    const val BUBBLE_WIDTH = 1.12f
+    /** BJ18: the grid-wide name size never drops below this; a name still wider than its slot at the floor shrinks on its own card. */
+    const val NAME_UNIFORM_MIN = 13f
     /** DAILIES / PUZZLES title art over the compact grid (~25% smaller). */
     const val SECTION_TITLE_SCALE = 0.75f
 
     /** A card's subtitle stays ONE line: a long result takes the short form (web compactCardLine). */
     const val LINE_MAX = 16
+
+    /** The name's slot in a grid card: the card's full width less its insets (founder 10-10). */
+    fun nameSlot(gridWidth: Float, columns: Int = 2): Float {
+        val card = (gridWidth - GAP * maxOf(0, columns - 1)) / maxOf(1, columns)
+        return card - 2 * PAD_X
+    }
+
+    /**
+     * FINISH_SPEC BJ18: ONE name size for a pair of cards — the largest (≤ [NAME], ≥ [NAME_UNIFORM_MIN], 0.5 steps) at which
+     * the widest name fits [slot]. [widths] are the names measured at [NAME] (same unit as [slot]). iOS HomeCardSpec.uniformNameSize.
+     */
+    fun uniformNameSize(widths: List<Float>, slot: Float): Float {
+        val widest = widths.maxOrNull() ?: return NAME
+        if (slot <= 0f || widest <= 0f) return NAME
+        val fit = kotlin.math.floor(NAME * minOf(1f, slot / widest) * 2f) / 2f
+        return maxOf(NAME_UNIFORM_MIN, minOf(NAME, fit))
+    }
 
     fun compactLine(line: String, max: Int = LINE_MAX): String {
         if (line.length <= max) return line
@@ -92,20 +121,17 @@ internal object CardTrimGeometry {
 
 private val MODE_CARD_CORNER = HomeCardSpec.RADIUS.dp
 private val MODE_CARD_BAND = CardTrimGeometry.BAND.dp
-private val MODE_CARD_ICON = HomeCardSpec.ICON.dp
+private val MODE_CARD_ICON = HomeCardSpec.ROW_ICON.dp
 
-/** BJ18: the Home grid's shared card-name size (sp); a lone card keeps [HomeCardSpec.NAME]. */
-internal val LocalCardNameSize = androidx.compose.runtime.compositionLocalOf { HomeCardSpec.NAME }
-
-/** BJ18: the uniform name size never goes below this share of [HomeCardSpec.NAME] (13 sp). */
-internal const val CARD_NAME_UNIFORM_MIN = 13f / 17f
+/** BJ18: each Home card's name size by title — ONE size per grid ROW (founder 10-10); a lone card keeps [HomeCardSpec.NAME]. */
+internal val LocalCardNameSizes = androidx.compose.runtime.compositionLocalOf<Map<String, Float>> { emptyMap() }
 
 /**
- * FINISH_SPEC BJ18 (founder 10-03: QuadWord's name rendered smaller than Classic's): every card in a
- * Home grid draws its name at ONE size — the largest (≤ 17 sp, ≥ 13 sp, 0.5 sp steps) at which the
- * widest name fits its slot (card − insets − icon − gaps − the reserved badge). Measured with the
- * card's own capped font scale; a name still too wide at the floor shrinks on its own card (FitText).
- * iOS: HomeCardNameSize, web: FitName's shared size.
+ * FINISH_SPEC BJ18 (founder 10-03: QuadWord's name rendered smaller than Classic's; founder 10-10: Crosswordocious set every
+ * puzzle's name to ~12 sp): every PAIR of cards in a Home grid draws its names at ONE size — the largest (≤ 18 sp, ≥ 13 sp,
+ * 0.5 sp steps) at which the wider name of the pair fits the card's full width less its insets (× 1.12 for the lettering).
+ * Measured with the card's own capped font scale; a name still too wide at the floor shrinks on its own card (FitText).
+ * iOS: HomeCardNameFit.rowSizes, web: FitName's shared size.
  */
 @androidx.compose.runtime.Composable
 internal fun CardNameSizeScope(titles: List<String>, columns: Int = 2, content: @androidx.compose.runtime.Composable () -> Unit) {
@@ -114,18 +140,21 @@ internal fun CardNameSizeScope(titles: List<String>, columns: Int = 2, content: 
         val d = androidx.compose.ui.platform.LocalDensity.current
         val capped = androidx.compose.ui.unit.Density(d.density, d.fontScale.coerceAtMost(1.3f))
         val base = androidx.compose.material3.LocalTextStyle.current
-        val cardW = (maxWidth - (HomeCardSpec.GAP * (columns - 1)).dp) / columns
-        val slot = cardW - (2 * HomeCardSpec.PAD_X + HomeCardSpec.ICON + 8f + 4f + HomeCardSpec.BADGE).dp
-        val size = androidx.compose.runtime.remember(titles, slot, capped, base) {
-            val slotPx = with(capped) { slot.toPx() }
+        val slot = HomeCardSpec.nameSlot(maxWidth.value, columns)
+        val sizes = androidx.compose.runtime.remember(titles, slot, capped, base, columns) {
             val style = base.copy(fontSize = HomeCardSpec.NAME.sp, fontWeight = FontWeight.Black)
-            val widest = titles.maxOfOrNull {
-                measurer.measure(it, style, maxLines = 1, softWrap = false, density = capped).size.width
-            } ?: 0
-            val scale = if (widest <= 0) 1f else (slotPx / widest).coerceIn(CARD_NAME_UNIFORM_MIN, 1f)
-            kotlin.math.floor(HomeCardSpec.NAME * scale * 2f) / 2f
+            val out = HashMap<String, Float>()
+            titles.chunked(columns).forEach { row ->
+                // Widths in dp so they compare with the dp slot.
+                val widths = row.map {
+                    with(capped) { measurer.measure(it, style, maxLines = 1, softWrap = false, density = capped).size.width.toDp().value } * HomeCardSpec.BUBBLE_WIDTH
+                }
+                val size = HomeCardSpec.uniformNameSize(widths, slot)
+                row.forEach { out[it] = size }
+            }
+            out
         }
-        androidx.compose.runtime.CompositionLocalProvider(LocalCardNameSize provides size) { content() }
+        androidx.compose.runtime.CompositionLocalProvider(LocalCardNameSizes provides sizes) { content() }
     }
 }
 private val MODE_CARD_MIN_HEIGHT = HomeCardSpec.HEIGHT.dp
@@ -303,43 +332,41 @@ internal fun ModeCardView(
     ) {
         Column {
             CardTrim(if (isLocked) Color(0xFFD1D5DB) else card.accent, locked = isLocked)
-            // Founder 10-03 ("align at the tops"): icon, name and badge share ONE top line; the
-            // subtitle sits 4 under the name, beside the icon. The card hugs it (66 dp with the trim).
-            Row(
+            // Founder 10-10 ("make the main titles a bit taller and more readable"): the name spans the card's full width
+            // on top (ONE size per grid row, LocalCardNameSizes); the icon (today's W / L on its corner) leads the subtitle
+            // line under it. The card hugs it (80 dp with the trim).
+            Column(
                 Modifier.fillMaxWidth().heightIn(min = MODE_CARD_MIN_HEIGHT - MODE_CARD_BAND)
                     .padding(start = HomeCardSpec.PAD_X.dp, end = HomeCardSpec.PAD_X.dp, top = HomeCardSpec.PAD_TOP.dp, bottom = HomeCardSpec.PAD_BOTTOM.dp),
-                verticalAlignment = Alignment.Top,
+                verticalArrangement = Arrangement.spacedBy(HomeCardSpec.DESC_GAP.dp),
             ) {
-                // The glossy 3D game icon (ART_SPEC §3) on its own; the old glyph only as a fallback.
-                val art = gameArtRes(card.id)
-                if (art != null) {
-                    androidx.compose.foundation.Image(
-                        androidx.compose.ui.res.painterResource(art), contentDescription = null,
-                        modifier = Modifier.size(MODE_CARD_ICON),
-                    )
-                } else {
-                    Box(Modifier.size(MODE_CARD_ICON), contentAlignment = Alignment.Center) {
-                        ModeGlyph(card, card.accent, box = 34.dp)
-                    }
-                }
-                Spacer(Modifier.width(8.dp))
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(HomeCardSpec.DESC_GAP.dp)) {
-                    // The name's cap height on the icon's top edge; the badge top-aligned at the row's end
-                    // (its slot always reserved so solved and unsolved names line up).
-                    Row(Modifier.offset(y = (-3).dp), verticalAlignment = Alignment.Top) {
-                        // One line, shrink-to-fit (Crosswordocious, ProperNoundle), never wraps.
-                        // BJ18: the grid's ONE name size (LocalCardNameSize); FitText shrinks this card only
-                        // as a last resort (a name still wider than its slot at the uniform floor).
-                        FitText(
-                            card.title, fontSize = LocalCardNameSize.current.sp, fontWeight = FontWeight.Black,
-                            color = if (isLocked) WTheme.textMuted else (WTheme.season?.onCard(card.accent) ?: card.accent), minScale = 0.6f, wrapAtMin = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Box(Modifier.padding(top = 2.dp).size(HomeCardSpec.BADGE.dp), contentAlignment = Alignment.TopCenter) {
-                            if (isDone && !unlimited) {
-                                ResultBadge(won = doneWon, size = HomeCardSpec.BADGE.dp, modifier = Modifier.requiredSize(HomeCardSpec.BADGE.dp))
+                // One line, shrink-to-fit (0.75), never wraps. BJ18: the row's ONE name size; FitText shrinks this card only
+                // as a last resort (a name still wider than the card at the uniform floor).
+                FitText(
+                    card.title, fontSize = (LocalCardNameSizes.current[card.title] ?: HomeCardSpec.NAME).sp, fontWeight = FontWeight.Black,
+                    color = if (isLocked) WTheme.textMuted else (WTheme.season?.onCard(card.accent) ?: card.accent), minScale = 0.75f,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 21.dp),
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // The glossy 3D game icon (ART_SPEC §3) on its own; the old glyph only as a fallback. Today's W / L sits on
+                    // its top-trailing corner.
+                    Box(Modifier.size(MODE_CARD_ICON)) {
+                        val art = gameArtRes(card.id)
+                        if (art != null) {
+                            androidx.compose.foundation.Image(
+                                androidx.compose.ui.res.painterResource(art), contentDescription = null,
+                                modifier = Modifier.size(MODE_CARD_ICON),
+                            )
+                        } else {
+                            Box(Modifier.size(MODE_CARD_ICON), contentAlignment = Alignment.Center) {
+                                ModeGlyph(card, card.accent, box = 26.dp)
                             }
+                        }
+                        if (isDone && !unlimited) {
+                            ResultBadge(
+                                won = doneWon, size = HomeCardSpec.BADGE.dp,
+                                modifier = Modifier.align(Alignment.TopEnd).offset(x = 7.dp, y = (-6).dp).requiredSize(HomeCardSpec.BADGE.dp),
+                            )
                         }
                     }
                     // Completed daily shows guesses · time; else the mode description (web parity).
@@ -353,7 +380,7 @@ internal fun ModeCardView(
                         } else if (vsDone) "Played today" else card.desc,
                         fontSize = HomeCardSpec.DESC.sp, fontWeight = FontWeight.Medium, color = WTheme.textMuted,
                         minScale = 0.7f, wrapAtMin = true,
-                        modifier = Modifier.offset(y = (-3).dp),
+                        modifier = Modifier.weight(1f),
                     )
                 }
                 // ART_SPEC §21.4: no trailing ">" chevron — the whole card is the tap target.

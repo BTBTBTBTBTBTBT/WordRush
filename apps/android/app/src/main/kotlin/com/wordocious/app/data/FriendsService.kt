@@ -415,8 +415,44 @@ object FriendsService {
         val reactions: Map<String, Reactions> = emptyMap(),
     )
 
+    /** DEBUG only (`--es dressDemo friends`): a canned moments feed so the Friends page can be checked offline. */
+    private var debugFeed: String? = null
+
+    /**
+     * DEBUG only (`--es dressDemo friends`): seed a believable friends payload + moments feed so the Friends page
+     * renders offline on an emulator (the real fetch fails and leaves the seeded cache on screen).
+     */
+    fun debugSeedDemo() {
+        if (!com.wordocious.app.BuildConfig.DEBUG) return
+        val now = java.time.Instant.now()
+        val day = localDay()
+        fun f(id: String, name: String, seen: Long?, activity: String?, played: Int, today: Int, week: Int, streak: Int, flawless: Int = 0, fs: Int = 0, since: String = "2026-06-01T00:00:00Z") =
+            """{"id":"$id","username":"$name","level":${10 + played},"since":"$since","streak":$streak,"playedToday":$played,"todayPoints":$today,"weekPoints":$week,"flawlessStreak":$flawless,"friendStreak":$fs,""" +
+                (if (seen != null) """"lastSeenAt":"${now.minusSeconds(seen)}",""" else "") + (if (activity != null) """"activity":"$activity",""" else "") + """"h2hW":3,"h2hL":2}"""
+        val friendsJson = listOf(
+            f("5d0e0000-0000-4000-8000-000000000011", "KateTheGreat", 20, "Classic", 3, 410, 1900, 12, 2, 5),
+            f("5d0e0000-0000-4000-8000-000000000012", "Crosswordocious_Rob", 8_000, null, 9, 2300, 2100, 40, 4, 9),
+            f("5d0e0000-0000-4000-8000-000000000013", "Doug", 90_000, null, 0, 0, 300, 3),
+            f("5d0e0000-0000-4000-8000-000000000014", "Mia", 400_000, null, 0, 0, 120, 1),
+            f("5d0e0000-0000-4000-8000-000000000015", "Suzannah", 3_000, null, 4, 700, 980, 8),
+        ).joinToString(",")
+        val incoming = """{"id":"5d0e0000-0000-4000-8000-000000000021","username":"Priya","level":7}"""
+        val outgoing = """{"id":"5d0e0000-0000-4000-8000-000000000022","username":"Marcus","level":4,"requestedAt":"${now.minusSeconds(7_200)}"}"""
+        val payload = """{"friends":[$friendsJson],"incoming":[$incoming],"outgoing":["5d0e0000-0000-4000-8000-000000000022"],"outgoingProfiles":[$outgoing],""" +
+            """"me":{"playedToday":5,"weekPoints":1400,"todayPoints":900,"flawlessStreak":1}}"""
+        applyPayload(json.decodeFromString<FriendsPayload>(payload), fetchedAt = System.currentTimeMillis() + 3_600_000L)
+        debugFeed = """{"events":[
+            {"id":"m1","userId":"5d0e0000-0000-4000-8000-000000000011","username":"KateTheGreat","me":false,"day":"$day","type":"game","gameKind":"ttt","gameTitle":"Tic-Tac-Tile","score":"2–1","otherName":"WordWiz","otherId":"5d0e0000-0000-4000-8000-000000000001"},
+            {"id":"m2","userId":"5d0e0000-0000-4000-8000-000000000012","username":"Crosswordocious_Rob","me":false,"day":"$day","type":"flawless"},
+            {"id":"m3","userId":"5d0e0000-0000-4000-8000-000000000001","username":"WordWiz","me":true,"day":"$day","type":"game","gameKind":"rps","gameTitle":"Rock Paper Scissors","score":"2–0","otherName":"Doug","otherId":"5d0e0000-0000-4000-8000-000000000013"}
+        ],"reactions":{"m2":{"counts":{"clap":2,"fire":1},"mine":["clap"]}}}"""
+    }
+
     /** The feed with its reactions (§6), or null on any failure. */
     suspend fun fetchFeedWithReactions(day: String = localDay()): Pair<List<FeedEvent>, Map<String, Reactions>>? {
+        debugFeed?.let { raw ->
+            return runCatching { json.decodeFromString<FeedPayload>(raw) }.getOrNull()?.let { it.events to it.reactions }
+        }
         val resp = api("GET", "/api/friends/feed?day=$day") ?: return null
         if (resp.first != 200) return null
         return runCatching { json.decodeFromString<FeedPayload>(resp.second) }.getOrNull()?.let { it.events to it.reactions }

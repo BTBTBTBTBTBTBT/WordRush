@@ -290,7 +290,7 @@ fun FriendsScreen(
             Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 FriendsLabel("PLAY WITH FRIENDS")
                 Spacer(Modifier.weight(1f))
-                FriendsLabel("TAP A GAME, PICK A FRIEND")
+                com.wordocious.app.ui.friends.FriendsCaption("Tap a game, pick a friend")
             }
             // Six games, 3 across × 2 rows (§9); each row's cards share one height. C4: each a
             // small card tinted in its own color with its own top bar.
@@ -318,7 +318,7 @@ fun FriendsScreen(
                 onSeeFriends = { newFriend = null },
                 // The existing challenge path (a private Classic VS battle, pushed to the friend).
                 onChallenge = f?.let { { newFriend = null; challenge(it) } },
-                light = true,
+                light = !FriendsPink.dark,
             )
         }
 
@@ -478,7 +478,7 @@ private fun InvitesSection(
                 modifier = Modifier.fillMaxWidth(),
                 showArt = showArt && i == 0,
                 onOpenProfile = { onOpenProfile(r.id) },
-                light = true,
+                light = !FriendsPink.dark,
             )
         }
         if (outgoing.isNotEmpty()) {
@@ -495,10 +495,7 @@ private fun InvitesSection(
                         ) {
                             FriendAvatar(r)
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    "@${r.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                )
+                                com.wordocious.app.ui.friends.FriendsName("@${r.username}", size = 13f)
                                 // T1: a small "Pending" glossy pill on the request-pending row.
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     PendingPill()
@@ -594,7 +591,7 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Row(
-                Modifier.weight(1f, fill = false)
+                Modifier.weight(1f)
                     .tileClickable(card = false, label = if (showWeek) "Hide this week's race" else "Show this week's race") { showWeek = !showWeek },
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
@@ -604,8 +601,7 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
                     modifier = Modifier.size(16.dp).rotate(if (showWeek) 180f else 0f),
                 )
             }
-            Spacer(Modifier.weight(1f))
-            WeekEndsCountdown(ink)
+            WeekEndsCountdown()
             if (raceStarted) {
                 // A3: the bare 3D share icon with the squish.
                 SoftControl(
@@ -753,11 +749,7 @@ private fun RaceRankRows(
                     modifier = Modifier.width(32.dp), textAlign = TextAlign.End,
                 )
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        e.username, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
-                        color = if (e.isMe) FriendsPink.solid else ink,
-                        fontFamily = Nunito, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    )
+                    com.wordocious.app.ui.friends.FriendsName(e.username, isMe = e.isMe, size = 13f)
                     // Both parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
                     FriendCards.raceBadgeLines(e.badge).forEach { line ->
                         Text(
@@ -919,8 +911,8 @@ private fun YourFriendsSection(
                 }
             }
             if (slackers.isNotEmpty()) {
-                CastButton(
-                    "Nudge all",
+                FriendsQuietText(
+                    "Nudge all", com.wordocious.app.ui.friends.FriendsQuietInk.gold, "Nudge all who haven't played",
                     onClick = {
                         scope.launch {
                             var n = 0
@@ -930,13 +922,12 @@ private fun YourFriendsSection(
                             onNote(if (n > 0) "Nudged $n friend${if (n == 1) "" else "s"}!" else "Everyone already nudged today")
                         }
                     },
-                    color = CastColor.GOLD, size = CastSize.S,
-                    modifier = Modifier.width(ACTION_PILL_WIDTH), fill = true, capScale = ACTION_PILL_CAP,
-                    contentDescription = "Nudge all who haven't played",
-                )
+                ) { Icon3D(Icon3DName.BELL, 16.dp) }
             }
-            // C4b: "Add a friend" moved here from the header circle (same flow).
-            CastButton("Add a friend", onClick = onAdd, color = CastColor.PINK, size = CastSize.S)
+            // C4b: "Add a friend" moved here from the header circle (same flow); founder 10-10: a quiet text action.
+            FriendsQuietText(
+                "Add", com.wordocious.app.ui.friends.FriendsQuietInk.pink, "Add a friend", onClick = onAdd,
+            ) { Icon3D(Icon3DName.ADD_FRIEND, 16.dp) }
         }
         if (friends.isEmpty()) {
             Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -976,16 +967,13 @@ private fun YourFriendsSection(
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 // Founder 10-09: the name may shrink to 0.8 before it ellipsizes (the chips moved to the line below).
-                                var nameSize by remember(f.id) { mutableStateOf(14f) }
-                                Text(
+                                // Founder 10-10: plain heavy type in the page ink, one line, shrinking to 0.7.
+                                com.wordocious.app.ui.friends.FriendsName(
                                     buildAnnotatedString {
                                         append("@${f.username}")
                                         if (f.id == crownId) { append(" "); appendIcon3D(Icon3DName.CROWN) }
                                     },
-                                    fontSize = nameSize.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
-                                    inlineContent = icon3DInline(),
-                                    onTextLayout = { if (it.hasVisualOverflow && nameSize > 14f * 0.8f) nameSize -= 0.5f },
+                                    Modifier.weight(1f, fill = false), size = 14f, inlineContent = icon3DInline(),
                                 )
                                 if ((f.flawlessStreak ?: 0) >= 2) MiniChip("×${f.flawlessStreak}", Color(0xFFB45309), Color(0xFFF59E0B), Icon3DName.TROPHY)
                             }
@@ -1004,22 +992,19 @@ private fun YourFriendsSection(
                             }
                         }
                         (f.friendStreak ?: 0).takeIf { it > 0 }?.let { Box(Modifier.heightIn(min = 34.dp), contentAlignment = Alignment.Center) { FlameCount("$it") } }
-                        // C4: chunky candy actions — Play / Challenge pink, Nudge gold. Founder 10-09: ONE width and ONE letter height down the list.
+                        // Founder 10-10 ("the buttons are loud"): each row's one action is a quiet round icon — Play (the play icon,
+                        // pink), Challenge (swords), Nudge (the bell) — on a soft wash of its color, not a 96 dp candy pill.
                         when {
-                            on -> CastButton(
-                                "Play", onClick = { onPlay(f) }, modifier = Modifier.width(ACTION_PILL_WIDTH), color = CastColor.PINK, size = CastSize.S,
-                                fill = true, capScale = ACTION_PILL_CAP, contentDescription = "Play with ${f.username}",
-                            )
-                            played > 0 || (f.todayPoints ?: 0) > 0 -> CastButton(
-                                if (challengingId == f.id) "Sending…" else "Challenge",
-                                onClick = { onChallenge(f) }, modifier = Modifier.width(ACTION_PILL_WIDTH),
-                                color = CastColor.PINK, size = CastSize.S, fill = true, capScale = ACTION_PILL_CAP,
-                                enabled = challengingId == null, contentDescription = "Challenge ${f.username}",
-                            )
-                            else -> CastButton(
-                                "Nudge", onClick = { onTaunt(f) }, modifier = Modifier.width(ACTION_PILL_WIDTH), color = CastColor.GOLD, size = CastSize.S,
-                                fill = true, capScale = ACTION_PILL_CAP, contentDescription = "Nudge ${f.username}",
-                            )
+                            on -> FriendsQuietAction(
+                                com.wordocious.app.ui.friends.FriendsQuietInk.pink, "Play with ${f.username}", onClick = { onPlay(f) },
+                            ) { FamIconImage(FamIcon.PLAY, com.wordocious.app.ui.friends.FriendsQuietInk.pink, 15.dp) }
+                            played > 0 || (f.todayPoints ?: 0) > 0 -> FriendsQuietAction(
+                                com.wordocious.app.ui.friends.FriendsQuietInk.pink, "Challenge ${f.username} to a VS Battle",
+                                enabled = challengingId == null, onClick = { onChallenge(f) },
+                            ) { GlyphArtImage(GlyphArt.SWORDS, 21.dp) }
+                            else -> FriendsQuietAction(
+                                com.wordocious.app.ui.friends.FriendsQuietInk.gold, "Nudge ${f.username}", onClick = { onTaunt(f) },
+                            ) { Icon3D(Icon3DName.BELL, 21.dp) }
                         }
                     }
                 }
@@ -1093,8 +1078,6 @@ private fun FriendMenuHost(
 }
 
 /** Founder 10-09: the All friends row action (Play / Challenge / Nudge / Nudge all): one width, one letter height (iOS actionPillWidth / castCapScale 0.78). */
-private val ACTION_PILL_WIDTH = 96.dp
-private const val ACTION_PILL_CAP = 0.78f
 
 /** The gift note's marker: the note row swaps it for the 3D shield. */
 private const val SHIELD_NOTE = com.wordocious.app.ui.friends.FRIENDS_SHIELD_NOTE
@@ -1135,9 +1118,9 @@ private fun PocketGameCard(kind: com.wordocious.core.FriendlyKind, modifier: Mod
                 .shadow(5.dp, shape, clip = false, ambientColor = FinishInk.cardShadow, spotColor = FinishInk.cardShadow)
                 .clip(shape)
                 // BI23 / BJ7: wash only, no outline.
-                .background(friendsWash(kind.color, 0.14f)),
+                .background(friendsWash(kind.color, 0.16f)),
         ) {
-            Box(Modifier.fillMaxWidth().height(5.dp).background(kind.color))
+            // Founder 10-10 ("the whole page is very busy"): no colored top bar — the soft fill keeps the game's color.
             // BJ7: the card hugs its content — icon, a one-line name, the detail (2 lines
             // reserved so the row's cards match).
             Column(
@@ -1145,8 +1128,9 @@ private fun PocketGameCard(kind: com.wordocious.core.FriendlyKind, modifier: Mod
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 FriendlyGameGlyph(kind, 32.dp)
+                // Founder 10-10: the title in plain heavy type in the page ink (no bubble lettering).
                 FitText(
-                    kind.title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
+                    kind.title, fontSize = 13.5.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading, minScale = 0.65f,
                 )
                 Text(
                     kind.sub, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted,
@@ -1248,7 +1232,7 @@ private fun AddFriendSection(
                 name = "@$sentTo",
                 note = "It's waiting on their Friends tab.",
                 onSendAnother = { onSentDone(); scope.launch { delay(60); runCatching { focus.requestFocus() } } },
-                light = true,
+                light = !FriendsPink.dark,
             )
             return@Column
         }
@@ -1526,12 +1510,13 @@ internal fun FriendAvatar(f: FriendsService.FriendProfile, accentHex: String? = 
 
 /** "ends Sunday · 2d 04:12:09" — the weekly race's live clock (weeks run Mon-Sun, reset Monday 00:00 local). */
 @Composable
-private fun WeekEndsCountdown(color: Color = FriendsPink.label) {
+private fun WeekEndsCountdown(color: Color = FriendsPink.muted) {
     val hidden = LocalTabHidden.current
     val label by produceState(weekEndsLabel()) {
         while (true) { delay(1_000); hidden.awaitShown(); value = weekEndsLabel() }
     }
-    Text(label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = color, fontFamily = Nunito, maxLines = 1)
+    // Founder 10-10: a plain 11 sp muted caption.
+    com.wordocious.app.ui.friends.FriendsCaption(label, color = color, tabular = true)
 }
 
 private fun weekEndsLabel(): String {

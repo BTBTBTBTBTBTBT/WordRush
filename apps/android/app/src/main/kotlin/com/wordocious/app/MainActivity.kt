@@ -87,6 +87,7 @@ class MainActivity : ComponentActivity() {
         // DEBUG only: `--es dressDemo vs|vsfriend|vsbots|friends` shows the VS lobby (its Friend / Bots page) or the
         // Friends tab for the signed-in Pro demo player (season surface checks, 10-05; pair with `--es dressSeason halloween`).
         val friendsDemo = com.wordocious.app.ui.DressDemo.isFriends(intent?.getStringExtra("dressDemo"))
+        if (friendsDemo) com.wordocious.app.data.FriendsService.debugSeedDemo()
         (com.wordocious.app.ui.DressDemo.vsPage(intent?.getStringExtra("dressDemo")) ?: if (friendsDemo) com.wordocious.app.ui.vs.VsLobbyPage.Main else null)?.let { page ->
             com.wordocious.app.ui.DressDemo.start(com.wordocious.app.ui.DressDoor.Stage)
             com.wordocious.app.data.ThemePref.load()

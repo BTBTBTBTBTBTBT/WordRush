@@ -7,13 +7,25 @@ import org.junit.Test
 /** FINISH_SPEC BH: the compact Home game card + its candy cap trim (parity with web/iOS). */
 class HomeCardTrimTest {
     @Test fun compactCardMeasures() {
-        // Founder 10-03: ~64–70 tall, icon 40, the card hugging one top-aligned row.
-        assertTrue(HomeCardSpec.HEIGHT in 64f..70f)
+        // Founder 10-10: full-width names — ~74–82 tall, the name on top, the 30 dp icon leading the subtitle line.
+        assertTrue(HomeCardSpec.HEIGHT in 74f..82f)
         assertEquals(40f, HomeCardSpec.ICON)
-        assertEquals(17f, HomeCardSpec.NAME)
+        assertEquals(30f, HomeCardSpec.ROW_ICON)
+        assertEquals(18f, HomeCardSpec.NAME)
         assertEquals(13f, HomeCardSpec.DESC)
-        val content = maxOf(HomeCardSpec.ICON, 21f + HomeCardSpec.DESC_GAP + 16f)
+        assertEquals(18f, HomeCardSpec.BADGE)
+        // The card hugs the rows: band + top pad + name line + gap + icon row + bottom pad.
+        val content = 21f + HomeCardSpec.DESC_GAP + HomeCardSpec.ROW_ICON
         assertTrue(CardTrimGeometry.BAND + HomeCardSpec.PAD_TOP + content + HomeCardSpec.PAD_BOTTOM <= HomeCardSpec.HEIGHT + 1f)
+    }
+
+    /** BJ18: one name size per grid row — the widest name decides it; floored at 13 (then per-card shrink). iOS parity. */
+    @Test fun uniformNameSizeFitsTheWidestName() {
+        assertEquals(18f, HomeCardSpec.uniformNameSize(listOf(60f, 70f), 80f))
+        assertEquals(16.5f, HomeCardSpec.uniformNameSize(listOf(60f, 85f), 80f))   // 18 × 80/85 = 16.9 → 16.5
+        assertEquals(13f, HomeCardSpec.uniformNameSize(listOf(60f, 200f), 80f))     // the floor
+        assertEquals(18f, HomeCardSpec.uniformNameSize(emptyList(), 80f))
+        assertEquals(170f - 20f, HomeCardSpec.nameSlot(350f))
     }
 
     @Test fun longResultStaysOneLine() {

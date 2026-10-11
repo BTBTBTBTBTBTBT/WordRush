@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -63,6 +64,8 @@ object FriendsPink {
     // Season surfaces (a dark `tone`): the Friends cards take the season's night glass, so each
     // fixed ink swaps to a light twin (iOS FriendsInk parity). Preview off = the mockup inks.
     private val night: Boolean get() = com.wordocious.app.ui.vs.vsDarkSeason
+    /** True on a dark (season) surface — the quiet inks and names below lift for it. */
+    val dark: Boolean get() = night
     private val season get() = com.wordocious.app.ui.theme.WTheme.season
     val ink: Color get() = if (night) Color(0xFFF9A8D4) else Color(0xFF831843)
     val mid: Color get() = if (night) Color(0xFFF472B6) else Color(0xFF9D174D)
@@ -355,3 +358,50 @@ object PickerGrid {
  */
 fun pocketTitleArtName(kind: FriendlyKind): String = "art_titlecast_pocket_${kind.raw}"
 const val PICK_FRIEND_TITLE_ART = "art_titlecast_pick_friend"
+
+// ── Calm Friends page (founder 10-10: "the buttons are loud and obnoxious, the whole page is very busy, and it's hard to
+// read the names and titles"; iOS FriendsName / FriendsQuietAction / FriendsQuietText). Names in plain heavy type (the
+// bubble lettering stays on section titles), each row's one action a quiet round 3D icon, secondary actions as quiet
+// text — the candy pills are kept for real calls to action elsewhere.
+
+/** The quiet-action inks (gold / pink / violet): deep on light, lifted on a dark season surface. */
+object FriendsQuietInk {
+    val gold: Color get() = if (FriendsPink.dark) Color(0xFFFCD34D) else Color(0xFFB45309)
+    val pink: Color get() = if (FriendsPink.dark) Color(0xFFF9A8D4) else Color(0xFFBE185D)
+    val violet: Color get() = if (FriendsPink.dark) Color(0xFFC4B5FD) else Color(0xFF6D28D9)
+}
+
+/** The brand pink for "you", lifted toward white on a dark season surface so a name in it still reads. */
+val FriendsPink.me: Color get() = if (dark) Color(0xFFF9A8D4) else solid
+
+/** A player's name on the Friends page: plain heavy type in the page ink (yours in the brand pink), one line, shrinking to 0.7. */
+@Composable
+fun FriendsName(
+    text: androidx.compose.ui.text.AnnotatedString,
+    modifier: Modifier = Modifier,
+    isMe: Boolean = false,
+    size: Float = 15f,
+    inlineContent: Map<String, androidx.compose.foundation.text.InlineTextContent> = emptyMap(),
+) {
+    var scale by androidx.compose.runtime.remember(text, size) { androidx.compose.runtime.mutableFloatStateOf(1f) }
+    Text(
+        text, fontSize = (size * scale).sp, fontWeight = FontWeight.Black,
+        color = if (isMe) FriendsPink.me else FriendsPink.heading,
+        maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis, modifier = modifier,
+        inlineContent = inlineContent,
+        onTextLayout = { if (it.hasVisualOverflow && scale > 0.7f) scale = (scale - 0.05f).coerceAtLeast(0.7f) },
+    )
+}
+
+@Composable
+fun FriendsName(text: String, modifier: Modifier = Modifier, isMe: Boolean = false, size: Float = 15f) =
+    FriendsName(androidx.compose.ui.text.AnnotatedString(text), modifier, isMe, size)
+
+/** Header captions ("Tap a game, pick a friend", "Last 7 days · hold to react", "ends Sunday …"): plain 11 sp muted text. */
+@Composable
+fun FriendsCaption(text: String, modifier: Modifier = Modifier, color: Color = FriendsPink.muted, tabular: Boolean = false) {
+    Text(
+        text, fontSize = 11.sp, fontWeight = if (tabular) FontWeight.ExtraBold else FontWeight.Bold, color = color,
+        modifier = modifier, maxLines = 1, overflow = TextOverflow.Ellipsis,
+    )
+}
