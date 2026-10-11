@@ -534,6 +534,8 @@ struct KindredCategoryChip: View {
 /// The unsolved words as a 4-wide grid of Classic-style tiles; selected tiles
 /// fill with the accent; hinted pairs wear a violet ring; long words shrink.
 struct KindredTileGrid: View {
+    private static let darkTileTop = Color(hex: 0xF7F2FF), darkTileBase = Color(hex: 0xDCCFFB)
+    private static let darkTileEdge = Color(hex: 0x8D74D0), darkTileInk = Color(hex: 0x2E1065)
     @ObservedObject var vm: KindredVM
     /// Scaled by the board to fill its band (founder, 2026-09-28); 56 was the fixed height before.
     var tileHeight: CGFloat = 56
@@ -556,14 +558,16 @@ struct KindredTileGrid: View {
                     // selected fills with the tier ramp's purple.
                     Text(w).font(Brand.font(long ? fontLong : fontNormal, .black))
                         .lineLimit(1).minimumScaleFactor(0.55)
-                        .foregroundStyle(sel ? Color.white : PuzKit.ink)
+                        .foregroundStyle(sel ? Color.white : (Theme.isDark ? Self.darkTileInk : PuzKit.ink))
                         .shadow(color: sel ? Color(hex: 0x2E0C63).opacity(0.5) : .clear, radius: 0.5, x: 0, y: 1)
                         .padding(.horizontal, 4)
                         .frame(maxWidth: .infinity).frame(height: tileHeight - 4)
-                        .puzChip(sel ? Color(hex: 0x7C3AED) : PuzKit.face(kindredAccent, 0.10),
-                                 light: sel ? Color(hex: 0xA66BFF) : (Theme.isDark ? nil : Color.white.mixed(over: kindredAccent.wash(0.10), 0.6)),
-                                 edge: sel ? Color(hex: 0x4C1D95) : (Theme.isDark ? Color.black.opacity(0.35) : kindredAccent.wash(0.34)),
-                                 border: sel ? nil : PuzKit.line(kindredAccent, 0.28),
+                        // Dark (founder 10-10 audit): a clean pale-lavender word card (like the Sudoku givens), not a
+                        // maroon wash on the night surface — the words pop; selected stays the glossy purple.
+                        .puzChip(sel ? Color(hex: 0x7C3AED) : (Theme.isDark ? Self.darkTileBase : PuzKit.face(kindredAccent, 0.10)),
+                                 light: sel ? Color(hex: 0xA66BFF) : (Theme.isDark ? Self.darkTileTop : Color.white.mixed(over: kindredAccent.wash(0.10), 0.6)),
+                                 edge: sel ? Color(hex: 0x4C1D95) : (Theme.isDark ? Self.darkTileEdge : kindredAccent.wash(0.34)),
+                                 border: sel ? nil : (Theme.isDark ? Color.white.opacity(0.55) : PuzKit.line(kindredAccent, 0.28)),
                                  radius: 10, lip: 4)
                         .overlay(ringed.contains(w) ? RoundedRectangle(cornerRadius: 13).stroke(kindredPairRing, lineWidth: 2).padding(-3) : nil)
                         .padding(3)
@@ -589,10 +593,11 @@ struct KindredProgressRail: View {
     var body: some View {
         HStack {
             HStack(spacing: 6) {
-                Text("Groups").font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
+                Text("Groups").font(Brand.font(11, .bold)).foregroundStyle(Theme.isDark ? Theme.textPrimary : FinishInk.secondary)
                 Text("\(solvedTiers.count) of \(GROUPS_TOTAL_BOARDS)").softNumber(12)
                 ForEach(1...4, id: \.self) { tier in
-                    let c = KindredTierStyle.of(tier).bg
+                    // Dark: tier 4's near-black swatch vanishes on the night board, so it reads white.
+                    let c = (Theme.isDark && tier == 4) ? Color.white : KindredTierStyle.of(tier).bg
                     Circle().fill(solvedTiers.contains(tier) ? c : Color.clear)
                         .overlay(Circle().stroke(c, lineWidth: 1.5))
                         .frame(width: 10, height: 10)
@@ -613,9 +618,10 @@ struct KindredMistakeDots: View {
     let max: Int
     var body: some View {
         HStack(spacing: 6) {
-            Text("Mistakes left").font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
+            Text("Mistakes left").font(Brand.font(11, .bold)).foregroundStyle(Theme.isDark ? Theme.textPrimary : FinishInk.secondary)
             ForEach(0..<max, id: \.self) { i in
-                Circle().fill(i < max - mistakes ? kindredAccent : PuzKit.face(kindredAccent, 0.22)).frame(width: 10, height: 10)
+                Circle().fill(i < max - mistakes ? (Theme.isDark ? Color(hex: 0xFB4F73) : kindredAccent)
+                                                 : (Theme.isDark ? Color.white.opacity(0.22) : PuzKit.face(kindredAccent, 0.22))).frame(width: 10, height: 10)
             }
         }
         .accessibilityElement(children: .ignore)

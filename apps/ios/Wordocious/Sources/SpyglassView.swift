@@ -329,7 +329,7 @@ struct SpyglassView: View {
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(visible ? "\(w)\(found ? ", found" : "")" : "\(w.count)-letter word")
-                .foregroundStyle(found ? Color.white : (visible ? PuzKit.ink : FinishInk.secondary))
+                .foregroundStyle(found ? Color.white : (visible ? PuzKit.ink : (Theme.isDark ? Theme.textPrimary : FinishInk.secondary)))
                 .shadow(color: found ? Color(hex: 0x1A2E05).opacity(0.5) : .clear, radius: 0.5, x: 0, y: 1)
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .background {

@@ -236,7 +236,7 @@ struct BoardView: View {
                                    highlighted: zoomed || (vm.isSequence && seqActive && !seqDone),
                                    padding: trayPadding))
         // Sequence: dim locked (future) boards.
-        .opacity(seqLocked ? 0.6 : 1)
+        .opacity(seqLocked ? (Theme.isDark ? 0.82 : 0.6) : 1)
         .onAppear { if seenGuessCount < 0 { seenGuessCount = board.guesses.count } }
         .onChange(of: vm.shakeCount) { _ in playReject() }
         // §AQ1: typing over a rejected row drops its red hold at once.

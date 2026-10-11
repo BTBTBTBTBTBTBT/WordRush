@@ -629,7 +629,7 @@ struct CrosswordGridView: View {
         // §J3: every cell is a B1 glossy tile — frosted when empty, the typed white
         // face once a letter is in, purple when Check locked it, purple with the
         // gold ring when revealed, red when a Check just cleared it.
-        let face: GlossyFace = wrong ? .bad : (revealed || locked) ? .correct : (letter.isEmpty ? .empty : .typed)
+        let face: GlossyFace = wrong ? .bad : (revealed || locked) ? .correct : (letter.isEmpty ? .cellEmpty : .typed)
         let radius = side * 0.22
         // Founder 10-06: every cell's letter is the same size and centered; the number is the small corner badge.
         return Button { vm.selectCell(i) } label: {
@@ -648,8 +648,12 @@ struct CrosswordGridView: View {
                     // The clue number: a small muted superscript fully inside the top-left corner (no chip on the
                     // border); the cursor ring is drawn outside the tile, so it never covers it.
                     let inset = CGFloat(CrosswordCellSpec.inset(cell: Double(side)))
-                    Text("\(number)").font(Brand.fixedFont(CGFloat(CrosswordCellSpec.numberSize(cell: Double(side))), .black))
-                        .foregroundStyle(face == .correct ? Color.white.opacity(0.85) : cwPurple.opacity(0.72))
+                    // Dark (founder 10-10): bigger, in a bright ink (deep violet on the lavender open cell, white on a colored one).
+                    let dark = Theme.isDark
+                    let numSize = CGFloat(CrosswordCellSpec.numberSize(cell: Double(side)))
+                    Text("\(number)").font(Brand.fixedFont(dark ? max(numSize, side * 0.28) : numSize, .black))
+                        .foregroundStyle(face == .correct ? Color.white.opacity(dark ? 1 : 0.85)
+                                         : (dark ? (face == .cellEmpty ? Color(hex: 0x2E1065) : Color(hex: 0x5B21B6)) : cwPurple.opacity(0.72)))
                         .lineLimit(1).fixedSize()
                         .padding(.leading, inset).padding(.top, inset * 0.7)
                         .allowsHitTesting(false)
@@ -735,7 +739,7 @@ struct CrosswordActiveClueBar: View {
                     Text(entry.clue).font(Brand.font(15, .heavy)).foregroundStyle(Theme.textPrimary)
                         .multilineTextAlignment(.leading).lineLimit(2).minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Image(systemName: "arrow.left.arrow.right").font(.system(size: 14, weight: .bold)).foregroundStyle(crosswordAccent)
+                    Image(systemName: "arrow.left.arrow.right").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.isDark ? Color(hex: 0xDDD0FF) : crosswordAccent)
                 } else {
                     Color.clear.frame(maxWidth: .infinity)
                 }
@@ -765,7 +769,7 @@ struct CrosswordCluesToggle: View {
                 Image(systemName: showing ? "square.grid.3x3" : "list.number").font(.system(size: 15, weight: .bold))
                 Text(showing ? "Grid" : "Clues").font(Brand.font(10, .black))
             }
-            .foregroundStyle(crosswordAccent)
+            .foregroundStyle(Theme.isDark ? Color(hex: 0xEDE6FF) : crosswordAccent)
             .frame(width: 52, height: 56)
             .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(PuzKit.face(cwPurple, 0.10)))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(PuzKit.line(cwPurple, 0.32), lineWidth: 1.5))

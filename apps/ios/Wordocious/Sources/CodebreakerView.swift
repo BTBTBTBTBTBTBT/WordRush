@@ -12,6 +12,8 @@ import WordociousCore
 private let codebreakerAccent = Color(hex: 0x92400E)
 private let codebreakerHint = Color(hex: 0x8B5CF6)
 private let codebreakerWrong = Color(hex: 0xDC2626)
+/// The brown accent as TEXT on the night board (dark): a bright amber — the brown vanishes there (founder 10-10).
+private var codebreakerInk: Color { Theme.isDark ? Color(hex: 0xFCD34D) : codebreakerAccent }
 
 /// The bundled bank (Resources/cryptogram-puzzles.json — sha-guarded to match the web copy).
 enum CryptogramBankStore {
@@ -670,7 +672,7 @@ private struct CipherTile: View {
                 .modifier(TypePop(letter: face == .typed ? plain : "", size: CGSize(width: width, height: h)))
                 .overlay(selected ? RoundedRectangle(cornerRadius: r + 3, style: .continuous).stroke(codebreakerAccent, lineWidth: 2).padding(-3) : nil)
             Text(code).font(.system(size: codeSize, weight: .heavy, design: .monospaced))
-                .foregroundStyle(selected ? Color.white : (Theme.isDark ? Theme.textSecondary : codebreakerAccent))
+                .foregroundStyle(selected ? Color.white : (Theme.isDark ? Theme.textPrimary : codebreakerAccent))
                 .frame(minWidth: max(codeSize * 1.3, width * 0.62), minHeight: codeSize * 1.25)
                 .background(Capsule().fill(selected ? codebreakerAccent : PuzKit.face(codebreakerAccent, 0.14)))
                 .overlay(Capsule().strokeBorder(selected ? codebreakerAccent : PuzKit.line(codebreakerAccent, 0.3), lineWidth: 0.75))
@@ -766,10 +768,10 @@ struct FrequencyStripView: View {
                         // landing never widens the chip, never re-wraps the strip and never shrinks the board above it.
                         ZStack {
                             Text("→W").font(Brand.font(fontSize, .black)).opacity(0).accessibilityHidden(true)
-                            if let plain { Text("→\(plain)").font(Brand.font(fontSize, .black)).foregroundStyle(locked ? codebreakerAccent : PuzKit.ink) }
+                            if let plain { Text("→\(plain)").font(Brand.font(fontSize, .black)).foregroundStyle(locked ? codebreakerInk : PuzKit.ink) }
                         }
                     }
-                    .foregroundStyle(locked ? codebreakerAccent : FinishInk.secondary)
+                    .foregroundStyle(locked ? codebreakerInk : (Theme.isDark ? Theme.textPrimary : FinishInk.secondary))
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     // §A1: tinted chips; the selected one the stronger tint + accent ring.
                     .background(Capsule().fill(PuzKit.face(codebreakerAccent, isSel ? 0.22 : 0.09)))

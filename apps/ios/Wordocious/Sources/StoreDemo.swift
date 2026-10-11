@@ -564,6 +564,21 @@ enum StoreDemoDriver {
         case "hub": PerfDrive.playUnlimited("HUB")
         case "sudoku": PerfDrive.playUnlimited("SUDOKU")
         case "muddle": PerfDrive.playUnlimited("SCRAMBLE")
+        // 10-10 dark-audit shots: the rest of the Puzzles + the Succession / Deliverance / Six / Seven boards.
+        case "kindred": PerfDrive.playUnlimited("GROUPS")
+        case "spyglass": PerfDrive.playUnlimited("WORDSEARCH")
+        case "ladder": PerfDrive.playUnlimited("LADDER")
+        case "code": PerfDrive.playUnlimited("CRYPTOGRAM")
+        case "succession": PerfDrive.playUnlimited("SEQUENCE")
+        case "rescue": PerfDrive.playUnlimited("RESCUE")
+        case "six": PerfDrive.playUnlimited("DUEL_6")
+        case "seven": PerfDrive.playUnlimited("DUEL_7")
+        // 10-10 dark-audit shots: the VS board vs a bot, Word of the Day, and a fresh pocket game per kind
+        // (`pocket-rps|ttt|coin|pass|ghost|chain`, a demo game built locally — no server).
+        case "vsboard": PerfTour.send(.cover(.vsBot))
+        case "wotd": PerfTour.send(.sheet(.words))
+        case let s where s.hasPrefix("pocket-"):
+            if let kind = FriendlyKind(rawValue: String(s.dropFirst(7))) { presentPocketDemo(kind) }
         case "friendspage": PerfTour.send(.selectTab(.friends))
         case "stats": PerfTour.send(.selectTab(.stats))
         case "leaderboard":
@@ -616,6 +631,20 @@ enum StoreDemoDriver {
             DressUp.shared.open(.room(MascotBuilderTab(rawValue: String(s.dropFirst(5))) ?? .body))
         default: PerfTour.send(.selectTab(.home))
         }
+    }
+
+    private static func presentPocketDemo(_ kind: FriendlyKind) {
+        guard let state = try? JSONEncoder().encode(FriendlyGames.newState(kind)),
+              let stateObj = try? JSONSerialization.jsonObject(with: state) else { return }
+        let json: [String: Any] = [
+            "id": "demo-\(kind.rawValue)", "kind": kind.rawValue, "title": kind.title, "me": "a",
+            "opponent": ["id": StoreDemo.people[0].id, "username": StoreDemo.people[0].name],
+            "state": stateObj, "status": "active", "yourTurn": true, "line": "Your move",
+            "createdAt": "2026-10-10T12:00:00Z", "updatedAt": "2026-10-10T12:00:00Z",
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: json),
+              let game = try? JSONDecoder().decode(FriendlyGameView.self, from: data) else { return }
+        present(AnyView(FriendlyGameScreen(gameId: game.id, initial: game)), full: true)
     }
 
     private static func classic(finish: Bool) async {

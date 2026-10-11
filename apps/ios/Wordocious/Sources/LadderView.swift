@@ -9,6 +9,8 @@ import WordociousCore
 // move. guess_count = moves − par + 1.
 
 private let ladderAccent = Color(hex: 0x0284C7)
+/// The accent as TEXT / outline on the night board (dark): a light sky blue, the deep blue vanishes there (founder 10-10).
+private var ladderBright: Color { Theme.isDark ? Color(hex: 0x7DD3FC) : ladderAccent }
 
 /// The bundled bank (Resources/ladder-puzzles.json — sha-guarded to match the web copy).
 enum LadderBankStore {
@@ -416,11 +418,11 @@ private struct LadderTile: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
                             .strokeBorder(style: StrokeStyle(lineWidth: max(1.5, size * 0.05), dash: [5, 4]))
-                            .foregroundStyle(ladderAccent.opacity(0.55))
+                            .foregroundStyle(Theme.isDark ? ladderBright : ladderAccent.opacity(0.55))
                             .padding(.bottom, size * 0.07)
                     )
                     .overlay(
-                        Text(letter).font(Brand.fixedFont(size * 0.5, .black)).foregroundStyle(ladderAccent)
+                        Text(letter).font(Brand.fixedFont(size * 0.5, .black)).foregroundStyle(ladderBright)
                             .padding(.bottom, size * 0.07)
                     )
             default:
@@ -481,7 +483,7 @@ struct LadderBoardView: View {
             }
             if s.status == .playing { row(vm.typing, prev: s.current, kind: "typing", invalid: vm.invalid) }
             if s.current != s.end {
-                Text("↓ \(s.status == .playing ? "REACH" : "TARGET")").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(ladderAccent.opacity(0.7))
+                Text("↓ \(s.status == .playing ? "REACH" : "TARGET")").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.isDark ? ladderBright : ladderAccent.opacity(0.7))
                 row(s.end, prev: nil, kind: "end")
             }
             if revealPath && !collapsed {
@@ -580,7 +582,7 @@ private struct LadderPlayBoard: View {
             }
             LadderRowView(word: vm.typing, prev: s.current, kind: "typing", invalid: vm.invalid, tileSize: f.tile)
             if showEnd {
-                Text("↓ REACH").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(ladderAccent.opacity(0.7))
+                Text("↓ REACH").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.isDark ? ladderBright : ladderAccent.opacity(0.7))
                     .lineLimit(1).frame(height: label)
                 LadderRowView(word: s.end, prev: nil, kind: "end", tileSize: f.tile)
             }

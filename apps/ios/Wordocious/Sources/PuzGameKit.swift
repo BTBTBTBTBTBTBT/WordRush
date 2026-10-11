@@ -10,12 +10,12 @@ enum PuzKit {
     /// §A1 surface: a soft wash of `accent` over white (dark: the dark surface
     /// with a faint accent tint, so dark mode keeps its dark surfaces).
     static func face(_ accent: Color, _ amount: Double = 0.12) -> Color {
-        Theme.isDark ? accent.mixed(over: Theme.surface, 0.16) : accent.wash(amount)
+        Theme.isDark ? accent.mixed(over: Theme.surface, 0.26) : accent.wash(amount)
     }
 
     /// §A1 border: the accent at ~30% over white (dark: the accent at 40%).
     static func line(_ accent: Color, _ amount: Double = 0.32) -> Color {
-        Theme.isDark ? accent.opacity(0.4) : accent.wash(amount)
+        Theme.isDark ? accent.opacity(0.55) : accent.wash(amount)
     }
 
     /// Ink that reads on a tinted face in both themes.

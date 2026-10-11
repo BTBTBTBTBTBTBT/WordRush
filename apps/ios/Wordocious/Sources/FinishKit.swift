@@ -614,6 +614,9 @@ enum GlossyFace: Equatable {
     /// BI6: a given / an empty cell in the selected cell's row, column or box — a pale
     /// lavender tint, lighter than `sudokuSame`.
     case sudokuWashGiven, sudokuWashEmpty
+    /// Crosswordocious's open cell: the frosted `.empty` in the light theme; in the dark theme a clean mid-lavender square
+    /// (an empty answer cell must read as a fillable square against the purple board, founder 10-10).
+    case cellEmpty
 }
 
 /// The palette for one colored state: light (gradient top), base (70%), bottom,
@@ -733,10 +736,17 @@ struct GlossyTile: View {
     static func style(_ face: GlossyFace) -> Style {
         let dark = Theme.isDark
         switch face {
+        case .cellEmpty where dark:
+            return Style(edge: AnyShapeStyle(Color(hex: 0x7B5FD0)), face: AnyShapeStyle(Color(hex: 0xB7A2F0)),
+                         ring: Color(hex: 0xE4D9FF).opacity(0.7), ringWidth: 0.04, gloss: 0.4,
+                         ink: Color(hex: 0x2E1065), letterShadow: .clear)
+        case .cellEmpty: return style(.empty)
         case .empty:
+            // Dark (founder 10-10 audit): a lifted frosted tile — 0.19 white face, a brighter lilac ring — so an open
+            // square reads as a square on every board, not a muddy hole.
             return dark
-                ? Style(edge: AnyShapeStyle(Color.white.opacity(0.07)), face: AnyShapeStyle(Color.white.opacity(0.10)),
-                        ring: Color(hex: 0xA78BFA).opacity(0.28), gloss: 0.12, ink: Theme.textMuted, letterShadow: .clear)
+                ? Style(edge: AnyShapeStyle(Color.white.opacity(0.13)), face: AnyShapeStyle(Color.white.opacity(0.19)),
+                        ring: Color(hex: 0xB9A4FF).opacity(0.5), gloss: 0.2, ink: Theme.textMuted, letterShadow: .clear)
                 : Style(edge: AnyShapeStyle(Color(hex: 0xD8C8F3).opacity(0.55)), face: AnyShapeStyle(Color.white.opacity(0.58)),
                         ring: Color(hex: 0x7C3AED).opacity(0.16), gloss: 0.35, ink: Color(hex: 0x8A78AD), letterShadow: .clear)
         case .hintUsed:

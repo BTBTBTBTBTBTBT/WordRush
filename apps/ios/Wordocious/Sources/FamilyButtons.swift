@@ -33,10 +33,10 @@ enum FamilyMetrics {
 /// The helper / quiet inks (README §1–2).
 enum FamilyInk {
     static func helperFill(_ tint: Color, dark: Bool, pressed: Bool) -> Color {
-        dark ? tint.mixed(over: Color(hex: 0x231C40), pressed ? 0.42 : 0.34) : tint.mixed(over: .white, pressed ? 0.27 : 0.20)
+        dark ? tint.mixed(over: Color(hex: 0x231C40), pressed ? 0.62 : 0.52) : tint.mixed(over: .white, pressed ? 0.27 : 0.20)
     }
     static func helperInk(_ tint: Color, dark: Bool) -> Color {
-        dark ? Color.white.mixed(over: tint, 0.65) : Color.black.mixed(over: tint, 0.32)
+        dark ? Color.white.mixed(over: tint, 0.9) : Color.black.mixed(over: tint, 0.32)
     }
     /// The label on a selected (solid-tint) helper: white, or near-black on a bright tint (readability gate).
     static func selectedInk(_ tint: Color) -> Color {
@@ -300,8 +300,9 @@ struct HelperButtonStyle: ButtonStyle {
                 .frame(width: style.circle ? h : nil, height: h)
                 .background { FamilyPillSkin(fill: fill, pressed: pressed, dark: dark, height: h) }
                 .contentShape(Capsule())
-                .saturation(dim ? 0.25 : 1)
-                .opacity(dim ? 0.5 : 1)
+                // Dark: a disabled / spent pill stays readable (0.72, half color) instead of dying at 0.5 / 0.25.
+                .saturation(dim ? (dark ? 0.5 : 0.25) : 1)
+                .opacity(dim ? (dark ? 0.72 : 0.5) : 1)
                 .scaleEffect(pressed && !still ? 0.94 : 1)
                 .animation(still ? nil : (pressed ? .easeOut(duration: 0.08) : .spring(response: 0.26, dampingFraction: 0.5)), value: pressed)
                 .onChange(of: configuration.isPressed) { Feedback.press($0) }

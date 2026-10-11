@@ -46,7 +46,10 @@ struct FriendlyGameScreen: View {
 
     /// The bed under the pinned keyboards: the Friends wallpaper's top color (§A1 —
     /// no plain white).
-    static var keyboardBed: Color { PageTint.friends.barColor }
+    static var keyboardBed: Color {
+        // Dark (founder 10-10 audit): the light bar color was a pale pink slab under Ghost's / Word Chain's keyboard.
+        Theme.isDark ? PageTint.friends.stops(dark: true)[2] : PageTint.friends.barColor
+    }
 
     /// The load error for a game that no longer exists (its scene is O3 not found).
     private static let goneLine = "This game isn't here anymore."
@@ -676,7 +679,7 @@ struct FriendlyGameScreen: View {
                                     Image(art(p)).resizable().interpolation(.high).scaledToFit().frame(width: 70, height: 70)
                                         .accessibilityHidden(true)   // §AB: the word below names it
                                     PocketBubble(text: p.rawValue, color: rps, size: 14,
-                                                 palette: selected ? PlayerTint.platePalette(lightInk: true) : nil, minScale: 0.5)
+                                                 palette: (selected || Theme.isDark) ? PlayerTint.platePalette(lightInk: true) : nil, minScale: 0.5)
                                 }
                                 .frame(maxWidth: .infinity).frame(height: 114)
                                 // §A1: tinted pick cards (selected = filled purple).
