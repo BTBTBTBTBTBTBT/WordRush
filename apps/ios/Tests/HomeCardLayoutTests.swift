@@ -37,6 +37,6 @@ final class HomeCardLayoutTests: XCTestCase {
         XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [60, 85], slot: 80), 16.5)     // 18 × 80/85 = 16.9 → 16.5
         XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [60, 200], slot: 80), 13)      // the floor
         XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [], slot: 80), 18)
-        XCTAssertEqual(HomeCardSpec.nameSlot(gridWidth: 350), 170 - 20)
+        XCTAssertEqual(HomeCardSpec.nameSlot(gridWidth: 350), 170 - 20 - 4 - 22)
     }
 }

@@ -21,8 +21,8 @@ public enum HomeCardSpec {
     public static let desc: CGFloat = 13
     public static let padX: CGFloat = 10
     public static let gap: CGFloat = 10
-    /// Today's W / L badge on the icon's top-trailing corner.
-    public static let badge: CGFloat = 18
+    /// Today's W / L badge at the end of the name's line.
+    public static let badge: CGFloat = 22
     /// The bubble lettering runs wider than the plain-font measure (rim + tracking).
     public static let bubbleWidth: CGFloat = 1.12
     /// DAILIES / PUZZLES title art scale over the compact grid (~25% smaller).
@@ -32,10 +32,11 @@ public enum HomeCardSpec {
     /// the floor shrinks on its own card (minimumScaleFactor) as the last resort.
     public static let nameUniformMin: CGFloat = 13
 
-    /// The name's slot in a grid card: the card's full width less its insets (founder 10-10).
+    /// The name's slot in a grid card: the card's full width less its insets and the W / L badge at the row's end
+    /// (founder 10-10: the badge back on the name's line).
     public static func nameSlot(gridWidth: CGFloat, columns: Int = 2) -> CGFloat {
         let card = (gridWidth - gap * CGFloat(max(0, columns - 1))) / CGFloat(max(1, columns))
-        return card - 2 * padX
+        return card - 2 * padX - 4 - badge
     }
 
     /// FINISH_SPEC BJ18 (founder 10-03: QuadWord's name smaller than Classic's): ONE name size for a

@@ -581,3 +581,27 @@ struct FriendsQuietText: View {
     }
 }
 
+/// A round icon button drawn as a gold OUTLINE (founder 10-10, Muddle: "the clue and hint buttons are dark and hard to read
+/// … the same color as the gold tiles … outlines instead of fills"): a 2 pt gold ring, a faint gold wash, the clay icon in gold.
+struct GoldOutlineIconButton: View {
+    let clay: String
+    let label: String
+    var size: CGFloat = 36
+    let action: () -> Void
+    static let gold = Color(hex: 0xF5B82E)
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                Circle().fill(Self.gold.opacity(0.10))
+                Circle().strokeBorder(Self.gold, lineWidth: 2)
+                if let ui = FamilyArt.shared.image("art-fam-ic-\(clay)") {
+                    Image(uiImage: ui).resizable().interpolation(.high).scaledToFit()
+                        .frame(width: size * 0.5, height: size * 0.5).colorMultiply(Self.gold)
+                }
+            }
+            .frame(width: size, height: size)
+        }
+        .buttonStyle(RoundIconButtonStyle())
+        .accessibilityLabel(label)
+    }
+}

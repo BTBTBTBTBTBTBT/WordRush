@@ -399,6 +399,10 @@ struct SudokuBoardView: View {
                                                    height: Double(geo.size.height - (pad + lip) / CGFloat(BoardSizing.heightFill)),
                                                    maxTile: 420 / 9, minTile: 10))
             let side = cell * 9
+            // Founder 10-10 ("hard to see the separation of the 9 boards"): real gaps between the 3 × 3 boxes; the cells
+            // shrink to make room so the board keeps its size.
+            let boxGap = max(5, cell * 0.16)
+            let tile = (side - 2 * boxGap) / 9
             let selRow = selected.map { $0 / 9 } ?? -1, selCol = selected.map { $0 % 9 } ?? -1, selBox = selected.map(boxOf) ?? -1
             let selDigit: Character? = selected.flatMap { ch(state.board, $0) == "0" ? nil : ch(state.board, $0) }
             ZStack {
@@ -408,22 +412,24 @@ struct SudokuBoardView: View {
                         HStack(spacing: 0) {
                             ForEach(0..<9, id: \.self) { c in
                                 let i = r * 9 + c
-                                cellView(i, cell: cell, inWash: r == selRow || c == selCol || boxOf(i) == selBox,
+                                cellView(i, cell: tile, inWash: r == selRow || c == selCol || boxOf(i) == selBox,
                                          isSelected: i == selected, selDigit: selDigit)
+                                    .padding(.trailing, c == 2 || c == 5 ? boxGap : 0)
                             }
                         }
+                        .padding(.bottom, r == 2 || r == 5 ? boxGap : 0)
                     }
                 }
-                // §L: the tiles separate the cells; the 3 × 3 boxes are parted by
-                // soft darker seams in the tray color — never black lines.
+                // §L: the tiles separate the cells; the 3 × 3 boxes are parted by a gap with a bright seam down its middle
+                // (founder 10-10: the old 55% seam vanished on the dark board).
                 Canvas { ctx, _ in
-                    let seam = GameTray.seam(sudokuAccent, strong: true)
-                    for k in [3, 6] {
-                        let w: CGFloat = max(2, cell * 0.07)
-                        let p = CGFloat(k) * cell
-                        ctx.fill(Path(roundedRect: CGRect(x: p - w / 2, y: cell * 0.1, width: w, height: side - cell * 0.2),
+                    let seam = Theme.isDark ? Color(hex: 0xC4B5FD).opacity(0.7) : GameTray.seam(sudokuAccent, strong: true)
+                    let w: CGFloat = max(2, boxGap * 0.38)
+                    for k in [1, 2] {
+                        let p = CGFloat(k * 3) * tile + CGFloat(k - 1) * boxGap + boxGap / 2
+                        ctx.fill(Path(roundedRect: CGRect(x: p - w / 2, y: tile * 0.1, width: w, height: side - tile * 0.2),
                                       cornerRadius: w / 2), with: .color(seam))
-                        ctx.fill(Path(roundedRect: CGRect(x: cell * 0.1, y: p - w / 2, width: side - cell * 0.2, height: w),
+                        ctx.fill(Path(roundedRect: CGRect(x: tile * 0.1, y: p - w / 2, width: side - tile * 0.2, height: w),
                                       cornerRadius: w / 2), with: .color(seam))
                     }
                 }
@@ -534,8 +540,10 @@ struct SudokuPad: View {
                     Button { vm.place(d) } label: {
                         // FINISH_SPEC §B2: the number keys are key tiles too.
                         KeyCap(state: nil, fill: vm.state.notesMode ? sudokuAccent.wash(0.18) : nil, height: 48) {
+                            // Founder 10-10 ("the numbers are too dark at the bottom"): a bright digit on the dark keys.
                             Text("\(d)").font(Brand.font(20, .black))
-                                .foregroundStyle(vm.state.notesMode ? sudokuAccent : FinishInk.softNumber)
+                                .foregroundStyle(vm.state.notesMode ? sudokuAccent.bubbleInk
+                                                                    : (Theme.isDark ? Color(hex: 0xF5F0FF) : FinishInk.softNumber))
                         }
                         .opacity(done ? 0.4 : 1)
                     }

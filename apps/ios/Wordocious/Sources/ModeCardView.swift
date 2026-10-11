@@ -42,11 +42,6 @@ struct ModeCardView: View {
             titleRow
             HStack(alignment: .center, spacing: 8) {
                 iconView
-                    .overlay(alignment: .topTrailing) {
-                        if let won = badgeWon {
-                            ResultBadge(won: won, size: HomeCardSpec.badge).offset(x: 7, y: -6)
-                        }
-                    }
                 subtitle(isVs ? (vsWon != nil ? "Played today" : mode.desc) : resultText)
             }
         }
@@ -76,12 +71,34 @@ struct ModeCardView: View {
     /// never wrapping) with today's W / L badge top-aligned at the row's end (its slot is
     /// reserved, so solved and unsolved names line up). §Y: VoiceOver still hears "Unlimited".
     private var titleRow: some View {
-        // BJ18: the grid's ONE name size; founder rule 10-10: the name wears bubble lettering (shrinks, never wraps), now
-        // across the card's full width.
-        BubbleOneLine(text: mode.title.uppercased(), palette: .accent(locked ? Theme.textMuted : mode.accent.onSeasonCard),
-                      size: nameSize, minScale: 0.75, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityLabel(unlimited && !locked ? "\(mode.title), Unlimited" : mode.title)
+        // Founder 10-10: the name across the card's top line with today's W / L badge back at its top-right end (its slot
+        // is reserved, so solved and unsolved names line up).
+        HStack(alignment: .center, spacing: 4) {
+            titleText
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityLabel(unlimited && !locked ? "\(mode.title), Unlimited" : mode.title)
+            Group {
+                if let won = badgeWon { ResultBadge(won: won, size: HomeCardSpec.badge) }
+            }
+            .frame(width: HomeCardSpec.badge, height: HomeCardSpec.badge)
+        }
+    }
+
+    /// The tile name's lettering (founder 10-10: "do the letters on the tiles need to have the borders?").
+    @ViewBuilder private var titleText: some View {
+        let ink = locked ? Theme.textMuted : mode.accent.onSeasonCard
+        switch HomeCardTitleStyle.current {
+        case .bubble:
+            BubbleOneLine(text: mode.title.uppercased(), palette: .accent(ink), size: nameSize, minScale: 0.75, alignment: .leading)
+        case .plainCaps:
+            Text(mode.title.uppercased()).font(Brand.font(nameSize, .black)).tracking(0.4)
+                .foregroundStyle(locked ? Theme.textMuted : ink.bubbleInk)
+                .lineLimit(1).minimumScaleFactor(0.75)
+        case .plain:
+            Text(mode.title).font(Brand.font(nameSize + 1, .black))
+                .foregroundStyle(locked ? Theme.textMuted : ink.bubbleInk)
+                .lineLimit(1).minimumScaleFactor(0.75)
+        }
     }
 
     /// The glossy game icon at 40 pt (no chip box); the old chip glyph when the art is missing.
@@ -268,4 +285,15 @@ extension HomeCardNameFit {
 extension View {
     /// BJ18: one card-name size across this grid of Home cards.
     func homeCardNames(_ titles: [String]) -> some View { modifier(HomeCardNameFit(titles: titles)) }
+}
+
+/// The Home tile name style. Founder 10-10 picked B (`plainCaps`) on the simulator; DEBUG `-tileTitleStyle` still flips it.
+enum HomeCardTitleStyle: String {
+    case bubble, plainCaps, plain
+    static var current: HomeCardTitleStyle {
+        #if DEBUG
+        if let raw = UserDefaults.standard.string(forKey: "tileTitleStyle"), let s = HomeCardTitleStyle(rawValue: raw) { return s }
+        #endif
+        return .plainCaps   // founder 10-10 picked B: clean capitals, no outline
+    }
 }

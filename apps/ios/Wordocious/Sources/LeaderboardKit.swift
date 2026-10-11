@@ -396,10 +396,15 @@ struct LbRowName: View {
     /// Tints the name in the player's own color (their backdrop); nil falls back to the name-derived color.
     var userId: String? = nil
     var body: some View {
-        // Founder rule 10-10: a person's name is bubble lettering in their own color; "YOU" rides after it in amber.
+        // Founder 10-10 ("make the leaderboard players under the podium plain text … like the Friends page"): plain heavy
+        // type in the page ink (the bubble lettering stays on the podium); "you" rides after it in amber.
         HStack(spacing: 5) {
-            BubbleLabel(name, color: PlayerTint.nameColor(userId: userId, username: name, onLight: !Theme.isDark), size: 15, minScale: 0.45)
-            if isMe { BubbleLabel("you", color: Color(hex: 0xD97706), size: 11, minScale: 0.7).layoutPriority(1) }
+            Text(name).font(Brand.font(15, .heavy)).foregroundStyle(FinishInk.heading)
+                .lineLimit(1).minimumScaleFactor(0.7)
+            if isMe {
+                Text("you").font(Brand.font(12, .heavy))
+                    .foregroundStyle(Theme.isDark ? Color(hex: 0xFCD34D) : Color(hex: 0xB45309)).layoutPriority(1)
+            }
             Spacer(minLength: 0)
         }
         .accessibilityElement(children: .ignore)

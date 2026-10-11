@@ -514,13 +514,15 @@ private struct DailyRing: View {
                     if flawless {
                         // The run is the hero; FLAWLESS under it (or alone on a first flawless day).
                         if flawlessRun >= 2 {
+                            // Founder 10-10 (small widget "×4 AWLESS"): both lines fit the gold ring's opening (the big run
+                            // pushed FLAWLESS down under the ring art).
                             Text("\u{00D7}\(flawlessRun)")
-                                .font(WType.black(min(WType.hero * 1.15, d * 0.34)))
+                                .font(WType.black(min(WType.hero * 1.15, d * 0.27)))
                                 .monospacedDigit().foregroundStyle(WInk.gold(dark))
                                 .lineLimit(1).minimumScaleFactor(0.4)
                             // Founder 10-10 ("×3 FLAWLES"): the label shrinks to fit inside the gold ring, never truncates.
                             if d >= 60 {
-                                Text("FLAWLESS").font(WType.black(WType.caps)).tracking(0.4)
+                                Text("FLAWLESS").font(WType.black(min(WType.caps, d * 0.1))).tracking(0.3)
                                     .foregroundStyle(WInk.gold(dark))
                                     .lineLimit(1).minimumScaleFactor(0.35).allowsTightening(true)
                             }
@@ -635,6 +637,45 @@ private struct StreakPair: View {
             FlameStreak(streak: snap.streak, size: size, big: big)
             if run >= 2 { TrophyStreak(streak: run, size: size, big: big) }
         }
+    }
+}
+
+/// Founder 10-10 (small widget: "streak info is hard to read … make the trophy and flame a little smaller and put the number
+/// underneath"): each icon a size down with its number under it in the widget's number ink — no number on the art.
+private struct StackedStreakPair: View {
+    let snap: WSnapshot
+    let height: CGFloat
+    let dark: Bool
+
+    var body: some View {
+        let run = snap.flawlessRun
+        let icon = height * 0.58
+        HStack(alignment: .top, spacing: 10) {
+            item(Image("icon3d-flame"), snap.streak, icon, dim: snap.streak == 0)
+                .accessibilityLabel("\(snap.streak) day streak")
+            if run >= 2 {
+                item(Image("streak-trophy-\(TrophyTier.of(run))"), run, icon, dim: false)
+                    .accessibilityLabel("\(run) flawless days in a row")
+            }
+        }
+    }
+
+    private func item(_ image: Image, _ n: Int, _ icon: CGFloat, dim: Bool) -> some View {
+        VStack(spacing: 0) {
+            image.resizable().interpolation(.high).scaledToFit()
+                .frame(width: icon, height: icon)
+                .saturation(dim ? 0.3 : 1).opacity(dim ? 0.7 : 1)
+            Text("\(n)").font(WType.black(height * 0.38)).monospacedDigit()
+                .foregroundStyle(WInk.number(dark))
+                .lineLimit(1).minimumScaleFactor(0.6)
+        }
+        .accessibilityElement(children: .ignore)
+    }
+}
+
+enum TrophyTier {
+    static func of(_ streak: Int) -> Int {
+        switch streak { case 30...: return 30; case 10...: return 10; case 7...: return 7; case 5...: return 5; default: return 3 }
     }
 }
 
@@ -872,7 +913,7 @@ struct SmallView: View {
                 // Founder 10-10: the streak pair (bigger numerals) on the left; today's points over the live countdown on the
                 // right — one line held the pair, the points and the timer at ~170 pt and clipped ("1,…"), so the right side stacks.
                 HStack(spacing: 4) {
-                    StreakPair(snap: snap, size: bottom, big: true)
+                    StackedStreakPair(snap: snap, height: bottom, dark: dark)
                     Spacer(minLength: 2)
                     VStack(alignment: .trailing, spacing: 1) {
                         (Text(WidgetStats.pointsText(snap.dayStats(at: date).points)).foregroundColor(WInk.number(dark))

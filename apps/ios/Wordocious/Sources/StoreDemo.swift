@@ -562,6 +562,8 @@ enum StoreDemoDriver {
         case "regions": PerfDrive.playUnlimited("REGIONS")
         case "crossword": PerfDrive.playUnlimited("CROSSWORD")
         case "hub": PerfDrive.playUnlimited("HUB")
+        case "sudoku": PerfDrive.playUnlimited("SUDOKU")
+        case "muddle": PerfDrive.playUnlimited("SCRAMBLE")
         case "friendspage": PerfTour.send(.selectTab(.friends))
         case "stats": PerfTour.send(.selectTab(.stats))
         case "leaderboard":

@@ -896,7 +896,8 @@ private struct MuddlePunchCoin: View {
 /// inside a 44 pt hit frame. The label is the accessibility label ("Reveal a
 /// letter" / "Solve this word").
 private func hintButton(_ label: String, _ symbol: String, action: @escaping () -> Void) -> some View {
-    PuzCandyIcon(symbol: symbol, label: label, variant: symbol == "eye" ? .pink : .amber, action: action)
+    // Founder 10-10: gold outlines (the gold letter tiles' color), not dark candy fills.
+    GoldOutlineIconButton(clay: symbol == "eye" ? "eye" : "hint", label: label, size: 34, action: action)
         .frame(width: MdSize.hitTarget, height: MdSize.hitTarget)
 }
 

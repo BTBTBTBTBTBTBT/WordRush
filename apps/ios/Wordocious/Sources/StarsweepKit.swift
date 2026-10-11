@@ -22,12 +22,14 @@ struct StarsweepTone {
     let deep: Color
 
     /// The tile face gradient: a lighter top easing into the pastel.
-    var faceTop: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.40) : Color.white.mixed(over: pastel, 0.45) }
-    var faceBottom: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.30) : pastel }
+    // Founder 10-10 ("Starsweep board is too dark … too faded, needs to pop"): on a dark board the regions carry much more of
+    // their own color (they sat at 30-40% over the night surface).
+    var faceTop: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.78) : Color.white.mixed(over: pastel, 0.45) }
+    var faceBottom: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.64) : pastel }
     /// The 1.5-pt bottom lip.
-    var lip: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.55) : deep.wash(0.50) }
+    var lip: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.45) : deep.wash(0.50) }
     /// The region's bed (shows in the small gaps between tiles of one region).
-    var bed: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.20) : deep.wash(0.30) }
+    var bed: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.34) : deep.wash(0.30) }
 
     private static var darkBase: Color { Theme.surface }
 }
@@ -113,6 +115,8 @@ struct StarsweepGlyphView: View {
         }
         .opacity(glyph == .missing ? 0.42 : 1)
         .saturation(glyph == .missing ? 0.35 : 1)
+        // Founder 10-10: the navy "placed" star vanished on the dark board — a light halo lifts it off the tile.
+        .shadow(color: Theme.isDark && glyph == .placed ? Color(hex: 0xFDE68A).opacity(0.85) : .clear, radius: 2.5)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
