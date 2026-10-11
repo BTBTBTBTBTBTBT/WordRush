@@ -924,10 +924,16 @@ export function renderAvatarPoseFixtures() {
   const withheld = [...AVATAR_POSES.slice(1), 'clap'].flatMap((pose) => bodies.map((body) => ({ pose, body, items: avatarPoseWithheld(pose, body) })));
   const placePoses = [1, 2, 3, 4, 10].map((place) => ({ place, pose: avatarPlacePose(place) }));
   const clapMatrices = bodies.map((body) => ({ body, m: avatarPoseMatrices(AVATAR_POSES_DATA.rigs[body], AVATAR_CODE_POSES.clap) }));
-  return {
+  // CI (Linux x64) and Macs (arm64) differ in the 17th digit of sin/cos, so the fixture is rounded to 9 decimals; the iOS /
+  // Android checks compare with a tolerance far above that.
+  return roundFloats({
     flag: AVATAR_LIVE_CONFIG, poses: AVATAR_POSES, reactionPose: AVATAR_REACTION_POSE, reactionSeconds: AVATAR_REACTION_SECONDS, reactionHops: AVATAR_REACTION_HOPS,
     data: AVATAR_POSES_DATA, matrices, frames, layouts, withheld, codePoses: AVATAR_CODE_POSES, placePoses, clapMatrices,
-  };
+  });
+}
+
+function roundFloats<T>(v: T): T {
+  return JSON.parse(JSON.stringify(v, (_k, x) => (typeof x === 'number' && !Number.isInteger(x) ? Math.round(x * 1e9) / 1e9 : x)));
 }
 
 export function renderAvatarLayoutFixtures() {
