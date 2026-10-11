@@ -24,59 +24,99 @@ struct LeaderboardStageCard<Content: View>: View {
 }
 
 /// The cloud bank, wider than the screen, drifting side to side very slowly (one Core Animation loop; still under Reduce
-/// Motion). Its top dissolves into the cast row and its lower edge fades out above the game rows.
+/// Motion / Low Power, and while a game covers the tab). Its top dissolves into the cast row and its lower edge fades out
+/// above the game rows: the fade mask and the 0.85 opacity are baked into the bitmap once (StageCloudBake), not a live mask.
 struct StageDriftingClouds: View {
     @Environment(\.accessibilityReduceMotion) private var envReduce
-    @State private var drift = false
+    @Environment(\.insideGameCover) private var insideGameCover
+    @ObservedObject private var chrome = ChromeVisibility.shared
 
     var body: some View {
-        let still = envReduce || Theme.reduceMotion
-        Image("art-lb-clouds").resizable().scaledToFit()
+        let still = envReduce || Theme.reduceMotion || PerfFlags.noDrift || ProcessInfo.processInfo.isLowPowerModeEnabled
+            || (chrome.bottomNavHidden && !insideGameCover)
+        let art = StageCloudBake.image
+        let ratio = (art?.size.width ?? 420) / (art?.size.height ?? 149)
+        CALoopImage(image: art, motion: .drift(dx: 26, tempo: 22), delay: 0.3, still: still)
+            .aspectRatio(ratio, contentMode: .fit)
             .padding(.horizontal, -36)
-            .offset(x: still ? 0 : (drift ? 26 : -26), y: -6)
-            .animation(still ? nil : .easeInOut(duration: 22).repeatForever(autoreverses: true), value: drift)
-            .opacity(0.85)
-            .mask(LinearGradient(stops: [.init(color: PerfFlags.noMask ? .black : .clear, location: 0), .init(color: .black, location: 0.22),
-                                         .init(color: .black, location: 0.6), .init(color: PerfFlags.noMask ? .black : .clear, location: 0.92)],
-                                 startPoint: .top, endPoint: .bottom).offset(y: -6))
-            .onAppear { if !still && !PerfFlags.noDrift { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { drift = true } } }
+            .offset(y: -6)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
     }
 }
 
-/// Sky wash in the game's tint (strongest on top), clouds, the sunburst light behind the podium, the floor glow.
+/// Sky wash in the game's tint (strongest on top), the sunburst light behind the podium, the floor glow — baked into ONE
+/// plain bitmap per (accent, appearance, season, size) (StageBake). A game switch cross-fades two images (0.38 s, the old
+/// accent-sweep timing) instead of tearing down and rebuilding blurred / blended / masked layers.
 struct LeaderboardStageBackdrop: View {
     let accent: Color
 
     var body: some View {
-        ZStack(alignment: .top) {
-            LinearGradient(stops: [
-                .init(color: accent.opacity(LeaderboardStage.skyTop), location: 0),
-                .init(color: accent.opacity(LeaderboardStage.skyMid), location: 0.52),
-                .init(color: accent.opacity(LeaderboardStage.skyBottom), location: 1),
-            ], startPoint: .top, endPoint: .bottom)
-            // Founder 10-09: the stage's tint fades in over its first ~60 pt (no hard top edge under the cast row); the
-            // cloud bank lives on the card (unclipped), see LeaderboardStageCard.
-            .mask(VStack(spacing: 0) {
-                LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 60)
-                Color.black
-                LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 90)
-            })
-            if !PerfFlags.noSun { VStack { Spacer(minLength: 0)
-                Image("art-lb-sunburst").resizable().scaledToFit()
-                    .frame(maxWidth: .infinity).scaleEffect(1.3, anchor: .bottom)
-                    .opacity(LeaderboardStage.rays).blendMode(.softLight)
-                    .accessibilityHidden(true)
-            } }
-            VStack { Spacer(minLength: 0)
-                RadialGradient(colors: [accent.opacity(LeaderboardStage.floorGlow), accent.opacity(0)],
-                               center: .bottom, startRadius: 0, endRadius: 170)
-                    .frame(height: 60)
-            }
+        GeometryReader { g in
+            StageBackdropImage(accent: accent, size: g.size)
         }
-        .animation(Theme.reduceMotion || PerfFlags.noAccentAnim ? nil : .easeInOut(duration: 0.38), value: accent.description)
         .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// The baked backdrop for `size`, cross-fading from the previous game's when the accent changes.
+private struct StageBackdropImage: View {
+    let accent: Color
+    let size: CGSize
+    /// What is showing, and (during a fade) what is fading in over it.
+    @State private var shown: UIImage?
+    @State private var incoming: UIImage?
+    @State private var incomingOpacity: Double = 0
+    @State private var settle = 0
+    @State private var warmedFor: CGSize = .zero
+    @State private var shownAccent: [CGFloat] = []
+
+    var body: some View {
+        let spec = StageBake.spec(accent: accent, size: size)
+        let target = StageBake.image(spec)
+        ZStack(alignment: .top) {
+            if let base = shown ?? target { layer(base) }
+            if let incoming { layer(incoming).opacity(incomingOpacity) }
+        }
+        .frame(width: size.width, height: size.height, alignment: .top)
+        .onAppear { warm(); shown = shown ?? target; shownAccent = spec.rgba }
+        // The new spec comes in as the argument (the closure's own captures can be the previous body's).
+        .onChange(of: spec, perform: { newSpec in
+            warm(CGSize(width: newSpec.w, height: newSpec.h))
+            guard let new = StageBake.image(newSpec) else { return }
+            let isSwitch = newSpec.rgba != shownAccent
+            shownAccent = newSpec.rgba
+            // sizes change without an accent change (the list loading): swap, no fade
+            if shown == nil || !isSwitch || Theme.reduceMotion || PerfFlags.noAccentAnim { shown = new; incoming = nil; return }
+            settle += 1
+            let mine = settle
+            if let incoming { shown = incoming }   // a switch mid-fade: the half-faded image becomes the base
+            incoming = new
+            incomingOpacity = 0
+            withAnimation(.easeInOut(duration: 0.38)) { incomingOpacity = 1 }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.42) {
+                guard mine == settle else { return }
+                shown = incoming ?? shown; incoming = nil
+            }
+        })
+    }
+
+    private func layer(_ img: UIImage) -> some View {
+        Image(uiImage: img).resizable().interpolation(.high)
+            .frame(width: size.width, height: size.height)
+    }
+
+    /// Bakes the other games' backdrops at this size in the background (once per size), so the first switch is warm too.
+    private func warm(_ size: CGSize? = nil) {
+        let size = size ?? self.size
+        guard warmedFor != size, size.width > 1, size.height > 1 else { return }
+        warmedFor = size
+        let modes: [GameMode] = [.duel, .duel6, .duel7, .quordle, .octordle, .sequence, .rescue, .gauntlet, .propernoundle,
+                                 .sudoku, .scramble, .hub, .crossword, .groups, .ladder, .cryptogram, .wordsearch, .regions]
+        let accents = modes.map { ModeStyle.accent($0) } + [GamePicker.sweepAccent]
+        let specs = accents.map { StageBake.spec(accent: $0, size: size) }
+        StageBake.prewarm(specs)
     }
 }
 
@@ -177,16 +217,24 @@ struct StageTitleRow: View {
             }
             .padding(.horizontal, 10).padding(.top, 8)
             // Founder 10-09: the title's cloud bank glows from behind (a warm gold light), so it reads as lit, not pasted.
-            .background(alignment: .center) {
-                RadialGradient(colors: [Color(hex: 0xFFD978).opacity(0.62), Color(hex: 0xFFB04A).opacity(0.22), .clear],
-                               center: .center, startRadius: 4, endRadius: 210)
-                    .scaleEffect(x: 1.25, y: 0.75)
-                    .blur(radius: PerfFlags.noGlow ? 0 : 10)
-                    .padding(-24)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
+            .background(alignment: .center) { TitleGlow() }
+        }
+    }
+}
+
+/// The title's gold light as ONE baked bitmap (the radial gradient, its 1.25 x .75 squash and the 10 pt blur drawn once for
+/// the row's size) — no live blur on the stage.
+private struct TitleGlow: View {
+    var body: some View {
+        GeometryReader { g in
+            if !PerfFlags.noGlow, let glow = StageGlowBake.image(size: g.size) {
+                Image(uiImage: glow.image).resizable()
+                    .frame(width: glow.image.size.width, height: glow.image.size.height)
+                    .position(x: g.size.width / 2, y: g.size.height / 2)
             }
         }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
@@ -257,8 +305,7 @@ struct YourBoardPill: View {
             .shadow(color: Color(hex: 0x4C1D95).opacity(0.45), radius: 0, x: 0, y: 1)
             .padding(.horizontal, 13)
             .frame(height: 26)
-            .background(CandyPill(sprite: .thumbOn).hueRotation(PerfFlags.noHue ? .zero : GameHue.shift(to: accent)))
-            .animation(PerfFlags.noAccentAnim ? nil : .easeInOut(duration: 0.3), value: accent.description)
+            .background(CandyPill(sprite: .thumbOn).environment(\.candyHue, PerfFlags.noHue ? .zero : GameHue.shift(to: accent)))
             .contentShape(Capsule())
         }
         .buttonStyle(.squish)

@@ -60,6 +60,7 @@ struct Icon3D: View {
     let name: Icon3DName
     var size: CGFloat
     var label: String? = nil
+    @Environment(\.candyHue) private var hue
 
     init(_ name: Icon3DName, size: CGFloat, label: String? = nil) {
         self.name = name
@@ -71,8 +72,16 @@ struct Icon3D: View {
         self.init(name, size: size, label: label)
     }
 
+    /// The art at display size; under a `candyHue` (the Leaderboard's controls) pre-tinted once, never a live filter.
+    private static func art(_ asset: String, size: CGFloat, hue: Angle) -> Image {
+        guard abs(hue.degrees) > 0.01 else { return ArtThumbs.image(asset, points: size) }
+        let base = ArtThumbs.uiImage(asset, points: size) ?? UIImage(named: asset)
+        guard let base else { return ArtThumbs.image(asset, points: size) }
+        return Image(uiImage: HueTint.image(base, key: "icon|\(asset)|\(Int(size))", hue))
+    }
+
     var body: some View {
-        let image = ArtThumbs.image(name.assetName, points: size)   // §AQ2: display-size bitmap
+        let image = Self.art(name.assetName, size: size, hue: hue)   // §AQ2: display-size bitmap
             .resizable()
             .interpolation(.high)
             .scaledToFit()

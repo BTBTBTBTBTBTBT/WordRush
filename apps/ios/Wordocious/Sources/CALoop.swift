@@ -14,6 +14,8 @@ struct CALoopImage: UIViewRepresentable {
         case hop(hop: CGFloat, stretch: CGSize, squash: CGSize, sway: Double, tempo: Double, swayTempo: Double)
         /// Opacity `low`...1 and scale `small`...`big`.
         case twinkle(low: Float, small: CGFloat, big: CGFloat, tempo: Double)
+        /// A slow side-to-side drift of +/- `dx` points (the Leaderboard's cloud bank).
+        case drift(dx: CGFloat, tempo: Double)
     }
 
     let image: UIImage?
@@ -88,6 +90,8 @@ struct CALoopImage: UIViewRepresentable {
             case let .twinkle(low, small, big, tempo):
                 loop("opacity", low, 1, tempo)
                 loop("transform.scale", small, big, tempo)
+            case let .drift(dx, tempo):
+                loop("transform.translation.x", -dx, dx, tempo)
             }
         }
     }

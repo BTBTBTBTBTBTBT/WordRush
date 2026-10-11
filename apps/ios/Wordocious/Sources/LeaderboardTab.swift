@@ -261,8 +261,8 @@ struct LeaderboardTab: View {
                     }
                     modeShareButton
                 }
-                .hueRotation(PerfFlags.noHue ? .zero : GameHue.shift(to: stageAccent))
-                .animation(PerfFlags.noAccentAnim ? nil : .easeInOut(duration: 0.3), value: stageAccent.description)
+                // Founder 10-10 (smoothness): pre-tinted sprites / inks (HueTint), not a live hueRotation filter animation.
+                .environment(\.candyHue, PerfFlags.noHue ? .zero : GameHue.shift(to: stageAccent))
                 .layoutPriority(2)
             }
             HStack(spacing: 6) {

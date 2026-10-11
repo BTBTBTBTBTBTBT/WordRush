@@ -187,6 +187,7 @@ struct CandySegmented<Key: Hashable>: View {
     var labelPad: CGFloat = 14
     let onSelect: (Key) -> Void
     @Namespace private var ns
+    @Environment(\.candyHue) private var hue
 
     var body: some View {
         let pad = CandySprite.pad(height)
@@ -200,8 +201,8 @@ struct CandySegmented<Key: Hashable>: View {
                 } label: {
                     Text(opt.label)
                         .font(Brand.font(fontSize, .black)).tracking(0.3)
-                        .foregroundStyle(on ? CandyToggleInk.on : CandyToggleInk.off)
-                        .shadow(color: on ? Color(hex: 0x4C1D95).opacity(0.45) : .clear, radius: 0, x: 0, y: 1)
+                        .foregroundStyle(on ? CandyToggleInk.on : HueTint.color(CandyToggleInk.off, hue))
+                        .shadow(color: on ? HueTint.color(Color(hex: 0x4C1D95), hue).opacity(0.45) : .clear, radius: 0, x: 0, y: 1)
                         .lineLimit(1).minimumScaleFactor(0.8)
                         .padding(.horizontal, labelPad)
                         .frame(maxWidth: .infinity, minHeight: height - pad * 2)
@@ -513,10 +514,10 @@ struct PodiumView: View {
     private var burstOn: Bool { FlagsService.shared.isLive("podium_burst") }
 
     var body: some View {
+        // Founder 10-10 (smoothness): a place's identity is its PLAYER (stable by userId), so a game switch that leaves the same
+        // players on the podium keeps their living mascots' views (and layers) alive; only names / scores update.
         HStack(alignment: .bottom, spacing: 8) {
-            column(place: 2)
-            column(place: 1)
-            column(place: 3)
+            ForEach(slots, id: \.id) { slot in column(place: slot.place) }
         }
         // The glossy floor plate (art-podium-floor) the pedestals stand on: a flat disc
         // whose middle line meets the steps' feet (static, one image).
@@ -532,6 +533,17 @@ struct PodiumView: View {
         .softSheet(item: $stageTarget) { t in
             PodiumStageCard(entry: t.entry, place: t.place, onProfile: onTap.map { tap in { tap(t.entry) } })
                 .presentationDetents([.height(400), .large])
+        }
+    }
+
+    /// The three slots left to right (2 · 1 · 3), each identified by the player standing in it (the place when it is empty).
+    private var slots: [(place: Int, id: String)] {
+        var seen = Set<String>()
+        return [2, 1, 3].map { place in
+            guard place - 1 < entries.count else { return (place, "slot\(place)") }
+            let pid = entries[place - 1].id
+            if pid.isEmpty || !seen.insert(pid).inserted { return (place, "slot\(place)#\(pid)") }
+            return (place, pid)
         }
     }
 
@@ -843,10 +855,12 @@ enum CandySprite: String {
 /// A three-sliced candy pill that fills its frame.
 struct CandyPill: View {
     let sprite: CandySprite
+    /// The Leaderboard's controls wear the selected game's hue: the sprite is pre-tinted once (HueTint), never a live filter.
+    @Environment(\.candyHue) private var hue
     var body: some View {
         GeometryReader { g in
             if let img = CandySprite.pill(sprite, dark: Theme.isDark, size: g.size) {
-                Image(uiImage: img).resizable()
+                Image(uiImage: HueTint.image(img, key: "\(sprite.rawValue)|\(Theme.isDark)|\(Int(g.size.width))x\(Int(g.size.height))", hue)).resizable()
             }
         }
         .allowsHitTesting(false)

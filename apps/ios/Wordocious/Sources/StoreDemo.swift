@@ -564,7 +564,11 @@ enum StoreDemoDriver {
         case "hub": PerfDrive.playUnlimited("HUB")
         case "friendspage": PerfTour.send(.selectTab(.friends))
         case "stats": PerfTour.send(.selectTab(.stats))
-        case "leaderboard": PerfTour.send(.selectTab(.leaderboard))
+        case "leaderboard":
+            // `-storeLbMode QUORDLE`: the board opens on that game (stage-backdrop reference shots).
+            let a = ProcessInfo.processInfo.arguments
+            if let i = a.firstIndex(of: "-storeLbMode"), i + 1 < a.count { NextDailyCTA.pendingLeaderboardMode = a[i + 1] }
+            PerfTour.send(.selectTab(.leaderboard))
         case "friends":
             PerfTour.send(.selectTab(.friends))
             await PerfDrive.sleep(2.0)
