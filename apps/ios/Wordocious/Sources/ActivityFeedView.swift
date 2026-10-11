@@ -42,8 +42,8 @@ struct ActivityFeedView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             FriendsSectionHeader(title: "MOMENTS") {
-                Text("LAST 7 DAYS · DOUBLE-TAP OR HOLD TO REACT").font(Brand.font(8.5, .black)).tracking(0.6)
-                    .foregroundStyle(FriendsInk.section).lineLimit(1).minimumScaleFactor(0.7)
+                Text("Last 7 days · hold to react").font(Brand.font(11, .bold))
+                    .foregroundStyle(FriendsInk.muted).lineLimit(1).minimumScaleFactor(0.7)
             }
             if let events {
                 if events.isEmpty {
@@ -138,8 +138,8 @@ struct ActivityFeedView: View {
             }
         }
         .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 8)
-        .friendsCard(accent: look.color, bar: [look.color, look.color.mixed(over: .white, 0.7)], radius: 16,
-                     barHeight: 5, tint: e.me ? 0.12 : 0.08, line: 0.26)
+        // Founder 10-10 ("the whole page is very busy"): no rainbow top bar per moment; the art keeps the color.
+        .friendsCard(accent: look.color, radius: 16, tint: e.me ? 0.10 : 0.07, line: 0.2)
         .overlay(shape.stroke(open ? FriendsKit.solid.opacity(0.6) : .clear, lineWidth: 2).allowsHitTesting(false))
         .contentShape(shape)
         .onTapGesture(count: 2) {
@@ -231,9 +231,17 @@ struct ActivityFeedView: View {
                     toggle(e, "rematch")
                 }
             } label: {
-                CandyLabel(title: "Rematch", symbol: "arrow.counterclockwise")
+                // Founder 10-10: a quiet text action, not a candy pill.
+                HStack(spacing: 5) {
+                    Image(systemName: "arrow.counterclockwise").font(.system(size: 12, weight: .black))
+                    Text("Rematch").font(Brand.font(13, .heavy))
+                }
+                .foregroundStyle(FriendsQuietInk.violet)
+                .padding(.horizontal, 10).frame(minHeight: 34)
+                .background(Capsule().fill(FriendsQuietInk.violet.opacity(FriendsInk.dark ? 0.16 : 0.10)))
+                .contentShape(Capsule())
             }
-            .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+            .buttonStyle(.squish)
             .accessibilityLabel("Rematch")
         }
         // FINISH_SPEC §AS5: no "View" button — tapping the row (or the avatar) opens

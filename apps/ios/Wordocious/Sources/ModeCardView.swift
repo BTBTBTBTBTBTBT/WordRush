@@ -24,9 +24,11 @@ struct ModeCardView: View {
     /// FINISH_SPEC §Y, no infinity mark either).
     var unlimited: Bool = false
 
-    private static let icon = HomeCardSpec.icon
+    private static let icon = HomeCardSpec.rowIcon
     /// BJ18: the Home grid's shared name size (HomeCardNameFit); a lone card keeps 17.
-    @Environment(\.homeCardNameSize) private var nameSize
+    @Environment(\.homeCardNameSizes) private var nameSizes
+    /// This card's name size: its row's shared size (founder 10-10), else the spec size.
+    private var nameSize: CGFloat { nameSizes[mode.title] ?? HomeCardSpec.name }
 
     var body: some View {
         let isVs = mode.id == "vs"
@@ -34,15 +36,21 @@ struct ModeCardView: View {
         let lockGray = Color(hex: 0xD1D5DB)
         // Founder 10-03 ("align at the tops"): icon, name and badge share ONE top line; the
         // subtitle sits 4 under the name, beside the icon. The card hugs it (66 with the trim).
-        return HStack(alignment: .top, spacing: 8) {
-            iconView
-            VStack(alignment: .leading, spacing: HomeCardSpec.descGap) {
-                titleRow
-                    .padding(.top, -3) // the name's cap height on the icon's top edge
+        // Founder 10-10 ("make the main titles a bit taller and more readable"): the name spans the full card width on
+        // top; the icon (today's W / L on its corner) leads the subtitle line under it.
+        return VStack(alignment: .leading, spacing: HomeCardSpec.descGap) {
+            titleRow
+            HStack(alignment: .center, spacing: 8) {
+                iconView
+                    .overlay(alignment: .topTrailing) {
+                        if let won = badgeWon {
+                            ResultBadge(won: won, size: HomeCardSpec.badge).offset(x: 7, y: -6)
+                        }
+                    }
                 subtitle(isVs ? (vsWon != nil ? "Played today" : mode.desc) : resultText)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, HomeCardSpec.padX)
         .padding(.top, HomeCardSpec.padTop).padding(.bottom, HomeCardSpec.padBottom)
         .frame(maxWidth: .infinity, minHeight: HomeCardSpec.height - GameCardChrome.band, alignment: .topLeading)
@@ -68,18 +76,12 @@ struct ModeCardView: View {
     /// never wrapping) with today's W / L badge top-aligned at the row's end (its slot is
     /// reserved, so solved and unsolved names line up). §Y: VoiceOver still hears "Unlimited".
     private var titleRow: some View {
-        HStack(alignment: .top, spacing: 4) {
-            // BJ18: the grid's ONE name size; founder rule 10-10: the name wears bubble lettering (shrinks, never wraps).
-            BubbleOneLine(text: mode.title.uppercased(), palette: .accent(locked ? Theme.textMuted : mode.accent.onSeasonCard),
-                          size: nameSize + 1, minScale: 0.5, alignment: .leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityLabel(unlimited && !locked ? "\(mode.title), Unlimited" : mode.title)
-            Group {
-                if let won = badgeWon { ResultBadge(won: won, size: HomeCardSpec.badge) }
-            }
-            .frame(width: HomeCardSpec.badge, height: HomeCardSpec.badge, alignment: .top)
-            .padding(.top, 2)
-        }
+        // BJ18: the grid's ONE name size; founder rule 10-10: the name wears bubble lettering (shrinks, never wraps), now
+        // across the card's full width.
+        BubbleOneLine(text: mode.title.uppercased(), palette: .accent(locked ? Theme.textMuted : mode.accent.onSeasonCard),
+                      size: nameSize, minScale: 0.75, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityLabel(unlimited && !locked ? "\(mode.title), Unlimited" : mode.title)
     }
 
     /// The glossy game icon at 40 pt (no chip box); the old chip glyph when the art is missing.
@@ -88,7 +90,7 @@ struct ModeCardView: View {
         if let art = mode.icon.gameArt {
             GameArtImage(asset: art, size: Self.icon)
         } else {
-            ModeIconView(icon: mode.icon, accent: mode.accent, box: 34)
+            ModeIconView(icon: mode.icon, accent: mode.accent, box: 26)
                 .frame(width: Self.icon, height: Self.icon)
         }
     }
@@ -219,10 +221,11 @@ extension View {
 
 // MARK: - BJ18 one name size per grid
 
-private struct HomeCardNameSizeKey: EnvironmentKey { static let defaultValue: CGFloat = HomeCardSpec.name }
+private struct HomeCardNameSizeKey: EnvironmentKey { static let defaultValue: [String: CGFloat] = [:] }
 
 extension EnvironmentValues {
-    var homeCardNameSize: CGFloat {
+    /// Each card's name size by title (one size per grid ROW).
+    var homeCardNameSizes: [String: CGFloat] {
         get { self[HomeCardNameSizeKey.self] }
         set { self[HomeCardNameSizeKey.self] = newValue }
     }
@@ -236,16 +239,29 @@ private struct HomeCardNameFit: ViewModifier {
     @State private var width: CGFloat = 0
 
     func body(content: Content) -> some View {
-        let widths = titles.map { Brand.textWidth($0, HomeCardSpec.name, .black) }
-        let size = width > 0 ? HomeCardSpec.uniformNameSize(widths: widths, slot: HomeCardSpec.nameSlot(gridWidth: width))
-                             : HomeCardSpec.name
+        // Founder 10-10 (Crosswordocious set every puzzle's name to ~12 pt): ONE size per grid ROW, so the two cards side
+        // by side still match (BJ18's even look) while a short-named row keeps the full size.
         content
-            .environment(\.homeCardNameSize, size)
+            .environment(\.homeCardNameSizes, Self.rowSizes(titles, width: width))
             .background(GeometryReader { g in
                 Color.clear
                     .onAppear { width = g.size.width }
                     .onChange(of: g.size.width) { width = $0 }
             })
+    }
+}
+
+extension HomeCardNameFit {
+    static func rowSizes(_ titles: [String], width: CGFloat) -> [String: CGFloat] {
+        let slot = HomeCardSpec.nameSlot(gridWidth: width)
+        var sizes: [String: CGFloat] = [:]
+        for row in stride(from: 0, to: titles.count, by: 2) {
+            let pair = Array(titles[row..<min(row + 2, titles.count)])
+            let widths = pair.map { Brand.textWidth($0.uppercased(), HomeCardSpec.name, .black) * HomeCardSpec.bubbleWidth }
+            let size = width > 0 ? HomeCardSpec.uniformNameSize(widths: widths, slot: slot) : HomeCardSpec.name
+            for t in pair { sizes[t] = size }
+        }
+        return sizes
     }
 }
 

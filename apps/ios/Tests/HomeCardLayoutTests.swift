@@ -4,12 +4,12 @@ import XCTest
 final class HomeCardLayoutTests: XCTestCase {
     func testCompactCardMeasures() {
         // BH2 + founder 10-03: ~64–70 tall (was ~104), icon 40, name 17, one 13 subtitle line.
-        XCTAssertTrue((64...70).contains(HomeCardSpec.height))
+        XCTAssertTrue((74...82).contains(HomeCardSpec.height))   // founder 10-10: full-width names
         XCTAssertEqual(HomeCardSpec.icon, 40)
-        XCTAssertEqual(HomeCardSpec.name, 17)
+        XCTAssertEqual(HomeCardSpec.name, 18)
         XCTAssertEqual(HomeCardSpec.desc, 13)
         // The card hugs the top row: band + top pad + max(icon, name line + gap + one line) + bottom pad.
-        let content = max(HomeCardSpec.icon, 21 + HomeCardSpec.descGap + 16)
+        let content = 21 + HomeCardSpec.descGap + HomeCardSpec.rowIcon
         XCTAssertLessThanOrEqual(CardTrimGeometry.band + HomeCardSpec.padTop + content + HomeCardSpec.padBottom, HomeCardSpec.height + 1)
         XCTAssertGreaterThanOrEqual(HomeCardSpec.height, 44)
     }
@@ -33,10 +33,10 @@ final class HomeCardLayoutTests: XCTestCase {
 
     /// BJ18: one name size per grid — the widest name decides it; floored at 13 (then per-card shrink).
     func testUniformNameSizeFitsTheWidestName() {
-        XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [60, 70], slot: 80), 17)
-        XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [60, 85], slot: 80), 16)       // 17 × 80/85 = 16.0
+        XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [60, 70], slot: 80), 18)
+        XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [60, 85], slot: 80), 16.5)     // 18 × 80/85 = 16.9 → 16.5
         XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [60, 200], slot: 80), 13)      // the floor
-        XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [], slot: 80), 17)
-        XCTAssertEqual(HomeCardSpec.nameSlot(gridWidth: 350), 170 - 94)
+        XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [], slot: 80), 18)
+        XCTAssertEqual(HomeCardSpec.nameSlot(gridWidth: 350), 170 - 20)
     }
 }

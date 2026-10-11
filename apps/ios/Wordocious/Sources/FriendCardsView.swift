@@ -66,7 +66,7 @@ struct FriendCardView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .friendsCard(accent: accent, bar: [accent], radius: 18, barHeight: 5, tint: 0.07, line: 0.2)
+        .friendsCard(accent: accent, radius: 18, tint: 0.07, line: 0.2)   // founder 10-10: no top bar (page was busy)
     }
 
     // MARK: Header
@@ -77,9 +77,7 @@ struct FriendCardView: View {
                 HStack(spacing: 10) {
                     avatar
                     VStack(alignment: .leading, spacing: 2) {
-                        BubbleOneLine(text: card.name.uppercased(),
-                                      palette: .accent(PlayerTint.nameColor(userId: card.friendId, username: card.name, onLight: !FriendsInk.dark)),
-                                      size: 16, minScale: 0.45, alignment: .leading)
+                        FriendsName(name: card.name, size: 16)
                         if let p = card.presence {
                             HStack(spacing: 4) {
                                 Circle().fill(FriendsInk.online).frame(width: 7, height: 7)

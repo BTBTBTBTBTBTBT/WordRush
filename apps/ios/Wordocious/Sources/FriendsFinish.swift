@@ -332,3 +332,83 @@ struct FriendsNewFriendsCard: View {
         .friendsCard(accent: FriendsInk.pink, bar: [FriendsInk.pink, FriendsInk.purple])
     }
 }
+
+// MARK: - Calm Friends page (founder 10-10: "the buttons are loud and obnoxious, the whole page is very busy, and it's hard to read
+// the names and titles"). Names in plain heavy type (the bubble lettering stays on section titles), each row's one action a
+// quiet round 3D icon, secondary actions as quiet text — the candy pills are kept for real calls to action elsewhere.
+
+/// A player's name on the Friends page: plain heavy type in the page ink (yours in the brand pink).
+struct FriendsName: View {
+    let name: String
+    var isMe = false
+    var size: CGFloat = 15
+    var body: some View {
+        Text(name).font(Brand.font(size, .heavy))
+            .foregroundStyle(isMe ? FriendsKit.solid.liftedOnDark : FriendsInk.heading)
+            .lineLimit(1).minimumScaleFactor(0.7)
+    }
+}
+
+private extension Color {
+    /// The brand pink lifted toward white on a dark (season) surface so a name in it still reads.
+    var liftedOnDark: Color { FriendsInk.dark ? Color(hex: 0xF9A8D4) : self }
+}
+
+/// A row's one action as a quiet round icon: a soft wash in its color + the 3D art (44 pt hit area, 36 pt face).
+struct FriendsQuietAction: View {
+    enum Glyph { case art(String), clay(String) }
+    let glyph: Glyph
+    let tint: Color
+    let label: String
+    var disabled = false
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                Circle().fill(tint.opacity(FriendsInk.dark ? 0.24 : 0.14))
+                switch glyph {
+                case .art(let name):
+                    Image(name).resizable().interpolation(.high).scaledToFit().frame(width: 21, height: 21)
+                case .clay(let name):
+                    if let ui = FamilyArt.shared.image("art-fam-ic-\(name)") {
+                        Image(uiImage: ui).resizable().interpolation(.high).scaledToFit().frame(width: 15, height: 15)
+                            .colorMultiply(tint)
+                    }
+                }
+            }
+            .frame(width: 36, height: 36)
+        }
+        .buttonStyle(RoundIconButtonStyle())
+        .disabled(disabled)
+        .opacity(disabled ? 0.5 : 1)
+        .accessibilityLabel(label)
+    }
+}
+
+/// A secondary action as quiet text with its small 3D icon (Nudge all, Add) — no candy fill.
+struct FriendsQuietText: View {
+    let title: String
+    let art: String
+    let tint: Color
+    let label: String
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(art).resizable().interpolation(.high).scaledToFit().frame(width: 16, height: 16)
+                Text(title).font(Brand.font(13, .heavy)).foregroundStyle(tint)
+            }
+            .padding(.horizontal, 10).frame(minHeight: 34)
+            .background(Capsule().fill(tint.opacity(FriendsInk.dark ? 0.16 : 0.10)))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.squish)
+        .accessibilityLabel(label)
+    }
+}
+
+enum FriendsQuietInk {
+    static var gold: Color { FriendsInk.dark ? Color(hex: 0xFCD34D) : Color(hex: 0xB45309) }
+    static var pink: Color { FriendsInk.dark ? Color(hex: 0xF9A8D4) : Color(hex: 0xBE185D) }
+    static var violet: Color { FriendsInk.dark ? Color(hex: 0xC4B5FD) : Color(hex: 0x6D28D9) }
+}

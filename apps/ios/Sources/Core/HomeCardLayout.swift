@@ -5,21 +5,26 @@ import Foundation
 /// ModeCardView / GameCardChrome (app) and the tests; mirrors web lib/card-trim.ts + MODE_CARD
 /// and Android ModeCardView.kt (keep the three in step).
 public enum HomeCardSpec {
-    /// BH2: ~35% shorter than the old ~104 pt card; founder 10-03 ("align at the tops … clear off
-    /// some of the empty space"): one top-aligned row [icon][name][badge], the subtitle 4 under the
-    /// name — the card hugs it: trim band 9 + 7 + max(icon 40, 21 + 4 + 16) + 9 = 66.
-    public static let height: CGFloat = 66
+    /// Founder 10-10 ("make the main titles a bit taller and more readable … Crosswordocious I can barely read"): the
+    /// name spans the card's full width on the top line; the icon (with today's W / L on its corner) leads the subtitle
+    /// line under it — band 9 + 7 + name 21 + 4 + row icon 30 + 9 ≈ 80. (BH2's 66 pt row squeezed every name to the
+    /// 13 pt floor and the long ones to ~7 pt.)
+    public static let height: CGFloat = 80
+    /// The icon on the subtitle line.
+    public static let rowIcon: CGFloat = 30
     public static let radius: CGFloat = 16
     public static let icon: CGFloat = 40
     public static let padTop: CGFloat = 7
     public static let padBottom: CGFloat = 9
     public static let descGap: CGFloat = 4
-    public static let name: CGFloat = 17
+    public static let name: CGFloat = 18
     public static let desc: CGFloat = 13
     public static let padX: CGFloat = 10
     public static let gap: CGFloat = 10
-    /// The W / L badge at the end of the top row.
-    public static let badge: CGFloat = 22
+    /// Today's W / L badge on the icon's top-trailing corner.
+    public static let badge: CGFloat = 18
+    /// The bubble lettering runs wider than the plain-font measure (rim + tracking).
+    public static let bubbleWidth: CGFloat = 1.12
     /// DAILIES / PUZZLES title art scale over the compact grid (~25% smaller).
     public static let sectionTitleScale: CGFloat = 0.75
 
@@ -27,10 +32,10 @@ public enum HomeCardSpec {
     /// the floor shrinks on its own card (minimumScaleFactor) as the last resort.
     public static let nameUniformMin: CGFloat = 13
 
-    /// The name's slot in a grid card: card − insets − icon − 8 gap − 4 gap − the reserved badge.
+    /// The name's slot in a grid card: the card's full width less its insets (founder 10-10).
     public static func nameSlot(gridWidth: CGFloat, columns: Int = 2) -> CGFloat {
         let card = (gridWidth - gap * CGFloat(max(0, columns - 1))) / CGFloat(max(1, columns))
-        return card - 2 * padX - icon - 8 - 4 - badge
+        return card - 2 * padX
     }
 
     /// FINISH_SPEC BJ18 (founder 10-03: QuadWord's name smaller than Classic's): ONE name size for a

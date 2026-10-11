@@ -269,7 +269,8 @@ struct FriendsPanelView: View {
     private var playWithFriendsSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             FriendsSectionHeader(title: "PLAY WITH FRIENDS") {
-                BubbleLabel("Tap a game, pick a friend", color: FriendsInk.section, size: 11, minScale: 0.5, alignment: .trailing)
+                Text("Tap a game, pick a friend").font(Brand.font(11, .bold)).foregroundStyle(FriendsInk.muted)
+                    .lineLimit(1).minimumScaleFactor(0.7)
             }
             // §9: six games, 3 across × 2 rows. §C4: each a small card tinted in its
             // OWN color with its own top bar (mockup `.gt`).
@@ -282,13 +283,14 @@ struct FriendsPanelView: View {
                         // every card in the grid stays the same height.
                         VStack(alignment: .leading, spacing: 3) {
                             pocketIcon(k, size: 32)
-                            BubbleOneLine(text: k.title.uppercased(), palette: .accent(accent), size: 13, minScale: 0.5, alignment: .leading)
+                            Text(k.title).font(Brand.font(13.5, .heavy)).foregroundStyle(FriendsInk.heading)
+                                .lineLimit(1).minimumScaleFactor(0.65)
                             Text(FriendsKit.sub(k)).font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.muted)
                                 .lineLimit(2, reservesSpace: true).minimumScaleFactor(0.8).multilineTextAlignment(.leading)
                         }
                         .padding(.horizontal, 8).padding(.vertical, 8)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
-                        .friendsCard(accent: accent, bar: [accent], radius: 16, barHeight: 5, tint: 0.10, line: 0.28)
+                        .friendsCard(accent: accent, radius: 16, tint: 0.10, line: 0.22)   // founder 10-10: no rainbow top bars
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.squish)
@@ -322,7 +324,8 @@ struct FriendsPanelView: View {
                 Spacer(minLength: 6)
                 // §218: name the window and when it closes; §226 live clock.
                 TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                    BubbleLabel(FriendsPanelView.weekEndsLabel(at: ctx.date), color: weekInk, size: 11, minScale: 0.5, alignment: .trailing)
+                    Text(FriendsPanelView.weekEndsLabel(at: ctx.date)).font(Brand.font(11, .heavy)).monospacedDigit()
+                        .foregroundStyle(FriendsInk.muted).lineLimit(1).minimumScaleFactor(0.7)
                 }
                 // §234: share the race once someone has actually scored this week.
                 if raceStarted {
@@ -407,8 +410,7 @@ struct FriendsPanelView: View {
                             HStack(spacing: 8) {
                                 BubbleOneLine(text: FriendsPanelView.ordinal(i + 4).uppercased(), palette: .accent(weekInk), size: 12, minScale: 0.5, alignment: .trailing)
                                     .frame(width: 30, alignment: .trailing)
-                                BubbleLabel(e.username, color: e.isMe ? FriendsKit.solid : PlayerTint.nameColor(userId: e.id, username: e.username, onLight: !FriendsInk.dark),
-                                            size: 13, minScale: 0.45)
+                                FriendsName(name: e.username, isMe: e.isMe)
                                 Spacer(minLength: 4)
                                 Text(e.pts.formatted()).softNumber(13, color: VsLobbyKit.numberInk)
                                     .fixedSize()
@@ -487,8 +489,7 @@ struct FriendsPanelView: View {
                                 BubbleOneLine(text: FriendsPanelView.ordinal(i + 4).uppercased(), palette: .accent(ink), size: 12, minScale: 0.5, alignment: .trailing)
                                     .frame(width: 30, alignment: .trailing)
                                 VStack(alignment: .leading, spacing: 1) {
-                                    BubbleLabel(e.username, color: e.isMe ? FriendsKit.solid : PlayerTint.nameColor(userId: e.id, username: e.username, onLight: !FriendsInk.dark),
-                                                size: 13, minScale: 0.45)
+                                    FriendsName(name: e.username, isMe: e.isMe)
                                     // Both parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
                                     ForEach(Array(FriendCards.raceBadgeLines(e.badge).enumerated()), id: \.offset) { _, line in
                                         Text(line).font(Brand.font(8.5, .black)).tracking(0.4)
@@ -574,13 +575,9 @@ struct FriendsPanelView: View {
             // §C4b: "Add a friend" lives here now — a small candy button in the
             // section header (the old circle beside the FRIENDS title is gone).
             FriendsSectionHeader(title: friends.isEmpty ? "YOUR FRIENDS" : "YOUR FRIENDS · \(friends.count)") {
-                Button {
+                FriendsQuietText(title: "Add", art: "icon3d-add-friend", tint: FriendsQuietInk.pink, label: "Add a friend") {
                     if let onAddFriend { onAddFriend() } else { fieldFocused = true }
-                } label: {
-                    CandyLabel(title: "Add a friend", symbol: "plus")
                 }
-                .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
-                .accessibilityLabel("Add a friend")
             }
             if friends.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
@@ -703,7 +700,8 @@ struct FriendsPanelView: View {
                             .font(Brand.font(11, .heavy)).foregroundStyle(FriendsInk.rowSub)
                             .lineLimit(1).minimumScaleFactor(0.8)
                         Spacer(minLength: 6)
-                        Button {
+                        FriendsQuietText(title: "Nudge all", art: "icon3d-bell", tint: FriendsQuietInk.gold,
+                                         label: "Nudge all who haven't played") {
                             Task {
                                 var n = 0
                                 for f in slackers {
@@ -714,13 +712,7 @@ struct FriendsPanelView: View {
                                 }
                                 note = n > 0 ? "Nudged \(n) friend\(n == 1 ? "" : "s")!" : "Everyone already nudged today"
                             }
-                        } label: {
-                            CandyLabel(title: "Nudge all", symbol: "bell.fill")
                         }
-                        .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: true))
-                        .environment(\.castCapScale, 0.78)
-                        .frame(width: Self.actionPillWidth)
-                        .accessibilityLabel("Nudge all who haven't played")
                     }
                     .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 4)
                 }
@@ -780,8 +772,7 @@ struct FriendsPanelView: View {
                     .frame(width: 38, height: 38)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 5) {
-                        BubbleLabel(f.username, color: PlayerTint.nameColor(userId: f.id, username: f.username, onLight: !FriendsInk.dark),
-                                    size: 15, minScale: 0.45)
+                        FriendsName(name: f.username)
                         // §V3: the tier badge + level beside the name.
                         if f.level > 0 { LevelBadge(level: f.level, size: 16) }
                         // §216: the week's leader wears the crown.
@@ -894,28 +885,20 @@ struct FriendsPanelView: View {
     private func actionPill(_ f: FriendsService.FriendProfile, online: Bool) -> some View {
         // Founder 10-09: Play / Challenge / Nudge are ONE width with ONE letter height down the list (they were sized
         // to their words and Challenge squeezed the names).
+        // Founder 10-10 ("the buttons are loud"): one quiet round icon per row instead of a 96 pt candy pill.
         actionPillButton(f, online: online)
-            .environment(\.castCapScale, 0.78)
-            .frame(width: Self.actionPillWidth)
     }
-    static let actionPillWidth: CGFloat = 96
 
     @ViewBuilder private func actionPillButton(_ f: FriendsService.FriendProfile, online: Bool) -> some View {
         if online {
-            Button { quickPlay = QuickPlay(friend: f, kind: nil) } label: { CandyLabel(title: "Play") }
-                .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: true))
-                .accessibilityLabel("Play with \(f.username)")
-        } else if (f.playedToday ?? 0) > 0 {
-            Button { challenge(f) } label: {
-                CandyLabel(title: challenging == f.id ? "Sending…" : "Challenge")
+            FriendsQuietAction(glyph: .clay("play"), tint: FriendsQuietInk.pink, label: "Play with \(f.username)") {
+                quickPlay = QuickPlay(friend: f, kind: nil)
             }
-            .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: true))
-            .disabled(challenging != nil)
-            .accessibilityLabel("Challenge \(f.username) to a VS Battle")
+        } else if (f.playedToday ?? 0) > 0 {
+            FriendsQuietAction(glyph: .art("art-badge-swords"), tint: FriendsQuietInk.pink,
+                               label: "Challenge \(f.username) to a VS Battle", disabled: challenging != nil) { challenge(f) }
         } else {
-            Button { tauntTarget = f } label: { CandyLabel(title: "Nudge") }
-                .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: true))
-                .accessibilityLabel("Nudge \(f.username)")
+            FriendsQuietAction(glyph: .art("icon3d-bell"), tint: FriendsQuietInk.gold, label: "Nudge \(f.username)") { tauntTarget = f }
         }
     }
 
@@ -975,8 +958,7 @@ struct FriendsPanelView: View {
                             } label: {
                                 HStack(spacing: 10) {
                                     AvatarView(url: u.avatar_url, username: u.username, size: 30, emoji: u.avatar_emoji)
-                                    BubbleLabel(u.username, color: PlayerTint.nameColor(userId: u.id, username: u.username, onLight: !FriendsInk.dark),
-                                                size: 14, minScale: 0.45)
+                                    FriendsName(name: u.username)
                                     Spacer()
                                     LevelBadge(level: u.level, size: 18) // §V3
                                     Icon3D(.addFriend, size: 18) // ART_SPEC §5
@@ -1044,8 +1026,7 @@ struct FriendsPanelView: View {
                                 // §M: each waiting request wears the small candy badge.
                                 .overlay(alignment: .topTrailing) { CandyCountBadge(count: 1, size: 16).offset(x: 6, y: -6) }
                             NavigationLink(value: r.id) {
-                                BubbleLabel(r.username, color: PlayerTint.nameColor(userId: r.id, username: r.username, onLight: !FriendsInk.dark),
-                                            size: 15, minScale: 0.45)
+                                FriendsName(name: r.username)
                             }.buttonStyle(.squish)
                             Spacer()
                             // §T2: Accept is the green (teal) candy; §T3 a yes shows NEW FRIENDS!.
@@ -1081,8 +1062,7 @@ struct FriendsPanelView: View {
                             NavigationLink(value: r.id) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack(spacing: 6) {
-                                        BubbleLabel(r.username, color: PlayerTint.nameColor(userId: r.id, username: r.username, onLight: !FriendsInk.dark),
-                                                    size: 15, minScale: 0.45)
+                                        FriendsName(name: r.username)
                                         Text(agoShort(r.requestedAt)).font(Brand.font(10, .bold)).foregroundColor(FriendsInk.rowSub)
                                             .lineLimit(1).fixedSize()
                                     }
