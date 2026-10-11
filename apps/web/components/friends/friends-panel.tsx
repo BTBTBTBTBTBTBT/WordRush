@@ -47,7 +47,7 @@ import { FriendCards } from './friend-cards';
 import { InvitesRow } from '@/components/invites/invites-row';
 import { HaveACodeButton } from '@/components/invites/have-a-code';
 import { QuickPlaySheet } from './quick-play-sheet';
-import { FlameCount, FrCard, FriendAvatar, GameIconSquare, Pill, PocketGameCard, SectionLabel, Sheet, cardStyle } from './friends-ui';
+import { FlameCount, FrCard, FriendAvatar, GameIconSquare, Pill, PocketGameCard, QuietAction, QuietText, SectionLabel, Sheet, cardStyle } from './friends-ui';
 import { GREEN_CANDY, InviteSentCard, NewFriendsModal, PendingPill, ShieldNotice, type InvitePerson } from './invite-screens';
 import { WATCHED_REQUESTS_KEY, giftShareText, inviteShareText, parseWatched, trackRequests } from '@/lib/invite-screens';
 import { FR_LOOK, frBar, frSurface, podiumSlots, rowStripe } from '@/lib/friends-look';
@@ -63,28 +63,6 @@ import { HeadingArt } from '@/components/ui/heading-art';
 const ADD_POSE = poseArt('i', 'reach');
 
 /** A danger candy (Unfriend): the candy look recolored red. */
-/** Founder 10-09: the All friends row action (Play / Challenge / Nudge / Nudge all): one width, one letter height (iOS actionPillWidth / castCapScale 0.78). */
-const ACTION_PILL_WIDTH = 96;
-const ACTION_CAP = 0.78;
-function ActionPill({ color, onClick, disabled, label, children }: { color: 'pink' | 'gold'; onClick: () => void; disabled?: boolean; label: string; children: React.ReactNode }) {
-  return (
-    <CastButton
-      screen="pink"
-      size="sm"
-      color={color}
-      capScale={ACTION_CAP}
-      block
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
-      disabled={disabled}
-      aria-label={label}
-      className="shrink-0"
-      style={{ width: ACTION_PILL_WIDTH }}
-    >
-      {children}
-    </CastButton>
-  );
-}
-
 const DANGER = { ['--candy-1' as string]: '#fb7185', ['--candy-2' as string]: '#dc2626', ['--candy-lip' as string]: '#8f1919' } as React.CSSProperties;
 
 /** Accepted within the last 24h — wears the NEW chip (Tier 2, Aug 11). */
@@ -587,7 +565,7 @@ export function FriendsPanel() {
               <h2 className="m-0 text-[11px] font-black uppercase" style={{ letterSpacing: 1.3, color: FR_LOOK.goldInk }}>This week&apos;s race</h2>
               <ChevronDown className="w-3 h-3 transition-transform" style={{ color: FR_LOOK.goldInk, transform: showWeek ? 'rotate(180deg)' : 'none' }} aria-hidden="true" />
             </button>
-            <span className="flex items-center gap-1 text-[10px] font-black uppercase" style={{ color: FR_LOOK.goldInk, letterSpacing: 0.6 }}>
+            <span className="flex items-center gap-1 text-[11px] font-extrabold tabular-nums" style={{ color: FR_LOOK.sub }}>
               <span>{weekEndsLabel}</span>
               {raceStarted && (
                 <button
@@ -733,7 +711,7 @@ export function FriendsPanel() {
       {/* 5. PLAY WITH FRIENDS — six small tinted cards, each with its own top bar (C4). */}
       <SectionLabel
         color={FR_LOOK.playLabel}
-        right={<span className="text-[10px] font-black" style={{ color: FR_LOOK.playLabel, letterSpacing: 0.8 }}>TAP A GAME, PICK A FRIEND</span>}
+        right={<span className="text-[11px] font-bold" style={{ color: FR_LOOK.sub }}>Tap a game, pick a friend</span>}
       >
         Play with friends
       </SectionLabel>
@@ -775,7 +753,7 @@ export function FriendsPanel() {
           ) : (
             <h2 className="m-0 min-w-0 text-[11px] font-black uppercase truncate" style={{ letterSpacing: 1.3, color: 'var(--fr-label, #5b3c96)' }}>Your friends</h2>
           )}
-          <CastButton screen="pink" size="sm" color="pink" icon="plus" onClick={jumpToAdd} className="shrink-0">Add a friend</CastButton>
+          <QuietText ink="pink" icon={<Icon3D name="add-friend" size={16} />} label="Add a friend" onClick={jumpToAdd}>Add</QuietText>
         </div>
         {pending ? (
           <div className="animate-pulse" aria-hidden>
@@ -824,14 +802,12 @@ export function FriendsPanel() {
                     </span>
                   </Link>
                   <FlameCount days={f.friendStreak ?? 0} />
-                  {/* Founder 10-09: Play / Challenge / Nudge are ONE width with ONE letter height down the list. */}
-                  {action === 'play' && <ActionPill color="pink" onClick={() => openPlay(f)} label={`Play with ${f.username}`}>Play</ActionPill>}
+                  {/* Founder 10-10: each row's one action is a quiet round icon (was a 96 px candy pill). */}
+                  {action === 'play' && <QuietAction glyph={{ fam: 'play' }} ink="pink" onClick={() => openPlay(f)} label={`Play with ${f.username}`} />}
                   {action === 'challenge' && (
-                    <ActionPill color="pink" onClick={() => challenge(f)} disabled={challenging !== null} label={`Challenge ${f.username} to a VS Battle`}>
-                      {challenging === f.id ? 'Sending…' : 'Challenge'}
-                    </ActionPill>
+                    <QuietAction glyph={{ art: 'art-badge-swords' }} ink="pink" onClick={() => challenge(f)} disabled={challenging !== null} label={`Challenge ${f.username} to a VS Battle`} />
                   )}
-                  {action === 'nudge' && <ActionPill color="gold" onClick={() => setTauntTarget(f)} label={`Nudge ${f.username}`}>Nudge</ActionPill>}
+                  {action === 'nudge' && <QuietAction glyph={{ icon3d: 'bell' }} ink="gold" onClick={() => setTauntTarget(f)} label={`Nudge ${f.username}`} />}
                   <span className="relative shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); setMenuFor(f.id); }}
@@ -853,18 +829,7 @@ export function FriendsPanel() {
                 <span className="text-[11px] font-extrabold" style={{ color: FR_LOOK.rowSub }}>
                   <SoftNum size={12}>{slackers.length}</SoftNum> {slackers.length === 1 ? 'friend hasn’t' : 'friends haven’t'} played today
                 </span>
-                <CastButton screen="pink"
-                  size="sm"
-                  color="gold"
-                  icon={<Icon3D name="bell" size={16} />}
-                  capScale={ACTION_CAP}
-                  onClick={nudgeAll}
-                  aria-label="Nudge all friends who haven't played today"
-                  className="shrink-0"
-                  style={{ width: ACTION_PILL_WIDTH }}
-                >
-                  Nudge all
-                </CastButton>
+                <QuietText ink="gold" icon={<Icon3D name="bell" size={16} />} label="Nudge all friends who haven't played today" onClick={nudgeAll}>Nudge all</QuietText>
               </div>
             )}
           </div>

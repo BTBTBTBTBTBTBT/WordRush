@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Medal, Star, Sparkles, LayoutGrid } from 'lucide-react';
+import { Medal, RotateCcw, Star, Sparkles, LayoutGrid } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { modeMomentHeadline, moreSweepModeKeys, moreSweepMomentText, recordValueText, type FriendlyKind } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
@@ -14,14 +14,13 @@ import { WIN_FG } from '@/lib/tile-theme';
 import {
   FR, KIND_COLOR, REACTIONS, REACTION_LABEL, gameMomentText, kindForTitle, reactionChips, toggleReaction, type ReactionKey,
 } from '@/lib/friends-play';
-import { FrCard, FriendAvatar, GameIconSquare, SectionLabel } from './friends-ui';
+import { FrCard, FriendAvatar, GameIconSquare, QuietText, SectionLabel } from './friends-ui';
 import { SceneArt } from './invite-screens';
 import { ArtScene } from '@/components/ui/art-scene';
 import { CandyButton } from '@/components/ui/candy-button';
-import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { ART_SIZE, PAGE_SCENES, artSrc, poseArt, type PoseArtName } from '@/lib/art';
-import { FR_LOOK, frBar, frSurface, momentAccent, momentKey, momentPoses, numberRuns } from '@/lib/friends-look';
+import { FR_LOOK, frSurface, momentAccent, momentKey, momentPoses, numberRuns } from '@/lib/friends-look';
 import { softMix } from '@/lib/soft-surface';
 import { haptic } from '@/lib/haptics';
 import { ReactionIcon, REACTION_TINT } from './reaction-icon';
@@ -230,7 +229,7 @@ export function ActivityFeed({ onRematch }: Props) {
     <div className="space-y-2">
       <SectionLabel
         color={FR_LOOK.playLabel}
-        right={<span className="text-[10px] font-black text-right" style={{ color: FR_LOOK.playLabel, letterSpacing: 0.8 }}>LAST 7 DAYS · DOUBLE-TAP OR HOLD TO REACT</span>}
+        right={<span className="text-[11px] font-bold text-right" style={{ color: FR_LOOK.sub }}>Last 7 days · hold to react</span>}
       >
         Moments
       </SectionLabel>
@@ -241,7 +240,7 @@ export function ActivityFeed({ onRematch }: Props) {
           </div>
         </FrCard>
       ) : events.length === 0 ? (
-        <FrCard accent={FR_LOOK.pink} bar={FR_LOOK.bannerBar}>
+        <FrCard accent={FR_LOOK.pink}>
           <div className="flex flex-col items-center gap-2 p-4 text-center">
             {/* R, asleep: quiet in here (docs/ART_SPEC.md §7). */}
             <ArtScene scene={PAGE_SCENES.empty} />
@@ -283,8 +282,7 @@ export function ActivityFeed({ onRematch }: Props) {
                   animationDelay: `${Math.min(idx, 8) * 45}ms`,
                 }}
               >
-                <div aria-hidden="true" style={{ ...frBar(accent, 5), borderRadius: '16px 16px 0 0' }} />
-                <div className="flex items-start gap-2.5" style={{ padding: '8px 10px 9px' }}>
+                <div className="flex items-start gap-2.5" style={{ padding: '9px 10px 9px' }}>
                   <FriendAvatar name={e.username} userId={e.userId} url={e.avatar_url} config={e.avatar_config} castId={e.avatar_cast_id} frame={e.avatar_frame} pro={e.is_pro} size={36} />
                   <div className="flex-1 min-w-0">
                     <span className="flex items-start gap-1.5">
@@ -324,7 +322,7 @@ export function ActivityFeed({ onRematch }: Props) {
                       <span className="text-[10px] font-extrabold" style={{ color: FR_LOOK.rowSub }}>{dayLabel(e.day, today)}</span>
                       {/* AS5: no View button — the row (or the avatar) opens the profile. */}
                       {isGame && pocket && (
-                        <CastButton screen="pink" size="sm" color="pink" icon="replay" onClick={(ev) => { ev.stopPropagation(); rematch(e); }}>Rematch</CastButton>
+                        <QuietText ink="violet" icon={<RotateCcw className="w-3 h-3" strokeWidth={3} />} label="Rematch" onClick={(ev) => { ev.stopPropagation(); rematch(e); }}>Rematch</QuietText>
                       )}
                     </div>
                   </div>
@@ -387,7 +385,7 @@ export function ActivityFeed({ onRematch }: Props) {
                       );
                     })}
                     {isGame && (
-                      <CastButton screen="pink" size="sm" color="pink" onClick={() => rematch(e)}>Rematch</CastButton>
+                      <QuietText ink="violet" icon={<RotateCcw className="w-3 h-3" strokeWidth={3} />} label="Rematch" onClick={() => rematch(e)}>Rematch</QuietText>
                     )}
                   </div>
                 )}

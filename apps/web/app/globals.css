@@ -1011,6 +1011,36 @@ html[data-season-tone="dark"] [data-page-tint="friends"] {
   /* 2.8 wave 3: the friend cards' "playing Classic" line (green) lifted for the night glass */
   --fr-online: #6ee7b7;
 }
+/* Quiet Friends actions (founder 10-10: "the buttons are loud and obnoxious"): a row's one action is a quiet round
+   icon, Add / Nudge all / Rematch quiet text on a soft capsule. Inks: gold / pink / violet, deep on the light page,
+   lifted in a dark season (the Halloween Friends page). components/friends/friends-ui.tsx QuietAction / QuietText. */
+:root {
+  --fq-gold: #b45309; --fq-pink: #be185d; --fq-violet: #6d28d9;
+  --fq-action-pct: 14%; --fq-text-pct: 10%;
+}
+html[data-season-tone="dark"] {
+  --fq-gold: #fcd34d; --fq-pink: #f9a8d4; --fq-violet: #c4b5fd;
+  --fq-action-pct: 24%; --fq-text-pct: 16%;
+}
+.fr-qa {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 44px; height: 44px; margin: -4px -4px; padding: 0; border: 0; background: transparent; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.fr-qa-face {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 999px;
+  background: color-mix(in srgb, var(--fq) var(--fq-action-pct), transparent);
+}
+.fr-qa:disabled { opacity: 0.5; cursor: default; }
+.fr-qt {
+  display: inline-flex; align-items: center; gap: 5px; flex: none; min-height: 34px; padding: 0 10px;
+  border: 0; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  font-size: 13px; font-weight: 800; line-height: 1; color: var(--fq);
+  background: color-mix(in srgb, var(--fq) var(--fq-text-pct), transparent);
+  -webkit-tap-highlight-color: transparent;
+}
+.fr-qt:disabled { opacity: 0.5; cursor: default; }
 /* Content ends above the docked bar (A4): never less than the page's own
    bottom padding, and at least the bar's room (--bottom-nav-h, published by
    BottomNav) plus 16 px while a tab bar is on screen. */

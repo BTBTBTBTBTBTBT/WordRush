@@ -88,7 +88,7 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
               <div className="flex-1 min-w-0 truncate text-[13px] font-black leading-tight" style={{ color: 'var(--color-text)' }}>{subtitle}</div>
               {done && (
                 <TitleLineSlot line={16}>
-                  <Icon3D name={vsDailyWon ? 'badge-w' : 'badge-l'} size={MODE_CARD.badge} label={vsDailyWon ? 'Won' : 'Lost'} />
+                  <Icon3D name={vsDailyWon ? 'badge-w' : 'badge-l'} size={MODE_CARD.vsBadge} label={vsDailyWon ? 'Won' : 'Lost'} />
                 </TitleLineSlot>
               )}
             </div>

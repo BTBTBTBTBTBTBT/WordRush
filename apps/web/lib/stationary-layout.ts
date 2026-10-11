@@ -209,19 +209,19 @@ export function homeBannerContent(mode: PlayMode, input: BannerInput): BannerCon
 // ── The Home game cards ────────────────────────────────────────────────────
 
 /**
- * Card measures shared with components/home/mode-card.tsx MODE_CARD (FINISH_SPEC BH2: the compact
- * card, founder 10-03 "align at the tops"): one top row — the 40 icon, the one-line name (21 line
- * box) and the W / L / ✓ badge (22) at the row's end, all top-aligned — then ONE subtitle line
- * (16) 4 under the name.
+ * Card measures shared with components/home/mode-card.tsx MODE_CARD (founder 10-10, "make the main
+ * titles a bit taller and more readable"): the one-line name spans the card's full width on top
+ * (21 line box), then the 30 icon leads ONE subtitle line (16) 4 under it; today's W / L badge sits
+ * on the icon's corner (an overlay, no slot). iOS HomeCardSpec.
  */
-export const CARD_SLOT = { titleLine: 21, titleSlot: 22, descGap: 4, descLine: 16, descLines: 1, icon: 40 } as const;
+export const CARD_SLOT = { titleLine: 21, descGap: 4, descLine: 16, descLines: 1, icon: 30 } as const;
 
 export interface CardSlots {
-  /** The title row's right-end slot (badge / lock), reserved even when empty. */
-  titleSlotWidth: number;
   /** The subtitle box: one line, always reserved (a result or the description fills it). */
   descHeight: number;
-  /** The text column's height for a one-line title. */
+  /** The icon + subtitle row's height. */
+  rowHeight: number;
+  /** The card body's height for a one-line title. */
   textHeight: number;
 }
 
@@ -229,9 +229,10 @@ export interface CardSlots {
 export function modeCardSlots(mode: PlayMode): CardSlots {
   void mode;
   const descHeight = CARD_SLOT.descLine * CARD_SLOT.descLines;
+  const rowHeight = Math.max(CARD_SLOT.icon, descHeight);
   return {
-    titleSlotWidth: CARD_SLOT.titleSlot,
     descHeight,
-    textHeight: CARD_SLOT.titleLine + CARD_SLOT.descGap + descHeight,
+    rowHeight,
+    textHeight: CARD_SLOT.titleLine + CARD_SLOT.descGap + rowHeight,
   };
 }

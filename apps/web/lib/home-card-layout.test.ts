@@ -11,28 +11,32 @@ const root = path.join(__dirname, '..');
 const src = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 
 describe('Home game card (§21)', () => {
-  it('is the compact card (FINISH_SPEC BH2): ~68 tall, 40 icon, 17 name, ONE 13 subtitle line', () => {
-    expect(MODE_CARD.height).toBeGreaterThanOrEqual(64);
-    expect(MODE_CARD.height).toBeLessThanOrEqual(70);
-    expect(MODE_CARD.icon).toBe(40);
-    expect(MODE_CARD.name).toBe(17);
+  it('is the compact card (FINISH_SPEC BH2 + founder 10-10): ~80 tall, 30 row icon, 18 name, ONE 13 subtitle line', () => {
+    expect(MODE_CARD.height).toBeGreaterThanOrEqual(74);
+    expect(MODE_CARD.height).toBeLessThanOrEqual(82);
+    expect(MODE_CARD.rowIcon).toBe(30);
+    expect(MODE_CARD.name).toBe(18);
     expect(MODE_CARD.desc).toBe(13);
-    // The card hugs the top row: trim band + top pad + max(icon, name + 4 + one line) + bottom pad.
-    const content = Math.max(MODE_CARD.icon, MODE_CARD.titleLine + MODE_CARD.descGap + MODE_CARD.descLine);
+    expect(MODE_CARD.badge).toBe(18);
+    // The card hugs the body: trim band + top pad + name line + gap + the icon row + bottom pad.
+    const content = MODE_CARD.titleLine + MODE_CARD.descGap + MODE_CARD.rowIcon;
     expect(MODE_CARD.band + MODE_CARD.padTop + content + MODE_CARD.padY).toBeLessThanOrEqual(MODE_CARD.height + 1);
   });
 
-  it('top-aligns icon, name and badge on one row; subtitle right under the name; no stroke, no chevron (BH)', () => {
+  it('puts the name on top across the full width, the icon (badge on its corner) leading the subtitle line; no stroke, no chevron', () => {
     const card = src('components/home/mode-card.tsx');
-    expect(card).toContain('flex items-start gap-2');
-    expect(card).toContain('slots.titleSlotWidth');
+    expect(card).toContain('flex items-center gap-2');
+    expect(card).toContain('MODE_CARD.rowIcon');
     expect(card).toContain('marginTop: MODE_CARD.descGap');
+    expect(card).toContain('row={row}');
     expect(card).toContain('whitespace-nowrap');
     expect(card).toContain('truncate');
     expect(card).toContain('compactCardLine(');
-    expect(card).not.toMatch(/WebkitLineClamp|overflowWrap = 'anywhere'|justify-between/);
+    expect(card).not.toMatch(/WebkitLineClamp|overflowWrap = 'anywhere'|justify-between|titleSlotWidth/);
     expect(card).not.toMatch(/border:\s*`/);
     expect(card).not.toContain('ChevronRight');
+    // One name size per grid ROW (pairs of cards), not per grid.
+    expect(src('app/page.tsx')).toContain('row={Math.floor(index / 2)}');
   });
 
   it('draws the trim as ONE static path (BH1/BH4)', () => {

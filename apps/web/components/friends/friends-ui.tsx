@@ -5,11 +5,12 @@ import { MOTION } from '@/lib/motion-spec';
 import { prefersReducedMotion } from '@/lib/motion';
 import { Hash, Scissors, ArrowLeftRight, Ghost, Link as LinkChain } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
+import { FamIcon } from '@/components/ui/family-button';
 import { PocketArt } from '@/components/ui/game-art';
 import { PlayerAvatar } from '@/components/avatar/player-avatar';
 import { avatarRadiusPx } from '@/lib/avatar-render';
 import { CandyButton } from '@/components/ui/candy-button';
-import { GAME_ART_FILL, pageWall } from '@/lib/art';
+import { GAME_ART_FILL, artSrc, pageWall, type ArtName } from '@/lib/art';
 import { SeasonWallLayer } from '@/components/ui/season-preview';
 import type { FriendlyKind } from '@wordle-duel/core';
 import { FR, KIND_COLOR } from '@/lib/friends-play';
@@ -202,9 +203,9 @@ export function Pill({ children, onClick, solid = false, disabled = false, label
 }
 
 /**
- * One of the six friend games (C4, mockup `.gt`): a small card tinted in the
- * game's color with its own 7 px top bar, the 3D pocket icon, the title and a
- * short line.
+ * One of the six friend games (C4, mockup `.gt`): a small card tinted in the game's color, the 3D
+ * pocket icon, the title and a short line. Founder 10-10 ("the whole page is very busy"): no top
+ * bar; the title is plain heavy type in the page ink (iOS PlayWithFriends).
  */
 export function PocketGameCard({ kind, title, sub, onClick }: { kind: FriendlyKind; title: string; sub: string; onClick: () => void }) {
   const color = KIND_COLOR[kind];
@@ -215,14 +216,74 @@ export function PocketGameCard({ kind, title, sub, onClick }: { kind: FriendlyKi
       className="relative overflow-hidden flex flex-col text-left"
       style={{ ...frSurface(color, { radius: 16, shadow: false }), boxShadow: '0 6px 14px rgba(60, 30, 110, 0.08)' }}
     >
-      <span aria-hidden="true" className="block w-full" style={frBar(color, 5)} />
       {/* BJ7: the card hugs its content — icon, a one-line name, the detail (2 lines
           reserved so a row's cards match). */}
       <span className="flex flex-col gap-[3px]" style={{ padding: 8 }}>
         <PocketArt kind={kind} size={32} fallback={<OutlineGlyph kind={kind} size={24} color={color} stroke={2.2} />} />
-        <span className="text-[12px] font-black leading-tight line-clamp-2" style={{ color: FR_LOOK.ink }}>{title}</span>
+        <span className="text-[13.5px] font-extrabold leading-tight truncate" style={{ color: FR_LOOK.ink }}>{title}</span>
         <span className="text-[10px] font-bold leading-tight line-clamp-2" style={{ color: FR_LOOK.sub, minHeight: '2.5em' }}>{sub}</span>
       </span>
+    </button>
+  );
+}
+
+/** The quiet inks (founder 10-10): gold / pink / violet, deep on the light page, lifted in a dark season (globals.css --fq-*). */
+export type QuietInk = 'gold' | 'pink' | 'violet';
+const quietVar = (ink: QuietInk) => ({ ['--fq' as string]: `var(--fq-${ink})` }) as React.CSSProperties;
+
+/**
+ * A row's one action as a quiet round icon (founder 10-10: "the buttons are loud and obnoxious"): a 36 px circle
+ * with a soft wash of its ink (14% light / 24% dark) holding the 3D art, in a 44 px hit area. Replaces the
+ * 96 px candy pills. Stops the row's own tap. iOS FriendsQuietAction.
+ */
+export function QuietAction({ glyph, ink, label, onClick, disabled = false }: {
+  /** `art` = a 3D art name (`art-badge-swords`); `icon3d` = an Icon3D name; `fam` = a clay helper icon tinted in the ink. */
+  glyph: { art: ArtName } | { icon3d: 'bell' } | { fam: 'play' };
+  ink: QuietInk;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      data-squish
+      className="fr-qa"
+      style={quietVar(ink)}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      disabled={disabled}
+      aria-label={label}
+    >
+      <span className="fr-qa-face" aria-hidden="true">
+        {'art' in glyph ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={artSrc(glyph.art)} alt="" width={21} height={21} draggable={false} style={{ width: 21, height: 21 }} />
+        ) : 'icon3d' in glyph ? (
+          <Icon3D name={glyph.icon3d} size={21} />
+        ) : (
+          <FamIcon name={glyph.fam} size={15} ink="var(--fq)" />
+        )}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * A secondary action as quiet text with its small icon (Add, Nudge all, Rematch): 13 px heavy label in the ink
+ * on a soft capsule wash of the same color (10% light / 16% dark), min 34 px tall — no candy fill. iOS FriendsQuietText.
+ */
+export function QuietText({ children, icon, ink, label, onClick, className = '' }: {
+  children: React.ReactNode;
+  icon: React.ReactNode;
+  ink: QuietInk;
+  label?: string;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  className?: string;
+}) {
+  return (
+    <button type="button" data-squish className={`fr-qt ${className}`.trim()} style={quietVar(ink)} onClick={onClick} aria-label={label}>
+      <span className="shrink-0 flex items-center" aria-hidden="true">{icon}</span>
+      <span>{children}</span>
     </button>
   );
 }

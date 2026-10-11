@@ -406,7 +406,7 @@ export default function HomePage() {
   const grid = (cards: HomeCard[], reorder?: ReturnType<typeof useReorder>) => (
     <CardNameScope>
       <div className="home-cards grid grid-cols-2 gap-2.5">
-        {cards.map((card) => {
+        {cards.map((card, index) => {
           const state = stateFor(card);
           const href = hrefFor(card);
           const rb = reorder?.bind(card.id);
@@ -432,7 +432,7 @@ export default function HomePage() {
                 }
               }}
             >
-              <ModeCard card={card} state={state} unlimited={playMode === 'unlimited'} />
+              <ModeCard card={card} state={state} unlimited={playMode === 'unlimited'} row={Math.floor(index / 2)} />
             </Link>
           );
         })}
