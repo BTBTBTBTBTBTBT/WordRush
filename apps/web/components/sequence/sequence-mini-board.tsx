@@ -77,7 +77,7 @@ export function SequenceMiniBoard({
 
   return (
     <div
-      className={`relative transition-colors duration-300 ${tileSize ? '' : 'h-full'} flex flex-col overflow-hidden ${!isActive && !isCompleted && !isFailed ? 'opacity-60' : ''}`}
+      className={`relative transition-colors duration-300 ${tileSize ? '' : 'h-full'} flex flex-col overflow-hidden ${!isActive && !isCompleted && !isFailed ? 'opacity-60 seq-locked' : ''}`}
       style={{ ...miniBoardFrame(isCompleted ? 'WON' : isFailed ? 'LOST' : 'PLAYING', accent, { active: isActive && !isCompleted && !isFailed }), ['--gt-font' as string]: tileSize ? `${tileFontPx(tileSize)}px` : '11px' }}
     >
       {/* Lock icon for locked boards */}

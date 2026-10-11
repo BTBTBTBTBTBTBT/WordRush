@@ -399,10 +399,10 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
                   {activeEntry && (<>
                     <span className="shrink-0 rounded-md text-[11px] font-black w-6 h-6 flex items-center justify-center" style={{ background: '#ede9fe', color: '#7c3aed', boxShadow: `inset 0 0 0 1px #c4b5fd, inset 0 -2px 0 ${alphaHex('#7c3aed', 0.2)}` }}>{activeEntry.n}{activeEntry.dir}</span>
                     <span className="text-[15px] font-extrabold leading-snug flex-1 line-clamp-2" style={{ color: 'var(--color-text)' }}>{activeEntry.clue}</span>
-                    <ArrowLeftRight className="w-4 h-4 shrink-0" style={{ color: CROSSWORD_ACCENT }} />
+                    <ArrowLeftRight className="w-4 h-4 shrink-0 cw-swap-ico" style={{ color: CROSSWORD_ACCENT }} />
                   </>)}
                 </button>
-                <button type="button" onClick={() => { playKeyTap(); setShowClues((v) => !v); }} className="shrink-0 w-12 flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-black" style={{ background: softBackground(CROSSWORD_ACCENT, 0.13), border: softBorder(CROSSWORD_ACCENT, 0.13), boxShadow: `inset 0 4px 0 ${CROSSWORD_ACCENT}, 0 4px 10px ${alphaHex(CROSSWORD_ACCENT, 0.12)}`, color: CROSSWORD_ACCENT }} aria-pressed={showClues} aria-label={showClues ? 'Show the grid' : 'Show all clues'}>
+                <button type="button" onClick={() => { playKeyTap(); setShowClues((v) => !v); }} className="cw-clues-btn shrink-0 w-12 flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-black" style={{ background: softBackground(CROSSWORD_ACCENT, 0.13), border: softBorder(CROSSWORD_ACCENT, 0.13), boxShadow: `inset 0 4px 0 ${CROSSWORD_ACCENT}, 0 4px 10px ${alphaHex(CROSSWORD_ACCENT, 0.12)}`, color: CROSSWORD_ACCENT }} aria-pressed={showClues} aria-label={showClues ? 'Show the grid' : 'Show all clues'}>
                   {showClues ? <Grid3x3 className="w-4 h-4" /> : <ListOrdered className="w-4 h-4" />}
                   {showClues ? 'Grid' : 'Clues'}
                 </button>

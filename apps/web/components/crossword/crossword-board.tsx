@@ -70,6 +70,8 @@ export const CrosswordBoard = memo(function CrosswordBoard({ state, selected, ac
   const fonts = cell ? crosswordCellFonts(cell) : null;
   const font = fonts ? `${fonts.letter}px` : 'clamp(12px, 3.6vw, 18px)';
   const numFont = fonts ? `${fonts.number}px` : 'clamp(7px, 1.9vw, 9px)';
+  // Dark theme (founder 10-10, iOS 5ab65fa79): the clue number is at least 28% of the cell (globals.css --pz-num-d).
+  const numFontDark = cell && fonts ? `${Math.max(fonts.number, Math.round(cell * 0.28))}px` : 'clamp(9px, 2.6vw, 12px)';
   return (
     <GameTray
       accent={CROSSWORD_ACCENT}
@@ -115,11 +117,13 @@ export const CrosswordBoard = memo(function CrosswordBoard({ state, selected, ac
               data-s={look}
               data-wash={inActive ? 'true' : undefined}
               data-sel={isSel ? 'true' : undefined}
+              data-cw="true"
               data-num={n === undefined ? undefined : 'true'}
               data-wrong={wrong ? 'true' : undefined}
               style={{
                 ['--gt-font' as string]: font,
                 ['--pz-num' as string]: numFont,
+                ['--pz-num-d' as string]: numFontDark,
                 ['--pz-ring' as string]: CROSSWORD_ACCENT,
                 ['--pz-glow' as string]: alphaHex(CROSSWORD_ACCENT, 0.35),
                 ...(flip ? { ['--gt-d' as string]: `${motion.delay}ms` } : null),

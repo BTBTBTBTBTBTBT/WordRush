@@ -1209,7 +1209,9 @@ html[data-season-tone="dark"] {
 .gtile[data-s="conflict"] { --gt-edge: #b4233c; --gt-face: linear-gradient(#ff8a9b, #f0435f 70%, #d9324e); --gt-ring: none; }
 /* A revealed-by-hint gap (Six / Seven hint rows): a quiet frosted tile. */
 .gtile[data-s="gap"] { --gt-edge: rgba(216, 200, 243, 0.4); --gt-face: rgba(255, 255, 255, 0.45); --gt-gloss: 0.25; --gt-glyph: #c4b5fd; --gt-shadow: transparent; }
-[data-theme="dark"] .gtile[data-s="empty"] { --gt-edge: rgba(167, 139, 250, 0.28); --gt-face: rgba(255, 255, 255, 0.12); --gt-ring: inset 0 0 0 2px rgba(196, 181, 253, 0.22); --gt-gloss: 0.12; --gt-glyph: #e9ddff; }
+/* Founder 10-10 dark audit (iOS 5ab65fa79): a lifted frosted tile (white .19 face, a brighter lilac ring, a livelier gloss) so an
+   open square reads as a square on every board, not a muddy hole. */
+[data-theme="dark"] .gtile[data-s="empty"] { --gt-edge: rgba(167, 139, 250, 0.34); --gt-face: rgba(255, 255, 255, 0.19); --gt-ring: inset 0 0 0 2px rgba(185, 164, 255, 0.5); --gt-gloss: 0.2; --gt-glyph: #e9ddff; }
 [data-theme="dark"] .gtile[data-s="gap"] { --gt-edge: rgba(167, 139, 250, 0.2); --gt-face: rgba(255, 255, 255, 0.08); --gt-gloss: 0.1; }
 
 /* The tile flipping over shows its typed face until the half (.gt-cover). */
@@ -1494,9 +1496,10 @@ html[data-season-tone="dark"] {
 /* Selected (a tab / choice that is on): the solid tint with white ink. */
 .candy.candy-on { --fam-fill: var(--fam-tint); --fam-fill-p: color-mix(in srgb, var(--fam-tint) 85%, #000000); --fam-ink: #ffffff; text-shadow: 0 1px 1px color-mix(in srgb, var(--fam-tint) 60%, #000000); }
 [data-theme="dark"] .candy {
-  --fam-fill: color-mix(in srgb, var(--fam-tint) 34%, #231c40);
-  --fam-fill-p: color-mix(in srgb, var(--fam-tint) 42%, #231c40);
-  --fam-ink: color-mix(in srgb, var(--fam-tint) 35%, #ffffff);
+  /* Founder 10-10 dark audit (iOS 5ab65fa79 helperFill / helperInk): a stronger fill, a near-white ink. */
+  --fam-fill: color-mix(in srgb, var(--fam-tint) 52%, #231c40);
+  --fam-fill-p: color-mix(in srgb, var(--fam-tint) 62%, #231c40);
+  --fam-ink: color-mix(in srgb, var(--fam-tint) 10%, #ffffff);
   --fam-lm-a: 0.85;
 }
 [data-theme="dark"] [data-page-scheme="light"] .candy {
@@ -1522,9 +1525,9 @@ html[data-season] .candy.candy-peach:not(.candy-on) {
   --fam-ink: color-mix(in srgb, var(--season-quiet-tint, #7c3aed) 70%, #000000);
 }
 [data-theme="dark"][data-season] .candy.candy-peach:not(.candy-on), html[data-season][data-theme="dark"] .candy.candy-peach:not(.candy-on) {
-  --fam-fill: color-mix(in srgb, var(--season-quiet-tint, #7c3aed) 34%, #1a1028);
-  --fam-fill-p: color-mix(in srgb, var(--season-quiet-tint, #7c3aed) 42%, #1a1028);
-  --fam-ink: color-mix(in srgb, var(--season-quiet-tint, #7c3aed) 30%, #ffffff);
+  --fam-fill: color-mix(in srgb, var(--season-quiet-tint, #7c3aed) 52%, #1a1028);
+  --fam-fill-p: color-mix(in srgb, var(--season-quiet-tint, #7c3aed) 62%, #1a1028);
+  --fam-ink: color-mix(in srgb, var(--season-quiet-tint, #7c3aed) 10%, #ffffff);
 }
 /* Inside a game a small peach candy is a normal game helper (the game accent's wash). The used look
    (saturation .25, 50%) goes only on a spent hint, explicitly (.candy-dim / :disabled / UsedHintPill). */
@@ -1536,9 +1539,9 @@ html[data-season] .candy.candy-peach:not(.candy-on) {
   padding: 0 calc(var(--candy-h) * 0.42) 0 calc(var(--candy-h) * 0.34);
 }
 [data-theme="dark"] [data-page-tint="game"] .candy.candy-peach.candy-sm:not(.candy-on) {
-  --fam-fill: color-mix(in srgb, var(--fam-tint) 34%, #231c40);
-  --fam-fill-p: color-mix(in srgb, var(--fam-tint) 42%, #231c40);
-  --fam-ink: color-mix(in srgb, var(--fam-tint) 35%, #ffffff);
+  --fam-fill: color-mix(in srgb, var(--fam-tint) 52%, #231c40);
+  --fam-fill-p: color-mix(in srgb, var(--fam-tint) 62%, #231c40);
+  --fam-ink: color-mix(in srgb, var(--fam-tint) 10%, #ffffff);
 }
 /* CAST PRIMARY: any other md / lg (raw class users; the CandyButton component renders CastButton
    and gets the art labels). Live lettering at the cast cap height (0.42 h, cap ratio 0.75). */
@@ -1577,6 +1580,8 @@ html[data-season] .candy.candy-peach:not(.candy-on) {
 .candy.candy-teal { --cast-deep: #016774; --cs: url(/art/art-btn-teal-l.webp) 0 169 0 170 fill / 0 56.33px 0 56.67px / 0 stretch; --cs-p: url(/art/art-btn-teal-l-pressed.webp) 0 174 0 175 fill / 0 58.00px 0 58.33px / 0 stretch; --cs-d: url(/art/art-btn-teal-l-dark.webp) 0 169 0 170 fill / 0 56.33px 0 56.67px / 0 stretch; --cs-pd: url(/art/art-btn-teal-l-pressed-dark.webp) 0 174 0 175 fill / 0 58.00px 0 58.33px / 0 stretch; }
 .candy-md.candy-teal { --cast-deep: #016774; --cs: url(/art/art-btn-teal-m.webp) 0 133 0 133 fill / 0 44.33px 0 44.33px / 0 stretch; --cs-p: url(/art/art-btn-teal-m-pressed.webp) 0 137 0 137 fill / 0 45.67px 0 45.67px / 0 stretch; --cs-d: url(/art/art-btn-teal-m-dark.webp) 0 133 0 133 fill / 0 44.33px 0 44.33px / 0 stretch; --cs-pd: url(/art/art-btn-teal-m-pressed-dark.webp) 0 137 0 137 fill / 0 45.67px 0 45.67px / 0 stretch; }
 .candy:disabled, .candy[aria-disabled="true"], .candy.candy-dim { filter: saturate(0.25); opacity: 0.5; cursor: default; }
+/* Dark (iOS 5ab65fa79): a disabled / spent pill stays readable (0.72, half color) instead of dying at 0.5 / 0.25. */
+[data-theme="dark"] :is(.candy-sm, .candy-round, .candy-peach):is(.candy:disabled, .candy[aria-disabled="true"], .candy.candy-dim) { filter: saturate(0.5); opacity: 0.72; }
 .candy:focus-visible { outline: 3px solid #7c3aed; outline-offset: 3px; }
 /* A tinted 3D icon (components/ui/family-button.tsx FamIcon): the white clay multiplied by the ink, masked
    to its own shape — one element (background-blend-mode), so it also works on a lucide <svg> swapped below. */
@@ -1957,6 +1962,41 @@ html[data-reduced-motion="true"] .castrow[data-musical] .cm > .cm-note { animati
 }
 .gtile.pz-cell[data-s="correct"] .pz-num { color: rgba(255, 255, 255, 0.85); }
 [data-theme="dark"] .pz-num { color: rgba(233, 221, 255, 0.8); }
+
+/* ── Founder 10-10 dark audit (iOS 5ab65fa79). Dark theme only; the light branch is untouched. ──
+   Crosswordocious open cells: clean lavender squares (an empty answer cell must read as a fillable square against the purple
+   board); the active entry a lighter lavender; clue numbers bigger (>= 28% of the cell, --pz-num-d) in deep violet. */
+[data-theme="dark"] .gtile.pz-cell[data-cw][data-s="empty"] { --gt-edge: #7b5fd0; --gt-face: #b7a2f0; --gt-ring: inset 0 0 0 2px rgba(228, 217, 255, 0.7); --gt-gloss: 0.4; --gt-glyph: #2e1065; --gt-shadow: transparent; }
+[data-theme="dark"] .gtile.pz-cell[data-cw][data-wash="true"][data-s="empty"],
+[data-theme="dark"] .gtile.pz-cell[data-cw][data-wash="true"][data-s="typed"] { --gt-face: #d6c9fb; --gt-edge: #9a82e0; --gt-glyph: #2e1065; }
+[data-theme="dark"] .gtile.pz-cell[data-cw][data-wrong="true"][data-s] { --gt-glyph: #c2183a; }
+[data-theme="dark"] .gtile.pz-cell[data-cw] .pz-num { color: #5b21b6; font-size: var(--pz-num-d, var(--pz-num, 8px)); }
+[data-theme="dark"] .gtile.pz-cell[data-cw][data-s="empty"] .pz-num,
+[data-theme="dark"] .gtile.pz-cell[data-cw][data-wash="true"] .pz-num { color: #2e1065; }
+[data-theme="dark"] .gtile.pz-cell[data-cw][data-s="correct"] .pz-num { color: #ffffff; }
+/* The active clue's swap arrow + the Clues / Grid toggle label: light lavender instead of the slate accent. */
+[data-theme="dark"] .cw-clues-btn { color: #ede6ff !important; }
+[data-theme="dark"] .cw-swap-ico { color: #ddd0ff !important; }
+/* Kindred: dark word cards a pale lavender (like the Sudoku givens) with deep ink — the words pop; selected stays glossy purple.
+   The hint pair ring rides --kd-ring (an inline box-shadow can't be merged with an !important one). */
+[data-theme="dark"] .kd-word:not([aria-pressed="true"]) {
+  background: linear-gradient(rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 52%), linear-gradient(#f7f2ff, #dccffb) !important;
+  color: #2e1065 !important;
+  box-shadow: inset 0 -4px 0 #8d74d0, inset 0 0 0 1.5px rgba(255, 255, 255, 0.55), 0 3px 8px rgba(0, 0, 0, 0.28), var(--kd-ring, 0 0 0 0 transparent) !important;
+}
+/* Kindred rail: bright text, tier 4's near-black pip reads white, remaining mistakes pink-red (a quiet track when spent). */
+[data-theme="dark"] .kd-rail-text { color: var(--color-text) !important; }
+[data-theme="dark"] .kd-pip-4 { border-color: #ffffff !important; }
+[data-theme="dark"] .kd-pip-4[data-done="true"] { background: #ffffff !important; }
+[data-theme="dark"] .kd-dot { background: rgba(255, 255, 255, 0.22) !important; }
+[data-theme="dark"] .kd-dot[data-on="true"] { background: #fb4f73 !important; }
+/* Spyglass hidden-word dots, the Codebreaker frequency chips: primary ink instead of the muted gray; Letter Ladder's REACH row and
+   dashed target a light sky blue (the deep blue vanishes on the night board). */
+[data-theme="dark"] { --pz-dim: var(--color-text); --ladder-bright: #7dd3fc; }
+/* Spyglass word chips: the tinted game chrome a notch stronger (iOS PuzKit.face .16 -> .26). */
+[data-theme="dark"] .sg-pill { background: linear-gradient(rgba(255, 255, 255, var(--pz-gloss, 0.12)), rgba(255, 255, 255, 0) 52%), linear-gradient(#4d7c0f40, #4d7c0f40), var(--color-card-base, #252542) !important; }
+/* Succession: a locked (future) board stays legible. */
+[data-theme="dark"] .seq-locked { opacity: 0.82; }
 
 /* ── F2 fix · one cast row at a time (components/providers/cold-start-intro.tsx):
    the real header row stays laid out but hidden while the intro runs; after

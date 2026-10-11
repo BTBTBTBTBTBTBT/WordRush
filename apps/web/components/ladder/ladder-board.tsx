@@ -17,6 +17,10 @@ import { ladderFit } from '@/lib/ladder-fit';
 // the ladder so nobody leaves without the answer.
 
 export const LADDER_ACCENT = '#0284c7';
+/** The accent as TEXT / outline on the night board (founder 10-10, iOS 5ab65fa79): a light sky blue in the dark theme (--ladder-bright), the accent otherwise. */
+const LADDER_BRIGHT = `var(--ladder-bright, ${LADDER_ACCENT})`;
+const LADDER_REACH = `var(--ladder-bright, ${LADDER_ACCENT}aa)`;
+const LADDER_DASH = `var(--ladder-bright, ${LADDER_ACCENT}88)`;
 const HINT = '#8b5cf6';
 
 type RowKind = 'start' | 'rung' | 'hint' | 'typing' | 'end' | 'reveal';
@@ -50,7 +54,7 @@ function LadderTile({ letter, kind, changed, invalid, bad, outIndex }: { letter:
       break;
     case 'end':
       look = 'empty';
-      style = { ['--gt-glyph' as string]: LADDER_ACCENT, outline: `2px dashed ${LADDER_ACCENT}88`, outlineOffset: -2, borderRadius: '22%' };
+      style = { ['--gt-glyph' as string]: LADDER_BRIGHT, outline: `2px dashed ${LADDER_DASH}`, outlineOffset: -2, borderRadius: '22%' };
       break;
     case 'reveal':
       look = 'gap'; style = { ['--gt-glyph' as string]: '#9ca3af' }; break;
@@ -104,7 +108,7 @@ export const LadderBoard = memo(function LadderBoard({ state, typing, invalid, s
         {playing && <LadderRow word={typing} prev={state.words[state.words.length - 1]} kind="typing" invalid={invalid} shaking={shaking} />}
         {state.words[state.words.length - 1] !== state.end && (
           <>
-            <div className="text-[10px] font-black tracking-wider" style={{ color: `${LADDER_ACCENT}aa` }}>↓ {state.status === 'playing' ? 'REACH' : 'TARGET'}</div>
+            <div className="text-[10px] font-black tracking-wider" style={{ color: LADDER_REACH }}>↓ {state.status === 'playing' ? 'REACH' : 'TARGET'}</div>
             <LadderRow word={state.end} kind="end" />
           </>
         )}
@@ -163,7 +167,7 @@ export function LadderPlayBoard({ state, typing, invalid, shaking }: Omit<Ladder
           <LadderRow word={typing} prev={state.words[state.words.length - 1]} kind="typing" invalid={invalid} shaking={shaking} tile={fit.tile} />
           {showEnd && (
             <>
-              <div className="shrink-0 text-[10px] leading-[14px] font-black tracking-wider" style={{ color: `${LADDER_ACCENT}aa` }}>↓ REACH</div>
+              <div className="shrink-0 text-[10px] leading-[14px] font-black tracking-wider" style={{ color: LADDER_REACH }}>↓ REACH</div>
               <LadderRow word={state.end} kind="end" tile={fit.tile} />
             </>
           )}
@@ -207,7 +211,7 @@ export function LadderSummary({ state }: { state: LadderState }) {
         )}
         {!reached && (
           <>
-            <div className="text-[10px] font-black tracking-wider" style={{ color: `${LADDER_ACCENT}aa` }}>↓ TARGET</div>
+            <div className="text-[10px] font-black tracking-wider" style={{ color: LADDER_REACH }}>↓ TARGET</div>
             <LadderRow word={state.end} kind="end" />
           </>
         )}

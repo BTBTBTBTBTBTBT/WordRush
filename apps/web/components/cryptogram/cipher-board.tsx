@@ -13,7 +13,9 @@ const MONO = 'ui-monospace, Menlo, monospace';
 export const CIPHER_TRAY_PAD = 10;
 export const CIPHER_TRAY_CHROME = trayChrome(CIPHER_TRAY_PAD);
 /** The code letter's chip ink: the accent's deep ink on the light wash, a light amber on the dark theme. */
-const CODE_INK = accentInk(CRYPTOGRAM_ACCENT);
+// Founder 10-10 (iOS 5ab65fa79): the brown accent as TEXT vanishes on the night board, so its dark-theme ink is a bright amber.
+const CODE_INK_BASE = accentInk(CRYPTOGRAM_ACCENT);
+const CODE_INK = { className: CODE_INK_BASE.className, style: { ...CODE_INK_BASE.style, ['--ink-d' as string]: '#fcd34d' } as CSSProperties };
 
 interface CipherBoardProps {
   state: CryptogramState;
@@ -191,7 +193,7 @@ export const FrequencyStrip = memo(function FrequencyStrip({ state, selected, on
               fontSize: chipFont,
               background: softBackground(CRYPTOGRAM_ACCENT, isSel ? 0.24 : 0.1),
               border: isSel ? `1.5px solid ${CRYPTOGRAM_ACCENT}` : softBorder(CRYPTOGRAM_ACCENT, 0.1, 1),
-              color: locked ? undefined : 'var(--color-text-muted)',
+              color: locked ? undefined : 'var(--pz-dim, var(--color-text-muted))',
               ...(locked ? CODE_INK.style : null),
             }}
             aria-label={`Code letter ${c}, ${freq[c]} times${plain ? `, penciled ${plain}` : ''}`}>

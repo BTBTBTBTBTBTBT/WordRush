@@ -165,12 +165,12 @@ export function SpyglassWordList({ state: s, done }: { state: WordsearchState; d
         // tinted glossy chips (A1, no plain white); a hinted word wears an accent ring.
         const chip = found ? glossyChip(WORDSEARCH_ACCENT, { lip: 3 }) : tintedChip(WORDSEARCH_ACCENT, { lip: 3 });
         return (
-          <span key={p.w} className={`text-sm font-bold px-3 pt-1.5 rounded-full whitespace-nowrap ${found ? 'line-through' : ''}`}
+          <span key={p.w} className={`text-sm font-bold px-3 pt-1.5 rounded-full whitespace-nowrap ${found ? 'line-through' : 'sg-pill'}`}
             style={{
               ...chip,
               paddingBottom: 'calc(0.375rem + 3px)',
               ...(found ? null : {
-                color: visible ? 'var(--color-text)' : 'var(--color-text-muted)',
+                color: visible ? 'var(--color-text)' : 'var(--pz-dim, var(--color-text-muted))',
                 letterSpacing: visible ? undefined : '0.2em',
                 boxShadow: hinted ? `${chip.boxShadow}, 0 0 0 2px ${WORDSEARCH_ACCENT}` : chip.boxShadow,
               }),

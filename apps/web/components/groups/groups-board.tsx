@@ -98,11 +98,12 @@ export const TileGrid = memo(function TileGrid({ state, onToggle, shaking, fit =
               type="button"
               onClick={() => onToggle(w)}
               aria-pressed={sel}
-              className={`rounded-xl font-black uppercase flex items-center justify-center text-center leading-none px-1 transition-colors ${fit ? '' : `h-[clamp(52px,12vw,68px)] ${long ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}`}
+              className={`kd-word rounded-xl font-black uppercase flex items-center justify-center text-center leading-none px-1 transition-colors ${fit ? '' : `h-[clamp(52px,12vw,68px)] ${long ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}`}
               style={{
                 ...chip,
                 color: sel ? '#ffffff' : 'var(--color-text)',
                 boxShadow: ring ? `${chip.boxShadow}, ${ring}` : chip.boxShadow,
+                ['--kd-ring' as string]: ring ?? undefined,
                 paddingBottom: CHIP_LIP,
                 height: fit ? fit.h : undefined,
                 fontSize,
@@ -123,9 +124,9 @@ export const TileGrid = memo(function TileGrid({ state, onToggle, shaking, fit =
 export function MistakeDots({ mistakes, max }: { mistakes: number; max: number }) {
   return (
     <div className="flex items-center gap-1.5" aria-label={`${max - mistakes} mistakes remaining`}>
-      <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Mistakes left</span>
+      <span className="kd-rail-text text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Mistakes left</span>
       {Array.from({ length: max }, (_, i) => (
-        <span key={i} className="w-2.5 h-2.5 rounded-full" style={{ background: i < max - mistakes ? GROUPS_ACCENT : 'var(--color-border)' }} />
+        <span key={i} className="kd-dot w-2.5 h-2.5 rounded-full" data-on={i < max - mistakes ? 'true' : undefined} style={{ background: i < max - mistakes ? GROUPS_ACCENT : 'var(--color-border)' }} />
       ))}
     </div>
   );
@@ -149,8 +150,8 @@ export function ProgressRail({ solvedTiers, total, mistakes, maxMistakes }: Prog
   return (
     <div className="w-full max-w-md flex items-center justify-between gap-2 px-0.5" role="group" aria-label={`${found} of ${total} groups found`}>
       <div className="flex items-center gap-1.5">
-        <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Groups</span>
-        <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{found} of {total}</span>
+        <span className="kd-rail-text text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Groups</span>
+        <span className="kd-rail-text text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{found} of {total}</span>
         {Array.from({ length: total }, (_, i) => {
           const tier = i + 1;
           const st = TIER_STYLE[tier] ?? TIER_STYLE[4];
@@ -158,7 +159,8 @@ export function ProgressRail({ solvedTiers, total, mistakes, maxMistakes }: Prog
           return (
             <span
               key={tier}
-              className="w-2.5 h-2.5 rounded-full shrink-0"
+              className={`w-2.5 h-2.5 rounded-full shrink-0 ${tier === 4 ? 'kd-pip-4' : ''}`}
+              data-done={done ? 'true' : undefined}
               style={done ? { background: st.bg } : { border: `1.5px solid ${st.bg}` }}
               aria-hidden
             />
