@@ -116,7 +116,8 @@ function QuadrantKey({
   return (
     <button
       onClick={() => { haptic('light'); playKeyTap(); onClick(); }}
-      data-s={allAbsent ? 'absent' : undefined}
+      // Founder 10-10 (multi-board letters hard to read): ruled out on every board = the dead key (globals.css .kkey[data-dead]).
+      data-dead={allAbsent ? '' : undefined}
       className={cn(
         // §255: the sm sizes are thumb keys; from lg (desktop / iPad landscape)
         // they were eating a third of the viewport and squeezing the boards.
@@ -140,12 +141,13 @@ function QuadrantKey({
         >
           {boardStates.map((states, i) => {
             const state = states[letter];
-            return <span key={i} style={{ background: state ? KEY_FACE[state] : 'var(--k-face, #fbfaff)' }} />;
+            // Dark theme: a ruled-out cell sinks below the unused ones (--k-absent-cell), it no longer reads lit.
+            return <span key={i} style={{ background: state === 'absent' ? 'var(--k-absent-cell, var(--gt-a-base))' : state ? KEY_FACE[state] : 'var(--k-face, #fbfaff)' }} />;
           })}
         </span>
       )}
       <span
-        className={cn('relative z-10', hasAny && 'kkey-text')}
+        className={cn('relative z-10', hasAny && (allAbsent ? 'kkey-text' : 'kkey-halo'))}
         style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitFontSmoothing: 'antialiased' }}
       >
         {letter}

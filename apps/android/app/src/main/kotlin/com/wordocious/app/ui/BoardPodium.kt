@@ -323,11 +323,10 @@ fun BoardPodium(
                         s.userId, s.username ?: s.name, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
                         frame = s.frame, accentHex = s.accentHex,
                     ) { ink ->
-                        // Points stay the headline (#1 a touch larger), then ONE detail line, both in the bubble lettering on the plate's palette.
+                        // Points stay the bubble-lettered headline (#1 a touch larger); the detail parts sit under it in plain heavy type,
+                        // one per line (founder 10-10: the single shrunken bubble line was unreadable).
                         BubbleOneLine(s.points.uppercase(), ink.palette, (if (compact) 14f else 17f) + (if (place == 1) 2f else 0f))
-                        s.detail?.takeIf { it.isNotEmpty() }?.let { d ->
-                            BubbleOneLine(d.uppercase(), ink.palette, if (compact) 10f else 11.5f, minScale = 0.55f)
-                        }
+                        s.detail?.takeIf { it.isNotEmpty() }?.let { d -> PlaqueDetail(d, ink, compact) }
                     }
                     // Friends board: the taunt bell stays reachable for friends on the podium.
                     s.onTaunt?.let { taunt ->

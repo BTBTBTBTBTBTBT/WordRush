@@ -185,7 +185,16 @@ export function PodiumPlaque({ place, compact = false, first = false }: { place:
         </div>
         {place.badge}
       </div>
-      {place.detail ? <BubbleOneLine text={place.detail.toUpperCase()} spec={spec} size={compact ? 10 : 11.5} minScale={0.55} /> : null}
+      {/* Founder 10-10 (podium stats hard to read): one plain heavy line per detail part ("3 GUESSES" / "1M 14S")
+          instead of one bubble line allowed to shrink to 55%. */}
+      {place.detail
+        ? place.detail.split('·').map((part) => part.trim()).filter(Boolean).map((part) => (
+            <span key={part} className="font-extrabold whitespace-nowrap tabular-nums max-w-full overflow-hidden text-ellipsis"
+              style={{ fontSize: compact ? 10.5 : 12, letterSpacing: '0.02em', lineHeight: 1.15, color: plate.lightInk ? '#ffffff' : '#2e1065' }}>
+              {part.toUpperCase()}
+            </span>
+          ))
+        : null}
       {place.extra && <div style={{ color: plate.lightInk ? '#f5b82e' : '#b45309' }}>{place.extra}</div>}
       {place.nameSuffix}
       {place.action}

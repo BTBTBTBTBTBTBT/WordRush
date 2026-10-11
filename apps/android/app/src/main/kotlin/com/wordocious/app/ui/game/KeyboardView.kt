@@ -172,6 +172,9 @@ private data class KeyLook(val fill: Color, val ink: Color)
 /** The unstated key: #fbfaff with the deep purple letter; dark #3d355f with #efe9ff. */
 private val KEY_PLAIN = KeyLook(Color(0xFFFBFAFF), Color(0xFF3B1A78))
 private val KEY_PLAIN_DARK = KeyLook(Color(0xFF3D355F), Color(0xFFEFE9FF))
+/** A multi-board letter ruled out on every board (founder 10-10): dark and flat, below every live key. */
+private val KEY_DEAD = KeyLook(Color(0xFF515B70), Color.White)
+private val KEY_DEAD_DARK = KeyLook(Color(0xFF1A1630), Color.White)
 
 /** A revealed key takes its tile's state color (the colorblind swap included). */
 private fun keyLookFor(state: TileState): KeyLook {
@@ -233,7 +236,9 @@ private fun RowScope.QuadrantKey(
     val cellStates = perBoardStates.map { it[letter] ?: TileState.EMPTY }
     val hasAny = cellStates.any { it != TileState.EMPTY }
     val allAbsent = cellStates.isNotEmpty() && cellStates.all { it == TileState.ABSENT }
-    val look = if (allAbsent) keyLookFor(TileState.ABSENT) else if (WTheme.isDark) KEY_PLAIN_DARK else KEY_PLAIN
+    // Founder 10-10 ("hard to tell which letters were used and wrong on the multi-board games"): a letter ruled out on every
+    // board is a dark, recessed key with a dimmed letter (reads "dead" at a glance), parity with iOS QuadrantKeyView.deadFill.
+    val look = if (allAbsent) (if (WTheme.isDark) KEY_DEAD_DARK else KEY_DEAD) else if (WTheme.isDark) KEY_PLAIN_DARK else KEY_PLAIN
     val spoken = run {
         // Spoken per-board summary, e.g. "A, board 1 correct, board 3 not in word".
         val parts = cellStates.mapIndexedNotNull { i, st ->
@@ -268,12 +273,13 @@ private fun RowScope.QuadrantKey(
         }
         Text(
             letter,
-            color = if (hasAny) Color.White else look.ink,
+            color = if (allAbsent) Color.White.copy(alpha = 0.45f) else if (hasAny) Color.White else look.ink,
             fontWeight = FontWeight.Black,
             fontSize = 18.sp,
             modifier = Modifier.padding(bottom = KEY_LIP),
             // Web: text-shadow on the overlaid letter so it reads over sub-cells.
-            style = if (hasAny) TextStyle(shadow = Shadow(Color(0x80000000), blurRadius = 3f)) else TextStyle.Default,
+            // A tight dark halo so the white glyph reads over any mix of white / gold / purple / dark cells.
+            style = if (hasAny && !allAbsent) TextStyle(shadow = Shadow(Color(0xE61E1035), blurRadius = 4f)) else TextStyle.Default,
         )
     }
 }
@@ -283,7 +289,8 @@ private fun RowScope.QuadrantKey(
 private fun quadColor(state: TileState): Color = when (state) {
     TileState.CORRECT -> if (WTheme.colorblind) Color(0xFFF5793A) else Color(0xFF7C3AED)
     TileState.PRESENT, TileState.HINT_USED -> if (WTheme.colorblind) Color(0xFF85C0F9) else Color(0xFFF5A524)
-    TileState.ABSENT -> Color(0xFF6B7891)
+    // Dark theme: near-black, BELOW the unused cells (the slate read lighter than them there, so "wrong" looked lit).
+    TileState.ABSENT -> if (WTheme.isDark) Color(0xFF17132A) else Color(0xFF6B7891)
     TileState.EMPTY -> Color.Transparent
 }
 

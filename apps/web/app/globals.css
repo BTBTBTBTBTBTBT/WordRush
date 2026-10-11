@@ -1307,6 +1307,13 @@ html[data-season-tone="dark"] [data-page-tint="friends"] {
 .kkey[data-s="absent"] { --k-face: var(--gt-a-base); --k-ink: #eef1f6; }
 .kkey[data-s="blocked"] { --k-face: rgba(254, 226, 226, 0.9); --k-ink: rgba(220, 38, 38, 0.45); }
 .kkey-text { text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18); }
+/* Founder 10-10 (multi-board keyboards: hard to tell used + wrong letters): a letter ruled out on every board is a dark,
+   recessed key with a dimmed letter; a used letter's white glyph carries a tight dark halo over any mix of cells; in the
+   dark theme a ruled-out cell is near-black, below the unused cells. Parity: iOS QuadrantKeyView, Android QuadrantKey. */
+.kkey[data-dead] { --k-face: #515b70; --k-ink: rgba(255, 255, 255, 0.45); }
+[data-theme="dark"] .kkey[data-dead] { --k-face: #1a1630; }
+[data-theme="dark"] .kkey { --k-absent-cell: #17132a; }
+.kkey-halo { text-shadow: 0 0 1px rgba(30, 16, 53, 0.95), 0 1px 2px rgba(30, 16, 53, 0.7); }
 .kkey:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
 
 /* ── A9 · Everything tappable squishes: components/ui/squish-host.tsx plays the

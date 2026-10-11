@@ -68,5 +68,6 @@ export function secondaryColorHex(patternColorId: string | null | undefined): st
 export function platePaletteSpec(lightInk: boolean): HeadlinePaletteSpec {
   return lightInk
     ? { top: '#FFFFFF', bottom: '#EDE9FE', deep: '#3B0764', nameTop: '#FFFFFF', nameBottom: '#EDE9FE', numberTop: '#FFE07A', numberBottom: '#F5A524', rim: '#4C1D95' }
-    : { top: '#A855F7', bottom: '#6D28D9', deep: '#3B0764', nameTop: '#A855F7', nameBottom: '#6D28D9', numberTop: '#A855F7', numberBottom: '#6D28D9', rim: '#FFFFFF' };
+    // Founder 10-10 (podium stats hard to read): deep violet on the pale plate (was a light-to-mid purple, ~3:1).
+    : { top: '#7C3AED', bottom: '#4C1D95', deep: '#2E1065', nameTop: '#7C3AED', nameBottom: '#4C1D95', numberTop: '#7C3AED', numberBottom: '#4C1D95', rim: '#FFFFFF' };
 }

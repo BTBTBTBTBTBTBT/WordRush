@@ -28,6 +28,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.zIndex
 import com.wordocious.app.data.AvatarFields
 import com.wordocious.app.data.PlayerAvatars
@@ -41,6 +43,8 @@ class PlaqueInk(val lightInk: Boolean) {
     val muted: Color = if (lightInk) Color.White.copy(alpha = 0.82f) else Color(0xFF5B4B7A)
     /** The gold highlight (FLAWLESS / streak): bright gold on dark, deep amber on light. */
     val badge: Color = if (lightInk) Color(0xFFF5B82E) else Color(0xFFB45309)
+    /** The plain detail lines (guesses / time): white on a dark plate, the deepest violet on a pale one. */
+    val detail: Color = if (lightInk) Color.White else Color(0xFF2E1065)
     /**
      * The bubble lettering on the plate (founder 10-09): purple letters + numbers with a white outline on a pale plate; white
      * letters + gold numbers (dark outline) on a dark one. Mirrors iOS PlayerTint.platePalette.
@@ -52,8 +56,9 @@ class PlaqueInk(val lightInk: Boolean) {
         )
     } else {
         HeadlinePalette(
-            top = Color(0xFFA855F7), bottom = Color(0xFF6D28D9), deep = Color(0xFF3B0764), nameTop = Color(0xFFA855F7), nameBottom = Color(0xFF6D28D9),
-            outline = Color.White, numberTop = Color(0xFFA855F7), numberBottom = Color(0xFF6D28D9), rim = Color.White,
+            // Founder 10-10 (podium stats hard to read): deep violet on the pale plate (was a light-to-mid purple, ~3:1).
+            top = Color(0xFF7C3AED), bottom = Color(0xFF4C1D95), deep = Color(0xFF2E1065), nameTop = Color(0xFF7C3AED), nameBottom = Color(0xFF4C1D95),
+            outline = Color.White, numberTop = Color(0xFF7C3AED), numberBottom = Color(0xFF4C1D95), rim = Color.White,
         )
     }
 }
@@ -185,4 +190,18 @@ fun rememberPlayerNamePalette(
     }
     val cfg = PlayerAvatars.resolve(row).config
     return remember(cfg.bg, cfg.color, WTheme.isDark) { ThemeKit.accentPalette(hex(PlayerTint.nameHex(cfg.bg, avatarColorHex(cfg.color)))) }
+}
+
+/**
+ * Founder 10-10 ("the stats for the podium winners are hard to read"): the detail ("3 GUESSES · 1M 14S") was one bubble-lettered
+ * line allowed to shrink to 55% (~6 sp). Each part now gets its own line in plain heavy type that barely shrinks.
+ */
+@Composable
+fun PlaqueDetail(detail: String, ink: PlaqueInk, compact: Boolean) {
+    detail.split("·").map { it.trim() }.filter { it.isNotEmpty() }.forEach { part ->
+        FitText(
+            part.uppercase(), fontSize = (if (compact) 10.5f else 12f).sp, color = ink.detail,
+            fontWeight = FontWeight.ExtraBold, letterSpacing = 0.3.sp, minScale = 0.8f,
+        )
+    }
 }
