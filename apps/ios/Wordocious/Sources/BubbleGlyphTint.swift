@@ -110,7 +110,11 @@ enum GlyphManifest {
     private static var previous: [Entry] = []
     private static var writeScheduled = false
     private static let cap = 2500
-    private static let queue = DispatchQueue(label: "com.wordocious.glyph-manifest", qos: .utility)
+    // Founder 10-10 gate (guest Home idle 55 → 451 ms/s): replaying the whole capped manifest (up to 2,500 tints) at .utility
+    // kept a core busy for seconds after launch and the main thread waited on it. Background QoS, the 300 most recent only,
+    // small batches with real breathers.
+    private static let queue = DispatchQueue(label: "com.wordocious.glyph-manifest", qos: .background)
+    private static let warmLimit = 300
 
     private static var fileURL: URL? {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("bubble-glyph-manifest.json")
@@ -146,14 +150,14 @@ enum GlyphManifest {
                   let entries = try? JSONDecoder().decode([Entry].self, from: data) else { return }
             lock.lock(); previous = entries; lock.unlock()
             var n = 0
-            for e in entries where e.v.count == 11 {
+            for e in entries.prefix(warmLimit) where e.v.count == 11 {
                 let v = e.v
                 let q = BubbleGlyphTint.Request(stem: e.s, w: CGFloat(v[0]), h: CGFloat(v[1]), f0: v[2], f1: v[3],
                                                 t0: (Float(v[4]), Float(v[5]), Float(v[6])), t1: (Float(v[7]), Float(v[8]), Float(v[9])),
                                                 scale: CGFloat(v[10]))
                 _ = BubbleGlyphTint.tint(q)
                 n += 1
-                if n % 40 == 0 { Thread.sleep(forTimeInterval: 0.02) }
+                if n % 8 == 0 { Thread.sleep(forTimeInterval: 0.05) }
             }
         }
     }

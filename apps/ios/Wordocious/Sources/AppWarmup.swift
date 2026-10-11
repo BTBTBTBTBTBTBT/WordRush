@@ -86,12 +86,9 @@ enum AppWarmup {
         GoProSign.prewarm()        // BJ17: the GO PRO sign cast (Stats locked sections + the free finish upsell)
         Task { @MainActor in GameCoverPreview.prewarm() }   // BJ14 r7: recent games' page + header art for the open's shell
         Task { @MainActor in WidgetAvatarSnapshot.start() }   // BI13c: the player's look for the widget
-        // Founder 10-10 (smoothness): last session's bubble lettering is re-tinted in the background once Home has settled
-        // (after the 3 s launch window, so it never overlaps the first seconds the player sees).
-        Task.detached(priority: .utility) {
-            try? await Task.sleep(nanoseconds: 4_000_000_000)
-            GlyphManifest.warmFromLastSession()
-        }
+        // The glyph-manifest warm (re-tinting last session's lettering in the background) is OFF: the 10-10 night gate found
+        // it kept a core busy and the main thread waiting in the first seconds on Home (guest idle 55 → 451 ms/s) for a
+        // 16–37 ms first-visit saving. Smooth over pretty. (GlyphManifest still records; re-enable only with a gate.)
         Task.detached(priority: .utility) {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             GamePersistence.shared.sweepStalePracticeSaves()
