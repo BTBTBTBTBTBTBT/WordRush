@@ -160,6 +160,7 @@ export const RegionsBoard = memo(function RegionsBoard({ state, focused, onTap, 
                         draggable={false}
                         decoding="async"
                         className="ss-piece"
+                        data-piece={look.piece}
                         data-muted={look.muted ? 'true' : undefined}
                       />
                     )}

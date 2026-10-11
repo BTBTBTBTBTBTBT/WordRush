@@ -79,15 +79,15 @@ export function modeCardState(args: {
 /**
  * The card's measures (FINISH_SPEC BH2, the compact card; founder 10-10: "make the main titles a bit
  * taller and more readable … Crosswordocious I can barely read"). The game name 900 / 18 spans the
- * card's FULL width on the top line (one line, shrinks for long names, never wraps; one shared size
- * per grid ROW); under it the 30 icon leads the ONE muted subtitle line (13, 4 under the name), with
- * today's W / L / ✓ badge (18) on the icon's top-trailing corner. Under the candy trim (9 + its
+ * card's width on the top line in clean capitals (plain black-weight, no outline; one line, shrinks for long names,
+ * never wraps; one shared size per grid ROW) with today's W / L / ✓ badge (22) at the row's END (its slot reserved);
+ * under it the 30 icon leads the ONE muted subtitle line (13, 4 under the name). Under the candy trim (9 + its
  * drips) with 7 / 9 padding: 9 + 7 + 21 + 4 + 30 + 9 = 80 tall. The VS Battle card reuses the
  * surface, trim and padding (§21.5) and keeps its own 22 badge (`vsBadge`). iOS HomeCardSpec.
  */
 export const MODE_CARD = {
   radius: 16, band: TRIM.band, icon: 40, rowIcon: 30, name: 18, nameMin: 11, nameMinLast: 10.5, desc: 13,
-  titleLine: 21, descGap: 4, descLine: 16, badge: 18, vsBadge: 22, padX: 10, padY: 9, padTop: 7, height: 80,
+  titleLine: 21, descGap: 4, descLine: 16, badge: 22, vsBadge: 22, padX: 10, padY: 9, padTop: 7, height: 80,
 } as const;
 
 /**
@@ -200,18 +200,22 @@ export function ModeCard({ card, state, unlimited = false, row = 0 }: { card: Ho
 
       {/* Founder 10-10: the name spans the full width on top; the icon (badge on its corner) leads the subtitle under it. */}
       <div className="flex flex-col" style={{ padding: `${MODE_CARD.padTop}px ${MODE_CARD.padX}px ${MODE_CARD.padY}px`, minHeight: slots.textHeight }} data-testid="mode-card-text">
-        <FitName color={isLocked ? 'var(--color-text-muted)' : null} accent={card.accentColor} row={row}>{card.title}</FitName>
+        {/* Founder 10-10 (iOS 0c384ee48): the clean-capitals name across the top line with today's W / L / ✓ badge back at its
+            end (its 22 slot is reserved, so solved and unsolved names line up); the icon leads the subtitle under it. */}
+        <div className="flex items-center" style={{ gap: 4 }}>
+          <div className="flex-1 min-w-0">
+            <FitName color={isLocked ? 'var(--color-text-muted)' : null} accent={card.accentColor} row={row}>{card.title}</FitName>
+          </div>
+          <span className="shrink-0 flex items-center justify-center" style={{ width: MODE_CARD.badge, height: MODE_CARD.titleLine }} data-testid="mode-card-badge">
+            {slot}
+          </span>
+        </div>
         <div className="flex items-center gap-2" style={{ marginTop: MODE_CARD.descGap, height: slots.rowHeight }}>
           {/* Icon — the game's art when daily is done (even if locked); the lock only when locked without a result. */}
           <div className="relative shrink-0 flex items-center justify-center" style={{ width: MODE_CARD.rowIcon, height: MODE_CARD.rowIcon }}>
             {(isLocked && !isDailyDone)
               ? <Icon3D name="lock" size={20} />
               : <GameArt id={card.id} size={MODE_CARD.rowIcon} fallback={glyph} />}
-            {slot && (
-              <span className="absolute flex items-center justify-center" style={{ top: -6, right: -7, width: MODE_CARD.badge, height: MODE_CARD.badge }}>
-                {slot}
-              </span>
-            )}
           </div>
           {/* Z: a fixed one-line box, the same in both modes. */}
           <FitDesc key={unlimited ? 'u' : 'd'} height={slots.descHeight}>{subtitle}</FitDesc>
@@ -367,7 +371,7 @@ function FitName({ color, accent, row, children }: { color: string | null; accen
   return (
     <div
       ref={ref}
-      className={`font-black whitespace-nowrap overflow-hidden text-ellipsis ${ink?.className ?? ''}`}
+      className={`font-black uppercase tracking-[0.4px] whitespace-nowrap overflow-hidden text-ellipsis ${ink?.className ?? ''}`}
       style={{ fontSize: MODE_CARD.name, lineHeight: `${MODE_CARD.titleLine}px`, ...(ink ? ink.style : { color: color ?? undefined }) }}
     >
       {children}

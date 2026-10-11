@@ -195,15 +195,16 @@ export function BoardRow({ rank, userId, username, avatarUrl, avatar, isMe, leve
         </button>
       ) : <BoardAvatar url={avatarUrl} name={username} userId={userId} level={level} {...avatar} />}
       <div className="flex-1 min-w-0">
+        {/* Founder 10-10 (iOS 0c384ee48): plain heavy 15 px names in the page ink under the podium (the bubble lettering stays on the podium); "you" rides after in amber. */}
         <Link
           href={`/profile/${userId}`}
-          className="text-[14px] font-black truncate block hover:opacity-80 transition-opacity leading-tight"
+          className="text-[15px] font-extrabold truncate block hover:opacity-80 transition-opacity leading-tight"
           style={{ color: 'var(--color-text)' }}
         >
           {username}
           {level ? <LevelBadge level={level} size={16} numberSize={11} className="ml-1 align-middle" /> : null}
           {nameSuffix}
-          {isMe && <span style={{ color: '#d97706' }}> (you)</span>}
+          {isMe && <span className="ml-1.5 text-[12px] font-extrabold" style={{ color: 'var(--you-amber)' }}>you</span>}
         </Link>
         {stats != null && (
           <div className="flex items-center gap-1.5 text-[11px] font-bold leading-snug mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{stats}</div>

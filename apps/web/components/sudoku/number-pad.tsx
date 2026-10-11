@@ -52,8 +52,8 @@ export function NumberPad({ onDigit, onUndo, onErase, onToggleNotes, onHint, not
               type="button"
               onClick={tap(() => onDigit(d))}
               disabled={disabled}
-              className={`kkey flex-1 max-w-[52px] h-12 sm:h-14 lg:h-11 text-lg sm:text-xl select-none ${done ? 'opacity-40' : ''}`}
-              style={notesMode ? { ['--k-face' as string]: `linear-gradient(${SUDOKU_ACCENT}1f, ${SUDOKU_ACCENT}1f), #ffffff`, ['--k-edge' as string]: `${SUDOKU_ACCENT}88` } : undefined}
+              className={`kkey sdk-key flex-1 max-w-[52px] h-12 sm:h-14 lg:h-11 text-lg sm:text-xl select-none ${done ? 'opacity-40' : ''}`}
+              style={notesMode ? { ['--k-face' as string]: `linear-gradient(${SUDOKU_ACCENT}1f, ${SUDOKU_ACCENT}1f), #ffffff`, ['--k-edge' as string]: `${SUDOKU_ACCENT}88`, ['--k-ink' as string]: SUDOKU_ACCENT } : undefined}
               aria-label={`${notesMode ? 'Note ' : ''}${d}`}
             >
               <span>{d}</span>

@@ -17,7 +17,7 @@ describe('Home game card (§21)', () => {
     expect(MODE_CARD.rowIcon).toBe(30);
     expect(MODE_CARD.name).toBe(18);
     expect(MODE_CARD.desc).toBe(13);
-    expect(MODE_CARD.badge).toBe(18);
+    expect(MODE_CARD.badge).toBe(22);
     // The card hugs the body: trim band + top pad + name line + gap + the icon row + bottom pad.
     const content = MODE_CARD.titleLine + MODE_CARD.descGap + MODE_CARD.rowIcon;
     expect(MODE_CARD.band + MODE_CARD.padTop + content + MODE_CARD.padY).toBeLessThanOrEqual(MODE_CARD.height + 1);

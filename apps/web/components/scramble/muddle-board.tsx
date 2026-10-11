@@ -23,7 +23,7 @@ export const TILE_GAP = 6;
 export const TILE_FONT = 18;
 export const RING_INSET = '16%';   // ring ≈ 60 % of the tile, drawn inside it
 export const SCRAMBLE_FONT = 17;   // bold scramble letters, light tracking
-export const ICON_BTN = 32;        // Letter · Solve round candy buttons (FINISH_SPEC I4)
+export const ICON_BTN = 34;        // Letter · Solve round buttons (FINISH_SPEC I4; founder 10-10: gold OUTLINE circles, 34 — iOS GoldOutlineIconButton)
 export const FINAL_TILE = 32;      // gold punchline coins (FINISH_SPEC I2)
 export const FINAL_FONT = 16;
 /** Column width of the puzzle: the six-tile grid plus a scramble row with the two icon buttons — same on phone and desktop. */
@@ -42,8 +42,8 @@ export const MUDDLE_FULL: MuddleSizes = { tile: TILE, tileGap: TILE_GAP, tileFon
 /** While playing: tile 34 / chip 24 / coin 30; on a short viewport (< 700 tall) 32 / 22 / 28. */
 export function muddlePlaySizes(short: boolean): MuddleSizes {
   return short
-    ? { tile: 32, tileGap: 4, tileFont: 16, chip: 22, iconBtn: 28, coin: 28 }
-    : { tile: 34, tileGap: 5, tileFont: 17, chip: 24, iconBtn: 30, coin: 30 };
+    ? { tile: 32, tileGap: 4, tileFont: 16, chip: 22, iconBtn: 34, coin: 28 }
+    : { tile: 34, tileGap: 5, tileFont: 17, chip: 24, iconBtn: 34, coin: 30 };
 }
 /** A compact word line (inactive or solved): ~28 tall, chips 20, answer tiles 22; the locked punchline's rings 18; the open punchline's tray chips 22. */
 export const MUDDLE_LINE = { height: 28, chip: 20, tile: 22, tileGap: 3, tileFont: 12, ring: 18, trayChip: 22 } as const;
@@ -94,7 +94,7 @@ export const CartoonPanel = memo(function CartoonPanel({ src, alt, fixed = false
   );
 });
 
-/** I4: a small round candy hint button (bulb / eye); the label lives in aria-label and the title tooltip. */
+/** I4: a small round hint button (bulb / eye) drawn as a gold OUTLINE (founder 10-10; globals.css `.candy-gold-outline`); the label lives in aria-label and the title tooltip. */
 function IconButton({ label, onClick, children, size = ICON_BTN }: { label: string; onClick: (e: MouseEvent) => void; children: ReactNode; size?: number }) {
   return (
     <CandyButton
@@ -104,8 +104,8 @@ function IconButton({ label, onClick, children, size = ICON_BTN }: { label: stri
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="shrink-0"
-      style={{ ['--candy-h' as string]: `${size}px`, ['--candy-lip-h' as string]: '3px', ['--candy-ring' as string]: '1px', marginBottom: 3 } as CSSProperties}
+      className="shrink-0 candy-gold-outline"
+      style={{ ['--candy-h' as string]: `${size}px`, marginBottom: 3 } as CSSProperties}
     />
   );
 }
@@ -307,8 +307,8 @@ export const WordRow = memo(function WordRow({ state, row, active, shaking, onSe
         {chips(sizes.chip, 'gap-1')}
         {!solved && !finished && (
           <div className="flex items-center gap-2.5">
-            <IconButton size={sizes.iconBtn} label="Reveal a letter" onClick={(e) => { e.stopPropagation(); onRevealLetter(row); }}><Lightbulb className="w-4 h-4" color="#ffffff" strokeWidth={2.75} /></IconButton>
-            <IconButton size={sizes.iconBtn} label="Solve this word" onClick={(e) => { e.stopPropagation(); onSolveWord(row); }}><Eye className="w-4 h-4" color="#ffffff" strokeWidth={2.75} /></IconButton>
+            <IconButton size={sizes.iconBtn} label="Reveal a letter" onClick={(e) => { e.stopPropagation(); onRevealLetter(row); }}><Lightbulb className="w-4 h-4" color="currentColor" strokeWidth={2.5} /></IconButton>
+            <IconButton size={sizes.iconBtn} label="Solve this word" onClick={(e) => { e.stopPropagation(); onSolveWord(row); }}><Eye className="w-4 h-4" color="currentColor" strokeWidth={2.5} /></IconButton>
           </div>
         )}
       </div>
@@ -362,7 +362,7 @@ export const FinalRow = memo(function FinalRow({ state, active, shaking, onSelec
       <div className="flex items-center justify-between gap-2" style={{ minHeight: showTray ? sizes.iconBtn + 2 : undefined }}>
         <span className="text-[10px] font-black tracking-widest uppercase leading-none" style={{ color: 'var(--color-text-muted)' }}>{open || finished ? 'The punchline' : 'Solve the four words to unlock the punchline'}</span>
         {showTray && (
-          <IconButton size={sizes.iconBtn} label="Reveal a letter of the punchline" onClick={(e) => { e.stopPropagation(); onRevealLetter(); }}><Lightbulb className="w-4 h-4" color="#ffffff" strokeWidth={2.75} /></IconButton>
+          <IconButton size={sizes.iconBtn} label="Reveal a letter of the punchline" onClick={(e) => { e.stopPropagation(); onRevealLetter(); }}><Lightbulb className="w-4 h-4" color="currentColor" strokeWidth={2.5} /></IconButton>
         )}
       </div>
       {showTray && (

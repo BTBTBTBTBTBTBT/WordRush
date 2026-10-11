@@ -100,7 +100,9 @@ export const SudokuBoard = memo(function SudokuBoard({ state, selected, onSelect
   // FINISH_SPEC L: the board sits on the shared game tray; the 3×3 boxes are
   // split by soft darker seams in the tray's color (traySeam), never black lines.
   const trayState = trayStateFor(state.status);
-  const seam = `2px solid ${traySeam(trayState === 'won' ? '#7c3aed' : trayState === 'lost' ? '#6b7891' : SUDOKU_ACCENT, 0.4)}`;
+  // Founder 10-10 (iOS 0c384ee48, "hard to see the separation of the 9 boards"): on a dark board the seam is a bright
+  // lilac (--sdk-seam-dark, globals.css) centered in the gap between the boxes.
+  const seam = `2px solid var(--sdk-seam-dark, ${traySeam(trayState === 'won' ? '#7c3aed' : trayState === 'lost' ? '#6b7891' : SUDOKU_ACCENT, 0.4)})`;
   return (
     <GameTray accent={SUDOKU_ACCENT} state={trayState} className="w-full mx-auto" style={{ maxWidth: maxSize }}>
       <div
