@@ -168,21 +168,27 @@ struct TttStrikeView: View {
     }
 }
 
-/// The "YOUR TURN" flag over a pocket board while it is your move: pops in once, then rests.
+/// "YOUR TURN" over a pocket board while it is your move: pops in once, then rests. Founder 10-10: the old blank lavender
+/// flag art read as a stray icon — a small gold label with the words instead.
 struct PocketYourTurnFlag: View {
     @State private var shown = Theme.reduceMotion
 
     var body: some View {
-        if let art = PocketArt.yourTurnFlag {
-            Image(art).resizable().interpolation(.high).scaledToFit()
-                .frame(height: 30)
-                .scaleEffect(shown ? 1 : 0.7)
-                .opacity(shown ? 1 : 0)
-                .onAppear {
-                    guard !shown else { return }
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.65)) { shown = true }
-                }
-                .accessibilityLabel("Your turn")
+        HStack(spacing: 5) {
+            Image(systemName: "flag.fill").font(.system(size: 11, weight: .black))
+            Text("YOUR TURN").font(Brand.font(12, .black)).tracking(0.8)
         }
+        .foregroundStyle(Color(hex: 0x3B2300))
+        .padding(.horizontal, 12).padding(.vertical, 5)
+        .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xFDE68A), Color(hex: 0xF5B82E)], startPoint: .top, endPoint: .bottom)))
+        .overlay(Capsule().strokeBorder(Color.white.opacity(0.55), lineWidth: 1))
+        .shadow(color: Color(hex: 0xF59E0B).opacity(0.35), radius: 5, y: 2)
+        .scaleEffect(shown ? 1 : 0.7)
+        .opacity(shown ? 1 : 0)
+        .onAppear {
+            guard !shown else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.65)) { shown = true }
+        }
+        .accessibilityLabel("Your turn")
     }
 }

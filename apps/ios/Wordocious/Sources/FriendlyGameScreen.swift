@@ -368,8 +368,10 @@ struct FriendlyGameScreen: View {
             VStack(alignment: .leading, spacing: 4) {
                 PocketBubble(text: headline(g), color: accent, size: 21, names: [themName], nameColor: themColor,
                              minScale: 0.5, alignment: .leading, hug: false)
-                BubbleTextView(text: subLine(g), palette: .accent(FriendsInk.dark ? FriendsInk.bannerLabel : Color(hex: 0xB0306F)),
-                               names: [themName], maxSize: 11.5, minSize: 10, animated: false, alignment: .leading)
+                // Founder 10-10 (RPS: the tiny lettered line was hard to read): plain heavy text.
+                Text(subLine(g)).font(Brand.font(12, .heavy)).tracking(0.3)
+                    .foregroundStyle(FriendsInk.dark ? Color(hex: 0xF9A8D4) : Color(hex: 0xB0306F))
+                    .lineLimit(2).minimumScaleFactor(0.85)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12).padding(.vertical, 10)
@@ -642,9 +644,25 @@ struct FriendlyGameScreen: View {
                 VStack(spacing: 6) {
                     Group {
                         if let hidden = PocketArt.rpsHidden {
-                            // Wave 3: their face-down hand (the shipped art).
-                            Image(hidden).resizable().interpolation(.high).scaledToFit()
-                                .accessibilityLabel(theirs != nil ? "\(themName)'s hand, face down" : "Waiting for \(themName)'s hand")
+                            // Wave 3: their face-down hand (the shipped art). Founder 10-10: the art's "?" bubble is cut off
+                            // flat at the image's top edge — show only the fist (the bottom 63%) and draw a whole "?" bubble.
+                            VStack(spacing: -10) {
+                                ZStack {
+                                    Circle().fill(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0x7C3AED)], startPoint: .top, endPoint: .bottom))
+                                    Circle().strokeBorder(Color.white.opacity(0.5), lineWidth: 1.5)
+                                    Text("?").font(Brand.font(24, .black)).foregroundStyle(.white)
+                                        .shadow(color: Color(hex: 0x4C1D95).opacity(0.6), radius: 0, y: 1.5)
+                                }
+                                .frame(width: 38, height: 38)
+                                .offset(x: -6)
+                                .zIndex(1)
+                                Image(hidden).resizable().interpolation(.high).scaledToFill()
+                                    .frame(width: 92, height: 116, alignment: .bottom)
+                                    .frame(width: 92, height: 74, alignment: .bottom)
+                                    .clipped()
+                            }
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel(theirs != nil ? "\(themName)'s hand, face down" : "Waiting for \(themName)'s hand")
                         } else {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 16, style: .continuous)
