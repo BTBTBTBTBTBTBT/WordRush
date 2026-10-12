@@ -305,6 +305,8 @@ function AgeRecoverySignIn({ onCancel }: { onCancel: () => void }) {
 export function AgeCheckUnder() {
   const failed = useAgeRecoveryFailed();
   const [signingIn, setSigningIn] = useState(false);
+  // On the season's night wall the purple body lines were unreadable: light gold there (iOS parity).
+  const night = useSeason() !== null;
   useEffect(() => {
     document.title = 'See you soon! | Wordocious';
   }, []);
@@ -314,16 +316,16 @@ export function AgeCheckUnder() {
         <div className="w-full"><CastHeader ground /></div>
         <h1 className="sr-only">Wordocious is for players 13 and up. See you soon!</h1>
         <SeeYouScene />
-        <p className="font-bold" style={{ color: '#5b21b6', fontSize: 15, lineHeight: 1.35 }}>
+        <p className="font-bold" style={{ color: night ? '#ffdb8c' : '#5b21b6', fontSize: 15, lineHeight: 1.35 }}>
           Wordocious is for players 13 and up. We would love to play with you when you are older!
         </p>
-        <p className="font-semibold" style={{ color: 'rgba(76,29,149,0.7)', fontSize: 12 }}>
+        <p className="font-semibold" style={{ color: night ? 'rgba(255,233,184,0.82)' : 'rgba(76,29,149,0.7)', fontSize: 12 }}>
           Parents: questions or corrections? Write to{' '}
           <a href={`mailto:${AGE_CHECK_SUPPORT_EMAIL}`} className="font-bold underline">{AGE_CHECK_SUPPORT_EMAIL}</a>.
         </p>
         {/* A grown-up who tapped the wrong year: a confirmed 13+ account unlocks this device (AgeGate's recovery effect). */}
         {failed && !signingIn && (
-          <p role="status" className="font-bold" style={{ color: '#5b21b6', fontSize: 12 }}>{AGE_RECOVERY_UNCONFIRMED_LINE}</p>
+          <p role="status" className="font-bold" style={{ color: night ? '#ffdb8c' : '#5b21b6', fontSize: 12 }}>{AGE_RECOVERY_UNCONFIRMED_LINE}</p>
         )}
         {signingIn ? (
           <AgeRecoverySignIn onCancel={() => setSigningIn(false)} />
