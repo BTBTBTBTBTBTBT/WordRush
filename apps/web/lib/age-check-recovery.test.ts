@@ -20,7 +20,7 @@ describe('recovery from a mistaken under (web)', () => {
     vi.stubGlobal('sessionStorage', memoryStorage());
     vi.stubGlobal('window', { dispatchEvent: () => true });
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => { vi.unstubAllGlobals(); });
 
   it('locked + confirmed account: the stored under becomes a passing ok', () => {
     const toddler = new Date().getFullYear() - 2;

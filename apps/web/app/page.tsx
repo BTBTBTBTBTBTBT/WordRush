@@ -14,7 +14,6 @@ import { CardNameScope, ModeCard, modeCardState, modeCardSurface } from '@/compo
 import { openGame } from '@/lib/game-transition';
 import { HomeBanner, type BannerRow } from '@/components/home/home-banner';
 import { WordOfTheDay } from '@/components/home/word-of-the-day';
-import { HomeTodayCard } from '@/components/home/today-card';
 import { VSLiveTile } from '@/components/home/vs-live-tile';
 import { moreSweepTier } from '@/lib/more-games';
 import { useFlags } from '@/hooks/use-flags';
@@ -479,24 +478,14 @@ export default function HomePage() {
           onModeChange={setPlayMode}
           name={name}
           onOpen={open}
+          next={nextCard}
+          onPlayNext={open}
         />
         {/* 10-05 door 3: the one-time "Party hat?" card after the first win. */}
         <PartyHatOffer />
         {/* 10-05: the one-time seasonal "Dress up for Halloween?" card (once per season). */}
         <SeasonDressOffer />
         <DevDressRoom />
-        </div>
-        {/* Desktop website only (hidden below 1024 px): today's progress beside the banner. */}
-        <div className="dk-only">
-          <HomeTodayCard
-            word={wordRow.progress}
-            puzzles={puzzleRow.progress}
-            unlimited={playMode === 'unlimited'}
-            wordPlayed={wordRow.unlimitedPlayed}
-            puzzlesPlayed={puzzleRow.unlimitedPlayed}
-            next={nextCard}
-            onOpen={open}
-          />
         </div>
         </div>
 

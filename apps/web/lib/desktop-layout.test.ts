@@ -76,9 +76,10 @@ describe('desktop block (globals.css)', () => {
     const head = block.slice(0, firstMedia).replace(/\/\*[\s\S]*?\*\//g, '');
     const rules = head.match(/[^{}]+\{[^}]*\}/g) ?? [];
     const selectors = rules.map((r) => r.slice(0, r.indexOf('{')).trim());
-    expect(selectors).toEqual([':root', '.dk-tabs, .dk-only', '.home-hero']);
+    expect(selectors).toEqual([':root', '.dk-tabs, .dk-only', '.home-hero', '.hb-body, .hb-left, .hb-right']);
     expect(head).toMatch(/\.dk-tabs, \.dk-only \{ display: none; \}/);
     expect(head).toMatch(/\.home-hero \{ display: contents; \}/);
+    expect(head).toMatch(/\.hb-body, \.hb-left, \.hb-right \{ display: contents; \}/);
     const queries = [...block.matchAll(/@media ([^{]+)\{/g)].map((m) => m[1].trim());
     expect(queries.length).toBeGreaterThan(0);
     for (const q of queries) {
@@ -136,8 +137,11 @@ describe('desktop call sites', () => {
   it('marks the dashboard and the column layouts', () => {
     const home = read('app/page.tsx');
     expect(home).toContain('className="home-hero"');
-    expect(home).toContain('className="dk-only"');
-    expect(home).toContain('<HomeTodayCard');
+    // One full-width banner (founder 10-12): its body splits in two columns, with Play next on the right.
+    expect(home).not.toContain('<HomeTodayCard');
+    expect(home).toMatch(/onPlayNext=\{open\}/);
+    const banner = read('components/home/home-banner.tsx');
+    for (const c of ['hb-body', 'hb-left', 'hb-right', 'dk-only hb-next']) expect(banner).toContain(`className="${c}`);
     expect(home).toMatch(/className="home-cards grid grid-cols-2/);
     expect(home).toMatch(/className="home-games page-grid-2/);
     expect(read('app/daily/page.tsx')).toMatch(/className="lb-desk /);

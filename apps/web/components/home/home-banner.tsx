@@ -24,6 +24,7 @@ import {
 } from '@wordle-duel/core';
 import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
+import { CastButton } from '@/components/ui/cast-button';
 import { useHomeHost } from '@/components/avatar/player-avatar';
 import { HomeHost } from '@/components/home/home-host';
 import { CelebrationTrio } from '@/components/home/celebration-trio';
@@ -90,6 +91,9 @@ interface Props {
   /** The player's username; empty for a guest. */
   name: string;
   onOpen: (card: HomeCard) => void;
+  /** Desktop web: the next unplayed daily, played from the banner's right column. */
+  next?: HomeCard;
+  onPlayNext?: (card: HomeCard) => void;
 }
 
 /**
@@ -192,7 +196,7 @@ function useSlotWidth(ref: React.RefObject<HTMLElement>): number {
   return width;
 }
 
-export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, onOpen }: Props) {
+export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, onOpen, next, onPlayNext }: Props) {
   const unlimited = playMode === 'unlimited';
   // FINISH_SPEC Z: the slots (frame, headline box, share box, art box, rows)
   // come from today's DAILY state only, so the switch never moves the tiles or
@@ -363,6 +367,10 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
       {/* BJ6 symmetric hero (founder 10-03): the host stands centered on the card's top edge
           (drawn beside the card, below); its lower 44 px sit in the strip's top padding, and
           the headline / switch / meta line center under it — the card mirrors on its center line. */}
+      {/* Desktop web (founder 10-12): the body splits in two columns — greeting / switch / season art on the left, the
+          progress rows + Play next on the right. On phones these wrappers are display: contents (nothing moves). */}
+      <div className="hb-body">
+      <div className="hb-left">
       <div className={`${look ? '' : 'banner-frost '}relative flex flex-col`} style={{ gap: BANNER_SLOT.stripGap, padding: `${slots.stripTop}px 12px ${BANNER_SLOT.stripBottom}px` }}>
       <div className="flex items-center gap-1">
       <div className="flex-1 min-w-0">
@@ -391,7 +399,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
                           size={headLayout.size}
                           interactive
                           level={2}
-                          style={{ whiteSpace: 'nowrap', display: 'inline-block', width: 'auto' }}
+                          style={{ whiteSpace: 'nowrap', display: 'inline-block' }}
                         />
                         {i === 0 && <GoldSparkle mirror />}
                       </span>
@@ -480,13 +488,24 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           )}
         </div>
       )}
+      </div>
+      <div className="hb-right">
       {/* BJ6 round 3 flair: the two progress rows sit in one soft lavender band — the card reads as two zones. */}
-      <div className="relative" style={{ background: look?.raised ? 'color-mix(in srgb, var(--color-surface-alt) 45%, transparent)' : ROWS_BAND }}>
+      <div className="relative hb-rows" style={{ background: look?.raised ? 'color-mix(in srgb, var(--color-surface-alt) 45%, transparent)' : ROWS_BAND }}>
       <div className="relative flex flex-col" style={{ gap: BANNER_SLOT.rowGap, padding: `${BANNER_SLOT.wordPadTop}px ${BANNER_SLOT.rowPadX}px ${BANNER_SLOT.wordPadBottom}px` }}>
         {row(word, wTier, 'WORDOCIOUS')}
       </div>
       <div className="relative flex flex-col" style={{ gap: BANNER_SLOT.rowGap, padding: `${BANNER_SLOT.puzzlePadTop}px ${BANNER_SLOT.rowPadX}px ${BANNER_SLOT.puzzlePadBottom}px` }}>
         {row(puzzles, pTier, 'PUZZLES')}
+      </div>
+      </div>
+      {next && onPlayNext && (
+        <div className="dk-only hb-next">
+          <CastButton size="md" color="purple" icon="play" onClick={() => onPlayNext(next)}>
+            {`Play ${next.title}`}
+          </CastButton>
+        </div>
+      )}
       </div>
       </div>
     </div>
@@ -499,8 +518,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
     <div className="relative shrink-0" style={{ paddingTop: slots.headroom }}>
       {card}
       <span
-        className="absolute"
-        style={{ top: slots.headroom - BANNER_SLOT.hostRise, left: `calc(50% - ${BANNER_SLOT.hostSize / 2}px)`, width: BANNER_SLOT.hostSize, height: BANNER_SLOT.hostSize, zIndex: 2 }}
+        className="absolute hb-host"
+        style={{ ['--hb-host-half' as string]: `${BANNER_SLOT.hostSize / 2}px`, top: slots.headroom - BANNER_SLOT.hostRise, left: `calc(50% - ${BANNER_SLOT.hostSize / 2}px)`, width: BANNER_SLOT.hostSize, height: BANNER_SLOT.hostSize, zIndex: 2 }}
       >
         <HomeHost
           choice={invite ? { kind: 'mascot', config: invite } : host.choice}
@@ -657,7 +676,9 @@ function FitOneLine({ children }: { children: React.ReactNode }) {
   }, []);
   return (
     <div ref={box} className="min-w-0 flex-1 flex justify-center" style={{ overflow: 'visible' }}>
-      <div ref={inner} style={{ whiteSpace: 'nowrap', transform: scale < 1 ? `scale(${scale})` : undefined, transformOrigin: 'center' }}>
+      {/* flex: none — sized to its content, so the observer fires when the lettering loads and grows (capped at the box,
+          it never resized and a desktop "GOOD MORNING" overflowed unscaled, founder 10-12). */}
+      <div ref={inner} style={{ flex: 'none', whiteSpace: 'nowrap', transform: scale < 1 ? `scale(${scale})` : undefined, transformOrigin: 'center' }}>
         {children}
       </div>
     </div>

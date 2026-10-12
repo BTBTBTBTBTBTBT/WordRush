@@ -2478,6 +2478,8 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 }
 .dk-tabs, .dk-only { display: none; }
 .home-hero { display: contents; }
+/* The Home banner's desktop columns (founder 10-12): on phones these wrappers lay out nothing. */
+.hb-body, .hb-left, .hb-right { display: contents; }
 @media (min-width: 1024px) {
   :root { --page-wide: var(--desk-max); }
 
@@ -2534,13 +2536,19 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 
   .dk-only { display: block; }
 
-  /* Home: the hero, then the stacked card grids. */
+  /* Home: the hero, then the stacked card grids. Founder 10-12: one full-width banner (no side "Today" panel — it
+     repeated the banner's progress); the banner's body splits into two columns, the host stands over the left one. */
   .home-hero {
     display: grid;
-    grid-template-columns: minmax(0, var(--page-col)) minmax(0, 1fr);
-    column-gap: var(--page-grid-gap);
+    grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
   }
+  .hb-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
+  .hb-left { display: flex; flex-direction: column; justify-content: center; }
+  .hb-right { display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 16px 20px; }
+  .hb-right > .hb-rows { border-radius: 16px; }
+  .hb-next { display: flex; justify-content: center; }
+  .hb-host { left: calc(25% - var(--hb-host-half)) !important; }
   .home-hero > .page-col { max-width: none; margin: 0; }
   .home-hero > .dk-only { padding-top: 16px; }
   .home-games.page-grid-2 { grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
@@ -2815,3 +2823,16 @@ html[data-season-tone="dark"] { --ink-lift: 65%; }
 @keyframes idle-sway { from { rotate: calc(var(--il-sway, 1.5deg) * -1); } to { rotate: var(--il-sway, 1.5deg); } }
 @media (prefers-reduced-motion: reduce) { .idle-life { animation: none !important; translate: none; scale: none; rotate: none; } }
 [data-reduced-motion="true"] .idle-life { animation: none !important; translate: none; scale: none; rotate: none; }
+
+/* Home offer cards ("Dress up for Halloween?", "First win! Party hat?"): a pastel wash on light; on dark and the season
+   wall a tinted dark surface with light inks (they were light cards with purple ink on the Halloween Home, founder 10-12). */
+.home-offer {
+  --offer-ink: #6d28d9;
+  --offer-sub: #6b5a96;
+  background: linear-gradient(90deg, var(--offer-from), #ede9fe);
+}
+[data-theme="dark"] .home-offer {
+  --offer-ink: #f3e8ff;
+  --offer-sub: #d8c8f0;
+  background: linear-gradient(90deg, var(--offer-from-dark), rgba(139, 92, 246, 0.24)), var(--color-card-base);
+}
