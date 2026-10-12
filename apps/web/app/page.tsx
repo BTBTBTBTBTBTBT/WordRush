@@ -509,7 +509,7 @@ export default function HomePage() {
         </div>
         </div>
 
-        <div className="home-duo page-grid-2 flex flex-col gap-2">
+        <div className="page-grid-2 home-duo flex flex-col gap-2">
         {/* Word of the Day, now a quick quiz under its own section header
             (§12; see components/home/word-of-the-day.tsx). */}
         <div className="flex flex-col gap-2">
