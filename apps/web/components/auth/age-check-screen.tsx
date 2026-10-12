@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ageCheckYears, AGE_CHECK_SUPPORT_EMAIL, AGE_RECOVERY_LINK_LABEL, AGE_RECOVERY_UNCONFIRMED_LINE } from '@wordle-duel/core';
 import { CastButton, TextLink } from '@/components/ui/cast-button';
 import { QuietButton } from '@/components/ui/family-button';
@@ -181,7 +181,7 @@ function AskScene() {
   const halloween = season !== null;
   return (
     <div className="w-full flex flex-col items-center" style={{ maxWidth: 340 }}>
-      <SpeechBubble text="WHAT YEAR WERE YOU BORN?" halloween={halloween} style={{ width: '86%', alignSelf: 'flex-start' }} />
+      <SpeechBubble text="WHAT YEAR WERE YOU BORN?" halloween={halloween} style={{ width: '74%', alignSelf: 'flex-start', marginLeft: '6%' }} />
       <div className="relative w-full" style={{ height: 150, marginTop: 8 /* the tail stops just above D's head */ }}>
         {/* the shared soft floor */}
         <span aria-hidden="true" className="absolute pointer-events-none" style={{
@@ -243,10 +243,31 @@ function SeeYouScene() {
 export function AgeCheckQuestion({ onAnswer }: { onAnswer: (year: number) => void }) {
   const years = useMemo(() => ageCheckYears(), []);
   const [year, setYear] = useState<number | null>(null);
+  // Founder 10-12 (a player on iPhone Safari: "no submit button"): the question is ~830 px tall and Safari shows
+  // 550-740 px, so the wheel was cut off and Continue sat below the fold (swiping over the wheel spins it, so the
+  // page never scrolled there). The whole question now scales down to fit the visible height.
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(1);
+  useLayoutEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const measure = () => {
+      const avail = window.visualViewport?.height ?? window.innerHeight;
+      const need = el.offsetHeight;   // layout height: unaffected by the transform
+      setFit(need > 0 ? Math.min(1, avail / need) : 1);
+    };
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(el);
+    window.addEventListener('resize', measure);
+    window.visualViewport?.addEventListener('resize', measure);
+    return () => { ro?.disconnect(); window.removeEventListener('resize', measure); window.visualViewport?.removeEventListener('resize', measure); };
+  }, []);
 
   return (
     <PageBackground tint="home" scheme="light" className="fixed inset-0 z-[200] overflow-y-auto">
-      <div className="w-full max-w-sm mx-auto flex flex-col items-center gap-3 px-5 pt-3 pb-5">
+      <div ref={boxRef} className="w-full max-w-sm mx-auto flex flex-col items-center gap-3 px-5 pt-3 pb-5"
+        style={fit < 1 ? { transform: `scale(${fit})`, transformOrigin: 'top center' } : undefined}>
         {/* the live WORDOCIOUS cast row stays on top; the question lives below it */}
         <div className="w-full"><CastHeader ground /></div>
         <AskScene />
