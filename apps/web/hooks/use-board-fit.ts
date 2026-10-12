@@ -1,6 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useState, type RefObject } from 'react';
+import { DESK_TILE_SINGLE, wideStageCap } from '@/lib/desktop-layout';
 import { fitBoard, type SingleFit, type SingleFitInput } from '@/lib/board-fit';
 
 /**
@@ -24,7 +25,7 @@ export function useBoardFit(
     if (!el) return;
     const measure = () => {
       const r = el.getBoundingClientRect();
-      const next = fitBoard({ width: r.width, height: r.height, cols, rows, gap, side, vPad, maxTile, maxWidth, extraWidth });
+      const next = fitBoard({ width: r.width, height: r.height, cols, rows, gap, side, vPad, maxTile: maxTile ?? wideStageCap(el, DESK_TILE_SINGLE), maxWidth, extraWidth });
       setFit((prev) => (prev && next && prev.tile === next.tile && prev.gap === next.gap ? prev : next));
     };
     measure();

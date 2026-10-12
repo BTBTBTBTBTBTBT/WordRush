@@ -201,6 +201,9 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
   return (
     <GameBackground
       mode="OCTORDLE"
+      wide
+      // Eight 13-row boards are width-bound: OctoWord's playing stage is as wide as the finished one.
+      style={{ ['--game-wide-play' as string]: '1180px' }}
       className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? FINISHED_NAV_CLEAR : ''}`}
     >
       {showVictory && popupReady && <VictoryAnimation mode="OCTORDLE" onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={8} totalBoards={8} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('OCTORDLE', true, totalGuesses, elapsedTime, 8, 8).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}

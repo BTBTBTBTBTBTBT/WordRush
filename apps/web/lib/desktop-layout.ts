@@ -35,6 +35,16 @@ export const DESK_TILE_SINGLE = 96;
 export const DESK_TILE_MULTI = 72;
 export const DESK_TILE_RECAP = 48;
 
+/**
+ * The tile cap a board's fit may use: on the wide game stage (desktop ≥ 1024 px AND inside a
+ * `.game-wide` root, GameBackground `wide`) the bigger desktop cap, else `base` (undefined =
+ * the fit's own phone default). Screens that did not opt in keep today's sizes at every width.
+ */
+export function wideStageCap(el: Element | null | undefined, desk: number, base?: number): number | undefined {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function' || !el) return base;
+  return el.closest('.game-wide') && window.matchMedia(minWidthQuery(DESKTOP_MIN)).matches ? desk : base;
+}
+
 export type LayoutTier = 'phone' | 'wide' | 'desktop';
 
 /** The layout tier for a viewport width (CSS px). */

@@ -1,5 +1,6 @@
 import { BACKDROP_GAME, BACKDROP_PAGE, backdropColors, type BackdropLook } from '@/lib/backdrop-tiles';
 import { SeasonWallLayer } from '@/components/ui/season-preview';
+import { WideStageProvider } from '@/components/ui/wide-stage';
 import { LivingWallpaper, ThemeWallLayer } from '@/components/ui/theme-wall';
 import { PAGE_TINTS, WALL_OVERLAY, accentCardShadow, artSrc, wideWallSrc, gameTintForDbKey, gameWallForDbKey, pageWall, type PageTint, type TintStops, type WallArtName } from '@/lib/art';
 
@@ -88,7 +89,7 @@ export function PageBackground({
  * matches. The game's root element: it takes the className / style the old
  * flat-background div had.
  */
-export function GameBackground({ mode, className: baseClass = '', wide = false, ...rest }: Omit<PageBackgroundProps, 'tint' | 'colors' | 'wall' | 'dim'> & {
+export function GameBackground({ mode, className: baseClass = '', wide = false, children, ...rest }: Omit<PageBackgroundProps, 'tint' | 'colors' | 'wall' | 'dim'> & {
   /** The mode's db key (DUEL, QUORDLE, SCRAMBLE, …). */
   mode: string;
   /**
@@ -110,7 +111,9 @@ export function GameBackground({ mode, className: baseClass = '', wide = false, 
       // to the whole window and the board fit measures the column.
       className={`page-col ${className}`}
       {...rest}
-    />
+    >
+      {wide ? <WideStageProvider>{children}</WideStageProvider> : children}
+    </PageBackground>
   );
 }
 

@@ -404,6 +404,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   return (
     <GameBackground
       mode={mode}
+      wide
       className={`h-screen-stable flex flex-col relative ${gameComplete ? FINISHED_NAV_CLEAR : ''}`}
     >
       {showVictory && popupReady && <VictoryAnimation mode={mode} onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} points={computeScoreBreakdown(mode, true, guessesUsed, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}

@@ -176,7 +176,7 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterS
   const hStyle = keyHeight ? { height: layout === 'michael' ? keyHeight - 6 : keyHeight } : undefined;
 
   return (
-    <div className="flex flex-col gap-1.5 lg:gap-1 max-w-xl mx-auto" role="group" aria-label="Game keyboard">
+    <div className="kb-root flex flex-col gap-1.5 lg:gap-1 max-w-xl mx-auto" role="group" aria-label="Game keyboard">
       {rows.map((row, i) => (
         <div key={i} className="flex gap-1 justify-center">
           {row.map((key, ki) => {

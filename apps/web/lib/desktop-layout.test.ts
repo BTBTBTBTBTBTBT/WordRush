@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
 import {
-  DESKTOP_3COL_MIN, DESKTOP_MAX, GAME_WIDE_DONE, GAME_WIDE_PLAY, DESKTOP_MIN, DESKTOP_XL_MIN, WIDE_MIN,
+  DESKTOP_3COL_MIN, DESKTOP_MAX, GAME_WIDE_DONE, GAME_WIDE_PLAY, wideStageCap, DESKTOP_MIN, DESKTOP_XL_MIN, WIDE_MIN,
   homeCardColumns, layoutTier, minWidthQuery, showsBottomTabs, tabPageColumns,
 } from './desktop-layout';
 
@@ -126,6 +126,34 @@ describe('desktop block (globals.css)', () => {
 
   it('uses the wide wallpaper on every desktop width', () => {
     expect(css).toMatch(/@media \(min-aspect-ratio: 1\/1\), \(min-width: 1024px\) \{\s*\.page-bg/);
+  });
+});
+
+describe('wide game stage (call sites)', () => {
+  it('opts the eight daily word games in', () => {
+    for (const f of [
+      'components/practice/practice-game.tsx', 'components/quordle/quordle-game.tsx', 'components/octordle/octordle-game.tsx',
+      'components/sequence/sequence-game.tsx', 'components/rescue/rescue-game.tsx', 'components/gauntlet/gauntlet-game.tsx',
+    ]) {
+      expect(read(f), f).toMatch(/<GameBackground\s+mode=[^\n]+\n\s+wide\n/);
+    }
+    expect(read('components/gauntlet/gauntlet-results.tsx')).toMatch(/<GameBackground mode="GAUNTLET" wide /);
+  });
+
+  it('lays the finished screen in two columns only under a wide stage on desktop', () => {
+    const fs = read('components/game/finished-screen.tsx');
+    expect(fs).toMatch(/const desk = useDeskFinished\(\)/);
+    expect(fs).toContain('<FinishedDeskLayout');
+    const ws = read('components/ui/wide-stage.tsx');
+    expect(ws).toMatch(/return wide && desk/);
+    expect(read('components/ui/page-background.tsx')).toMatch(/\{wide \? <WideStageProvider>\{children\}<\/WideStageProvider> : children\}/);
+  });
+
+  it('raises the board tile caps only on the wide stage', () => {
+    expect(read('hooks/use-board-fit.ts')).toContain('wideStageCap(el, DESK_TILE_SINGLE)');
+    expect(read('hooks/use-square-board-fit.ts')).toContain('wideStageCap(el, DESK_TILE_MULTI)');
+    expect(read('components/game/fitted-recap.tsx')).toContain('wideStageCap(el, DESK_TILE_RECAP, cap)');
+    expect(wideStageCap(null, 96, 72)).toBe(72);
   });
 });
 

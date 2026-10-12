@@ -207,6 +207,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
   return (
     <GameBackground
       mode="RESCUE"
+      wide
       className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? FINISHED_NAV_CLEAR : ''}`}
     >
       {showVictory && popupReady && <VictoryAnimation mode="RESCUE" onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={4} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('RESCUE', true, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, 4, 4).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}

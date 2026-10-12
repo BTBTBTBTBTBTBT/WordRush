@@ -1,6 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useState, type RefObject } from 'react';
+import { DESK_TILE_MULTI, wideStageCap } from '@/lib/desktop-layout';
 import { fitBoardGrid, type GridFit } from '@/lib/board-fit';
 
 export type BoardFit = GridFit;
@@ -29,7 +30,7 @@ export function useSquareBoardFit(
     if (!el) return;
     const measure = () => {
       const r = el.getBoundingClientRect();
-      const next = fitBoardGrid({ width: r.width, height: r.height, boards: boardCount, rows: maxRows, extraBoardHeight });
+      const next = fitBoardGrid({ width: r.width, height: r.height, boards: boardCount, rows: maxRows, extraBoardHeight, maxTile: wideStageCap(el, DESK_TILE_MULTI) });
       setFit((prev) => (prev && next && prev.tile === next.tile && prev.cols === next.cols && prev.boardW === next.boardW ? prev : next));
     };
     measure();

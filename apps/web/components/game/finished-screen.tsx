@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, type ReactNode, type Ref } from 'react';
-import { FitBox, MoreDisclosure, useBlockCentering } from './finished-kit';
+import { FinishedDeskLayout, FitBox, MoreDisclosure, useBlockCentering } from './finished-kit';
+import { useDeskFinished } from '@/components/ui/wide-stage';
 import { prefersReducedMotion } from '@/lib/motion';
 
 /**
@@ -22,6 +23,11 @@ export const MORE_PEEK = 42;
  *   need a scroll. Extras (`more`: score breakdown, today's word, stage rows)
  *   go in a MoreDisclosure BELOW the dock; its closed pill peeks under the dock
  *   and opening it scrolls the extras into view.
+ *
+ * Desktop website (≥ 1024 px, founder 10-12; the game root must be `<GameBackground wide>`):
+ * the same pieces lay out as FinishedDeskLayout — the board(s) fill the LEFT column (under the
+ * header art), the RIGHT column is the results panel: strip, rank pill, dock, then the extras
+ * (`more`) shown OPEN inline instead of behind the disclosure.
  *
  * `fit`:
  *   - 'scale' (default): the board renders at its natural size inside a FitBox,
@@ -54,6 +60,7 @@ export function FinishedScreen({
 }) {
   const moreRef = useRef<HTMLDivElement>(null);
   const hasMore = !!more;
+  const desk = useDeskFinished();
 
   // Opening "More" scrolls its extras into view (the toggle event does not
   // bubble, so listen in the capture phase on the wrapper).
@@ -71,7 +78,10 @@ export function FinishedScreen({
 
   // Founder 10-02: the block sits vertically centered — the room the board
   // leaves in its box is split above the strip and below the dock + More.
-  const { onSlack, down, up } = useBlockCentering();
+  const centering = useBlockCentering();
+  const { onSlack } = centering;
+  const down = desk ? undefined : centering.down;
+  const up = desk ? undefined : centering.up;
   const selfRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (fit !== 'self') return;
@@ -117,7 +127,32 @@ export function FinishedScreen({
     ro.observe(area);
     measure();
     return () => { cancelAnimationFrame(raf); mo.disconnect(); ro.disconnect(); };
-  }, [fit, onSlack]);
+  }, [fit, onSlack, desk]);
+
+  if (desk) {
+    return (
+      <FinishedDeskLayout
+        main={fit === 'self' ? (
+          <div ref={boardRef} className="relative flex-1 min-h-0 w-full">
+            <div ref={selfRef} className="absolute inset-0 flex items-center justify-center">{board}</div>
+          </div>
+        ) : (
+          <div ref={boardRef} className="flex-1 min-h-0 w-full flex flex-col">
+            <FitBox onSlack={onSlack}>{board}</FitBox>
+          </div>
+        )}
+        side={
+          <>
+            <div className="fin-desk-top flex flex-col items-center gap-2">{strip}{sub}</div>
+            {dock}
+            {hasMore && (
+              <section className="fin-desk-more" aria-label={moreLabel}>{more}</section>
+            )}
+          </>
+        }
+      />
+    );
+  }
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: 'none' }}>

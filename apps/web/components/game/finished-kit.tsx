@@ -483,8 +483,9 @@ export function FinishedDock({ currentMode, isDaily, onShare, copied, onNewPuzzl
  *     inside a flex column, like FinishedScreen's board area): the board fills it and measures it.
  *   - `side` is the results panel: chips, rank pill, Share / Next / Ranks, Unlimited, the score
  *     breakdown OPEN inline, the next-daily CTA — vertically centered, 420 px max wide, no boxes.
- *   - Only render this when `useDesktopStage()` is true (hooks/use-desktop-stage.ts); below 1024 px
- *     keep today's single column. FinishedScreen does this for the word games.
+ *   - Only render this when `useDeskFinished()` is true (components/ui/wide-stage.tsx: desktop
+ *     ≥ 1024 px AND a `<GameBackground wide>` ancestor); otherwise keep today's single column.
+ *     FinishedScreen does this for every game that uses it.
  */
 export function FinishedDeskLayout({ main, side }: { main: ReactNode; side: ReactNode }) {
   return (

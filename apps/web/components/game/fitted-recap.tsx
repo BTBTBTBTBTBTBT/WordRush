@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from 'react';
 import { CompletedBoardsRecap, type RecapBoard } from './completed-mini-board';
+import { DESK_TILE_RECAP, wideStageCap } from '@/lib/desktop-layout';
 import { bestRecapLayout, recapCandidates, recapShape } from '@/lib/recap-fit';
 
 /**
@@ -22,7 +23,7 @@ export function FittedBoardsRecap({ boards, maxTile }: { boards: RecapBoard[]; m
     const el = ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
     const measure = () => {
-      const next = bestRecapLayout({ width: el.clientWidth, height: el.clientHeight, boards: n, wordLength, rows, maxTile: cap }, recapCandidates(n));
+      const next = bestRecapLayout({ width: el.clientWidth, height: el.clientHeight, boards: n, wordLength, rows, maxTile: wideStageCap(el, DESK_TILE_RECAP, cap) }, recapCandidates(n));
       setFit((prev) => (prev && prev.cols === next.cols && prev.tile === next.tile ? prev : next));
     };
     measure();

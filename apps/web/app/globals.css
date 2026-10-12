@@ -2578,6 +2578,12 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
     --game-title-cap: 132px;
   }
   .page-col.game-wide:has(> .fin-desk-wrap) { --page-col: var(--game-wide-done); }
+  /* The on-screen keyboard: up to 720 px wide, keys scaling with the window height (a 10-key row = 720). */
+  .page-col.game-wide .kb-root { max-width: 720px; gap: 6px; }
+  .page-col.game-wide .kb-root > div { gap: 6px; }
+  .page-col.game-wide .kb-root .kkey { width: 64px; height: clamp(44px, 6.2dvh, 58px); font-size: 20px; }
+  .page-col.game-wide .kb-root .kkey[aria-label="Backspace"],
+  .page-col.game-wide .kb-root .kkey[aria-label="Submit guess"] { width: auto; min-width: 96px; font-size: 13px; }
   /* The docked tab bar keeps its phone-width row of four tabs, centered. */
   .page-col.game-wide .tab-dock { --page-col: 560px; }
 
@@ -2591,7 +2597,8 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
     padding-left: 20px;
     padding-right: 20px;
   }
-  .page-col.game-wide:has(> .fin-desk-wrap) > .game-art-header { grid-column: 1; grid-row: 1; }
+  /* The header's home / sound / guide buttons anchor to the stage's corners (the root is positioned), the art sits over the left column. */
+  .page-col.game-wide:has(> .fin-desk-wrap) > .game-art-header { grid-column: 1; grid-row: 1; position: static; }
   .fin-desk-wrap { display: contents; }
   .fin-desk-main { grid-column: 1; grid-row: 2; min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column; }
   .fin-desk-side {
@@ -2600,6 +2607,8 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
     padding: 12px 0;
     overflow-y: auto; scrollbar-width: none;
   }
+  /* The chips + rank pill read bigger beside the big boards. */
+  .fin-desk-top { zoom: 1.2; }
   .fin-desk-side > * { max-width: 420px; width: 100%; margin-left: auto; margin-right: auto; }
 }
 /* Friends: THIS WEEK'S RACE leads the page (2.8 TestFlight). One card, placed twice: under the headline

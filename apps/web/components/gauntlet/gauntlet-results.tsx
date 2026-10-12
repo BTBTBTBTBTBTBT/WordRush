@@ -24,6 +24,11 @@ import { Confetti } from '@/components/effects/confetti';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { GAUNTLET_ACCENT, GAUNTLET_LOST_POSES, starRow } from '@/lib/gauntlet-look';
 import { HeadingArt } from '@/components/ui/heading-art';
+import { GameBackground } from '@/components/ui/page-background';
+import { GameHomeButton } from '@/components/game/game-home-button';
+import { GameHostTitle } from '@/components/ui/mascot';
+import { useDesktopStage } from '@/hooks/use-desktop-stage';
+import { gameHeaderStyle } from '@/lib/art';
 
 const CHAMPION = 'art-scene-gauntlet-champion' as const;
 
@@ -178,15 +183,7 @@ export function GauntletResults({
   const sceneMax = `min(280px, 45vh, calc((min(100vw - 24px, 512px) - 32px) * ${(ch / cw).toFixed(4)}))`;
 
   return (
-    <div
-      className="h-screen-stable flex flex-col"
-      style={{
-        backgroundColor: 'var(--color-bg)',
-        paddingTop: 'max(12px, env(safe-area-inset-top, 0px))',
-        // R2: the column ends above the docked tab bar (BottomNav publishes its room).
-        paddingBottom: 'var(--bottom-nav-h, calc(env(safe-area-inset-bottom, 0px) + 76px))',
-      }}
-    >
+    <ResultsShell>
       {won && <Confetti />}
       {/* FINISH_SPEC R2: one screen — Q's amber hero card sized to the room
           left, the daily rank, then the dock (Share results · Next daily /
@@ -202,7 +199,7 @@ export function GauntletResults({
           // I's good game (kind, never sad) and the failed stage's answer on
           // glossy tiles. Then the headline, the 5-star row and the stat pills.
           <div
-            className="relative overflow-hidden text-center w-full max-w-lg max-h-full flex flex-col animate-fade-in-scale"
+            className="relative overflow-hidden text-center w-full max-w-lg lg:max-w-[620px] max-h-full flex flex-col animate-fade-in-scale"
             style={{ ...softCard(GAUNTLET_ACCENT, { radius: 24 }), ...(won ? null : { background: `linear-gradient(${alphaHex(GAUNTLET_ACCENT, 0.07)}, ${alphaHex(GAUNTLET_ACCENT, 0.07)}), var(--color-card-base, #ffffff)` }) }}
           >
             <div aria-hidden="true" className="shrink-0" style={cardBarStyle(GAUNTLET_ACCENT)} />
@@ -393,6 +390,41 @@ export function GauntletResults({
             onClose={() => setReviewStageIndex(null)}
           />
       )}
+    </ResultsShell>
+  );
+}
+
+/**
+ * The results screen's root. Phones and tablets: the plain page column it always was. Desktop
+ * (≥ 1024 px, founder 10-12): the wide game stage (GameBackground wide — the Gauntlet wallpaper,
+ * its title art over the left column) so FinishedScreen lays out the two columns.
+ */
+function ResultsShell({ children }: { children: React.ReactNode }) {
+  const desk = useDesktopStage();
+  if (desk) {
+    return (
+      <GameBackground mode="GAUNTLET" wide className="h-screen-stable flex flex-col relative pb-[var(--bottom-nav-h,80px)]">
+        <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('GAUNTLET')}>
+          <GameHomeButton accentColor="#d97706" />
+          <GameHostTitle mode="GAUNTLET" label="Gauntlet">
+            <h1 className="text-3xl font-black" style={{ color: GAUNTLET_ACCENT }}>GAUNTLET</h1>
+          </GameHostTitle>
+        </div>
+        {children}
+      </GameBackground>
+    );
+  }
+  return (
+    <div
+      className="h-screen-stable flex flex-col"
+      style={{
+        backgroundColor: 'var(--color-bg)',
+        paddingTop: 'max(12px, env(safe-area-inset-top, 0px))',
+        // R2: the column ends above the docked tab bar (BottomNav publishes its room).
+        paddingBottom: 'var(--bottom-nav-h, calc(env(safe-area-inset-bottom, 0px) + 76px))',
+      }}
+    >
+      {children}
     </div>
   );
 }
