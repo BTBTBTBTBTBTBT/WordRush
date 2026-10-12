@@ -375,5 +375,8 @@ export function Podium({ places, label = 'Top three', accent = STAGE_GOLD, bare 
  *  PodiumView.detailLines, Android PlaqueDetail). */
 export function plaqueDetailLines(detail: string): string[] {
   const parts = detail.split('·').map((p) => p.trim()).filter(Boolean);
+  // Founder 10-12 ("3M 13S · 2/4 · 1 HI…"): with time, boards AND hints the hints part joins the first line instead.
+  const h = parts.findIndex((p, i) => i > 0 && /hint/i.test(p));
+  if (parts.length >= 3 && h > 0) return [`${parts[0]} · ${parts[h]}`, parts.filter((_, i) => i !== 0 && i !== h).join(' · ')];
   return parts.length <= 1 ? parts : [parts[0], parts.slice(1).join(' · ')];
 }

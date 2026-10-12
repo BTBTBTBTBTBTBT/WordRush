@@ -1347,9 +1347,18 @@ private struct RpsReveal: View {
                 .frame(width: 40)
                 card(theirs, label: them.uppercased(), win: winner == 2, tint: FriendsKit.amber, ink: themColor)
             }
-            // Wave 3 (9d): the hands flip over onto the shared arena plate.
+            // Founder 10-12: the hands square off inside a wrestling ring (was the purple arena plate), there for the whole
+            // countdown, not only after the flip. Its canvas sits under the hands; the ropes rise behind them.
+            // The ring art is open at the front (cut just past the star, founder 10-12), so the canvas runs to the card's
+            // edge and the hands stand inside it: a little room above for the ropes, none below.
+            .padding(.top, PocketArt.ring == nil ? 0 : 20)
+            .padding(.bottom, PocketArt.ring == nil ? 0 : 2)
             .background(alignment: .bottom) {
-                if let plate = PocketArt.arenaPlate {
+                if let ring = PocketArt.ring {
+                    Image(ring).resizable().interpolation(.high).scaledToFit()
+                        .frame(width: 330)
+                        .accessibilityHidden(true)
+                } else if let plate = PocketArt.arenaPlate {
                     Image(plate).resizable().interpolation(.high).scaledToFit()
                         .frame(width: 270).offset(y: 14)
                         .opacity(flipped ? 0.9 : 0)
@@ -1398,11 +1407,26 @@ private struct RpsReveal: View {
                 .opacity(win ? 1 : 0.75)
         }
         .frame(width: 84, height: 92)
-        // §A1: tinted in the player's color, never plain white.
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(tint.vsWash(win ? 0.18 : 0.10))
-            .shadow(color: win && flipped ? tint.opacity(0.6) : Color(hex: 0x4C1D95).opacity(0.08), radius: win && flipped ? 10 : 4, y: 2))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .stroke(win && flipped ? tint : tint.vsWash(0.32), lineWidth: win && flipped ? 2 : 1.5))
+        .modifier(RpsCardBox(inRing: PocketArt.ring != nil, win: win && flipped, tint: tint))
+    }
+}
+
+/// The reveal card's box: in the ring the hands stand on the canvas bare (the winner glows in its color); without the
+/// ring art, the old tinted box. §A1: tinted in the player's color, never plain white.
+private struct RpsCardBox: ViewModifier {
+    let inRing: Bool
+    let win: Bool
+    let tint: Color
+    func body(content: Content) -> some View {
+        if inRing {
+            content.shadow(color: win ? tint.opacity(0.85) : .clear, radius: win ? 12 : 0)
+        } else {
+            content
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(tint.vsWash(win ? 0.18 : 0.10))
+                    .shadow(color: win ? tint.opacity(0.6) : Color(hex: 0x4C1D95).opacity(0.08), radius: win ? 10 : 4, y: 2))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(win ? tint : tint.vsWash(0.32), lineWidth: win ? 2 : 1.5))
+        }
     }
 }
 

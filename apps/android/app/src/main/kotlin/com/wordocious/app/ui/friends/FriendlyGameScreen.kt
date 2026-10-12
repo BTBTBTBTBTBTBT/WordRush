@@ -774,13 +774,15 @@ private fun RpsRevealCard(round: Int, mine: RpsPick, theirs: RpsPick, winner: Si
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         FriendsLabel("ROUND $round")
-        // 9d: the shipped arena plate sits under the two hands (a soft stage, quiet behind the pieces).
+        // Founder 10-12: the hands square off inside a wrestling ring (was the purple arena plate; iOS parity): its canvas
+        // under the hands, the back and side ropes rising behind them, there for the whole countdown.
         Box(contentAlignment = Alignment.BottomCenter) {
             Image(
-                painterResource(R.drawable.art_pocket_arena_plate), null, contentScale = ContentScale.Fit,
-                modifier = Modifier.size(width = 252.dp, height = 82.dp).offset(y = 6.dp).alpha(0.9f).clearAndSetSemantics { },
+                painterResource(R.drawable.art_pocket_ring), null, contentScale = ContentScale.Fit,
+                modifier = Modifier.size(width = 330.dp, height = 111.dp).clearAndSetSemantics { },
             )
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            // The ring art is open at the front (cut just past the star): ropes behind, the hands standing on the canvas.
+            Row(Modifier.padding(top = 18.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 RevealArt("YOU", mine, glow = flipped && winner == me, angle = turn.value, bob = if (flipped) 0f else bob.value, revealed = flipped)
                 // The middle slot: the countdown words, then (9d) the clash burst between the two hands once they turn over.
                 Box(Modifier.width(64.dp).height(40.dp), contentAlignment = Alignment.Center) {
@@ -819,11 +821,12 @@ private fun RevealArt(label: String, pick: RpsPick, glow: Boolean, angle: Float 
     val c = kotlin.math.cos(Math.toRadians(angle.toDouble())).toFloat()
     val shown = if (c >= 0f) pick else RpsPick.ROCK
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        // In the ring the hands stand on the canvas bare (no box); the winner glows behind its hand.
         Box(
             Modifier.size(72.dp)
                 .then(
-                    if (glow) Modifier.shadow(10.dp, shape, ambientColor = FriendsTiles.purple.copy(alpha = 0.8f), spotColor = FriendsTiles.purple.copy(alpha = 0.8f)).clip(shape).background(FriendsTiles.purple)
-                    else Modifier.clip(shape).background(friendsWash(FriendsTiles.purple, 0.10f)),
+                    if (glow) Modifier.background(androidx.compose.ui.graphics.Brush.radialGradient(listOf(FriendsTiles.purple.copy(alpha = 0.6f), Color.Transparent)), androidx.compose.foundation.shape.CircleShape)
+                    else Modifier,
                 ),
             Alignment.Center,
         ) {

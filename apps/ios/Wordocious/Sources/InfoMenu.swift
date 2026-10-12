@@ -508,16 +508,21 @@ struct WordsView: View {
             GlossyTile(face: .correct, letter: String(w.word.prefix(1)).uppercased(), width: 40)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
-                BubbleLabel(w.word, color: FinishInk.purple.bubbleInk, size: 17)
+                // Founder 10-12: plain bold capitals, like the Home tile names (the bubble lettering was hard to read).
+                Text(w.word.uppercased()).font(Brand.font(18, .black)).tracking(0.8).foregroundStyle(FinishInk.heading)
                 Text(prettyDate(w.date)).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
             .padding(.top, 2)
             Spacer()
         }
         .padding(.horizontal, 12).padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading)
-        // BI17: a borderless soft field (no outlined row cards).
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .fill(GuideFamily.washFill(InfoPageStyle.pink, 0.10)))
+        // BI17: a borderless field (no outlined row cards) — opaque now, so the word never sits on the wallpaper.
+        .background {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.isDark ? (SeasonKit.surfaces?.card ?? Theme.surface) : GuideFamily.cream)
+                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(GuideFamily.washFill(InfoPageStyle.pink, 0.10))
+            }
+        }
     }
 }
 
@@ -542,19 +547,27 @@ struct WordDetailBody: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 hero
+                // Founder 10-12 ("impossible to read"): the senses and the puzzle notes sit on solid reading cards,
+                // never straight on the wallpaper.
                 if !senses.isEmpty {
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 10) {
                         label("Meaning")
-                        ForEach(senses.indices, id: \.self) { i in senseRow(i + 1, senses[i]) }
-                        if !entry.example.isEmpty {
-                            GuideTakeaway(text: "\u{201C}\(entry.example)\u{201D}", accent: GuideFamily.brand)
+                        VStack(alignment: .leading, spacing: 14) {
+                            ForEach(senses.indices, id: \.self) { i in senseRow(i + 1, senses[i]) }
+                            if !entry.example.isEmpty {
+                                GuideTakeaway(text: "\u{201C}\(entry.example)\u{201D}", accent: GuideFamily.brand)
+                            }
                         }
+                        .readingCard()
                     }
                 }
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
                     label("\(w) as a puzzle answer")
-                    if !entry.analysisSummary.isEmpty { GuideTakeaway(text: entry.analysisSummary, accent: Self.amber) }
-                    if !entry.analysisStrategy.isEmpty { GuideParagraph(text: entry.analysisStrategy) }
+                    VStack(alignment: .leading, spacing: 12) {
+                        if !entry.analysisSummary.isEmpty { GuideTakeaway(text: entry.analysisSummary, accent: Self.amber) }
+                        if !entry.analysisStrategy.isEmpty { GuideParagraph(text: entry.analysisStrategy) }
+                    }
+                    .readingCard(Self.amber)
                 }
             }
             .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 28)

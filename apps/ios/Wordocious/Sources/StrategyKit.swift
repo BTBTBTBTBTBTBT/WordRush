@@ -171,6 +171,24 @@ struct GuideTakeaway: View {
     }
 }
 
+extension View {
+    /// A solid reading surface for body copy that would otherwise sit on the living / season wallpaper (founder 10-12:
+    /// the word pages were "impossible to read" over the Halloween fence and house). Opaque page surface + a faint
+    /// accent wash, no stroke.
+    func readingCard(_ accent: Color = GuideFamily.brand) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+        return padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                ZStack {
+                    // In a dark season the season's own card, else the page surface.
+                    shape.fill(Theme.isDark ? (SeasonKit.surfaces?.card ?? Theme.surface) : GuideFamily.cream)
+                    shape.fill(accent.opacity(Theme.isDark ? 0.10 : 0.05))
+                }
+            }
+    }
+}
+
 /// Body copy at a comfortable reading size.
 struct GuideParagraph: View {
     let text: String

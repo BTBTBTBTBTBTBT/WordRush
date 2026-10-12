@@ -134,7 +134,7 @@ export default async function WordOfDayPage({ params }: Props) {
 
           {/* Definition (dictionary): numbered senses, the example as a highlighted line. */}
           {entry.definition && (
-            <section className="flex flex-col gap-3.5">
+            <section className="word-read flex flex-col gap-3.5">
               <SectionLabel>Meaning</SectionLabel>
               <ol className="m-0 p-0 list-none flex flex-col gap-3.5">
                 <SenseRow n={1} partOfSpeech={entry.partOfSpeech}>{entry.definition}</SenseRow>
@@ -165,14 +165,14 @@ export default async function WordOfDayPage({ params }: Props) {
           )}
 
           {/* ORIGINAL: letter analysis — unique, factual, useful for word-puzzle players */}
-          <section className="flex flex-col gap-3">
+          <section className="word-read flex flex-col gap-3">
             <SectionLabel>{w} as a puzzle answer</SectionLabel>
             <GuideTakeaway accent={AMBER}>{analysis.summary}</GuideTakeaway>
             <GuideBody>{analysis.strategy}</GuideBody>
           </section>
 
           {/* ORIGINAL: by the numbers — first-party stats from the curated answer bank */}
-          <section className="flex flex-col gap-3">
+          <section className="word-read flex flex-col gap-3">
             <SectionLabel>{w} by the numbers</SectionLabel>
             <GuideBody>
               Across the {BANK_SIZE.toLocaleString()} curated answers in the Wordocious bank,{' '}
@@ -193,7 +193,7 @@ export default async function WordOfDayPage({ params }: Props) {
 
           {/* ORIGINAL: near misses & anagrams from the answer bank */}
           {(insights.neighbors.length > 0 || insights.anagrams.length > 0) && (
-            <section className="flex flex-col gap-3">
+            <section className="word-read flex flex-col gap-3">
               <SectionLabel>Near misses</SectionLabel>
               {insights.neighbors.length > 0 && (
                 <GuideBody>
@@ -212,7 +212,7 @@ export default async function WordOfDayPage({ params }: Props) {
           )}
 
           {/* Play CTA — internal links into the game modes */}
-          <section className="flex flex-col gap-3">
+          <section className="word-read flex flex-col gap-3">
             <SectionLabel>Put it to use</SectionLabel>
             <GuideBody>
               Words like {w} are exactly what the daily puzzles throw at you. Warm up in{' '}

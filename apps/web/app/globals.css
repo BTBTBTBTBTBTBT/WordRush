@@ -821,6 +821,14 @@
 }
 .live-float { animation: live-float 2.4s ease-out forwards; }
 
+/* Word of the Day pages (founder 10-12, "impossible to read" over the season wallpaper): each section on a solid
+   reading card — the page surface with a faint brand wash, no stroke. */
+.word-read {
+  background: linear-gradient(rgba(124, 58, 237, 0.06), rgba(124, 58, 237, 0.06)), var(--color-surface);
+  border-radius: 20px;
+  padding: 16px;
+}
+
 /* Founder 10-12: the skewed band must start and end wholly off the card — on a tall phone banner the slanted half
    reaches ~0.4 x the card's width past the band, so the old 320% end parked it in the bottom-right corner. */
 @keyframes banner-shimmer {

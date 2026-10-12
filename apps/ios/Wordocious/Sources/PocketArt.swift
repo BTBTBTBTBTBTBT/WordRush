@@ -40,6 +40,9 @@ enum PocketArt {
     static var turnMarker: String? { ArtAsset.exists("art-pocket-turn-marker") ? "art-pocket-turn-marker" : nil }
     /// The lilac disc under the Rock Paper Scissors reveal.
     static var arenaPlate: String? { ArtAsset.exists("art-pocket-arena-plate") ? "art-pocket-arena-plate" : nil }
+    /// Founder 10-12: the RPS reveal's wrestling ring (back + side ropes only, open at the front; free-ChatGPT art,
+    /// docs/design/brand/2.8/pocket/ring). The two hands square off on its canvas.
+    static var ring: String? { ArtAsset.exists("art-pocket-ring") ? "art-pocket-ring" : nil }
     /// The ghost, the puzzle piece and the gold chain links: small markers for Ghost, Pass the Puzzle and Word Chain.
     static var ghostMarker: String? { ArtAsset.exists("art-pocket-ghost-marker") ? "art-pocket-ghost-marker" : nil }
     static var puzzlePiece: String? { ArtAsset.exists("art-pocket-puzzle-piece") ? "art-pocket-puzzle-piece" : nil }

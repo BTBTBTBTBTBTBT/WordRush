@@ -200,7 +200,13 @@ fun rememberPlayerNamePalette(
 fun PlaqueDetail(detail: String, ink: PlaqueInk, compact: Boolean) {
     // At most two lines: the first part, then the rest ("8 GUESSES" / "48S · 4/4"), parity with iOS PodiumView.detailLines.
     val parts = detail.split("·").map { it.trim() }.filter { it.isNotEmpty() }
-    val lines = if (parts.size <= 1) parts else listOf(parts.first(), parts.drop(1).joinToString(" · "))
+    // Founder 10-12 ("3M 13S · 2/4 · 1 HI…"): with time, boards AND hints the hints part joins the first line instead.
+    val h = parts.indices.drop(1).firstOrNull { parts[it].contains("hint", ignoreCase = true) }
+    val lines = when {
+        parts.size <= 1 -> parts
+        parts.size >= 3 && h != null -> listOf("${parts.first()} · ${parts[h]}", parts.filterIndexed { i, _ -> i != 0 && i != h }.joinToString(" · "))
+        else -> listOf(parts.first(), parts.drop(1).joinToString(" · "))
+    }
     lines.forEach { part ->
         FitText(
             part.uppercase(), fontSize = (if (compact) 10.5f else 12f).sp, color = ink.detail,

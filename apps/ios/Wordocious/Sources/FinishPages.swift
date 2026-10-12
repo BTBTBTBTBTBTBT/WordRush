@@ -738,6 +738,12 @@ extension PodiumView {
     static func detailLines(_ detail: String) -> [String] {
         let parts = detail.split(separator: "·").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         guard let first = parts.first else { return [] }
+        // Founder 10-12 ("3M 13S · 2/4 · 1 HI…"): with time, boards AND hints the second line overflowed. The hints part
+        // joins the first line instead ("6 GUESSES · 1 HINT" / "3M 13S · 2/4"), so both lines fit.
+        if parts.count >= 3, let h = parts.dropFirst().firstIndex(where: { $0.lowercased().contains("hint") }) {
+            let rest = parts.enumerated().filter { $0.offset != 0 && $0.offset != h }.map(\.element)
+            return ["\(first) · \(parts[h])", rest.joined(separator: " · ")]
+        }
         return parts.count == 1 ? [first] : [first, parts.dropFirst().joined(separator: " · ")]
     }
 }

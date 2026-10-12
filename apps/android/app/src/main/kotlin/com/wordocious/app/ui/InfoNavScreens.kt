@@ -435,23 +435,36 @@ private fun WordDetail(w: WordsService.Entry, wotd: Boolean, onDone: () -> Unit,
                 }
             }
             if (w.definition.isNotEmpty()) {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     GuideSectionHead("MEANING")
-                    val senses = listOf(WordsService.Sense(w.partOfSpeech, w.definition)) + w.extraSenses.filter { it.definition.isNotBlank() }
-                    senses.forEachIndexed { i, sense -> SenseRow(i + 1, sense) }
-                    if (w.example.isNotEmpty()) GuideTakeaway("\u201C${w.example}\u201D", GUIDE_BRAND, italic = true)
+                    // Founder 10-12 ("impossible to read" over the season wallpaper): a solid reading card (iOS / web parity).
+                    Column(Modifier.readingCard(GUIDE_BRAND), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val senses = listOf(WordsService.Sense(w.partOfSpeech, w.definition)) + w.extraSenses.filter { it.definition.isNotBlank() }
+                        senses.forEachIndexed { i, sense -> SenseRow(i + 1, sense) }
+                        if (w.example.isNotEmpty()) GuideTakeaway("\u201C${w.example}\u201D", GUIDE_BRAND, italic = true)
+                    }
                 }
             }
             if (w.analysisSummary.isNotEmpty() || w.analysisStrategy.isNotEmpty()) {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     GuideSectionHead("$word AS A PUZZLE ANSWER")
-                    if (w.analysisSummary.isNotEmpty()) GuideTakeaway(w.analysisSummary, STRATEGY_ACCENT)
-                    if (w.analysisStrategy.isNotEmpty()) GuideParagraph(w.analysisStrategy)
+                    Column(Modifier.readingCard(STRATEGY_ACCENT), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (w.analysisSummary.isNotEmpty()) GuideTakeaway(w.analysisSummary, STRATEGY_ACCENT)
+                        if (w.analysisStrategy.isNotEmpty()) GuideParagraph(w.analysisStrategy)
+                    }
                 }
             }
         }
     }
 }
+
+/** A solid reading surface for body copy over the living / season wallpaper (page surface + a faint accent wash, no stroke). */
+private fun Modifier.readingCard(accent: Color): Modifier = this.fillMaxWidth()
+    .clip(RoundedCornerShape(20.dp))
+    // In a dark season the season's own card (opaque), else the page surface.
+    .background(WTheme.season?.card?.takeIf { WTheme.isDark } ?: WTheme.surface)
+    .background(accent.copy(alpha = 0.08f))
+    .padding(14.dp)
 
 /** One numbered sense: a soft numeral on a purple-wash circle, the part-of-speech eyebrow, the definition. */
 @Composable
