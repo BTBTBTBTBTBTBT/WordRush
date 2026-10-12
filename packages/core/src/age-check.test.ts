@@ -7,6 +7,8 @@ import {
   parseAgeCheckStored,
   AGE_CHECK_PASS_OFFSET,
   AGE_CHECK_MAX_YEARS_BACK,
+  ageRecoveryDecision,
+  AGE_RECOVERY_UNCONFIRMED_LINE,
 } from './age-check';
 
 const NOW = new Date('2026-10-09T12:00:00Z');
@@ -63,3 +65,20 @@ describe('the age gate decision', () => {
   });
 });
 
+
+describe('recovery from a mistaken under (2026-10-12)', () => {
+  const now = new Date(2026, 9, 12);
+  it('a confirmed account unlocks with the same shape a fresh device adopts', () => {
+    const d = ageRecoveryDecision(true, now);
+    expect(d).toEqual({ action: 'unlock', stored: { state: 'ok', year: 2008 } });
+    if (d.action === 'unlock') expect(ageCheckVerdict(d.stored.year, now)).toBe('pass');
+  });
+  it('an unconfirmed or missing flag stays locked and posts nothing', () => {
+    for (const v of [false, null, undefined]) {
+      expect(ageRecoveryDecision(v, now)).toEqual({ action: 'stay-locked', postUnder: false });
+    }
+  });
+  it('the unconfirmed line names the privacy address', () => {
+    expect(AGE_RECOVERY_UNCONFIRMED_LINE).toBe("This account isn't confirmed for 13+. A parent can email privacy@wordocious.com.");
+  });
+});

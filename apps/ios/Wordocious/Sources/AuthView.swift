@@ -17,6 +17,8 @@ struct AuthView: View {
     var showsCloseButton: Bool = true
     /// FINISH_SPEC §AO: the first-run flow opens straight on Sign up / Sign in.
     var initialMode: Mode? = nil
+    /// The 13+ lockout's "A grown-up? Sign in": signing in only, never "Sign up" (an account made on a locked device can never be confirmed).
+    var signInOnly: Bool = false
     @ObservedObject var auth = AuthService.shared
     @Environment(\.dismiss) private var dismiss
 
@@ -141,6 +143,9 @@ struct AuthView: View {
                 // The mode switch: the question stays text, the action is a small
                 // candy button (§A8 — no plain text-link actions).
                 HStack(spacing: 8) {
+                    if signInOnly && mode == .signin {
+                        EmptyView()
+                    } else {
                     if mode != .reset {
                         Text(mode == .signin ? "Don't have an account?" : "Already have an account?")
                             .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
@@ -155,6 +160,7 @@ struct AuthView: View {
                     .accessibilityLabel(mode == .signin ? "Don't have an account? Sign up"
                                         : mode == .signup ? "Already have an account? Sign in"
                                         : "Back to sign in")
+                    }
                 }
             }
 

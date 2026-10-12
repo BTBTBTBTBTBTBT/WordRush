@@ -63,3 +63,28 @@ public enum AgeGate {
     }
 }
 
+
+/// Recovery from a mistaken "under" (2026-10-12: a real adult tapped a toddler year). The lockout screen offers a quiet
+/// "A grown-up? Sign in"; after a sign-in that started there, the account's server flag decides. Confirmed -> the device's
+/// "under" becomes a passing "ok" (the shape a confirmed account gets on a fresh device: this year - 18). Not confirmed, or
+/// missing -> the account is signed out again, the lockout stays and NOTHING is posted for it (it must not be flagged or
+/// purged just for trying). Mirrors core ageRecoveryDecision and Android AgeRecovery.
+public enum AgeRecovery {
+    public enum Decision: Equatable, Sendable {
+        case unlock(AgeCheck.Stored)
+        case stayLocked   // never posts the under-13 answer
+    }
+
+    public static let linkLabel = "A grown-up? Sign in"
+    public static let unconfirmedLine = "This account isn't confirmed for 13+. A parent can email \(AgeCheck.supportEmail)."
+
+    /// The year a confirmed account adopts (the server keeps only the yes/no flag).
+    public static func confirmedYear(now: Date = Date(), calendar: Calendar = .current) -> Int {
+        calendar.component(.year, from: now) - 18
+    }
+
+    public static func decide(serverConfirmed: Bool?, now: Date = Date(), calendar: Calendar = .current) -> Decision {
+        guard serverConfirmed == true else { return .stayLocked }
+        return .unlock(AgeCheck.Stored(state: .ok, year: confirmedYear(now: now, calendar: calendar)))
+    }
+}

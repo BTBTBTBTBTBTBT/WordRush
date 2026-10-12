@@ -68,6 +68,8 @@ fun AuthScreen(
     onDismiss: (() -> Unit)? = null,
     /** The mode it opens in: "signin" (default) or "signup" (FINISH_SPEC AO step 3). */
     initialMode: String = "signin",
+    /** The 13+ lockout's "A grown-up? Sign in": signing in only, never "Sign up" or guest play (an account made on a locked device can never be confirmed). */
+    signInOnly: Boolean = false,
 ) {
     // Pre-auth Privacy/Terms overlay (web parity: the footer links work).
     var infoRoute by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
@@ -288,7 +290,7 @@ fun AuthScreen(
         Spacer(Modifier.height(16.dp))
 
         // Toggle sign in / sign up
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (!(signInOnly && mode == "signin")) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 when (mode) { "signin" -> "Don't have an account?"; "signup" -> "Already have an account?"; else -> "Remembered it?" },
                 fontSize = 13.sp, color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted, fontWeight = FontWeight.Bold,
@@ -306,7 +308,7 @@ fun AuthScreen(
         Spacer(Modifier.height(14.dp))
         // Apple 5.1.1(v) / Google Play: a signed-out visitor must be able to play
         // the single-player daily without registering. BJ15 round 2: a secondary text link, not a pill.
-        TextLink("Play without an account", onClick = { AuthService.enterGuest() }, fontSize = 15.sp)
+        if (!signInOnly) TextLink("Play without an account", onClick = { AuthService.enterGuest() }, fontSize = 15.sp)
 
         Spacer(Modifier.height(24.dp))
 

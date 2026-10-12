@@ -21,6 +21,10 @@ final class AgeCheckStore: ObservableObject {
     @Published private(set) var stored: AgeCheck.Stored?
     /// A signed-in account on a fresh device may already be confirmed server-side; true once we know.
     @Published private(set) var serverCheckDone = false
+    /// Recovery from a mistaken "under" (2026-10-12): a sign-in that started from the lockout's "A grown-up? Sign in" is
+    /// pending its server check. In memory only; the lockout screen reads `recoveryFailed` for its one explanatory line.
+    @Published private(set) var recoveryPending = false
+    @Published private(set) var recoveryFailed = false
 
     private static let defaultsKey = "wordocious.age-check"
     private static let keychainService = "com.wordocious.age-check"
@@ -32,6 +36,10 @@ final class AgeCheckStore: ObservableObject {
         #if DEBUG
         // Store shots: the demo player has passed the 13+ check (in memory only, never stored).
         if StoreDemo.active { stored = AgeCheck.Stored(state: .ok, year: 1990) }
+        // QA: `-ageCheckUnder` shows the under-13 lockout (in memory; the device's real answer is untouched until a recovery unlocks).
+        if ProcessInfo.processInfo.arguments.contains("-ageCheckUnder") {
+            stored = AgeCheck.Stored(state: .under, year: Calendar.current.component(.year, from: Date()) - 3)
+        }
         #endif
     }
 
@@ -75,6 +83,38 @@ final class AgeCheckStore: ObservableObject {
         #endif
     }
 
+    // MARK: - Recovery (a grown-up who tapped a toddler year)
+
+    /// The lockout's "A grown-up? Sign in" was tapped: the next sign-in is checked against its account's server flag.
+    func beginRecovery() {
+        guard isUnder else { return }
+        recoveryPending = true
+        recoveryFailed = false
+    }
+
+    /// An account that cannot be confirmed (also a brand-new account on a locked device): the lockout stays, with its line.
+    func noteRecoveryFailed() {
+        recoveryPending = false
+        recoveryFailed = true
+    }
+
+    /// Confirmed -> the stored "under" becomes a passing "ok" and the app carries on. Otherwise the account is signed out
+    /// again and NOTHING is posted for it (it must not be flagged or purged just for trying).
+    private func finishRecovery(confirmed: Bool?) async {
+        recoveryPending = false
+        switch AgeRecovery.decide(serverConfirmed: confirmed) {
+        case .unlock(let s):
+            recoveryFailed = false
+            stored = s
+            Self.write(s)
+            serverCheckDone = true
+            startServices()
+        case .stayLocked:
+            recoveryFailed = true
+            await AuthService.shared.signOut()
+        }
+    }
+
     // MARK: - Server
 
     /// For a signed-in account: adopt a server confirmation on a fresh device, mirror a device answer up,
@@ -93,6 +133,12 @@ final class AgeCheckStore: ObservableObject {
             .execute().value
         let confirmed = row?.age_confirmed_13 ?? false
         serverCheckDone = true
+
+        // A sign-in that started from the under-13 lockout: the account's flag decides (never posts the under answer).
+        if stored?.state == .under, recoveryPending {
+            await finishRecovery(confirmed: row?.age_confirmed_13)
+            return
+        }
 
         // The server keeps only the yes/no flag (no birth year); a confirmed account adopts a passing year here.
         if stored == nil, confirmed {

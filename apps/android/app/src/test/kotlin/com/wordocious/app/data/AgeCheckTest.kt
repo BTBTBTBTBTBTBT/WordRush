@@ -51,5 +51,17 @@ class AgeCheckTest {
         assertEquals(AgeGate.View.UNDER, gate(State.UNDER))
         assertEquals(true, AgeGate.MAX_WAIT_MS <= 2000L)
     }
+    // Recovery from a mistaken under (2026-10-12).
+    @Test fun `recovery - a confirmed account unlocks with a passing year`() {
+        val d = AgeRecovery.decide(true, now)
+        assertEquals(AgeRecovery.Decision.Unlock(Stored(State.OK, 2008)), d)
+        assertEquals(Verdict.PASS, AgeCheck.verdict((d as AgeRecovery.Decision.Unlock).stored.year, now))
+    }
+
+    @Test fun `recovery - unconfirmed or missing stays locked and posts nothing`() {
+        assertEquals(AgeRecovery.Decision.StayLocked, AgeRecovery.decide(false, now))
+        assertEquals(AgeRecovery.Decision.StayLocked, AgeRecovery.decide(null, now))
+        assertEquals("This account isn't confirmed for 13+. A parent can email privacy@wordocious.com.", AgeRecovery.UNCONFIRMED_LINE)
+    }
 }
 

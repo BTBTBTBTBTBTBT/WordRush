@@ -65,5 +65,19 @@ final class AgeCheckTests: XCTestCase {
             XCTAssertEqual(got.rawValue, c.view, "\(c)")
         }
     }
+    // MARK: recovery from a mistaken under (2026-10-12)
+
+    func testRecoveryConfirmedAccountUnlocksWithAPassingYear() {
+        let now = date(2026)
+        let d = AgeRecovery.decide(serverConfirmed: true, now: now, calendar: cal)
+        XCTAssertEqual(d, .unlock(AgeCheck.Stored(state: .ok, year: 2008)))
+        if case .unlock(let s) = d { XCTAssertEqual(AgeCheck.verdict(year: s.year, now: now, calendar: cal), .pass) }
+    }
+
+    func testRecoveryUnconfirmedOrMissingStaysLockedAndPostsNothing() {
+        XCTAssertEqual(AgeRecovery.decide(serverConfirmed: false), .stayLocked)
+        XCTAssertEqual(AgeRecovery.decide(serverConfirmed: nil), .stayLocked)
+        XCTAssertEqual(AgeRecovery.unconfirmedLine, "This account isn't confirmed for 13+. A parent can email privacy@wordocious.com.")
+    }
 }
 

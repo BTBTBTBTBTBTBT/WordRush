@@ -93,3 +93,30 @@ export function ageGateView(i: AgeGateInput): AgeGateView {
   if (i.hadSession && !i.serverCheckDone && i.elapsedMs < AGE_GATE_MAX_WAIT_MS) return 'placeholder';
   return 'question';
 }
+
+// ── Recovery from a mistaken "under" (2026-10-12: a real adult tapped a toddler year) ──────────────────────────────
+// An "under" answer sticks on the device, so a grown-up who mis-tapped had no way back. The lockout screen now offers a
+// quiet "A grown-up? Sign in". After a sign-in that started there, the account's server flag decides:
+//   - age_confirmed_13 = true  -> the device's "under" is replaced by a passing "ok" (same shape a confirmed account gets on a
+//                                 fresh device: this year - 18) and the app carries on;
+//   - false / missing          -> the account is signed out again, the lockout stays, and NOTHING is posted for it (it must
+//                                 not be flagged or purged just for trying).
+// Mirrors AgeCheck.recovery (iOS) and AgeCheck.recovery (Android).
+export type AgeRecoveryDecision =
+  | { action: 'unlock'; stored: AgeCheckStored }
+  | { action: 'stay-locked'; postUnder: false };
+
+/** The year a confirmed account adopts on a fresh or recovering device (the server keeps only the yes/no flag). */
+export function ageCheckConfirmedYear(now: Date = new Date()): number {
+  return now.getFullYear() - 18;
+}
+
+export function ageRecoveryDecision(serverConfirmed: boolean | null | undefined, now: Date = new Date()): AgeRecoveryDecision {
+  if (serverConfirmed === true) return { action: 'unlock', stored: { state: 'ok', year: ageCheckConfirmedYear(now) } };
+  return { action: 'stay-locked', postUnder: false };
+}
+
+/** The line shown on the lockout screen after a recovery sign-in that was not confirmed. */
+export const AGE_RECOVERY_UNCONFIRMED_LINE = `This account isn't confirmed for 13+. A parent can email ${AGE_CHECK_SUPPORT_EMAIL}.`;
+/** The quiet link on the lockout screen. */
+export const AGE_RECOVERY_LINK_LABEL = 'A grown-up? Sign in';

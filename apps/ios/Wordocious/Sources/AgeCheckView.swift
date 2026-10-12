@@ -247,6 +247,11 @@ private struct AgeSeeYouScene: View {
 
 /// The kind screen for an under-13 answer: nothing is created, the answer sticks on this device.
 struct AgeCheckUnderView: View {
+    @ObservedObject private var store = AgeCheckStore.shared
+    @State private var showSignIn = false
+    /// The wall is dark in season (Halloween): the lines read light there, the brand purple on the day wall.
+    private var ink: Color { CastSkin.season != nil ? Color(red: 1.0, green: 0.86, blue: 0.55) : Color(red: 0.357, green: 0.129, blue: 0.714) }
+
     var body: some View {
         ZStack {
             // The app's own wall (the season's wall in season), so the scene sits in the same world as Home.
@@ -258,19 +263,35 @@ struct AgeCheckUnderView: View {
                     AgeSeeYouScene()
                     Text("Wordocious is for players 13 and up. We would love to play with you when you are older!")
                         .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundColor(Color(red: 0.357, green: 0.129, blue: 0.714))
+                        .foregroundColor(ink)
                         .multilineTextAlignment(.center)
                     if let mail = URL(string: "mailto:\(AgeCheck.supportEmail)") {
                         Link("Parents: questions or corrections? \(AgeCheck.supportEmail)", destination: mail)
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
                             .multilineTextAlignment(.center)
                     }
+                    // A grown-up who tapped the wrong year: sign in, and an account the server has confirmed as 13+ unlocks this
+                    // device (AgeCheckStore.finishRecovery). Quiet on purpose; nothing else about the screen changes.
+                    if store.recoveryFailed {
+                        Text(AgeRecovery.unconfirmedLine)
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundColor(ink)
+                            .multilineTextAlignment(.center)
+                            .accessibilityAddTraits(.updatesFrequently)
+                    }
+                    Button {
+                        store.beginRecovery()
+                        showSignIn = true
+                    } label: { CandyLabel(title: AgeRecovery.linkLabel) }
+                        .buttonStyle(QuietButtonStyle(size: .small))
+                        .padding(.top, 2)
                 }
                 .padding(.horizontal, 20).padding(.vertical, 12)
                 .frame(maxWidth: 420)
                 .frame(maxWidth: .infinity)
             }
         }
+        .softSheet(isPresented: $showSignIn) { AuthView(signInOnly: true) }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
     }

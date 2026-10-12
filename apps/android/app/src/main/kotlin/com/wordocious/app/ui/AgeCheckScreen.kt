@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.graphics.graphicsLayer
@@ -59,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import com.wordocious.app.R
 import com.wordocious.app.data.AgeCheck
 import com.wordocious.app.data.AgeCheckStore
+import com.wordocious.app.data.AgeRecovery
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.FlagsService
 import com.wordocious.app.ui.theme.Nunito
@@ -92,7 +95,8 @@ fun AgeGateOverlay() {
 
     LaunchedEffect(Unit) { delay(AgeGate.MAX_WAIT_MS); elapsedMs = AgeGate.MAX_WAIT_MS }
     // The lookup rides the session's user id (it returns quietly until there is one); a profile arriving re-runs it.
-    LaunchedEffect(profile?.id) { AgeCheckStore.syncWithServer() }
+    val signedIn by AuthService.isAuthenticated.collectAsState()
+    LaunchedEffect(profile?.id, signedIn) { AgeCheckStore.syncWithServer() }
 
     when (AgeGate.view(stored?.state, FlagsService.isLive("age_check", flags), AuthService.hadPersistedSession(), serverDone, elapsedMs)) {
         AgeGate.View.UNDER -> AgeCheckUnder()
@@ -324,6 +328,8 @@ private fun AgeSeeYouScene() {
 @Composable
 fun AgeCheckUnder() {
     val context = LocalContext.current
+    val recoveryFailed by AgeCheckStore.recoveryFailed.collectAsState()
+    var showSignIn by remember { mutableStateOf(false) }
     Box(
         Modifier.fillMaxSize()
             .pageBackground(PageTint.HOME, alwaysLight = true)
@@ -357,6 +363,26 @@ fun AgeCheckUnder() {
                 fontFamily = Nunito, fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
                 color = Ink.copy(alpha = 0.75f), textAlign = TextAlign.Center,
             )
+            // A grown-up who tapped the wrong year: sign in, and an account the server has confirmed as 13+ unlocks this
+            // device (AgeCheckStore.finishRecovery). Quiet on purpose; nothing else about the screen changes.
+            if (recoveryFailed) {
+                Text(
+                    AgeRecovery.UNCONFIRMED_LINE,
+                    fontFamily = Nunito, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp, lineHeight = 16.sp,
+                    color = Ink, textAlign = TextAlign.Center,
+                    modifier = Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite },
+                )
+            }
+            QuietButton(
+                AgeRecovery.LINK_LABEL,
+                onClick = { AgeCheckStore.beginRecovery(); showSignIn = true },
+                size = CandySize.SMALL,
+            )
+        }
+        if (showSignIn) {
+            Box(Modifier.fillMaxSize().pageBackground(PageTint.HOME).statusBarsPadding()) {
+                AuthScreen(onAuthenticated = { showSignIn = false }, onDismiss = { showSignIn = false }, signInOnly = true)
+            }
         }
     }
 }

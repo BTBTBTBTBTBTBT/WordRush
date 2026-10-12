@@ -38,6 +38,15 @@ object AgeCheckStore {
     private val _serverCheckDone = MutableStateFlow(false)
     val serverCheckDone: StateFlow<Boolean> = _serverCheckDone.asStateFlow()
 
+    /**
+     * Recovery from a mistaken "under" (2026-10-12): a sign-in that started from the lockout's "A grown-up? Sign in" is
+     * pending its server check (in memory only); [recoveryFailed] is the lockout screen's one explanatory line.
+     */
+    private val _recoveryPending = MutableStateFlow(false)
+    val recoveryPending: StateFlow<Boolean> = _recoveryPending.asStateFlow()
+    private val _recoveryFailed = MutableStateFlow(false)
+    val recoveryFailed: StateFlow<Boolean> = _recoveryFailed.asStateFlow()
+
     private var startedServices = false
     private var syncing = false
     @Volatile private var loaded = false
@@ -84,6 +93,34 @@ object AgeCheckStore {
         runCatching { io.sentry.android.core.SentryAndroid.init(context) }
     }
 
+    /** The lockout's "A grown-up? Sign in" was tapped: the next sign-in is checked against its account's server flag. */
+    fun beginRecovery() {
+        if (!isUnder) return
+        _recoveryPending.value = true
+        _recoveryFailed.value = false
+    }
+
+    /**
+     * Confirmed -> the stored "under" becomes a passing "ok" and the app carries on. Otherwise the account is signed out
+     * again and NOTHING is posted for it (it must not be flagged or purged just for trying).
+     */
+    private suspend fun finishRecovery(confirmed: Boolean?) {
+        _recoveryPending.value = false
+        when (val d = AgeRecovery.decide(confirmed)) {
+            is AgeRecovery.Decision.Unlock -> {
+                _recoveryFailed.value = false
+                SettingsPref.set(KEY, AgeCheck.encode(d.stored))
+                _stored.value = d.stored
+                _serverCheckDone.value = true
+                startServices(com.wordocious.app.App.instance)
+            }
+            AgeRecovery.Decision.StayLocked -> {
+                _recoveryFailed.value = true
+                AuthService.signOut()
+            }
+        }
+    }
+
     @Serializable
     private data class AgeRow(
         @kotlinx.serialization.SerialName("age_confirmed_13") val confirmed: Boolean? = null,
@@ -94,7 +131,10 @@ object AgeCheckStore {
      * and sign an under-13 account out. Safe to call repeatedly.
      */
     fun syncWithServer() {
-        val uid = AuthService.userId ?: return
+        // A recovery sign-in may have no profile row yet (a brand-new account): the session's user id is enough to look.
+        val uid = AuthService.userId
+            ?: (if (_recoveryPending.value) runCatching { SupabaseConfig.client.auth.currentUserOrNull()?.id }.getOrNull() else null)
+            ?: return
         if (syncing) return
         syncing = true
         scope.launch {
@@ -108,6 +148,11 @@ object AgeCheckStore {
                 _serverCheckDone.value = true
 
                 val local = _stored.value
+                // A sign-in that started from the under-13 lockout: the account's flag decides (never posts the under answer).
+                if (local?.state == AgeCheck.State.UNDER && _recoveryPending.value) {
+                    finishRecovery(row?.confirmed)
+                    return@launch
+                }
                 // The server keeps only the yes/no flag (no birth year); a confirmed account adopts a passing year here.
                 if (local == null && confirmed) {
                     val s = AgeCheck.Stored(AgeCheck.State.OK, java.time.LocalDate.now().year - 18)

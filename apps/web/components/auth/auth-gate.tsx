@@ -7,6 +7,8 @@ import dynamic from 'next/dynamic';
 import { CastHeader } from '@/components/ui/cast-header';
 import { PageBackground } from '@/components/ui/page-background';
 import { AgeGate } from './age-gate';
+import { useAgeRecoveryFailed } from '@/hooks/use-age-recovery-failed';
+import { AgeCheckUnder } from './age-check-screen';
 
 // Signed-out-only screens load as their own chunks (founder, 2026-09-29): a
 // signed-in player never downloads them. Still server-rendered, so crawlers
@@ -62,6 +64,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // agree (both skeleton) — avoids a hydration mismatch. After mount, returning
   // users swap to the app within a frame, long before auth actually resolves.
   const [mounted, setMounted] = useState(false);
+  // A grown-up's recovery sign-in from the 13+ lockout that could not be confirmed: stay on the lockout (with its line).
+  const recoveryFailed = useAgeRecoveryFailed();
 
   useEffect(() => {
     setMounted(true);
@@ -126,6 +130,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // Gives crawlers/AdSense real content instead of a bare login wall. Game
   // URLs get their mode-specific landing (unique content per route).
   if (!user && !isGuest) {
+    if (recoveryFailed) return <AgeCheckUnder />;
     if (MODE_LANDING_PATHS[pathname]) {
       return <ModeLanding guideSlug={MODE_LANDING_PATHS[pathname]} />;
     }

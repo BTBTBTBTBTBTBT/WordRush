@@ -1,8 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ageCheckYears, AGE_CHECK_SUPPORT_EMAIL } from '@wordle-duel/core';
-import { CastButton } from '@/components/ui/cast-button';
+import { ageCheckYears, AGE_CHECK_SUPPORT_EMAIL, AGE_RECOVERY_LINK_LABEL, AGE_RECOVERY_UNCONFIRMED_LINE } from '@wordle-duel/core';
+import { CastButton, TextLink } from '@/components/ui/cast-button';
+import { QuietButton } from '@/components/ui/family-button';
+import { softInput, softNotice } from '@/components/ui/soft-popup';
+import { useAuth } from '@/lib/auth-context';
+import { beginAgeRecovery } from '@/lib/age-check';
+import { useAgeRecoveryFailed } from '@/hooks/use-age-recovery-failed';
 import { CastHeader } from '@/components/ui/cast-header';
 import { BubbleText } from '@/components/ui/bubble-text';
 import { castArt, useSeason } from '@/lib/season';
@@ -256,8 +261,50 @@ export function AgeCheckQuestion({ onAnswer }: { onAnswer: (year: number) => voi
   );
 }
 
+/**
+ * "A grown-up? Sign in" (2026-10-12): the way back for an adult who tapped the wrong year. Email or Google only (never sign-up:
+ * an account made on a locked device can never be confirmed). What happens after the sign-in is AgeGate's recovery effect.
+ */
+function AgeRecoverySignIn({ onCancel }: { onCancel: () => void }) {
+  const { signIn, signInWithGoogle } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const run = async (go: () => Promise<{ error: Error | null }>) => {
+    setError('');
+    setBusy(true);
+    beginAgeRecovery();
+    const { error: err } = await go();
+    if (err) setError(err.message);
+    setBusy(false);
+  };
+
+  return (
+    <form
+      onSubmit={(e) => { e.preventDefault(); void run(() => signIn(email, password)); }}
+      className="w-full space-y-3 text-left"
+      aria-label="Sign in"
+    >
+      <input type="email" placeholder="your@email.com" aria-label="Email" value={email} onChange={(e) => setEmail(e.target.value)} required
+        className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none" style={softInput()} />
+      <input type="password" placeholder="Password" aria-label="Password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6}
+        className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none" style={softInput()} />
+      {error && <div className="p-3 text-xs font-bold" style={softNotice('error')}>{error}</div>}
+      <CastButton type="submit" color="purple" size="l" block disabled={busy}>{busy ? 'Loading...' : 'Sign In'}</CastButton>
+      <QuietButton size="sm" block disabled={busy} onClick={() => void run(() => signInWithGoogle())}>Continue with Google</QuietButton>
+      <div className="text-center">
+        <TextLink onClick={onCancel} style={{ textTransform: 'none' }}>Back</TextLink>
+      </div>
+    </form>
+  );
+}
+
 /** The kind screen for an under-13 answer. Nothing is created; the answer sticks on this device. */
 export function AgeCheckUnder() {
+  const failed = useAgeRecoveryFailed();
+  const [signingIn, setSigningIn] = useState(false);
   useEffect(() => {
     document.title = 'See you soon! | Wordocious';
   }, []);
@@ -274,6 +321,15 @@ export function AgeCheckUnder() {
           Parents: questions or corrections? Write to{' '}
           <a href={`mailto:${AGE_CHECK_SUPPORT_EMAIL}`} className="font-bold underline">{AGE_CHECK_SUPPORT_EMAIL}</a>.
         </p>
+        {/* A grown-up who tapped the wrong year: a confirmed 13+ account unlocks this device (AgeGate's recovery effect). */}
+        {failed && !signingIn && (
+          <p role="status" className="font-bold" style={{ color: '#5b21b6', fontSize: 12 }}>{AGE_RECOVERY_UNCONFIRMED_LINE}</p>
+        )}
+        {signingIn ? (
+          <AgeRecoverySignIn onCancel={() => setSigningIn(false)} />
+        ) : (
+          <QuietButton size="sm" onClick={() => setSigningIn(true)}>{AGE_RECOVERY_LINK_LABEL}</QuietButton>
+        )}
       </div>
     </PageBackground>
   );

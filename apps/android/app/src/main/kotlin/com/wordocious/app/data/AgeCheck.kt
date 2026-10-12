@@ -86,3 +86,27 @@ object AgeGate {
     }
 }
 
+
+/**
+ * Recovery from a mistaken "under" (2026-10-12: a real adult tapped a toddler year). The lockout screen offers a quiet
+ * "A grown-up? Sign in"; after a sign-in that started there, the account's server flag decides. Confirmed -> the device's
+ * "under" becomes a passing "ok" (the shape a confirmed account gets on a fresh device: this year - 18). Not confirmed, or
+ * missing -> the account is signed out again, the lockout stays and NOTHING is posted for it (it must not be flagged or
+ * purged just for trying). Mirrors core ageRecoveryDecision and iOS AgeRecovery.
+ */
+object AgeRecovery {
+    sealed class Decision {
+        data class Unlock(val stored: AgeCheck.Stored) : Decision()
+        /** Never posts the under-13 answer. */
+        object StayLocked : Decision()
+    }
+
+    const val LINK_LABEL = "A grown-up? Sign in"
+    const val UNCONFIRMED_LINE = "This account isn't confirmed for 13+. A parent can email ${AgeCheck.SUPPORT_EMAIL}."
+
+    /** The year a confirmed account adopts (the server keeps only the yes/no flag). */
+    fun confirmedYear(now: Int = AgeCheck.currentYear()): Int = now - 18
+
+    fun decide(serverConfirmed: Boolean?, now: Int = AgeCheck.currentYear()): Decision =
+        if (serverConfirmed == true) Decision.Unlock(AgeCheck.Stored(AgeCheck.State.OK, confirmedYear(now))) else Decision.StayLocked
+}

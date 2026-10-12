@@ -732,7 +732,10 @@ final class AuthService: ObservableObject {
         // account (or a hand-off from guest play) starts clean.
         AuthService.claimSavesFor(userId)
         stampPresence(userId: userId)
-        switch await loadProfileRow(userId: userId) {
+        let loaded = await loadProfileRow(userId: userId)
+        // Signed out while the profile was loading (a 13+ recovery sign-in that could not be confirmed): do not resurrect it.
+        guard isAuthenticated else { return }
+        switch loaded {
         case .row(let row):
             if row.isBanned { await signOut(); return }
             profile = row
@@ -745,6 +748,12 @@ final class AuthService: ObservableObject {
                 profile = cached
             }
         case .missing:
+            // A locked (under-13) device never mints a profile: a new account here cannot be confirmed.
+            if AgeCheckStore.shared.isUnder {
+                AgeCheckStore.shared.noteRecoveryFailed()
+                await signOut()
+                return
+            }
             // No profile row yet (OAuth first sign-in) — auto-create one, mirroring
             // apps/web/lib/auth-context.tsx (anonymized username + avatar from the
             // provider metadata + has_onboarded:false), then re-fetch.

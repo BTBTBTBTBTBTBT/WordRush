@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from './supabase-client';
+import { readAgeCheck } from './age-check';
 import type { Database } from './database.types';
 import { isProActive } from './pro';
 import { reportRejectedWrite } from './supabase-error-handler';
@@ -231,6 +232,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // No profile exists — auto-create for OAuth users
     const u = userData;
     if (!u) return;
+    // A locked (under-13) device never mints a profile: a new account signed in from the lockout cannot be confirmed
+    // (the age gate signs it out and shows the line). Mirrors iOS / Android.
+    if (readAgeCheck()?.state === 'under') return;
 
     const avatarUrl = u.user_metadata?.avatar_url || u.user_metadata?.picture || null;
 
