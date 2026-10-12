@@ -763,9 +763,8 @@ export default function DailyPage() {
           1100 px wide — the day headline + picker keep the 560 column across
           the top, then two columns. AS4: the compact play row, YOUR result and
           TODAY'S BOARD on the left (first on a phone), then your finished board +
-          YESTERDAY'S WINNERS. Desktop website (≥ 1024 px, lib/desktop-layout.ts):
-          three columns — the day headline + picker (kept in view), TODAY'S BOARD,
-          then the play card, your board and YESTERDAY'S WINNERS (globals.css .lb-desk). */}
+          YESTERDAY'S WINNERS. Desktop website (≥ 1024 px, founder 10-12): one centered
+          880 px column — today's stage and ranks, then YESTERDAY underneath (globals.css .lb-desk). */}
       <div className="lb-desk max-w-lg page-wide mx-auto px-4" style={{ overflowX: 'clip' /* the stage clouds reach 18 px past the card: never a horizontal scroll */ }}>
         {/* 11 + 11b (founder 10-07): the Leaderboard top is ONE living stage — the day's bubble title with
             your mascot + the day's host, the game picker in the same card, the selected-game strip (art ·

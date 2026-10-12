@@ -6,7 +6,7 @@ import {
   type ChainState, type CoinFace, type CoinState, type FriendlyMove, type GhostState, type PassState, type RpsPick, type RpsState,
   type Side, type TttState,
 } from '@wordle-duel/core';
-import { Lock } from 'lucide-react';
+import { Flag, Lock } from 'lucide-react';
 import { Keyboard } from '@/components/game/keyboard';
 import {
   FR, TILE, chainNeededLetter, chainPrecheck, ghostRoundCard, ghostTiles, otherSide, passKeyStates, tileState, tttThreats,
@@ -81,6 +81,43 @@ function PocketPiece({ name, height, style, className }: { name: ArtName; height
   const [w, h] = ART_SIZE[name];
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={artSrc(name)} alt="" aria-hidden="true" width={Math.round((height * w) / h)} height={height} draggable={false} decoding="async" className={className} style={{ width: 'auto', height, ...style }} />;
+}
+
+/** "YOUR TURN" over a pocket board while it is your move: a gold capsule (flag + words) that pops in once, then rests (iOS / Android parity). */
+function YourTurnLabel() {
+  return (
+    <div role="status" aria-label="Your turn" className={`inline-flex items-center gap-[5px] rounded-full px-3 py-[5px] ${prefersReducedMotion() ? '' : 'gt-pop'}`}
+      style={{ background: 'linear-gradient(#fde68a, #f5b82e)', border: '1px solid rgba(255, 255, 255, 0.55)', boxShadow: '0 3px 10px rgba(245, 158, 11, 0.35)', color: '#3b2300' }}>
+      <Flag className="w-3 h-3" fill="#3b2300" strokeWidth={2.5} aria-hidden="true" />
+      <span className="text-[12px] font-black tracking-[0.07em] leading-none">YOUR TURN</span>
+    </div>
+  );
+}
+
+/**
+ * The opponent's well in Rock Paper Scissors (founder 10-10, iOS / Android parity): while they pick, their hand cycles
+ * rock → paper → scissors (the "Your pick" art, one swap every 0.42 s; a still rock under Reduce Motion). Once their pick is
+ * in: the face-down fist only (the bottom 63% of art-pocket-rps-hidden, clipped — never the ? bubble).
+ */
+function TheirHand({ picked }: { picked: boolean }) {
+  const [cycle, setCycle] = useState(0);
+  const still = prefersReducedMotion();
+  useEffect(() => {
+    if (picked || still) return;
+    const id = window.setInterval(() => setCycle((c) => (c + 1) % 3), 420);
+    return () => window.clearInterval(id);
+  }, [picked, still]);
+  if (picked) {
+    return (
+      <div aria-hidden="true" style={{ width: 92, height: 74, overflow: 'hidden', position: 'relative' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={artSrc('art-pocket-rps-hidden')} alt="" draggable={false} decoding="async" width={92} height={116}
+          style={{ position: 'absolute', left: 0, bottom: 0, width: 92, height: 116, maxWidth: 'none', objectFit: 'cover' }} />
+      </div>
+    );
+  }
+  const hand = still ? 'rock' : (['rock', 'paper', 'scissors'] as const)[cycle];
+  return <div aria-hidden="true" style={{ opacity: still ? 0.6 : 0.75 }}><Art name={hand} size={80} /></div>;
 }
 
 /**
@@ -315,7 +352,7 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
             <>
               <div style={wellStyle(0.30)}>{chosen ? <Art name={chosen} size={80} /> : null}</div>
               <div style={wellStyle(0.74)} aria-label={theirPick ? `${them.name} picked` : `${them.name} has not picked`}>
-                <PocketPiece name="art-pocket-rps-hidden" height={80} style={{ opacity: theirPick ? 1 : 0.4 }} />
+                <TheirHand picked={!!theirPick} />
               </div>
             </>
           )}
@@ -430,8 +467,8 @@ export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }
 
   return (
     <div className="flex flex-col items-center gap-3">
-      {/* 2.8 item 9d: the YOUR TURN flag waves in when it is your move. */}
-      {myTurn && <PocketPiece name="art-pocket-yourturn-flag" height={44} className={prefersReducedMotion() ? undefined : 'gt-pop'} />}
+      {/* YOUR TURN (founder 10-10, x3: the blank lavender flag art read as a stray icon): a gold capsule label. */}
+      {myTurn && <YourTurnLabel />}
       <GameTray accent={accent} state={tray}>
       <div className="relative grid grid-cols-3" style={{ gap: TTT_GAP }}>
         {board.map((m, i) => {

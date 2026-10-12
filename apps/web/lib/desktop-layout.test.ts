@@ -101,8 +101,8 @@ describe('desktop block (globals.css)', () => {
   it('lays Home, Leaderboard, Friends and Stats out as approved', () => {
     expect(block).toMatch(/\.home-cards\.grid \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
     expect(block).toMatch(/\.home-cards\.grid \{ grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
-    // The 560 px stage + the rest, beating the phone's max-w-lg cap (.page-wide on the same element).
-    expect(block).toMatch(/\.lb-desk\.page-wide \{[^}]*max-width: var\(--page-wide\);[^}]*grid-template-columns: minmax\(0, 560px\) minmax\(0, 1fr\)/);
+    // Founder 10-12: one centered column, wider than the phone card, beating its max-w-lg cap (.page-wide on the same element).
+    expect(block).toMatch(/\.lb-desk\.page-wide \{ max-width: 880px; display: block; \}/);
     expect(block).toMatch(/\.lb-desk > \.page-grid-2 \{ display: block; \}/);
     expect(block).toMatch(/\.rec-desk\.page-wide \{[^}]*grid-template-columns: minmax\(0, 480px\) minmax\(0, 1fr\)/);
     expect(block).toMatch(/\.pro-desk \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);

@@ -47,7 +47,7 @@ import { FriendCards } from './friend-cards';
 import { InvitesRow } from '@/components/invites/invites-row';
 import { HaveACodeButton } from '@/components/invites/have-a-code';
 import { QuickPlaySheet } from './quick-play-sheet';
-import { FlameCount, FrCard, FriendAvatar, GameIconSquare, Pill, PocketGameCard, QuietAction, QuietText, SectionLabel, Sheet, cardStyle } from './friends-ui';
+import { FlameCount, FrCard, FriendAvatar, GameIconSquare, Pill, PocketGameCard, QuietAction, QuietText, Sheet, cardStyle } from './friends-ui';
 import { GREEN_CANDY, InviteSentCard, NewFriendsModal, PendingPill, ShieldNotice, type InvitePerson } from './invite-screens';
 import { WATCHED_REQUESTS_KEY, giftShareText, inviteShareText, parseWatched, trackRequests } from '@/lib/invite-screens';
 import { FR_LOOK, frBar, frSurface, podiumSlots, rowStripe } from '@/lib/friends-look';
@@ -674,65 +674,72 @@ export function FriendsPanel() {
       {/* FINISH_SPEC AG (desktop web ≥ 900 px; nothing changes below): two
           columns — your turn, play with friends and the race on the left; your
           friends, invites, moments and add a friend on the right. */}
-      <div className="page-grid-2 space-y-3">
-      <div className="space-y-3">
+      <div className="page-grid-2 fr-cols space-y-3">
+      <div className="fr-left-col space-y-3">
       {/* The desktop grid (≥ 1200 px) leads its left column with THIS WEEK'S RACE; below that it sits under the headline. */}
       {raceCards && <div className="fr-weekly-desk">{raceCards}</div>}
       {/* 3b. INVITES row (hides itself when branded_invites is off). "Have a code?" is the small quiet pill in ADD A FRIEND. */}
       <InvitesRow userId={profile?.id} screen="pink" />
 
 
+      </div>
+
+      {/* The games column (founder 10-12): FRIENDS (games waiting) + PLAY WITH FRIENDS as two cards with the page's colored
+          top bars. Phones: between the race and YOUR FRIENDS, as before; 1024-1199: under the left column; >= 1200: the
+          third column (globals.css .fr-cols). */}
+      <div className="fr-play-col space-y-3">
       {/* 4. FRIEND CARDS (2.8 items 9 + 9e): one card per friend, online first, "N games waiting on you",
           a strip of game tiles (tap = straight in), their-turn games collapsed. */}
       {layout.cards.length > 0 && (
-        <>
-          <SectionLabel color={FR_LOOK.playLabel}>
-            Friends
+        <FrCard accent={FR_LOOK.pink} bar={FR_LOOK.bannerBar}>
+          <div className="flex items-center gap-1.5" style={{ padding: '10px 12px 6px' }}>
+            <h2 className="m-0 text-[11px] font-black uppercase" style={{ letterSpacing: 1.3, color: FR_LOOK.bannerClock }}>Friends</h2>
             {/* M: the same candy badge as the Friends tab, so the waiting games are easy to find. */}
             <CandyBadge count={myTurnCount} size={16} label={`${myTurnCount} waiting`} />
-          </SectionLabel>
-          <FriendCards
-            cards={layout.cards}
-            profiles={friendById}
-            onOpenGame={(id) => router.push(`/friends/games/${id}`)}
-            onStart={(friendId, kind) => { const f = friendById.get(friendId); if (f) openPlay(f, kind); }}
-            onMenu={(friendId) => setMenuFor(friendId)}
-            onProfile={(friendId) => router.push(`/profile/${friendId}`)}
-            // Founder 10-09: Resign lives on each game tile (a small flag, the confirm on the tile), not in the ⋯ menu.
-            onResign={async (gameId) => {
-              const done = await resignGame(gameId);
-              if (!done) setNote('Could not resign. Try again.');
-              void loadGames(true);
-            }}
-          />
-        </>
+          </div>
+          <div style={{ padding: '0 8px 8px' }}>
+            <FriendCards
+              cards={layout.cards}
+              profiles={friendById}
+              onOpenGame={(id) => router.push(`/friends/games/${id}`)}
+              onStart={(friendId, kind) => { const f = friendById.get(friendId); if (f) openPlay(f, kind); }}
+              onMenu={(friendId) => setMenuFor(friendId)}
+              onProfile={(friendId) => router.push(`/profile/${friendId}`)}
+              // Founder 10-09: Resign lives on each game tile (a small flag, the confirm on the tile), not in the ⋯ menu.
+              onResign={async (gameId) => {
+                const done = await resignGame(gameId);
+                if (!done) setNote('Could not resign. Try again.');
+                void loadGames(true);
+              }}
+            />
+          </div>
+        </FrCard>
       )}
 
       {/* 5. PLAY WITH FRIENDS — six small tinted cards, each with its own top bar (C4). */}
-      <SectionLabel
-        color={FR_LOOK.playLabel}
-        right={<span className="text-[11px] font-bold" style={{ color: FR_LOOK.sub }}>Tap a game, pick a friend</span>}
-      >
-        Play with friends
-      </SectionLabel>
-      <div className="grid grid-cols-3 gap-2">
-        {FRIENDLY_KINDS.map((k) => (
-          <PocketGameCard
-            key={k}
-            kind={k}
-            title={FRIENDLY_TITLES[k]}
-            sub={KIND_SUB[k]}
-            onClick={() => {
-              if (friends.length === 0) { setNote('Add a friend first, then pick a game'); jumpToAdd(); return; }
-              openPlay(friends.length === 1 ? friends[0] : null, k);
-            }}
-          />
-        ))}
+      <FrCard accent={FR_LOOK.lavender} bar={FR_LOOK.lavenderBar}>
+        <div className="flex items-center justify-between gap-2" style={{ padding: '10px 12px 6px' }}>
+          <h2 className="m-0 text-[11px] font-black uppercase" style={{ letterSpacing: 1.3, color: 'var(--fr-label, #5b3c96)' }}>Play with friends</h2>
+          <span className="text-[11px] font-bold" style={{ color: FR_LOOK.sub }}>Tap a game, pick a friend</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2" style={{ padding: '0 8px 8px' }}>
+          {FRIENDLY_KINDS.map((k) => (
+            <PocketGameCard
+              key={k}
+              kind={k}
+              title={FRIENDLY_TITLES[k]}
+              sub={KIND_SUB[k]}
+              onClick={() => {
+                if (friends.length === 0) { setNote('Add a friend first, then pick a game'); jumpToAdd(); return; }
+                openPlay(friends.length === 1 ? friends[0] : null, k);
+              }}
+            />
+          ))}
+        </div>
+      </FrCard>
       </div>
 
-      </div>
-
-      <div className="space-y-3">
+      <div className="fr-right-col space-y-3">
       {/* 7. YOUR FRIENDS — a lavender card with soft striped rows and chunky candy
           Play / Challenge / Nudge buttons (C4); "Add a friend" lives in its header (C4b). */}
       <FrCard accent={FR_LOOK.lavender} bar={FR_LOOK.lavenderBar}>

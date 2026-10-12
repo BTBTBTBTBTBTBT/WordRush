@@ -2256,6 +2256,14 @@ a, button, [role="button"], [data-squish] { touch-action: manipulation; }
   }
   .page-grid-2 > * { margin-top: 0 !important; }
   .page-grid-2 > .page-span { grid-column: 1 / -1; }
+  /* Friends on the two-column grid: the games column (FRIENDS waiting + PLAY WITH FRIENDS) under the left column, YOUR
+     FRIENDS on the right. >= 1200 px the three columns place them explicitly (.fr-desk > .fr-cols). */
+  .page-grid-2.fr-cols { grid-template-areas: "left right" "play right"; grid-template-rows: auto 1fr; row-gap: 0.75rem; }
+  .fr-cols > .fr-left-col { grid-area: left; }
+  .fr-cols > .fr-play-col { grid-area: play; }
+  .fr-cols > .fr-right-col { grid-area: right; }
+  .page-grid-2.fr-cols:has(> .fr-left-col:empty) { grid-template-areas: "play right"; grid-template-rows: auto; }
+  .fr-cols > .fr-left-col:empty { display: none; }
   .page-pop {
     max-width: var(--page-pop);
     margin-left: auto;
@@ -2642,16 +2650,9 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
   .page-col.game-wide .pz-rail .kb-root .kkey[aria-label="Backspace"],
   .page-col.game-wide .pz-rail .kb-root .kkey[aria-label="Submit guess"] { flex: 0 0 calc(15% - 4.25px); min-width: 0; font-size: 11px; }
 
-  /* Leaderboard (founder 10-12, a real website page, not a phone card): the living stage (picker, strip, podium)
-     at 560 px on the left, ranks 4+ and YESTERDAY'S WINNERS stacked on the right, filling the 1180 px box.
-     .page-wide beats the phone's max-w-lg cap on the same element. */
-  .lb-desk.page-wide {
-    max-width: var(--page-wide);
-    display: grid;
-    grid-template-columns: minmax(0, 560px) minmax(0, 1fr);
-    column-gap: var(--page-grid-gap);
-    align-items: start;
-  }
+  /* Leaderboard (founder 10-12): ONE centered column, wider than the phone card — today's stage (picker, strip,
+     podium) and its ranks, then YESTERDAY underneath. .page-wide beats the phone's max-w-lg cap on the same element. */
+  .lb-desk.page-wide { max-width: 880px; display: block; }
   .lb-desk > .page-col { max-width: none; margin: 0; }
   .lb-desk > .page-grid-2 { display: block; }
 
@@ -2712,6 +2713,15 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
   .fr-desk > :first-child { grid-column: 1 / -1; }
   .fr-desk > .page-col { max-width: none; margin: 0; }
   .fr-desk > .page-grid-2 { display: contents; }
+  /* Founder 10-12: the race | YOUR FRIENDS | the games column (FRIENDS waiting + PLAY WITH FRIENDS) in the third. */
+  .fr-desk > .fr-cols > .fr-left-col { grid-column: 1; grid-row: 2; }
+  .fr-desk > .fr-cols > .fr-right-col { grid-column: 2; grid-row: 2; }
+  .fr-desk > .fr-cols > .fr-play-col { grid-column: 3; grid-row: 2; }
+  /* No race yet (a new player): two columns, YOUR FRIENDS | the games, instead of an empty first column. */
+  .fr-desk > .fr-cols > .fr-left-col:empty { display: none; }
+  .fr-desk:has(> .fr-cols > .fr-left-col:empty) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fr-desk:has(> .fr-cols > .fr-left-col:empty) > .fr-cols > .fr-right-col { grid-column: 1; }
+  .fr-desk:has(> .fr-cols > .fr-left-col:empty) > .fr-cols > .fr-play-col { grid-column: 2; }
 }
 @media (min-width: 1280px) {
   .app-hdr > .hdr-cast { width: 288px !important; }
@@ -2724,7 +2734,6 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
   .page-sticky { top: calc(var(--desk-hdr-h, 72px) + 12px); }
 }
 @media (min-width: 1200px) and (min-height: 760px) {
-  .lb-desk > .page-col,
   .fr-desk > .page-col { position: sticky; top: calc(var(--desk-hdr-h, 72px) + 12px); }
 }
 
