@@ -16,7 +16,7 @@ import { MASCOT_MOMENT_EVENT } from '@/lib/living-mascot';
 import { useFlags } from '@/hooks/use-flags';
 import { haptic } from '@/lib/haptics';
 import { castLaugh, castNote } from '@/lib/sounds';
-import { MELODY_START, MUSICAL_POP_KEYS, MUSICAL_TIMING, melodyReplay, melodyTap, musicalTransformDelays, type MelodyState, type MusicalMelody } from '@wordle-duel/core';
+import { MELODY_START, MUSICAL_POP_KEYS, MUSICAL_TIMING, melodyReplay, melodyReplayDuration, melodyTap, musicalTransformDelays, type MelodyState, type MusicalMelody } from '@wordle-duel/core';
 import { MUSICAL_CAST_ON, NOTE_SVG, noteColor, unlockTune } from '@/lib/musical-cast';
 import { melodyCell, toggleMusicalOn, useMusical } from '@/lib/musical-store';
 
@@ -186,8 +186,10 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
     const r = melodyTap(melody.current, id, performance.now(), season);
     melody.current = r.state;
     if (r.matched) {
-      void unlockTune(r.matched.achievement);
-      playBack(r.matched);
+      const tune = r.matched;
+      playBack(tune);
+      // The unlock card waits for the playback to finish (it would cover the cast singing).
+      setTimeout(() => { void unlockTune(tune.achievement); }, melodyReplayDuration(tune) + 250);
     }
   };
 

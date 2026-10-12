@@ -213,7 +213,11 @@ fun LivingCastHeader(
         wake++
         if (fromPlayback) return
         MusicalCastState.tap(id.key, SeasonSkins.current())?.let { tune ->
-            scope.launch { com.wordocious.app.data.AchievementService.unlockTune(tune.achievement) }
+            // The unlock card waits for the playback to finish (it would cover the cast singing).
+            scope.launch {
+                delay(com.wordocious.core.MusicalCast.REPLAY_LEAD_IN_MS + tune.notes.size * com.wordocious.core.MusicalCast.REPLAY_BEAT_MS + 250)
+                com.wordocious.app.data.AchievementService.unlockTune(tune.achievement)
+            }
             // Founder 10-12: the cast sings the completed tune back once, cleanly (even beat, each note on its figure),
             // every time — the achievement itself unlocks once. Taps wait while it plays.
             playback?.cancel()

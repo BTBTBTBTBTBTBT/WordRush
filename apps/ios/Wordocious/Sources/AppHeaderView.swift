@@ -692,8 +692,10 @@ struct LivingCastHeader: View {
         musicalStore.melody = r.state
         if let tune = r.matched {
             let key = tune.achievement
-            Task { await AchievementService.unlockTune(key) }
             playBack(tune)
+            // The unlock card waits for the playback to finish (it dims the screen, which would hide the cast singing).
+            let wait = UInt64(MusicalCast.replayLeadInMs + tune.notes.count * MusicalCast.replayBeatMs + 250) * 1_000_000
+            Task { try? await Task.sleep(nanoseconds: wait); await AchievementService.unlockTune(key) }
         }
     }
 
