@@ -228,6 +228,8 @@ fun FriendlyGameScreen(
         val r = snap.receive(g)
         if (!r.applied) return
         snap = r.snap
+        // The friend moved: an old error ("The game moved on") is stale (iOS parity).
+        if (r.change.moved) error = null
         // A change that lands while my own move is in flight is my move, not the friend's.
         if (liveOnNow && !busy) {
             if (r.change.moved && g.active) {
@@ -304,8 +306,9 @@ fun FriendlyGameScreen(
                 is FriendlyGamesService.MoveOutcome.Moved -> accept(r.game, own = true)
                 is FriendlyGamesService.MoveOutcome.Rejected -> error = r.message
                 is FriendlyGamesService.MoveOutcome.Retry -> {
-                    error = r.message
+                    // Read the new state first (it clears a stale error), then say why the move didn't land.
                     FriendlyGamesService.get(gameId)?.let { accept(it) }
+                    error = r.message
                 }
                 is FriendlyGamesService.MoveOutcome.Failed -> error = r.message
             }

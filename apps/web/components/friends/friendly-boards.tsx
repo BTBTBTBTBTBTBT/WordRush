@@ -604,6 +604,8 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer, 
   const [hint, setHint] = useState<string | null>(null);
   const myTurn = active && whoseTurn(state) === me;
   const keyStates = passKeyStates(state.guesses);
+  // A new guess on the board (theirs, or the fresh state after a "moved on" retry) clears a half-typed attempt (Android parity).
+  useEffect(() => { setInput(''); setHint(null); }, [state.guesses.length]);
 
   const submit = async () => {
     if (!myTurn || busy) return;

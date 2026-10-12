@@ -117,6 +117,8 @@ export function FriendlyGameScreen({ id }: { id: string }) {
     if (!r.applied) return;
     snapRef.current = r.snap;
     if (rounds) setRevealKey((k) => k + 1);
+    // The friend moved: an old error ("Someone moved first") is stale (iOS / Android parity).
+    if (r.change.moved) setError(null);
     // A change that lands while my own move is in flight is my move, not the friend's.
     if (liveRef.current && !busyRef.current) {
       if (r.change.moved && g.status === 'active') { feedback('key'); setFx((f) => ({ ...f, arrive: f.arrive + 1 })); }

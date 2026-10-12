@@ -202,6 +202,14 @@ struct FriendlyGameScreen: View {
         } else {
             let r = snap.receive(g)
             guard r.applied else { return }
+            // The friend moved: an old error ("The game moved on") and a half-typed attempt from before their move are
+            // stale (Android parity: its boards reset on the same change).
+            if r.change.moved {
+                moveError = nil
+                passInput = ""
+                ghostPending = nil
+                chainTyped = ""
+            }
             // A change that lands while my own move is in flight is my move, not the friend's.
             if liveOn && !sending {
                 if r.change.moved && g.isActive {
@@ -278,8 +286,9 @@ struct FriendlyGameScreen: View {
                 }
                 if !ng.isActive { ng.result == "win" ? Haptics.success() : Haptics.tap() } else if !wasOptimistic { Haptics.tap() }
             case .failure(.retry):
-                moveError = "The game moved on — try again"
+                // Read the new state first (it clears stale input), then say why the move didn't land.
                 await refresh()
+                moveError = "The game moved on — try again"
             case .failure(.message(let msg)):
                 moveError = msg
                 Haptics.error()
@@ -837,6 +846,7 @@ struct FriendlyGameScreen: View {
                 }
                 // The result line rides with the coin and appears only once it has landed (no spoiler mid-flip).
                 SpinningCoin(face: c.rounds.last?.flip ?? .heads, spinKey: c.rounds.count, caption: caption)
+                    .id(g.id)   // a rematch is a new coin (no leftover flip key spinning the new game's placeholder)
             }
             .frame(maxWidth: .infinity)
             .gameTray(accent: FriendsKit.tileAccent(.coin), state: trayState(g))
