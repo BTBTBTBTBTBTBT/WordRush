@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import {
   wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, wordsearchCells, wordsearchLine,
   createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchGuessCount, wordsearchNextUnfound,
-  WORDSEARCH_DIRS, WORDSEARCH_N, wordsearchNearWord, type WordsearchBank, type WordsearchPuzzle, } from './wordsearch';
+  WORDSEARCH_DIRS, WORDSEARCH_N, wordsearchNearWord, wordsearchSelection, type WordsearchBank, type WordsearchPuzzle, } from './wordsearch';
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const bankPath = join(repo, 'apps', 'web', 'data', 'wordsearch-puzzles.json');
@@ -120,6 +120,37 @@ describe.skipIf(!bank)('Spyglass bank', () => {
     s = wordsearchReduce(s, { type: 'SELECT', from: 98, to: 68 });
     expect(s.misses).toBe(0);
     for (const q of [...b.daily, ...b.extra]) for (const w of q.near ?? []) expect(q.words.some((p) => p.w === w), `${q.id} ${w}`).toBe(false);
+  });
+  it('forgives off-by-one drags and real words (founder 10-12, Winter Day #20)', () => {
+    const wd = b.daily.find((q) => q.id === 'ws0020')!;
+    expect(wd.title).toBe('Winter Day');
+    let s = createWordsearchState(wd, 'x', 0);
+    const at = (r: number, c: number) => r * 10 + c;
+    // Row 9 = L E S L E D D I N G: SLEDDING sits at c2..c9.
+    expect(wordsearchSelection(s, at(9, 1), at(9, 8))).toEqual({ kind: 'partial', word: 'SLEDDING' }); // started a cell early, stopped short
+    expect(wordsearchSelection(s, at(9, 2), at(9, 7))).toEqual({ kind: 'partial', word: 'SLEDDING' }); // stopped short
+    expect(wordsearchSelection(s, at(9, 1), at(9, 9))).toEqual({ kind: 'found', word: 'SLEDDING' }); // one extra cell
+    expect(wordsearchSelection(s, at(9, 0), at(9, 9)).kind).toBe('miss'); // two extra cells: not forgiven
+    // Row 8 = A S W O O L E N S O: WOOL lies inside WOOLENS (partial); row 5 = Y E L L …: YELL is a real word.
+    expect(wordsearchSelection(s, at(8, 2), at(8, 5)).kind).toBe('partial');
+    expect(wordsearchSelection(s, at(5, 0), at(5, 3))).toEqual({ kind: 'real', word: 'YELL' });
+    expect(wd.real).toContain('WOOL');
+    // A crooked or short drag is nothing; a junk line is still a miss.
+    expect(wordsearchSelection(s, at(0, 0), at(1, 2)).kind).toBe('none');
+    expect(wordsearchSelection(s, at(1, 0), at(1, 3)).kind).toBe('miss');
+    for (const [f, t] of [[at(9, 1), at(9, 8)], [at(8, 2), at(8, 5)], [at(5, 0), at(5, 3)]]) s = wordsearchReduce(s, { type: 'SELECT', from: f, to: t });
+    expect(s.misses).toBe(0);
+    s = wordsearchReduce(s, { type: 'SELECT', from: at(9, 1), to: at(9, 9) });
+    expect(s.found).toEqual(['SLEDDING']);
+    s = wordsearchReduce(s, { type: 'SELECT', from: at(1, 0), to: at(1, 3) });
+    expect(s.misses).toBe(1);
+    // Every puzzle's real words really sit in its grid and are neither list words nor close calls.
+    for (const q of [...b.daily, ...b.extra]) {
+      expect(Array.isArray(q.real), q.id).toBe(true);
+      for (const w of q.real ?? []) {
+        expect(q.words.some((p) => p.w === w) || (q.near ?? []).includes(w), `${q.id} ${w}`).toBe(false);
+      }
+    }
   });
   it('keeps the variety rules: no theme within 120 days, no consecutive family, no word within 45 days', () => {
     const lastTheme = new Map<string, number>(), lastWord = new Map<string, number>();

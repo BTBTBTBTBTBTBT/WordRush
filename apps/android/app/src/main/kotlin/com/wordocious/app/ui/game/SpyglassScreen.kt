@@ -91,7 +91,8 @@ import com.wordocious.core.wordsearchCells
 import com.wordocious.core.wordsearchDailyNumber
 import com.wordocious.core.wordsearchLine
 import com.wordocious.core.wordsearchMatchRow
-import com.wordocious.core.wordsearchNearWord
+import com.wordocious.core.WordsearchSelectionKind
+import com.wordocious.core.wordsearchSelection
 import com.wordocious.core.wordsearchPuzzleForDay
 import com.wordocious.core.wordsearchPuzzleForSeed
 import com.wordocious.core.wordsearchReduce
@@ -185,6 +186,8 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
         val wordsShown: Boolean = false, val lateFinds: Int = 0,
         /** Close calls (founder, 2026-09-30); saves from before then lack it. */
         val near: List<String> = emptyList(),
+        /** Real words (founder, 2026-10-12); saves from before then lack it. */
+        val real: List<String> = emptyList(),
     )
     private val storageKey get() = if (isDaily) "wordsearch-save-daily" else "wordsearch-save-$seed"
 
@@ -194,7 +197,7 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
         val dto = SaveDto(
             seed, todayLocalDate(), elapsed, System.currentTimeMillis(),
             s.id, s.title, s.grid, s.words.map { PlaceDto(it.w, it.r, it.c, it.d) }, s.found, s.misses, s.hintsUsed, s.hinted, s.events,
-            s.status.key, s.startTime, s.endTime, s.wordsShown, s.lateFinds, s.near,
+            s.status.key, s.startTime, s.endTime, s.wordsShown, s.lateFinds, s.near, s.real,
         )
         runCatching { SettingsPref.set(storageKey, json.encodeToString(dto)) }
     }
@@ -211,7 +214,7 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
         state = WordsearchState(
             seed, dto.id, dto.title, 10, dto.grid, dto.words.map { WordsearchPlacement(it.w, it.r, it.c, it.d) },
             dto.found, dto.misses, dto.hintsUsed, dto.hinted, dto.events, status, dto.startTime, dto.endTime,
-            dto.wordsShown, dto.lateFinds, dto.near,
+            dto.wordsShown, dto.lateFinds, dto.near, dto.real,
         )
         restoredElapsedMs = dto.elapsed * 1000L
         if (status != WordsearchStatus.PLAYING) { finalTimeSeconds = dto.elapsed; recorded = true; restoredFinished = true }
@@ -227,12 +230,15 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
     fun select(from: Int, to: Int, onFinished: () -> Unit) {
         if (isFinished) return
         val before = state
-        // Close call: a theme word / plural in the grid that isn't a list word (never a miss; gentle note, no error sound).
-        val near = wordsearchNearWord(before, from, to)
+        // Never a miss (core wordsearchSelection): a theme word in the filler (STARS in Night Sky, 09-30), an everyday
+        // word (WOOL, 10-12), or a drag that falls a cell short of a list word (10-12). Gentle note, no error sound.
+        val (kind, word) = wordsearchSelection(before, from, to)
         dispatch(WordsearchAction.Select(from, to), onFinished)
         if (state.found.size > before.found.size) SoundManager.playPartial()
         else if (state.misses > before.misses) { SoundManager.playInvalid(); toast = "Not one of the words" }
-        else if (near != null) { SoundManager.playKeyTap(); toast = "$near fits the theme, but it's not one of today's 10" }
+        else if (kind == WordsearchSelectionKind.NEAR) { SoundManager.playKeyTap(); toast = "$word fits the theme, but it's not one of today's 10" }
+        else if (kind == WordsearchSelectionKind.REAL) { SoundManager.playKeyTap(); toast = "$word is a word, but not one of today's 10" }
+        else if (kind == WordsearchSelectionKind.PARTIAL && word !in before.found) { SoundManager.playKeyTap(); toast = "So close! Trace the whole word" }
     }
     fun hint(onFinished: () -> Unit) { val before = state.hintsUsed; dispatch(WordsearchAction.Hint, onFinished); if (state.hintsUsed > before) SoundManager.playKeyTap() }
     fun showWords(onFinished: () -> Unit) { if (state.wordsShown) return; dispatch(WordsearchAction.Show, onFinished); toast = "Words shown — finds from here count like misses" }

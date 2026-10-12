@@ -22,11 +22,20 @@ function holidayServed(holiday, days, from, since) {
   }
   return out;
 }
+/**
+ * A puzzle's content for hashing: derived lookup lists that never change what the puzzle IS (its grid, words and
+ * clues) are left out, so they can be regenerated for served days. Spyglass `real` (2026-10-12): the everyday words
+ * sitting in the grid, which only decide that tracing one is not a miss.
+ */
+const DERIVED_KEYS = ['real'];
+const contentOf = (p) => (p && typeof p === 'object' && DERIVED_KEYS.some((k) => k in p)
+  ? Object.fromEntries(Object.entries(p).filter(([k]) => !DERIVED_KEYS.includes(k))) : p);
+
 /** [{ key, first, value }] of served entries for a registered file, by schema. */
 export function servedEntries(schema, json, { from, holidayDays }) {
   if (schema === 'epoch-bank') {
     const n = Math.max(0, Math.min(json.daily.length, daysBetween(BANK_EPOCH, from)));
-    return [...json.daily.slice(0, n).map((p, i) => ({ key: `daily#${i}`, first: dayOf(BANK_EPOCH, i), value: p })),
+    return [...json.daily.slice(0, n).map((p, i) => ({ key: `daily#${i}`, first: dayOf(BANK_EPOCH, i), value: contentOf(p) })),
       ...holidayServed(json.holiday, holidayDays, from, BANK_EPOCH)];
   }
   if (schema === 'pool' || schema === 'pool-frozen') return [{ key: 'pool', first: null, value: json }];

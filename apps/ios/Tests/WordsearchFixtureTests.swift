@@ -21,10 +21,13 @@ final class WordsearchFixtureTests: XCTestCase {
     private struct NearCase: Decodable { let from: Int; let to: Int; let word: String? }
     private struct NearExpect: Decodable { let misses: Int; let events: [String]; let found: [String] }
     private struct Near: Decodable { let id: String; let list: [String]; let cases: [NearCase]; let actions: [Act]; let expect: NearExpect }
+    private struct SelCase: Decodable { let from: Int; let to: Int; let kind: String; let word: String? }
+    private struct Forgiving: Decodable { let id: String; let real: [String]; let cases: [SelCase]; let actions: [Act]; let expect: NearExpect }
     private struct Fixtures: Decodable {
         let epoch: String; let dailyCount: Int; let extraCount: Int; let days: [DayCase]; let seeds: [SeedCase]
         let puzzle: WordsearchPuzzle; let reducer: [Script]; let geometry: [Geo]; let placements: [Place]; let malformed: Recon?
         let near: Near
+        let forgiving: Forgiving
     }
 
     private func fixtureData(_ name: String) throws -> Data {
@@ -106,5 +109,29 @@ final class WordsearchFixtureTests: XCTestCase {
         json.removeValue(forKey: "near")
         let old = try JSONDecoder().decode(WordsearchState.self, from: JSONSerialization.data(withJSONObject: json))
         XCTAssertEqual(old.near, []); XCTAssertEqual(old.misses, s.misses)
+    }
+
+    // Forgiving selections (founder, 2026-10-12): Winter Day — an early start or short stop is never a miss, one extra
+    // cell still finds the word, YELL (a real word) is never a miss, a junk line still is.
+    func testForgivingSelectionsMatchSharedFixtures() throws {
+        let f = try load(); let b = try bank()
+        guard let p = (b.daily + b.extra).first(where: { $0.id == f.forgiving.id }) else { return XCTFail("missing \(f.forgiving.id)") }
+        XCTAssertEqual(p.real ?? [], f.forgiving.real)
+        let fresh = WordsearchState(puzzle: p, seed: "fixture", startTime: 0)
+        for c in f.forgiving.cases {
+            let sel = wordsearchSelection(fresh, from: c.from, to: c.to)
+            XCTAssertEqual(sel.kind.rawValue, c.kind, "kind \(c.from)→\(c.to)")
+            XCTAssertEqual(sel.word, c.word, "word \(c.from)→\(c.to)")
+        }
+        var s = fresh
+        for a in f.forgiving.actions { s = wordsearchReduce(s, action(a), now: 1000) }
+        XCTAssertEqual(s.misses, f.forgiving.expect.misses)
+        XCTAssertEqual(s.events, f.forgiving.expect.events)
+        XCTAssertEqual(s.found, f.forgiving.expect.found)
+        // A save from before real words (no "real" key) still decodes, with real = [].
+        var json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(s)) as! [String: Any]
+        json.removeValue(forKey: "real")
+        let old = try JSONDecoder().decode(WordsearchState.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertEqual(old.real, [])
     }
 }
