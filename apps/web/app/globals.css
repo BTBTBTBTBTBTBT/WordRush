@@ -2603,10 +2603,14 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
   .fin-desk-main { grid-column: 1; grid-row: 2; min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column; }
   .fin-desk-side {
     grid-column: 2; grid-row: 1 / -1; min-width: 0; min-height: 0;
-    display: flex; flex-direction: column; justify-content: center; align-items: stretch; gap: 12px;
-    padding: 12px 0;
+    display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 12px;
+    padding: 56px 0 12px; /* clears the stage's corner sound / guide buttons */
     overflow-y: auto; scrollbar-width: none;
   }
+  /* Centered when it fits, top-aligned and scrollable when it doesn't (justify-content: center pushed the
+     chips and Share above the top edge on a 1024 x 768 window). */
+  .fin-desk-side > :first-child { margin-top: auto; }
+  .fin-desk-side > :last-child { margin-bottom: auto; }
   /* The chips + rank pill read bigger beside the big boards. */
   .fin-desk-top { zoom: 1.2; }
   .fin-desk-side > * { max-width: 420px; width: 100%; margin-left: auto; margin-right: auto; }
