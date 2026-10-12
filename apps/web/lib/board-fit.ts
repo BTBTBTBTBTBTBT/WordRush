@@ -154,9 +154,9 @@ export function fitBoardGrid({
  */
 export const CROSSWORD_FIT = { gap: 3, side: 12, vPad: 8, maxCell: 42, minCell: 14 } as const;
 
-export function crosswordCell(width: number, height: number, cols: number, rows: number, chrome: { x: number; y: number }): number {
+export function crosswordCell(width: number, height: number, cols: number, rows: number, chrome: { x: number; y: number }, deskMaxCell?: number): number {
   const { gap, side, vPad, maxCell, minCell } = CROSSWORD_FIT;
-  const fit = fitBoard({ width: width - chrome.x, height: height - chrome.y, cols, rows, gap, side, vPad, maxTile: maxCell });
+  const fit = fitBoard({ width: width - chrome.x, height: height - chrome.y, cols, rows, gap, side, vPad, maxTile: deskMaxCell ?? maxCell });
   return Math.max(minCell, fit?.tile ?? minCell);
 }
 

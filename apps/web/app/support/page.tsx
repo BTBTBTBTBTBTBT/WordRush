@@ -8,8 +8,8 @@ export default function SupportPage() {
   return (
     // C6 layout; hosted by C (Help / Guides) beside the text title. Back keeps
     // its old target (home).
-    <InfoPageLayout title="Help & Support" art="art-titlecast-support" artLabel="Help & Support" backHref="/">
-      <IntroCard title={<>Got a question? We&apos;ve got answers.</>} />
+    <InfoPageLayout title="Help & Support" art="art-titlecast-support" artLabel="Help & Support" backHref="/" cols>
+      <IntroCard span title={<>Got a question? We&apos;ve got answers.</>} />
 
       {SUPPORT_SECTIONS.map((section, si) => (
         <SectionCard key={section.heading} heading={section.heading} accent={infoAccent(si)}>

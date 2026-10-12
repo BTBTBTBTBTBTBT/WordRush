@@ -9,6 +9,7 @@ import { GameArt } from '@/components/ui/game-art';
 import { SoftNum } from '@/components/ui/soft-number';
 import { CandyButton, CandyIcon, CandyLink } from '@/components/ui/candy-button';
 import { CastButton, CastLink, castNaturalWidth, castRowMin } from '@/components/ui/cast-button';
+import { useDeskFinished } from '@/components/ui/wide-stage';
 import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
@@ -73,14 +74,15 @@ export function ResultStrip({ won, guesses, guessLabel = 'guesses', time, points
         <HeadingArt slug={won ? 'solved' : 'nottoday'} label={headline ?? (won ? 'Solved!' : 'Not today')} height={36} />
       </div>
     )}
-    <div className="w-full flex items-center justify-center gap-1.5 flex-nowrap overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+    {/* 'safe center': a row wider than its column starts at the left edge (scrollable) instead of clipping the W / L badge. */}
+    <div className="w-full flex items-center justify-center gap-1.5 flex-nowrap overflow-x-auto" style={{ scrollbarWidth: 'none', justifyContent: 'safe center' }}>
       <span className="sr-only">{srText}</span>
       <Icon3D name={won ? 'badge-w' : 'badge-l'} size={24} label={won ? 'Won' : 'Lost'} />
       {guesses != null && <StripChip accent="#7c3aed" icon={<Icon3D name="badge-check" size={18} />} value={guesses} label={guessLabel} />}
       {time && <StripChip accent="#2563eb" icon={<ClockGlyph size={17} />} value={time} label="time" />}
       {points != null && <StripChip accent="#f5a524" icon={<Icon3D name="trophy" size={17} />} value={Math.round(points).toLocaleString()} label="pts" />}
       {/* Founder 10-02: an invisible twin of the leading W / L badge, so the chips sit on the screen's center line. */}
-      <span aria-hidden="true" className="shrink-0" style={{ width: 24, height: 24 }} />
+      <span aria-hidden="true" className="rs-twin shrink-0" style={{ width: 24, height: 24 }} />
     </div>
     </div>
   );
@@ -132,6 +134,9 @@ export function FitBox({ children, className = '', style, minScale = 0.4, onSlac
 
 /** R2: extras (definitions, score breakdowns) behind a tinted "More" disclosure. */
 export function MoreDisclosure({ label = 'More', children, accent = '#7c3aed' }: { label?: string; children: ReactNode; accent?: string }) {
+  // Desktop website (founder 10-12): the extras show OPEN inline in the results panel, no disclosure.
+  const desk = useDeskFinished();
+  if (desk) return <section className="fin-desk-more" aria-label={label}>{children}</section>;
   return (
     <details className="w-full max-w-[400px] mx-auto group">
       <summary

@@ -1,7 +1,9 @@
 'use client';
 
-import type { CSSProperties, ReactNode } from 'react';
-import { FinishedDock, FitBox, MoreDisclosure, ResultStrip, useBlockCentering } from '@/components/game/finished-kit';
+import { useRef, type CSSProperties, type ReactNode } from 'react';
+import { FinishedDeskLayout, FinishedDock, FitBox, MoreDisclosure, ResultStrip, useBlockCentering } from '@/components/game/finished-kit';
+import { useDeskFinished } from '@/components/ui/wide-stage';
+import { useDeskBox, type DeskBox } from '@/hooks/use-desk-box';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { BottomNav } from '@/components/ui/bottom-nav';
@@ -31,23 +33,55 @@ export const FINISHED_SHELL_PAD: CSSProperties = { paddingBottom: 'var(--bottom-
 
 export function PuzzleFinished({ strip, board, dock, beforeDock, more }: {
   strip: ReactNode;
-  /** The finished board(s): scaled to the room the strip and dock leave. */
-  board: ReactNode;
+  /**
+   * The finished board(s): scaled to the room the strip and dock leave. A function gets the left
+   * column's measured room on the desktop website (wide stage, ≥ 1024 px; null on a phone), so the
+   * board can grow into it (a plain node is only scaled down to fit, like on a phone).
+   */
+  board: ReactNode | ((box: DeskBox | null) => ReactNode);
   /** <FinishedDock …/>. */
   dock: ReactNode;
   /** A row that must stay on screen between the board and the dock (Hubbub's Keep going). */
   beforeDock?: ReactNode;
-  /** <MoreDisclosure …/> with the extras, below the dock. */
+  /** <MoreDisclosure …/> with the extras, below the dock (open inline on the desktop panel). */
   more?: ReactNode;
 }) {
   // Founder 10-02: the block sits vertically centered — the room the board
   // leaves in its FitBox is split above the strip and below the dock + More.
   const { onSlack, down, up } = useBlockCentering();
+  const desk = useDeskFinished();
+  const mainRef = useRef<HTMLDivElement>(null);
+  const box = useDeskBox(mainRef);
+  if (desk) {
+    // Founder 10-12: the website finished screen — the board big on the left (under the header art),
+    // the results panel (chips, rank, Share / Next, Unlimited, the breakdown open) on the right.
+    const sized = typeof board === 'function';
+    return (
+      <FinishedDeskLayout
+        main={
+          <div ref={mainRef} className="relative flex-1 min-h-0 w-full">
+            <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+              {sized ? (box ? board(box) : null) : <FitBox onSlack={onSlack}>{board as ReactNode}</FitBox>}
+            </div>
+          </div>
+        }
+        side={
+          <>
+            <div className="fin-desk-top flex flex-col items-center gap-2">{strip}</div>
+            {beforeDock}
+            {dock}
+            {more}
+          </>
+        }
+      />
+    );
+  }
+  const phoneBoard = typeof board === 'function' ? board(null) : board;
   return (
     <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
       <div className="flex flex-col px-3 pt-0.5" style={{ height: more ? `calc(100% - ${MORE_PEEK}px)` : '100%' }}>
         <div className="shrink-0 pb-1.5" style={down}>{strip}</div>
-        <FitBox onSlack={onSlack}>{board}</FitBox>
+        <FitBox onSlack={onSlack}>{phoneBoard}</FitBox>
         {beforeDock && <div className="shrink-0 flex justify-center pt-1.5" style={up}>{beforeDock}</div>}
         <div className="shrink-0" style={up}>{dock}</div>
       </div>

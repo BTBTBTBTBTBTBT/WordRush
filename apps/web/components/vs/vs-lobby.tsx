@@ -32,6 +32,7 @@ import { botArt, botPersona } from '@/lib/bot/bot-personas';
 import { castBotForKind } from '@/lib/adapters/bot-match-service';
 import { poseSrc } from '@/lib/art';
 import { alphaHex, darken } from '@/lib/soft-surface';
+import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { VsBanner } from './vs-banner';
 import { NoticeDot, VsNotice } from './vs-notice';
@@ -121,6 +122,7 @@ export function VsLobby() {
 
   return (
     <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24" style={VS_LIGHT_VARS}>
+      <AppHeader deskOnly />
       {/* BJ7: 12 between sections (was 14). */}
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3">
         <VsNav

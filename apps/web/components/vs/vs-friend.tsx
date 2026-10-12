@@ -20,6 +20,7 @@ import { vsHrefForMode } from '@/lib/invite-service';
 import { getFriends, loadFriends, onFriendsChange, type FriendProfile } from '@/lib/friends-service';
 import { VS, friendCta, friendLine, loadVsMode } from '@/lib/vs-lobby';
 import { InviteModal } from '@/components/invites/invite-modal';
+import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { InitialAvatar, ModeChip, SectionLabel, VS_ACCENT, VS_LIGHT_VARS, VsCard, VsNav, vsCard } from './vs-ui';
 import { PAGE_HOSTS } from '@/lib/mascots';
@@ -94,6 +95,7 @@ export function VsFriend() {
 
   return (
     <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24" style={VS_LIGHT_VARS}>
+      <AppHeader deskOnly />
       <InviteModal open={invite !== null} onClose={() => setInvite(null)} initialMode={mode} initialTab={invite ?? 'link'} />
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
         <VsNav title="CHALLENGE" heading="challenge" host={PAGE_HOSTS.vs} onBack={() => router.push('/vs')} right={<ModeChip mode={mode} />} />

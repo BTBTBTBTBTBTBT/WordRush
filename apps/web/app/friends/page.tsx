@@ -18,6 +18,7 @@ import { FR } from '@/lib/friends-play';
 import { PageBackground } from '@/components/ui/page-background';
 import { PageHeadline } from '@/components/ui/page-headline';
 import { GuestPitch, GUEST_GRADIENTS } from '@/components/ui/guest-pitch';
+import { FriendsDeskPreview } from '@/components/ui/guest-desk-preview';
 import { PAGE_HOSTS } from '@/lib/mascots';
 
 const LIGHT_CARD_BASE = { ['--color-card-base' as string]: '#ffffff' } as React.CSSProperties;
@@ -31,7 +32,7 @@ export default function FriendsPage() {
       <AppHeader />
 
       {/* FINISH_SPEC AG: up to 1100 px on desktop web (FriendsPanel lays its cards in two columns). */}
-      <main className={`max-w-md mx-auto px-4 pt-2 w-full ${!loading && !user ? 'flex flex-1 flex-col' : 'page-wide space-y-3.5'}`}>
+      <main className={`max-w-md mx-auto px-4 pt-2 w-full ${!loading && !user ? 'flex flex-1 flex-col lg:max-w-[1180px]' : 'page-wide space-y-3.5'}`}>
         {!loading && !user ? (
           // FINISH_SPEC BI23: a finished signed-out state under the FRIENDS title art — O1 + I
           // as a duo, the headline, one line, the candy SIGN IN (no empty list, no add field).
@@ -44,6 +45,7 @@ export default function FriendsPage() {
               subtitle="Sign in to add friends, race them every day and play pocket games together."
               gradient={GUEST_GRADIENTS.friends}
               preview={{ kind: 'none' }}
+              deskPreview={<FriendsDeskPreview />}
               onSignIn={exitGuest}
               subColor={FR.label}
             />

@@ -48,6 +48,8 @@ import { candyClass, candyVars } from '@/components/ui/candy-button';
 import { HintCountBadge } from '@/components/ui/hint-kit';
 import { KINDRED_LABEL_SLOT_PX } from '@/lib/hint-layout';
 import { GameTray } from '@/components/ui/game-tray';
+import { PuzzlePlayDesk } from '@/components/puzzles/play-desk';
+import { useDesktopStage } from '@/hooks/use-desktop-stage';
 
 // Kindred (More Games §14): sixteen words, four groups of four, four mistakes.
 // Submit four → a group locks (bar with pips), three-of-a-kind reads "One
@@ -239,6 +241,7 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
   // fallback for very short screens — tiles at the 56 floor plus bars may overflow, the pinned
   // buttons never do. Until the first measurement the vw clamp stands in.
   const bandRef = useRef<HTMLDivElement>(null);
+  const desk = useDesktopStage(); // the wide desktop stage (founder 10-12): a bigger grid, the solved bars + controls in a right rail
   const [tileFit, setTileFit] = useState<{ h: number; w: number } | null>(null);
   const playing = !!state && state.status === 'playing';
   const tileCount = state?.tiles.length ?? 0;
@@ -268,7 +271,7 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
       const colGap = parseFloat(gcs.columnGap) || 0;
       const rows = Math.max(1, Math.ceil(tileCount / 4));
       const free = band.clientHeight - padY - others - gap * Math.max(0, count - 1) - chromeY - rowGap * (rows - 1);
-      const h = Math.round(Math.min(92, Math.max(56, free / rows)));
+      const h = Math.round(Math.min(desk ? 128 : 92, Math.max(56, free / rows)));
       const w = (inner.clientWidth - colGap * 3) / 4;
       setTileFit((prev) => (prev && prev.h === h && Math.abs(prev.w - w) < 0.5 ? prev : { h, w }));
     };
@@ -276,7 +279,7 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
     ro.observe(band);
     measure();
     return () => ro.disconnect();
-  }, [playing, tileCount, solvedCount, revealedCount]);
+  }, [playing, tileCount, solvedCount, revealedCount, desk]);
 
   // The bank entry behind this session (fresh or restored) names its holiday.
   const sessionPuzzle = useSessionPuzzle(BANK, state?.id, state?.seed);
@@ -292,8 +295,38 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
   const capsuleStyle = (_dim: boolean, filled = false) => (filled ? candyVars('amber') : undefined);
   const mistakesLabel = `${state.mistakes} mistake${state.mistakes === 1 ? '' : 's'}`;
 
+  const solvedBars = state.solved.length > 0 ? (
+    <div className={`w-full ${desk ? '' : 'max-w-md'} flex flex-col gap-1.5 shrink-0`}>
+      {state.solved.map((g) => <GroupBar key={g.tier} group={g} big={desk} />)}
+    </div>
+  ) : null;
+  const controlsBlock = (
+    <div className="shrink-0 pb-3 px-2 pt-1 flex flex-col gap-2">
+      <div className="flex justify-center gap-2 px-1 flex-wrap" role="group" aria-label="Kindred controls">
+        <button type="button" onClick={() => { haptic('light'); playKeyTap(); dispatch({ type: 'SHUFFLE' }); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Shuffle the words">
+          <FamIcon name="shuffle" /> Shuffle
+        </button>
+        <button type="button" onClick={() => { playKeyTap(); dispatch({ type: 'DESELECT' }); }} disabled={!state.selected.length} className={capsule(!state.selected.length)} style={capsuleStyle(!state.selected.length)} aria-label="Deselect all">
+          <FamIcon name="xmark" /> Deselect
+        </button>
+        <button type="button" onClick={() => { haptic('light'); submit(); }} disabled={state.selected.length !== 4} className={capsule(state.selected.length !== 4)} style={capsuleStyle(state.selected.length !== 4, true)} aria-label="Submit the four selected words">
+          <FamIcon name="check" /> Submit
+        </button>
+      </div>
+      <div className="flex justify-center gap-2 px-1" role="group" aria-label="Hints">
+        <button type="button" onClick={hintLabel} className={capsule(false)} style={capsuleStyle(false)} aria-label="Hint: name a category">
+          <FamIcon name="hint" /> Name a category
+        </button>
+        {/* The count is a corner coin, never in the label, so the row never shifts (lib/hint-layout.ts). */}
+        <button type="button" onClick={hintPair} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint: show a pair (${state.hintsUsed} hints used)` : 'Hint: show a pair'}>
+          <FamIcon name="sparkles" /> Show a pair<HintCountBadge count={state.hintsUsed} />
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <GameBackground mode="GROUPS" className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
+    <GameBackground mode="GROUPS" wide className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
       {showVictory && <VictoryAnimation mode="GROUPS" onComplete={() => setShowVictory(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.mistakes} guessLabel="Mistakes" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -331,55 +364,38 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : !finished ? (
-        <>
-          {/* In-play column order (founder, 2026-09-28): category chips → grid (scaled to the band) →
-              progress rail → solved bars (newest at the bottom) → pinned controls. Solved groups stack
-              UNDER the grid so the tiles never get pushed down as you solve; nothing is moved up and
-              no filler is added. Every direct child except the grid is subtracted by the band fit. */}
-          <div ref={bandRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center gap-2 px-3 pb-1 pt-1">
-            {/* The named-category slot is ALWAYS here at one fixed line (empty until "Name a
-                category"): appearing in the flow, the chips were subtracted by the band fit and the
-                tiles shrank on the hint. Several chips scroll sideways instead of wrapping. */}
-            <div className="w-full max-w-md shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ height: KINDRED_LABEL_SLOT_PX }} aria-live="polite">
-              <div className="flex w-max min-w-full justify-center gap-1.5">
-                {revealedLabels.map((g) => (
-                  <span key={g.tier} className="shrink-0 whitespace-nowrap text-[11px] leading-4 font-black px-2.5 py-1 rounded-full" style={{ background: TIER_STYLE[g.tier].bg, color: TIER_STYLE[g.tier].fg }}>
-                    <span className="text-[7px] tracking-[2px] mr-1.5" aria-hidden>{'●'.repeat(g.tier)}</span>{g.label}
-                  </span>
-                ))}
+        <PuzzlePlayDesk
+          main={
+            // In-play column order (founder, 2026-09-28): category chips → grid (scaled to the band) →
+            // progress rail → solved bars (newest at the bottom) → pinned controls. Solved groups stack
+            // UNDER the grid so the tiles never get pushed down as you solve; nothing is moved up and
+            // no filler is added. Every direct child except the grid is subtracted by the band fit.
+            // On the desktop stage the solved bars + the controls move to the right rail.
+            <div ref={bandRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center gap-2 px-3 pb-1 pt-1">
+              {/* The named-category slot is ALWAYS here at one fixed line (empty until "Name a
+                  category"): appearing in the flow, the chips were subtracted by the band fit and the
+                  tiles shrank on the hint. Several chips scroll sideways instead of wrapping. */}
+              <div className="w-full max-w-md shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ height: KINDRED_LABEL_SLOT_PX }} aria-live="polite">
+                <div className="flex w-max min-w-full justify-center gap-1.5">
+                  {revealedLabels.map((g) => (
+                    <span key={g.tier} className="shrink-0 whitespace-nowrap text-[11px] leading-4 font-black px-2.5 py-1 rounded-full" style={{ background: TIER_STYLE[g.tier].bg, color: TIER_STYLE[g.tier].fg }}>
+                      <span className="text-[7px] tracking-[2px] mr-1.5" aria-hidden>{'●'.repeat(g.tier)}</span>{g.label}
+                    </span>
+                  ))}
+                </div>
               </div>
+              <TileGrid state={state} onToggle={toggle} shaking={shaking} fit={tileFit} big={desk} />
+              <ProgressRail solvedTiers={state.solved.map((g) => g.tier)} total={GROUPS_TOTAL_BOARDS} mistakes={state.mistakes} maxMistakes={GROUPS_MAX_MISTAKES} />
+              {!desk && solvedBars}
             </div>
-            <TileGrid state={state} onToggle={toggle} shaking={shaking} fit={tileFit} />
-            <ProgressRail solvedTiers={state.solved.map((g) => g.tier)} total={GROUPS_TOTAL_BOARDS} mistakes={state.mistakes} maxMistakes={GROUPS_MAX_MISTAKES} />
-            {state.solved.length > 0 && (
-              <div className="w-full max-w-md flex flex-col gap-1.5 shrink-0">
-                {state.solved.map((g) => <GroupBar key={g.tier} group={g} />)}
-              </div>
-            )}
-          </div>
-          <div className="shrink-0 pb-3 px-2 pt-1 flex flex-col gap-2">
-            <div className="flex justify-center gap-2 px-1 flex-wrap" role="group" aria-label="Kindred controls">
-              <button type="button" onClick={() => { haptic('light'); playKeyTap(); dispatch({ type: 'SHUFFLE' }); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Shuffle the words">
-                <FamIcon name="shuffle" /> Shuffle
-              </button>
-              <button type="button" onClick={() => { playKeyTap(); dispatch({ type: 'DESELECT' }); }} disabled={!state.selected.length} className={capsule(!state.selected.length)} style={capsuleStyle(!state.selected.length)} aria-label="Deselect all">
-                <FamIcon name="xmark" /> Deselect
-              </button>
-              <button type="button" onClick={() => { haptic('light'); submit(); }} disabled={state.selected.length !== 4} className={capsule(state.selected.length !== 4)} style={capsuleStyle(state.selected.length !== 4, true)} aria-label="Submit the four selected words">
-                <FamIcon name="check" /> Submit
-              </button>
-            </div>
-            <div className="flex justify-center gap-2 px-1" role="group" aria-label="Hints">
-              <button type="button" onClick={hintLabel} className={capsule(false)} style={capsuleStyle(false)} aria-label="Hint: name a category">
-                <FamIcon name="hint" /> Name a category
-              </button>
-              {/* The count is a corner coin, never in the label, so the row never shifts (lib/hint-layout.ts). */}
-              <button type="button" onClick={hintPair} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint: show a pair (${state.hintsUsed} hints used)` : 'Hint: show a pair'}>
-                <FamIcon name="sparkles" /> Show a pair<HintCountBadge count={state.hintsUsed} />
-              </button>
-            </div>
-          </div>
-        </>
+          }
+          rail={
+            <>
+              {desk && solvedBars}
+              {controlsBlock}
+            </>
+          }
+        />
       ) : (
         // FINISH_SPEC R2: one screen — the result strip, the four groups on the
         // tray (purple wash when won, slate when lost; the missed ones revealed)
@@ -390,14 +406,14 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
               <ResultStrip won={won} guesses={state.mistakes} guessLabel={state.mistakes === 1 ? 'mistake' : 'mistakes'} time={formatTime(elapsedSeconds)} points={points}
                 srText={`${won ? (state.mistakes === 0 ? 'Flawless — all four groups' : 'All four groups found') : 'Out of mistakes'}. ${state.solved.length}/${GROUPS_TOTAL_BOARDS} groups · ${mistakesLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`} />
             }
-            board={
-              <div className="max-w-md mx-auto px-1 pb-1">
+            board={(box) => (
+              <div className={`${box ? 'w-full max-w-[640px]' : 'max-w-md'} mx-auto px-1 pb-1`}>
                 <GameTray accent={GROUPS_ACCENT} state={won ? 'won' : 'lost'} padding={8} className="flex flex-col items-center gap-1.5">
-                  {state.solved.map((g) => <GroupBar key={g.tier} group={g} />)}
-                  {unsolved.map((g) => <GroupBar key={g.tier} group={g} revealed />)}
+                  {state.solved.map((g) => <GroupBar key={g.tier} group={g} big={!!box} />)}
+                  {unsolved.map((g) => <GroupBar key={g.tier} group={g} revealed big={!!box} />)}
                 </GameTray>
               </div>
-            }
+            )}
             dock={
               <FinishedDock currentMode="GROUPS" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
                 onNewPuzzle={mode !== 'daily' ? startPractice : undefined}

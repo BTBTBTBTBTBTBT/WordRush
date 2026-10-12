@@ -40,7 +40,9 @@ export interface InfoPageHeaderProps {
   help?: { href: string; label: string } | false;
 }
 
-export function InfoPageHeader({ title, backHref, titleTag = 'h1', host, art, artLabel, help }: InfoPageHeaderProps) {
+/** InfoPageLayout's `cols` flag reaches the header so its box matches the wide card columns on desktop. */
+
+export function InfoPageHeader({ title, backHref, titleTag = 'h1', host, art, artLabel, help, cols = false }: InfoPageHeaderProps & { cols?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   // AY: the top-left button lands on the Home root — never history-back, which
@@ -53,7 +55,7 @@ export function InfoPageHeader({ title, backHref, titleTag = 'h1', host, art, ar
   const helpTarget = help === false ? null : help ?? infoHelpTarget(pathname);
   const TitleTag = titleTag;
   return (
-    <div className="max-w-2xl mx-auto px-4 pt-3">
+    <div className={`info-hdr${cols ? ' info-hdr-cols' : ''} max-w-2xl mx-auto px-4 pt-3`}>
       <div className="flex items-center justify-between" style={{ minHeight: 44 }}>
         {backHref
           ? <HeaderGlyph icon="back" href={backHref} label="Back" />

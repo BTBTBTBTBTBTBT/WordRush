@@ -143,7 +143,7 @@ export default function ProPage() {
     <PageBackground tint="home" className="min-h-screen pb-20">
       <AppHeader />
 
-      <div className="max-w-lg mx-auto px-4">
+      <div className="max-w-lg pro-page page-wide mx-auto px-4">
         {/* The whole-cast GO PRO title art (docs/ART_SPEC.md §2) in the shared page header. */}
         <PageHeader
           className="mb-4"
@@ -151,7 +151,7 @@ export default function ProPage() {
           art="art-titlecast-gopro"
           artLabel="Go Pro"
           sub={(
-            <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-sm font-bold lg:text-center" style={{ color: 'var(--color-text-muted)' }}>
               {ADS_SERVING ? 'Play unlimited & ad-free — every mode, any time' : 'Play unlimited — every mode, any time'}
             </p>
           )}
@@ -168,7 +168,7 @@ export default function ProPage() {
         </div>
 
         {isProActive ? (
-          <>
+          <div className="pro-desk">
           <div className="text-center" style={goldCard}>
             <PopupBar accent={GOLD} gradient={GOLD_BAR} />
             <div className="p-7">
@@ -200,9 +200,10 @@ export default function ProPage() {
               Each friend gets 7 days of Pro free, and you earn rewards when they join.
             </p>
           </GiftProCard>
-          </>
+          </div>
         ) : (
-          <>
+          <div className="pro-desk">
+            <div className="pro-desk-l">
             {/* BJ11: a former member — W waves them back, with the day their Pro ended. */}
             {lapsed && (
               <div className="mb-4 flex items-center gap-3 p-3.5" style={goldCard} role="status">
@@ -233,6 +234,9 @@ export default function ProPage() {
               </div>
             </div>
 
+            </div>
+
+            <div className="pro-desk-r">
             {/* Plans: tinted option cards (selected = stronger wash + gold ring) and ONE amber CTA. */}
             <div style={goldCard}>
               <PopupBar accent={GOLD} gradient={GOLD_BAR} />
@@ -342,16 +346,17 @@ export default function ProPage() {
                 <span aria-hidden="true" style={{ color: 'var(--color-text-muted)' }}> · </span>
                 <a href="/privacy" className="text-[#7c3aed] [[data-theme=dark]_&]:text-[#c4a5ff]">Privacy Policy</a>
               </p>
-              {/* T4 (docs/FINISH_SPEC.md): the gift area — O3 with the crowned gift box on the gold card. */}
-              <GiftProCard className="mt-5">
-                <p className="m-0 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                  Invited by a friend? Open their invite link to claim 7 free days. Once you&apos;re
-                  Pro you can gift 7 days to 3 friends from the{' '}
-                  <a href="/friends" style={{ color: '#7c3aed' }}>Friends tab</a>.
-                </p>
-              </GiftProCard>
             </div>
-          </>
+            </div>
+            {/* T4 (docs/FINISH_SPEC.md): the gift area — O3 with the crowned gift box on the gold card. */}
+            <GiftProCard className="mt-5 pro-desk-gift">
+              <p className="m-0 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                Invited by a friend? Open their invite link to claim 7 free days. Once you&apos;re
+                Pro you can gift 7 days to 3 friends from the{' '}
+                <a href="/friends" style={{ color: '#7c3aed' }}>Friends tab</a>.
+              </p>
+            </GiftProCard>
+          </div>
         )}
 
         {/* Static explainer — renders for every visitor (including signed-out
@@ -359,7 +364,7 @@ export default function ProPage() {
             just buttons. */}
         <section className="mt-8 overflow-hidden" style={{ ...goldCard, background: softBackground('#7c3aed', 0.08), border: softBorder('#7c3aed', 0.08) }}>
           <PopupBar accent="#7c3aed" gradient="linear-gradient(90deg, #a78bfa, #ec4899)" />
-          <div className="p-5 space-y-5">
+          <div className="p-5 space-y-5 pro-explain-body">
           <div>
             <h2 className="text-lg font-black mb-2" style={{ color: 'var(--color-text)' }}>
               What Pro actually changes

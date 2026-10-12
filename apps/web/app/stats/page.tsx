@@ -53,6 +53,7 @@ import { SectionHeader, KitCard, ChartCard, TintTile } from '@/components/profil
 import { STAT_LABELS } from '@/lib/stat-labels';
 import { PageHeadline } from '@/components/ui/page-headline';
 import { GuestPitch, GUEST_GRADIENTS, GUEST_STATS_CHIPS } from '@/components/ui/guest-pitch';
+import { StatsDeskPreview } from '@/components/ui/guest-desk-preview';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
 import { CastButton, CastLink } from '@/components/ui/cast-button';
 import { HeaderGlyph } from '@/components/ui/header-glyph';
@@ -423,7 +424,7 @@ export default function StatsPage() {
     return (
       <PageBackground tint="stats" className="min-h-screen flex flex-col pb-24">
         <AppHeader />
-        <main className="flex flex-1 flex-col max-w-md mx-auto w-full">
+        <main className="flex flex-1 flex-col max-w-md lg:max-w-[1180px] mx-auto w-full">
           {/* BJ16 quick win: the STATS page title above the pitch. */}
           <PageHeadline name="art-titlecast-stats" label="Stats" className="pt-1" />
           <GuestPitch
@@ -432,6 +433,7 @@ export default function StatsPage() {
             subtitle="Sign in to track your stats, streaks and every game's history."
             gradient={GUEST_GRADIENTS.stats}
             preview={{ kind: 'chips', chips: GUEST_STATS_CHIPS }}
+            deskPreview={<StatsDeskPreview />}
             onSignIn={exitGuest}
           />
         </main>

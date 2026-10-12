@@ -42,6 +42,9 @@ import { gameHeaderStyle } from '@/lib/art';
 import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { CandySegment } from '@/components/ui/candy-segment';
+import { PuzzlePlayDesk } from '@/components/puzzles/play-desk';
+import { useDeskBox } from '@/hooks/use-desk-box';
+import { deskSquare } from '@/lib/desktop-layout';
 
 // Sudocious, the daily sudoku (More Games §4): one fixed Medium puzzle a day, generated on the
 // device from the daily seed; Pro Unlimited picks Easy / Medium / Hard. Three
@@ -69,6 +72,9 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
   const restoredRef = useRef(false);
+  // Desktop wide stage: the playing board's room (left column) sizes the board up to DESK_SQUARE_MAX.
+  const boardAreaRef = useRef<HTMLDivElement>(null);
+  const deskBox = useDeskBox(boardAreaRef);
   const hasRecordedRef = useRef(false);
 
   // Daily with no local save for today's seed → ask daily_results whether it
@@ -300,12 +306,18 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
   );
 
   const board = (
-    <SudokuBoard state={state} selected={finished ? null : selected} onSelect={onSelectCell} revealSolution={state.status === 'lost'} />
+    <SudokuBoard state={state} selected={finished ? null : selected} onSelect={onSelectCell} revealSolution={state.status === 'lost'}
+      maxSize={deskSquare(deskBox)} />
+  );
+  // The finished board on the desktop panel: a square as big as the left column allows.
+  const finishedBoard = (box: { w: number; h: number } | null) => (
+    <SudokuBoard state={state} selected={null} onSelect={onSelectCell} revealSolution={state.status === 'lost'} maxSize={deskSquare(box)} />
   );
 
   return (
     <GameBackground
       mode="SUDOKU"
+      wide
       className="h-screen-stable flex flex-col relative"
       style={finished || completion ? FINISHED_SHELL_PAD : undefined}
     >
@@ -341,9 +353,9 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : !finished ? (
-        <>
-          {/* Pro Unlimited: pick the difficulty. Switching starts a fresh puzzle. */}
-          {mode !== 'daily' && isPro && (
+        <PuzzlePlayDesk
+          railTop={mode !== 'daily' && isPro && (
+            // Pro Unlimited: pick the difficulty. Switching starts a fresh puzzle.
             // Button family §4: a three-way choice is the candy segmented (frosted track + glossy thumb).
             <div className="shrink-0 flex justify-center px-4 pb-2">
               <CandySegment label="Difficulty" height={32} itemPad={14}
@@ -351,19 +363,21 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
                 value={state.difficulty} onChange={(d) => { if (d !== state.difficulty) startPractice(d); }} />
             </div>
           )}
-
-          <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center px-3 pb-1">
-            {board}
-          </div>
-
-          <div className="shrink-0 pb-2 px-2 pt-1">
-            <NumberPad
-              onDigit={place} onUndo={undo} onErase={erase} onToggleNotes={toggleNotes} onHint={hint}
-              notesMode={state.notesMode} canUndo={state.history.length > 0} hintsUsed={state.hintsUsed}
-              completeDigits={completeDigits}
-            />
-          </div>
-        </>
+          main={
+            <div ref={boardAreaRef} className="flex-1 min-h-0 overflow-hidden flex items-center justify-center px-3 pb-1">
+              {board}
+            </div>
+          }
+          rail={
+            <div className="shrink-0 pb-2 px-2 pt-1">
+              <NumberPad
+                onDigit={place} onUndo={undo} onErase={erase} onToggleNotes={toggleNotes} onHint={hint}
+                notesMode={state.notesMode} canUndo={state.history.length > 0} hintsUsed={state.hintsUsed}
+                completeDigits={completeDigits}
+              />
+            </div>
+          }
+        />
       ) : (
         // FINISH_SPEC R2: one screen — the result strip, the board scaled to the
         // room left (a lost board shows the solution in muted digits, so nobody
@@ -376,7 +390,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
                   ? `Sudocious solved. ${formatGuessStat('mistakes', 1, state.mistakes + 1)} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`
                   : `Out of mistakes. ${remaining} cell${remaining === 1 ? '' : 's'} left · ${formatTime(elapsedSeconds)}`} />
             }
-            board={board}
+            board={finishedBoard}
             dock={
               <FinishedDock currentMode="SUDOKU" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
                 onNewPuzzle={mode !== 'daily' ? () => startPractice(difficulty) : undefined}

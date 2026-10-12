@@ -48,6 +48,8 @@ import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass } from '@/components/ui/candy-button';
 import { HintCountBadge, StableLabel } from '@/components/ui/hint-kit';
+import { PuzzlePlayDesk } from '@/components/puzzles/play-desk';
+import { useDesktopStage } from '@/hooks/use-desktop-stage';
 
 // Codebreaker (More Games §16): decode a saying written in a substitution
 // cipher. Three letters are given. Letters are pencil — set, change and clear
@@ -60,6 +62,9 @@ import { HintCountBadge, StableLabel } from '@/components/ui/hint-kit';
 const BANK = bankSession<CryptogramBank, CryptogramPuzzle>('cryptogram', (b, d) => cryptogramPuzzleForDay(b, d, HOLIDAY_TABLE), cryptogramPuzzleForSeed);
 
 interface CryptogramGameProps { isDaily?: boolean }
+
+/** The smallest glyph (px) on the desktop stage: code letters under the cells and the frequency chips. */
+const DESK_MIN_FONT = 12;
 
 export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const { profile, isProActive } = useAuth();
@@ -284,6 +289,10 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   // lines it measured, so there is nothing to oscillate. Until the first measurement the floor
   // size with a flex wrap stands in.
   const bandRef = useRef<HTMLDivElement>(null);
+  // The wide desktop stage (founder 10-12): a bigger cipher, the frequencies, buttons and keyboard in a right rail,
+  // and no glyph under 12 px (the code letters under the cells were 6-9 px).
+  const desk = useDesktopStage();
+  const minFont = desk ? DESK_MIN_FONT : 0;
   const [fit, setFit] = useState<{ cell: number; width: number } | null>(null);
   const cipher = state?.cipher ?? null;
   const playing = !!state && state.status === 'playing';
@@ -300,16 +309,16 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
       const height = band.clientHeight - padY - CIPHER_TRAY_CHROME.y;
       if (width <= 0 || height <= 0) return;
       // The strip is pinned below the band (founder, 2026-09-26): the board alone must fit here.
-      setFit({ cell: fitCipherCell(cipher, width, height, chipCount, false), width });
+      setFit({ cell: fitCipherCell(cipher, width, height, chipCount, false, minFont), width });
     };
     const ro = new ResizeObserver(measure);
     ro.observe(band);
     measure();
     return () => ro.disconnect();
-  }, [cipher, playing]);
+  }, [cipher, playing, minFont]);
   const cell = fit?.cell ?? CIPHER_CELL_MIN;
   const boardWidth = fit?.width ?? null;
-  const chipFont = 12;
+  const chipFont = desk ? 14 : 12;
 
   // The bank entry behind this session (fresh or restored) names its holiday.
   const sessionPuzzle = useSessionPuzzle(BANK, state?.id, state?.seed);
@@ -335,15 +344,49 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const capsuleStyle = (_dim: boolean) => undefined;
   // FINISH_SPEC R2: the decoded board + the saying, drawn at the finished cell
   // (32) and scaled down by the finished screen's FitBox when the room is short.
-  const cipherFinishedBoard = (s: CryptogramState) => (
-    <div className="flex flex-col items-center gap-2 px-1 pb-1">
-      <CipherBoard state={s} selected={null} onSelect={() => {}} finished cell={32} />
-      <p className="text-center text-base font-extrabold max-w-md" style={{ color: 'var(--color-text)' }}>“{s.text}”</p>
+  const cipherFinishedBoard = (s: CryptogramState, box?: { w: number; h: number } | null) => {
+    // Desktop finished panel: the cells grow into the left column (never a glyph under 12 px).
+    const innerW = box ? Math.min(box.w - 48, 768) - CIPHER_TRAY_CHROME.x : 0;
+    const bigCell = box ? fitCipherCell(s.cipher, innerW, box.h - 120 - CIPHER_TRAY_CHROME.y, 0, false, DESK_MIN_FONT) : 32;
+    return (
+      <div className="flex flex-col items-center gap-2 px-1 pb-1">
+        <CipherBoard state={s} selected={null} onSelect={() => {}} finished cell={bigCell} width={box ? innerW : null} minFont={box ? DESK_MIN_FONT : 0} />
+        <p className={`text-center font-extrabold ${box ? 'text-xl max-w-xl' : 'text-base max-w-md'}`} style={{ color: 'var(--color-text)' }}>“{s.text}”</p>
+      </div>
+    );
+  };
+
+  const controlsRow = (
+    <div className="flex justify-center gap-2 px-1 flex-wrap" role="group" aria-label="Codebreaker controls">
+      <button type="button" onClick={() => { haptic('light'); clearLetter(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete the selected letter">
+        <FamIcon name="delete" /> Delete
+      </button>
+      {/* Labels never change width (lib/hint-layout.ts): counts are corner coins and the
+          countdown keeps its widest width — a wider label wrapped this row and shrank the board. */}
+      <button type="button" onClick={() => { haptic('light'); playKeyTap(); check(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.checks > 0 ? `Check the penciled letters (${state.checks} used)` : 'Check the penciled letters'}>
+        <FamIcon name="check" /> Check<HintCountBadge count={state.checks} />
+      </button>
+      <button type="button" onClick={() => { playKeyTap(); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint: reveal one letter (${state.hintsUsed} used)` : 'Hint: reveal one letter'}>
+        <FamIcon name="hint" /> Hint<HintCountBadge count={state.hintsUsed} />
+      </button>
+      {/* Counts down on the clock's own tick, not the board's (founder, 2026-09-29). */}
+      <PlayClock timer={timer}>{(sec) => { const revealIn = Math.max(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - sec); return (
+      <button type="button" onClick={() => { haptic('medium'); reveal(); }} disabled={revealIn > 0} className={capsule(revealIn > 0)} style={capsuleStyle(revealIn > 0)} aria-label={revealIn > 0 ? `Reveal available in ${formatTime(revealIn)}` : 'Reveal the answer (records a loss)'}>
+        <FamIcon name="eye" /> <StableLabel value={revealIn > 0 ? `Reveal · ${formatTime(revealIn)}` : 'Reveal'} reserve={[`Reveal · ${formatTime(CRYPTOGRAM_REVEAL_AFTER_SECONDS)}`]} />
+      </button>); }}</PlayClock>
+    </div>
+  );
+  const cipherBand = (
+    <div ref={bandRef} className="relative flex-1 min-h-0 overflow-y-auto flex flex-col px-2 pb-1 pt-2">
+      {/* The board alone, centered in the band; the cell shrinks (floor 26px) so it never has to scroll. */}
+      <div className="my-auto w-full max-w-3xl self-center flex flex-col items-center gap-3">
+        <CipherBoard state={state} selected={selected} onSelect={(c) => { setSelected(c); playKeyTap(); }} finished={false} cell={cell} width={boardWidth} minFont={minFont} />
+      </div>
     </div>
   );
 
   return (
-    <GameBackground mode="CRYPTOGRAM" className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
+    <GameBackground mode="CRYPTOGRAM" wide className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
       {showVictory && <VictoryAnimation mode="CRYPTOGRAM" onComplete={() => setShowVictory(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -376,39 +419,32 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : !finished ? (
+        desk ? (
+          <PuzzlePlayDesk
+            railWidth={400}
+            main={cipherBand}
+            rail={
+              <>
+                {/* The letter frequencies: tap a code letter to select it everywhere. */}
+                <div className="flex justify-center"><FrequencyStrip state={state} selected={selected} onSelect={(c) => setSelected(c)} chipFont={chipFont} /></div>
+                {controlsRow}
+                <Keyboard onKey={onKey} keyFills={usedKeyFills} />
+              </>
+            }
+          />
+        ) : (
         <>
-          <div ref={bandRef} className="relative flex-1 min-h-0 overflow-y-auto flex flex-col px-2 pb-1 pt-2">
-            {/* The board alone, centered in the band; the cell shrinks (floor 26px) so it never has to scroll. */}
-            <div className="my-auto w-full max-w-3xl self-center flex flex-col items-center gap-3">
-              <CipherBoard state={state} selected={selected} onSelect={(c) => { setSelected(c); playKeyTap(); }} finished={false} cell={cell} width={boardWidth} />
-            </div>
-          </div>
+          {cipherBand}
           {/* Pinned (founder, 2026-09-26): the letter frequencies always sit right above the buttons and keyboard. */}
           <div className="shrink-0 px-2 pt-1 flex justify-center">
             <div className="w-full max-w-3xl"><FrequencyStrip state={state} selected={selected} onSelect={(c) => setSelected(c)} chipFont={chipFont} /></div>
           </div>
           <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-2">
-            <div className="flex justify-center gap-2 px-1 flex-wrap" role="group" aria-label="Codebreaker controls">
-              <button type="button" onClick={() => { haptic('light'); clearLetter(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete the selected letter">
-                <FamIcon name="delete" /> Delete
-              </button>
-              {/* Labels never change width (lib/hint-layout.ts): counts are corner coins and the
-                  countdown keeps its widest width — a wider label wrapped this row and shrank the board. */}
-              <button type="button" onClick={() => { haptic('light'); playKeyTap(); check(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.checks > 0 ? `Check the penciled letters (${state.checks} used)` : 'Check the penciled letters'}>
-                <FamIcon name="check" /> Check<HintCountBadge count={state.checks} />
-              </button>
-              <button type="button" onClick={() => { playKeyTap(); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint: reveal one letter (${state.hintsUsed} used)` : 'Hint: reveal one letter'}>
-                <FamIcon name="hint" /> Hint<HintCountBadge count={state.hintsUsed} />
-              </button>
-              {/* Counts down on the clock's own tick, not the board's (founder, 2026-09-29). */}
-              <PlayClock timer={timer}>{(sec) => { const revealIn = Math.max(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - sec); return (
-              <button type="button" onClick={() => { haptic('medium'); reveal(); }} disabled={revealIn > 0} className={capsule(revealIn > 0)} style={capsuleStyle(revealIn > 0)} aria-label={revealIn > 0 ? `Reveal available in ${formatTime(revealIn)}` : 'Reveal the answer (records a loss)'}>
-                <FamIcon name="eye" /> <StableLabel value={revealIn > 0 ? `Reveal · ${formatTime(revealIn)}` : 'Reveal'} reserve={[`Reveal · ${formatTime(CRYPTOGRAM_REVEAL_AFTER_SECONDS)}`]} />
-              </button>); }}</PlayClock>
-            </div>
+            {controlsRow}
             <Keyboard onKey={onKey} keyFills={usedKeyFills} />
           </div>
         </>
+        )
       ) : (
         // FINISH_SPEC R2: one screen — the result strip, the decoded board and
         // the saying scaled to the room left, then the dock; the breakdown under More.
@@ -418,7 +454,7 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
               <ResultStrip won={won} guesses={state.checks} guessLabel={state.checks === 1 ? 'check' : 'checks'} time={formatTime(elapsedSeconds)} points={points}
                 srText={`${won ? (state.checks === 0 ? 'Code cracked clean' : 'Code cracked') : 'Answer revealed'}. ${checksLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`} />
             }
-            board={cipherFinishedBoard(state)}
+            board={(box) => cipherFinishedBoard(state, box)}
             dock={
               <FinishedDock currentMode="CRYPTOGRAM" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
                 onNewPuzzle={mode !== 'daily' ? startPractice : undefined}

@@ -30,6 +30,8 @@ interface CipherBoardProps {
    * (results view, first frame) it falls back to a flex wrap of whole words.
    */
   width?: number | null;
+  /** Desktop wide stage: the code letters never draw under this size (px). */
+  minFont?: number;
 }
 
 interface CodeMotion { kind: 'lock' | 'hint'; delay: number; seq: number }
@@ -46,9 +48,9 @@ interface CodeMotion { kind: 'lock' | 'hint'; delay: number; seq: number }
  * ring + a filled code chip). The cell side, the chip and every gap scale
  * together from `cell`.
  */
-export const CipherBoard = memo(function CipherBoard({ state, selected, onSelect, finished, cell = CIPHER_CELL_MIN, width = null }: CipherBoardProps) {
+export const CipherBoard = memo(function CipherBoard({ state, selected, onSelect, finished, cell = CIPHER_CELL_MIN, width = null, minFont = 0 }: CipherBoardProps) {
   const conflicts = new Set(cryptogramConflicts(state.mapping));
-  const m = cipherMetrics(cell);
+  const m = cipherMetrics(cell, minFont);
   const plainFont = Math.round(cell * 0.45);
 
   // Code letters that just locked (a Check) or were hinted, kept per code with a
@@ -153,7 +155,7 @@ export const CipherBoard = memo(function CipherBoard({ state, selected, onSelect
     );
   }
 
-  const lines = wrapCipherWords(state.cipher, cell, width);
+  const lines = wrapCipherWords(state.cipher, cell, width, minFont);
   return (
     <GameTray accent={CRYPTOGRAM_ACCENT} state={trayState} padding={CIPHER_TRAY_PAD} className="max-w-full">
       <div className="flex flex-col items-center select-none" role="group" aria-label="Coded saying" style={{ gap: m.rowGap }}>

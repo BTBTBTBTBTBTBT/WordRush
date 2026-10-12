@@ -121,3 +121,19 @@ describe('cipherStripHeight', () => {
     expect(cipherStripHeight(40, 64, 380)).toBeGreaterThan(one);
   });
 });
+
+// Desktop wide stage (founder 10-12): no glyph under 12 px — the code letters under the cells were 6-9 px.
+describe('cipherMetrics minFont', () => {
+  it('floors the code-letter and chip type, and leaves the phone sizes alone without it', () => {
+    expect(cipherMetrics(30).codeFont).toBe(10);
+    expect(cipherMetrics(30, 12).codeFont).toBe(12);
+    expect(cipherMetrics(30, 12).chipFont).toBe(12);
+    expect(cipherMetrics(64, 12).codeFont).toBe(14);
+    expect(cipherMetrics(30, 12).codeChip).toBe(12 + CIPHER_CODE_CHIP_PAD);
+  });
+  it('fits a cell that still holds the taller chips', () => {
+    const plain = fitCipherCell(CIPHER, 560, 300, CHIPS, false);
+    const floored = fitCipherCell(CIPHER, 560, 300, CHIPS, false, 12);
+    expect(floored).toBeLessThanOrEqual(plain);
+  });
+});

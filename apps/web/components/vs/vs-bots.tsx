@@ -25,6 +25,7 @@ import { fetchBestGhostRun, type GhostRun } from '@/lib/bot/ghost-service';
 import type { CpuKind } from '@/lib/adapters/bot-match-service';
 import { VS, loadVsMode, modeTitle, todayTileLine, utcDay } from '@/lib/vs-lobby';
 import { darken } from '@/lib/soft-surface';
+import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import {
   BotFigure, BotPoseAvatar, BotSpeech, CardBar, GhostAvatar, ModeChip, SectionLabel, SoftPill, TealButton, VS_ACCENT, VS_LIGHT_VARS,
@@ -71,6 +72,7 @@ export function VsBots() {
 
   return (
     <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24" style={VS_LIGHT_VARS}>
+      <AppHeader deskOnly />
       {/* BJ7: 12 between sections. */}
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3">
         <VsNav title="BOTS" heading="bots" host={PAGE_HOSTS.vs} onBack={() => router.push('/vs')} right={<ModeChip mode={isPro ? mode : 'DUEL'} />} />

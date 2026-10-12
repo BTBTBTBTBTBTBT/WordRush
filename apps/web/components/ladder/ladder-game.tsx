@@ -3,7 +3,7 @@
 import ladderWords from '@/data/ladder-words.json';
 import { keyDuringReject } from '@/lib/tile-motion';
 import { useRejectRow } from '@/hooks/use-reject-row';
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
@@ -22,6 +22,7 @@ import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
+import { PuzzlePlayDesk } from '@/components/puzzles/play-desk';
 import { LadderBoard, LadderPlayBoard, LadderSummary, LADDER_ACCENT } from './ladder-board';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
@@ -49,6 +50,7 @@ import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass } from '@/components/ui/candy-button';
 import { HintCountBadge } from '@/components/ui/hint-kit';
+import { useDeskFinished } from '@/components/ui/wide-stage';
 
 // Letter Ladder (More Games §15): change one letter at a time from START to
 // END. Rejected entries are free; every accepted word is a move; the budget
@@ -71,6 +73,11 @@ interface LadderGameProps {
 }
 
 /** Rungs are checked against the 5-letter list, which loads on demand (founder, 2026-09-29). */
+/** The full ladder under "See all steps" is phone-only: the desktop finished screen already shows every rung on the left. */
+function PhoneOnly({ children }: { children: ReactNode }) {
+  return useDeskFinished() ? null : <>{children}</>;
+}
+
 export function LadderGame(props: LadderGameProps) {
   return useDictionary([5]) ? <LadderGameInner {...props} /> : <GameLoading />;
 }
@@ -273,7 +280,7 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
   const capsuleStyle = (_dim: boolean) => undefined;
 
   return (
-    <GameBackground mode="LADDER" className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
+    <GameBackground mode="LADDER" wide className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
       {showVictory && <VictoryAnimation mode="LADDER" onComplete={() => setShowVictory(false)} guesses={state.moves} guessLabel="Moves" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.moves} guessLabel="Moves" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -306,23 +313,28 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : !finished ? (
-        <>
-          <div className="flex-1 min-h-0 flex flex-col px-3 pb-1 pt-1">
-            <LadderPlayBoard state={state} typing={typing} invalid={invalid} shaking={shaking} />
-          </div>
-          <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-2">
-            <div className="flex justify-center gap-2 px-1" role="group" aria-label="Ladder controls">
-              <button type="button" onClick={() => { haptic('light'); playKeyTap(); undo(); }} disabled={state.words.length <= 1} className={capsule(state.words.length <= 1)} style={capsuleStyle(state.words.length <= 1)} aria-label="Undo">
-                <FamIcon name="undo" /> Undo
-              </button>
-              {/* The count is a corner coin, never in the label, so the row never shifts (lib/hint-layout.ts). */}
-              <button type="button" onClick={() => { haptic('light'); playKeyTap(); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint (${state.hintsUsed} used)` : 'Hint'}>
-                <FamIcon name="hint" /> Hint<HintCountBadge count={state.hintsUsed} />
-              </button>
+        <PuzzlePlayDesk
+          railWidth={400}
+          main={
+            <div className="flex-1 min-h-0 flex flex-col px-3 pb-1 pt-1">
+              <LadderPlayBoard state={state} typing={typing} invalid={invalid} shaking={shaking} />
             </div>
-            <Keyboard onKey={onKey} />
-          </div>
-        </>
+          }
+          rail={
+            <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-2">
+              <div className="flex justify-center gap-2 px-1" role="group" aria-label="Ladder controls">
+                <button type="button" onClick={() => { haptic('light'); playKeyTap(); undo(); }} disabled={state.words.length <= 1} className={capsule(state.words.length <= 1)} style={capsuleStyle(state.words.length <= 1)} aria-label="Undo">
+                  <FamIcon name="undo" /> Undo
+                </button>
+                {/* The count is a corner coin, never in the label, so the row never shifts (lib/hint-layout.ts). */}
+                <button type="button" onClick={() => { haptic('light'); playKeyTap(); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint (${state.hintsUsed} used)` : 'Hint'}>
+                  <FamIcon name="hint" /> Hint<HintCountBadge count={state.hintsUsed} />
+                </button>
+              </div>
+              <Keyboard onKey={onKey} />
+            </div>
+          }
+        />
       ) : (
         // FINISH_SPEC R2: one screen — the result strip, the ladder collapsed
         // to a summary (START · +N steps · last rung; a loss names one shortest
@@ -336,7 +348,16 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
                   ? `${state.moves} move${state.moves === 1 ? '' : 's'} · Par ${state.par} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`
                   : `${state.moves} moves · Par ${state.par} · ${formatTime(elapsedSeconds)}`}`} />
             }
-            board={<div className="flex justify-center px-1 pb-1"><LadderSummary state={state} /></div>}
+            board={(box) => {
+              // Desktop: every rung on the left (the panel's "See all steps" then holds only the breakdown).
+              const rows = state.words.length + (state.words[state.words.length - 1] === state.end ? 0 : 1);
+              return (
+                <div className="flex justify-center px-1 pb-1">
+                  <LadderSummary state={state} expand={!!box}
+                    tile={box ? Math.max(30, Math.min(84, Math.floor(Math.min((box.w - 80) / 5.4, (box.h - 70) / (rows * 1.14 + 0.6))))) : undefined} />
+                </div>
+              );
+            }}
             dock={
               <FinishedDock currentMode="LADDER" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
                 onNewPuzzle={mode !== 'daily' ? startPractice : undefined}
@@ -345,7 +366,7 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
             more={
               <MoreDisclosure label="See all steps" accent={LADDER_ACCENT}>
                 <div className="flex flex-col items-center gap-3">
-                  <LadderBoard state={state} typing="" invalid={false} shaking={false} revealPath={!won} />
+                  <PhoneOnly><LadderBoard state={state} typing="" invalid={false} shaking={false} revealPath={!won} /></PhoneOnly>
                   <ScoreBreakdownCard gameMode="LADDER" completed={won} guessCount={gc} timeSeconds={elapsedSeconds}
                     boardsSolved={won ? 1 : 0} totalBoards={1} hintsUsed={state.hintsUsed} day={mode === 'daily' ? getTodayLocal() : undefined} />
                 </div>

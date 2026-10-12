@@ -1,5 +1,6 @@
 'use client';
 
+import { DESK_TILE_SINGLE, wideStageCap } from '@/lib/desktop-layout';
 import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { Guess, TileState } from './types';
 import { normalizeString } from './game-logic';
@@ -132,7 +133,7 @@ export default memo(function NoundleBoard({
         rows: maxGuesses,
         gap: TILE_GAP,
         side: 0,
-        maxTile: 56,
+        maxTile: wideStageCap(el, DESK_TILE_SINGLE, 56),
         extraWidth: (wordGroups.length - 1) * (WORD_GAP - TILE_GAP),
       });
       const rowsFit = fillRows({ tileWidth: Math.max(fit?.tile ?? 16, 16), height: availH, rows: maxGuesses, gap: TILE_GAP });

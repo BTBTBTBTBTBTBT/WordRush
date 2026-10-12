@@ -17,12 +17,17 @@ export { INFO_ACCENTS, INTRO_BAR, infoAccent } from '@/lib/info-page';
 // keeps its dark surfaces; the inks are the theme tokens. No hooks: server-safe.
 
 /** The page shell: wallpaper + controls row + headline + a body column of cards. */
-export function InfoPageLayout({ children, className = '', ...header }: InfoPageHeaderProps & { children: ReactNode; className?: string }) {
+export function InfoPageLayout({ children, className = '', cols = false, ...header }: InfoPageHeaderProps & {
+  children: ReactNode;
+  className?: string;
+  /** Desktop website (≥ 1024 px): the cards flow in two balanced columns across the wide box; `span` cards run across. Phones unchanged. */
+  cols?: boolean;
+}) {
   return (
     <PageBackground tint="home" className="min-h-screen pb-16">
-      <InfoPageHeader {...header} />
-      {/* BJ7: 8 between cards (was 12). */}
-      <div className={`info-page max-w-2xl mx-auto px-4 pt-2 pb-6 flex flex-col gap-2 ${className}`}>{children}</div>
+      <InfoPageHeader {...header} cols={cols} />
+      {/* BJ7: 8 between cards (was 12). Desktop: long text keeps a ~760 px measure (globals.css div.info-page). */}
+      <div className={`info-page max-w-2xl mx-auto px-4 pt-2 pb-6 flex flex-col gap-2 ${cols ? 'info-cols ' : ''}${className}`}>{children}</div>
     </PageBackground>
   );
 }
@@ -32,7 +37,7 @@ export function InfoPageLayout({ children, className = '', ...header }: InfoPage
  * border and shadow, overflow hidden so the bar follows the corners. `bar` is a
  * CSS background for the bar (defaults to the accent).
  */
-export function InfoCard({ accent = BRAND_ACCENT, bar, as: Tag = 'div', className = 'p-4', style, children, id }: {
+export function InfoCard({ accent = BRAND_ACCENT, bar, as: Tag = 'div', className = 'p-4', style, children, id, span = false }: {
   accent?: string;
   bar?: string;
   as?: 'div' | 'section' | 'article';
@@ -40,9 +45,11 @@ export function InfoCard({ accent = BRAND_ACCENT, bar, as: Tag = 'div', classNam
   style?: CSSProperties;
   children: ReactNode;
   id?: string;
+  /** On a `cols` page: run across both columns at the 760 px measure (long text). */
+  span?: boolean;
 }) {
   return (
-    <Tag id={id} style={{ ...softCard(accent), overflow: 'hidden', ...style }}>
+    <Tag id={id} className={span ? 'info-span' : undefined} style={{ ...softCard(accent), overflow: 'hidden', ...style }}>
       <div aria-hidden="true" style={bar ? { ...cardBarStyle(accent), background: bar } : cardBarStyle(accent)} />
       <div className={className}>{children}</div>
     </Tag>
@@ -50,14 +57,15 @@ export function InfoCard({ accent = BRAND_ACCENT, bar, as: Tag = 'div', classNam
 }
 
 /** The intro card: lavender wash, purple → pink top bar, a bold lead line and the page's sub. */
-export function IntroCard({ title, children, titleAs: TitleTag = 'p' }: {
+export function IntroCard({ title, children, titleAs: TitleTag = 'p', span = false }: {
   title?: ReactNode;
+  span?: boolean;
   children?: ReactNode;
   /** The lead line's element ('h1' on article pages whose headline art is a div). */
   titleAs?: 'p' | 'h1' | 'h2';
 }) {
   return (
-    <InfoCard bar={INTRO_BAR} className="p-4 flex flex-col gap-1.5">
+    <InfoCard bar={INTRO_BAR} className="p-4 flex flex-col gap-1.5" span={span}>
       {title != null && (
         <TitleTag className="m-0 font-black leading-snug" style={{ fontSize: 15, color: 'var(--color-text)' }}>{title}</TitleTag>
       )}
@@ -76,8 +84,9 @@ export function IntroText({ children, size = 13, className = '' }: { children: R
 }
 
 /** A section card (Privacy / Terms / How to Play / guide sections): a tinted card with its h2. */
-export function SectionCard({ heading, accent = BRAND_ACCENT, headingAs: H = 'h2', children, className = 'p-5', id }: {
+export function SectionCard({ heading, accent = BRAND_ACCENT, headingAs: H = 'h2', children, className = 'p-5', id, span = false }: {
   heading?: ReactNode;
+  span?: boolean;
   accent?: string;
   headingAs?: 'h2' | 'h3';
   children: ReactNode;
@@ -85,7 +94,7 @@ export function SectionCard({ heading, accent = BRAND_ACCENT, headingAs: H = 'h2
   id?: string;
 }) {
   return (
-    <InfoCard accent={accent} className={className} id={id}>
+    <InfoCard accent={accent} className={className} id={id} span={span}>
       {heading != null && (
         <H className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>{heading}</H>
       )}

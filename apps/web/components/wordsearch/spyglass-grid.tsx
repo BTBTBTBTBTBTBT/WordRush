@@ -27,6 +27,8 @@ interface SpyglassGridProps {
   disabled?: boolean;
   /** After a reveal: outline the words that were never found. */
   revealMissing?: boolean;
+  /** The grid's width cap in px (default 440; the desktop wide stage passes up to 640). */
+  maxSize?: number;
 }
 
 type CapsuleKind = 'found' | 'preview' | 'missing';
@@ -58,7 +60,7 @@ function Capsule({ n, a, b, kind }: { n: number; a: number; b: number; kind: Cap
   );
 }
 
-export const SpyglassGrid = memo(function SpyglassGrid({ state, onSelect, disabled = false, revealMissing = false }: SpyglassGridProps) {
+export const SpyglassGrid = memo(function SpyglassGrid({ state, onSelect, disabled = false, revealMissing = false, maxSize = 440 }: SpyglassGridProps) {
   const n = state.n;
   const [anchor, setAnchor] = useState<number | null>(null);
   const [hover, setHover] = useState<number | null>(null);
@@ -102,7 +104,7 @@ export const SpyglassGrid = memo(function SpyglassGrid({ state, onSelect, disabl
 
   const trayState = state.status === 'won' ? 'won' : state.status === 'lost' ? 'lost' : 'playing';
   return (
-    <div className="w-full mx-auto select-none" style={{ maxWidth: 440 }}>
+    <div className="w-full mx-auto select-none" style={{ maxWidth: maxSize }}>
       <GameTray accent={WORDSEARCH_ACCENT} state={trayState}>
         <div
           ref={gridRef}
@@ -133,7 +135,7 @@ export const SpyglassGrid = memo(function SpyglassGrid({ state, onSelect, disabl
                 style={{
                   color: found ? '#ffffff' : SOFT_INK.num,
                   textShadow: found ? FOUND_SHADOW : undefined,
-                  fontSize: 'clamp(13px, 4vw, 20px)',
+                  fontSize: maxSize > 440 ? Math.round(maxSize / n * 0.44) : 'clamp(13px, 4vw, 20px)',
                   background: isAnchor ? alphaHex(WORDSEARCH_ACCENT, 0.28) : undefined,
                   boxShadow: isAnchor
                     ? `inset 0 0 0 2px ${alphaHex(WORDSEARCH_ACCENT, 0.6)}`

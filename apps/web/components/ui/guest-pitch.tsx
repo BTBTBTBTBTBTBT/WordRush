@@ -38,7 +38,8 @@ function glossStyle(accent: string, radius: number): React.CSSProperties {
   };
 }
 
-function Chip({ c }: { c: GuestChip }) {
+/** One sample stat tile (also the desktop preview's chips). */
+export function GuestChipTile({ c }: { c: GuestChip }) {
   return (
     <div className="flex flex-col items-center justify-center gap-0.5" style={{ width: 92, height: 88, ...glossStyle(c.accent, 16) }}>
       <Icon3D name={c.icon} size={24} />
@@ -66,7 +67,7 @@ function Podium() {
   );
 }
 
-export function GuestPitch({ hosts, title, heading, showTitle = true, subtitle, gradient, preview, onSignIn, subColor = 'var(--color-text-secondary)', className = '' }: {
+export function GuestPitch({ hosts, title, heading, showTitle = true, subtitle, gradient, preview, deskPreview, onSignIn, subColor = 'var(--color-text-secondary)', className = '' }: {
   hosts: MascotId[];
   title: string;
   /** False when the page's own title art already names it (the VS guest gate): no heading here. */
@@ -76,6 +77,8 @@ export function GuestPitch({ hosts, title, heading, showTitle = true, subtitle, 
   subtitle: string;
   gradient: string;
   preview: GuestPreview;
+  /** Desktop website (≥ 1024 px): a faded preview of the panels in a second column beside the pitch (the phone chips hide then). */
+  deskPreview?: React.ReactNode;
   onSignIn: () => void;
   subColor?: string;
   className?: string;
@@ -85,7 +88,9 @@ export function GuestPitch({ hosts, title, heading, showTitle = true, subtitle, 
   // offer what they have; SIGN IN stays (iOS + Android parity).
   const { isGuest } = useAuth();
   return (
-    <section className={`flex flex-1 flex-col items-center justify-center text-center px-5 py-6 ${className}`}>
+    <section className={`flex flex-1 flex-col items-center justify-center text-center px-5 py-6 ${deskPreview ? 'lg:grid lg:grid-cols-2 lg:items-center lg:gap-16 lg:w-full lg:max-w-[1100px] lg:mx-auto' : ''} ${className}`}>
+      {/* Phones: the wrapper lays out nothing (display: contents), so the pitch stacks exactly as before. */}
+      <div className={deskPreview ? 'contents lg:flex lg:flex-col lg:items-center' : 'contents'}>
       <div className="flex justify-center" style={{ gap: 0 }}>
         {hosts.map((h, i) => (
           <Mascot key={h} id={h} size={duo ? 104 : 120} motion="pop" priority style={i > 0 ? { marginLeft: -18 } : undefined} />
@@ -105,9 +110,9 @@ export function GuestPitch({ hosts, title, heading, showTitle = true, subtitle, 
       )}
       <p className="mt-1.5 text-[15px] font-semibold max-w-xs" style={{ color: subColor }}>{subtitle}</p>
       {preview.kind !== 'none' && (
-        <div className="mt-5 opacity-[0.72]" aria-hidden="true">
+        <div className={`mt-5 opacity-[0.72] ${deskPreview ? 'lg:hidden' : ''}`} aria-hidden="true">
           {preview.kind === 'chips' ? (
-            <div className="flex gap-2.5">{preview.chips.map((c) => <Chip key={c.label} c={c} />)}</div>
+            <div className="flex gap-2.5">{preview.chips.map((c) => <GuestChipTile key={c.label} c={c} />)}</div>
           ) : (
             <Podium />
           )}
@@ -119,6 +124,8 @@ export function GuestPitch({ hosts, title, heading, showTitle = true, subtitle, 
           Play without an account
         </Link>
       )}
+      </div>
+      {deskPreview && <div className="hidden lg:block min-w-0">{deskPreview}</div>}
     </section>
   );
 }

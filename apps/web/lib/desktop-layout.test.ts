@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
 import {
-  DESKTOP_3COL_MIN, DESKTOP_MAX, GAME_WIDE_DONE, GAME_WIDE_PLAY, wideStageCap, DESKTOP_MIN, DESKTOP_XL_MIN, WIDE_MIN,
+  DESKTOP_3COL_MIN, DESKTOP_MAX, DESK_SQUARE_MAX, GAME_WIDE_DONE, GAME_WIDE_PLAY, deskSquare, wideStageCap, DESKTOP_MIN, DESKTOP_XL_MIN, WIDE_MIN,
   homeCardColumns, layoutTier, minWidthQuery, showsBottomTabs, tabPageColumns,
 } from './desktop-layout';
 
@@ -47,8 +47,9 @@ describe('layout tiers', () => {
     }
     expect(tabPageColumns('leaderboard', 1100)).toBe(2);
     expect(tabPageColumns('friends', DESKTOP_3COL_MIN - 1)).toBe(2);
-    expect(tabPageColumns('leaderboard', DESKTOP_3COL_MIN)).toBe(3);
-    expect(tabPageColumns('leaderboard', 1280)).toBe(3);
+    // Leaderboard (founder 10-12): the 560 px stage | ranks + yesterday, two columns at every desktop width.
+    expect(tabPageColumns('leaderboard', DESKTOP_3COL_MIN)).toBe(2);
+    expect(tabPageColumns('leaderboard', 1280)).toBe(2);
     expect(tabPageColumns('friends', 1280)).toBe(3);
     expect(tabPageColumns('stats', 1280)).toBe(2);
     expect(tabPageColumns('home', 1280)).toBe(2);
@@ -100,9 +101,12 @@ describe('desktop block (globals.css)', () => {
   it('lays Home, Leaderboard, Friends and Stats out as approved', () => {
     expect(block).toMatch(/\.home-cards\.grid \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
     expect(block).toMatch(/\.home-cards\.grid \{ grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
-    expect(block).toMatch(/@media \(min-width: 1200px\) \{\s*\/\*[^*]*\*\/\s*\.lb-desk \{/);
-    expect(block).toMatch(/\.lb-desk \{[^}]*grid-template-columns: minmax\(300px, 360px\) minmax\(0, 1fr\) minmax\(0, 1fr\)/);
-    expect(block).toMatch(/\.lb-desk > \.page-grid-2 \{ display: contents; \}/);
+    // The 560 px stage + the rest, beating the phone's max-w-lg cap (.page-wide on the same element).
+    expect(block).toMatch(/\.lb-desk\.page-wide \{[^}]*max-width: var\(--page-wide\);[^}]*grid-template-columns: minmax\(0, 560px\) minmax\(0, 1fr\)/);
+    expect(block).toMatch(/\.lb-desk > \.page-grid-2 \{ display: block; \}/);
+    expect(block).toMatch(/\.rec-desk\.page-wide \{[^}]*grid-template-columns: minmax\(0, 480px\) minmax\(0, 1fr\)/);
+    expect(block).toMatch(/\.pro-desk \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+    expect(block).toMatch(/div\.info-page, div\.info-hdr \{ max-width: 760px; \}/);
     expect(block).toMatch(/\.fr-desk \{[^}]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
     expect(block).toMatch(/\.fr-desk > \.page-grid-2 \{ display: contents; \}/);
     expect(block).toMatch(/\.page-grid-2\.stats-desk \{[^}]*minmax\(320px, 380px\)/);
@@ -157,6 +161,52 @@ describe('wide game stage (call sites)', () => {
   });
 });
 
+describe('wide game stage: the puzzle games', () => {
+  const PUZZLES = [
+    'components/sudoku/sudoku-game.tsx', 'components/scramble/muddle-game.tsx', 'components/propernoundle/propernoundle-game.tsx',
+    'components/regions/regions-game.tsx', 'components/ladder/ladder-game.tsx', 'components/hub/hub-game.tsx',
+    'components/wordsearch/spyglass-game.tsx', 'components/groups/groups-game.tsx', 'components/crossword/crossword-game.tsx',
+    'components/cryptogram/cryptogram-game.tsx',
+  ];
+
+  it('opts every puzzle game in', () => {
+    for (const f of PUZZLES) expect(read(f), f).toMatch(/<GameBackground\s+mode=[^\n]*\bwide\b|<GameBackground\s+mode=[^\n]+\n\s+wide\n/);
+  });
+
+  it('lays the puzzles\' finished screen out in two columns through the shared kit, extras open', () => {
+    const pf = read('components/puzzles/finished-screen.tsx');
+    expect(pf).toContain('<FinishedDeskLayout');
+    expect(pf).toMatch(/useDeskFinished\(\)/);
+    expect(read('components/game/finished-kit.tsx')).toMatch(/const desk = useDeskFinished\(\);\s+if \(desk\) return <section className="fin-desk-more"/);
+  });
+
+  it('puts the playing board in the left column and the controls in a right rail (PuzzlePlayDesk), desktop only', () => {
+    const pd = read('components/puzzles/play-desk.tsx');
+    expect(pd).toContain('pz-play contents');
+    expect(pd).toContain('pz-rail contents');
+    for (const f of ['sudoku', 'scramble', 'regions', 'ladder', 'hub', 'wordsearch', 'groups', 'crossword', 'cryptogram']) {
+      const dir = `components/${f}`;
+      const game = PUZZLES.find((x) => x.startsWith(dir))!;
+      expect(read(game), game).toContain('<PuzzlePlayDesk');
+    }
+    expect(block).toMatch(/\.page-col\.game-wide \.pz-play \{[^}]*grid-template-columns: minmax\(0, 1fr\) var\(--pz-rail, 340px\)/);
+    expect(block).toMatch(/\.page-col\.game-wide \.pz-main \{[^}]*grid-column: 1/);
+    expect(block).toMatch(/\.page-col\.game-wide \.pz-rail \{[^}]*grid-column: 2/);
+    const head = block.slice(0, block.indexOf('@media')).replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(head).not.toMatch(/pz-/);
+  });
+
+  it('sizes a square puzzle board to its room on the wide stage, capped, and not at all without one', () => {
+    expect(DESK_SQUARE_MAX).toBe(640);
+    expect(deskSquare(null)).toBeUndefined();
+    expect(deskSquare({ w: 0, h: 0 })).toBeUndefined();
+    expect(deskSquare({ w: 900, h: 700 })).toBe(640);
+    expect(deskSquare({ w: 600, h: 700 })).toBe(584);
+    expect(deskSquare({ w: 900, h: 400 })).toBe(384);
+    expect(deskSquare({ w: 100, h: 100 })).toBe(120);
+  });
+});
+
 describe('desktop call sites', () => {
   it('puts the candy pill tabs in the shared header', () => {
     const hdr = read('components/ui/app-header.tsx');
@@ -188,7 +238,10 @@ describe('desktop call sites', () => {
     for (const c of ['hb-body', 'hb-left', 'hb-right', 'dk-only hb-next']) expect(banner).toContain(`className="${c}`);
     expect(home).toMatch(/className="home-cards grid grid-cols-2/);
     expect(home).toMatch(/className="home-games page-grid-2/);
-    expect(read('app/daily/page.tsx')).toMatch(/className="lb-desk /);
+    expect(read('app/daily/page.tsx')).toMatch(/className="lb-desk max-w-lg page-wide /);
+    expect(read('app/records/page.tsx')).toMatch(/className="max-w-lg rec-desk page-wide /);
+    expect(read('app/pro/page.tsx')).toMatch(/className="max-w-lg pro-page page-wide /);
+    for (const f of ['about', 'faq', 'guides', 'support', 'words']) expect(read(`app/${f}/page.tsx`), f).toMatch(/<InfoPageLayout [^>]* cols>/);
     expect(read('app/stats/page.tsx')).toMatch(/className="page-grid-2 stats-desk /);
     expect(read('components/friends/friends-panel.tsx')).toMatch(/className="fr-desk /);
   });

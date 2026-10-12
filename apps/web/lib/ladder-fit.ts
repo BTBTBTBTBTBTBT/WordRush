@@ -28,7 +28,7 @@ export function ladderFit(availW: number, availH: number, rungs: number, showEnd
   const chrome = trayChrome();
   const rows = rungs + 1 + (showEnd ? 1 : 0);
   const byW = (availW - 2 * chrome.x - ROW_GAP * 4) / 5;
-  const cap = Math.max(LADDER_TILE.min, Math.min(maxTile, LADDER_TILE.max, byW));
+  const cap = Math.max(LADDER_TILE.min, Math.min(maxTile, byW));
   for (const [gap, floor] of [[6, 36], [4, LADDER_TILE.min]] as const) {
     const fixed = chrome.top + chrome.bottom + (showEnd ? labelLine + gap : 0);
     const t = Math.min(cap, (availH - fixed - gap * (rows - 1)) / rows);

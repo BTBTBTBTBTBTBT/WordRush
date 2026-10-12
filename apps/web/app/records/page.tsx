@@ -989,11 +989,12 @@ export default function RecordsPage() {
     <PageBackground tint="leaderboard" className="min-h-screen pb-20">
       <AppHeader />
 
-      <div className="max-w-lg mx-auto px-4">
+      {/* Desktop website (≥ 1024 px): the picker on the left, the board / records on the right (globals.css .rec-desk). */}
+      <div className="max-w-lg rec-desk page-wide mx-auto px-4">
         {/* A6 + C2: the ALL-TIME RECORDS headline, then the one game picker
             card (sub line + DAILY | ALL-TIME switch on top, the WORDOCIOUS row
             with the Sweep broom tile, then PUZZLES). */}
-        <div className="mb-4">
+        <div className="mb-4 rec-desk-pick">
           <RecordsBanner
             tab={activeTab}
             onTab={setActiveTab}
@@ -1012,7 +1013,7 @@ export default function RecordsPage() {
         )}
 
         {/* A8: the two way-outs as quiet candy pills. */}
-        <div className="flex flex-col items-center gap-2 mt-6">
+        <div className="rec-desk-links flex flex-col items-center gap-2 mt-6">
           <CandyLink href="/daily" size="sm" color="peach">
             Today&apos;s boards → Leaderboard
           </CandyLink>

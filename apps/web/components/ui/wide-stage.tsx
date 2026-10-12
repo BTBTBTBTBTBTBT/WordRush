@@ -23,3 +23,8 @@ export function useDeskFinished(): boolean {
   const desk = useDesktopStage();
   return wide && desk;
 }
+
+/** The wide desktop stage while PLAYING (same test as useDeskFinished): a big board with the controls in a right rail. */
+export function useDeskWide(): boolean {
+  return useDeskFinished();
+}

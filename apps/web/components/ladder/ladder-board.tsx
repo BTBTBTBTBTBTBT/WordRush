@@ -8,6 +8,10 @@ import { darken, softMix } from '@/lib/soft-surface';
 import { GameTray } from '@/components/ui/game-tray';
 import { trayStateFor } from '@/lib/tray-fit';
 import { ladderFit } from '@/lib/ladder-fit';
+import { wideStageCap } from '@/lib/desktop-layout';
+
+/** Biggest rung tile on the wide desktop stage (px); a phone keeps clamp(34, 7.5vmin, 52). */
+const DESK_RUNG_TILE = 84;
 
 // The ladder (More Games §15): Classic tiles, one row per rung. START is a
 // filled purple row, each accepted rung is a light row with the CHANGED letter
@@ -145,14 +149,14 @@ export function LadderPlayBoard({ state, typing, invalid, shaking }: Omit<Ladder
   }, []);
   const showEnd = state.words[state.words.length - 1] !== state.end;
   const vmin = typeof window === 'undefined' ? 800 : Math.min(window.innerWidth, window.innerHeight);
-  const fit = box ? ladderFit(box.w, box.h, state.words.length, showEnd, 14, Math.min(52, Math.max(34, vmin * 0.075))) : null;
+  const fit = box ? ladderFit(box.w, box.h, state.words.length, showEnd, 14, wideStageCap(slotRef.current, DESK_RUNG_TILE, Math.min(52, Math.max(34, vmin * 0.075)))) : null;
   useEffect(() => {
     const r = rungsRef.current;
     if (r) r.scrollTop = r.scrollHeight;
   }, [state.words.length, fit?.scrolls]);
   const gap = fit?.gap ?? 6;
   return (
-    <div ref={slotRef} className="flex-1 min-h-0 w-full flex justify-center items-start">
+    <div ref={slotRef} className="ladder-slot flex-1 min-h-0 w-full flex justify-center items-start">
       {fit && (
         <GameTray accent={LADDER_ACCENT} state={trayStateFor(state.status)} role="grid" aria-label="Letter Ladder"
           className="w-fit max-w-full min-h-0 flex flex-col items-center"
@@ -187,32 +191,36 @@ export const LADDER_SUMMARY_AFTER = 4;
  * route on a single line, so nobody leaves without the answer. The full
  * ladder (LadderBoard) sits under the finished screen's "See all steps".
  */
-export function LadderSummary({ state }: { state: LadderState }) {
+export function LadderSummary({ state, tile, expand = false }: {
+  state: LadderState;
+  /** Desktop finished panel: a bigger rung tile (px). */ tile?: number;
+  /** Desktop finished panel: every rung, never collapsed (the left column has the room; the panel then skips the full ladder). */ expand?: boolean;
+}) {
   const words = state.words;
   const last = words.length - 1;
   const reached = words[last] === state.end;
   const lost = state.status === 'lost';
-  const collapse = words.length > LADDER_SUMMARY_AFTER;
+  const collapse = !expand && words.length > LADDER_SUMMARY_AFTER;
   const hidden = collapse ? words.length - 2 : 0;
   const kindAt = (i: number): RowKind => (i === 0 ? 'start' : state.hintMask[i] === '1' ? 'hint' : 'rung');
   return (
-    <div className="flex flex-col gap-1.5 items-center w-full" role="grid" aria-label={`Letter Ladder, ${last} step${last === 1 ? '' : 's'}`} style={{ ['--gt-font' as string]: 'calc(clamp(34px, 7.5vmin, 52px) * 0.55)' } as React.CSSProperties}>
+    <div className="flex flex-col gap-1.5 items-center w-full" role="grid" aria-label={`Letter Ladder, ${last} step${last === 1 ? '' : 's'}`} style={{ ['--gt-font' as string]: tile ? `${tile * 0.55}px` : 'calc(clamp(34px, 7.5vmin, 52px) * 0.55)' } as React.CSSProperties}>
       <GameTray accent={LADDER_ACCENT} state={trayStateFor(state.status)} className="w-fit max-w-full flex flex-col gap-1.5 items-center">
         {collapse ? (
           <>
-            <LadderRow word={words[0]} kind="start" />
+            <LadderRow word={words[0]} kind="start" tile={tile} />
             <div className="text-[11px] font-black tracking-wider px-2.5 py-0.5 rounded-full" style={{ color: LADDER_ACCENT, background: `${LADDER_ACCENT}1a` }}>
               + {hidden} step{hidden === 1 ? '' : 's'}
             </div>
-            <LadderRow word={words[last]} prev={words[last - 1]} kind={kindAt(last)} />
+            <LadderRow word={words[last]} prev={words[last - 1]} kind={kindAt(last)} tile={tile} />
           </>
         ) : (
-          words.map((w, i) => <LadderRow key={`${i}-${w}`} word={w} prev={i > 0 ? words[i - 1] : undefined} kind={kindAt(i)} />)
+          words.map((w, i) => <LadderRow key={`${i}-${w}`} word={w} prev={i > 0 ? words[i - 1] : undefined} kind={kindAt(i)} tile={tile} />)
         )}
         {!reached && (
           <>
             <div className="text-[10px] font-black tracking-wider" style={{ color: LADDER_REACH }}>↓ TARGET</div>
-            <LadderRow word={state.end} kind="end" />
+            <LadderRow word={state.end} kind="end" tile={tile} />
           </>
         )}
       </GameTray>

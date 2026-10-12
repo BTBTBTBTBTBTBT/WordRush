@@ -5,6 +5,7 @@ import { haptic } from '@/lib/haptics';
 import { playKeyTap } from '@/lib/sounds';
 import { candyClass } from '@/components/ui/candy-button';
 import { HintCountBadge } from '@/components/ui/hint-kit';
+import { useDeskWide } from '@/components/ui/wide-stage';
 
 // The Starsweep action row (§18b, §19): ProperNoundle-style capsules —
 // Undo · Erase · Auto-cross · Hint — EACH with its icon. Auto-cross is a
@@ -26,11 +27,13 @@ export function RegionsPad({ onUndo, onErase, onToggleAutoCross, onHint, autoCro
   const tap = (fn: () => void) => () => { if (disabled) return; haptic('light'); playKeyTap(); fn(); };
   // FINISH_SPEC A8 / H: every action is a small glossy candy pill (components/ui/candy-button.tsx)
   // with its icon in the candy white-with-outline treatment; Auto-cross turns amber while on.
-  const capsule = (active: boolean, dim: boolean) => candyClass({ dim, color: active ? 'amber' : 'purple', extra: active ? 'candy-on' : '' });
+  // Desktop wide stage (founder 10-12): the four actions sit in the right rail as a 2 x 2 grid of full-width pills.
+  const desk = useDeskWide();
+  const capsule = (active: boolean, dim: boolean) => candyClass({ dim, color: active ? 'amber' : 'purple', extra: `${active ? 'candy-on' : ''} ${desk ? '!flex w-full justify-center' : ''}`.trim() });
   const icon = 'w-3.5 h-3.5';
 
   return (
-    <div className="flex flex-wrap justify-center gap-x-2 gap-y-1 px-1 max-w-xl mx-auto w-full" role="group" aria-label="Starsweep controls">
+    <div className={desk ? 'grid grid-cols-2 gap-2 px-1 w-full' : 'flex flex-wrap justify-center gap-x-2 gap-y-1 px-1 max-w-xl mx-auto w-full'} role="group" aria-label="Starsweep controls">
       <button type="button" onClick={tap(onUndo)} disabled={disabled || !canUndo} className={capsule(false, disabled || !canUndo)} aria-label="Undo">
         <FamIcon name="undo" /><span className="candy-label">Undo</span>
       </button>

@@ -88,7 +88,7 @@ export function GameHelpCard({ slug, accent, onClose, firstPlay = false }: Props
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative max-w-sm w-full soft-pop"
+        className="relative max-w-sm lg:max-w-[680px] w-full soft-pop"
         style={{ marginTop: 64 }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -135,11 +135,11 @@ export function GameHelpCard({ slug, accent, onClose, firstPlay = false }: Props
               How to play
             </p>
 
-            <ol className="mt-3 space-y-2">
+            <ol className="mt-3 space-y-2 lg:space-y-0 lg:grid lg:grid-flow-col lg:auto-cols-fr lg:gap-2.5">
               {help.steps.map((step, i) => {
                 const replay = replays[i] ?? 0;
                 return (
-                  <li key={i} className="flex gap-3 px-3 py-2.5" style={tray}>
+                  <li key={i} className="flex gap-3 lg:flex-col lg:gap-2 px-3 lg:px-2.5 py-2.5" style={tray}>
                     <span
                       aria-hidden="true"
                       className="flex-none inline-flex items-center justify-center rounded-full text-[13px] font-black text-white"
@@ -150,7 +150,7 @@ export function GameHelpCard({ slug, accent, onClose, firstPlay = false }: Props
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-bold leading-snug" style={{ color: 'var(--color-text)' }}>{step.text}</p>
                       <div
-                        className="mt-2"
+                        className="mt-2 lg:[zoom:0.86]"
                         onClick={still ? undefined : () => setReplays((r) => { const next = [...r]; next[i] = (next[i] ?? 0) + 1; return next; })}
                       >
                         <HelpExample

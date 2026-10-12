@@ -47,8 +47,8 @@ export default async function WordsArchivePage() {
   }
 
   return (
-    <InfoPageLayout title="Word of the Day" art="art-titlecast-words" artLabel="Word of the Day Archive">
-      <div className="flex flex-col gap-2 px-1">
+    <InfoPageLayout title="Word of the Day" art="art-titlecast-words" artLabel="Word of the Day Archive" cols>
+      <div className="flex flex-col gap-2 px-1 info-span">
         <IntroText>
           Every day Wordocious surfaces a Word of the Day — a hand-curated five-letter word from the same answer bank the
           daily puzzles draw on. Each entry links to a full breakdown: pronunciation and meaning, synonyms and opposites,
@@ -68,9 +68,9 @@ export default async function WordsArchivePage() {
       {months.map(({ label, rows: monthRows }, mi) => {
         const accent = ROW_ACCENTS[mi % ROW_ACCENTS.length];
         return (
-          <section key={label} className="flex flex-col gap-1.5 mt-2">
+          <section key={label} className="flex flex-col gap-1.5 mt-2 info-full">
             <h2 className="m-0 px-1 font-black uppercase" style={{ fontSize: 11, letterSpacing: '1.2px', color: 'var(--color-text)' }}>{label}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 info-grid3 gap-1.5">
               {monthRows.map(({ key, date, entry }) => (
                 <Link
                   key={key}
@@ -97,7 +97,7 @@ export default async function WordsArchivePage() {
         );
       })}
 
-      <p className="m-0 mt-4 px-1 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+      <p className="m-0 mt-4 px-1 text-[11px] info-span" style={{ color: 'var(--color-text-secondary)' }}>
         Definitions adapted from Wiktionary via the Free Dictionary API (CC BY-SA). Analysis on each word page is original
         Wordocious research.
       </p>

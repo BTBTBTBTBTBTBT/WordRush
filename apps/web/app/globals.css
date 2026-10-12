@@ -2613,7 +2613,80 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
   .fin-desk-side > :last-child { margin-bottom: auto; }
   /* The chips + rank pill read bigger beside the big boards. */
   .fin-desk-top { zoom: 1.2; }
+  /* The panel is its own column there, so the centering twin of the W / L badge only costs width. */
+  .fin-desk-top .rs-twin { display: none; }
   .fin-desk-side > * { max-width: 420px; width: 100%; margin-left: auto; margin-right: auto; }
+
+  /* The puzzle games, PLAYING (components/puzzles/play-desk.tsx PuzzlePlayDesk): the board takes the big left
+     column, the controls (action buttons, word lists, clues, the pad / keyboard) a ~340 px right rail, centered
+     in the height. On phones the wrappers are `display: contents`, so nothing here applies below 1024 px. */
+  .page-col.game-wide .pz-play {
+    flex: 1 1 0%; min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--pz-rail, 340px);
+    grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr);
+    column-gap: 28px; padding: 4px 24px 18px;
+  }
+  .page-col.game-wide .pz-main { grid-column: 1; grid-row: 1 / -1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+  .page-col.game-wide .pz-rail-top { grid-column: 2; grid-row: 2; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding-bottom: 12px; }
+  .page-col.game-wide .pz-rail { grid-column: 2; grid-row: 3; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+  /* A rail that needs the whole height (a clue list, found words): the rail rows become one scroll column. */
+  .page-col.game-wide .pz-play.pz-tall { grid-template-rows: auto minmax(0, 1fr); }
+  .page-col.game-wide .pz-play.pz-tall .pz-rail-top { grid-row: 1; }
+  .page-col.game-wide .pz-play.pz-tall .pz-rail { grid-row: 2; min-height: 0; }
+  .page-col.game-wide .ladder-slot { align-items: center; }
+  .page-col.game-wide .pz-play .pz-rail > *, .page-col.game-wide .pz-play .pz-rail-top > * { max-width: none; width: 100%; margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
+  /* The on-screen keyboard inside a rail: the ten-key row fills the rail instead of the stage's 720 px board keyboard. */
+  .page-col.game-wide .pz-rail .kb-root { width: 100%; max-width: 100%; gap: 5px; }
+  .page-col.game-wide .pz-rail .kb-root > div { gap: 5px; }
+  .page-col.game-wide .pz-rail .kb-root .kkey { flex: 0 0 calc((100% - 45px) / 10); width: auto; min-width: 0; height: clamp(38px, 5.2dvh, 48px) !important; font-size: 17px; }
+  .page-col.game-wide .pz-rail .kb-root .kkey[aria-label="Backspace"],
+  .page-col.game-wide .pz-rail .kb-root .kkey[aria-label="Submit guess"] { flex: 0 0 calc(15% - 4.25px); min-width: 0; font-size: 11px; }
+
+  /* Leaderboard (founder 10-12, a real website page, not a phone card): the living stage (picker, strip, podium)
+     at 560 px on the left, ranks 4+ and YESTERDAY'S WINNERS stacked on the right, filling the 1180 px box.
+     .page-wide beats the phone's max-w-lg cap on the same element. */
+  .lb-desk.page-wide {
+    max-width: var(--page-wide);
+    display: grid;
+    grid-template-columns: minmax(0, 560px) minmax(0, 1fr);
+    column-gap: var(--page-grid-gap);
+    align-items: start;
+  }
+  .lb-desk > .page-col { max-width: none; margin: 0; }
+  .lb-desk > .page-grid-2 { display: block; }
+
+  /* All-Time Records: the mode picker on the left (kept in view), the board / the records grid on the right. */
+  .rec-desk.page-wide {
+    max-width: var(--page-wide);
+    display: grid;
+    grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+    column-gap: var(--page-grid-gap);
+    align-items: start;
+  }
+  .rec-desk > .rec-desk-pick { position: sticky; top: calc(var(--desk-hdr-h, 72px) + 12px); margin-bottom: 0; }
+  .rec-desk > .rec-desk-links { grid-column: 1 / -1; }
+
+  /* Go Pro: the hero across; the benefits on the left, the plans + CTA on the right; the long copy in two ~520 px columns. */
+  .pro-page.page-wide { max-width: var(--page-wide); }
+  .pro-desk { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--page-grid-gap); align-items: start; }
+  .pro-desk > * { margin-top: 0 !important; }
+  .pro-desk { row-gap: var(--page-grid-gap); }
+  .pro-desk > .pro-desk-r { grid-column: 2; grid-row: 1 / span 2; }
+  .pro-desk > .pro-desk-gift { grid-column: 1; grid-row: 2; }
+  .pro-explain-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 40px; align-items: start; }
+  .pro-explain-body > * { margin-top: 0 !important; }
+
+  /* Info pages (About, FAQ, Guides, Support, Privacy, Terms, How to Play): long text keeps a ~760 px measure. */
+  div.info-page, div.info-hdr { max-width: 760px; }
+  /* Card lists (InfoPageLayout cols) flow in two balanced columns across the 1180 px box; blocks that must stay
+     readable (.info-span) run across at the 760 px measure. */
+  div.info-page.info-cols, div.info-hdr.info-hdr-cols { max-width: var(--desk-max); }
+  div.info-page.info-cols { display: block; columns: 2; column-gap: var(--page-grid-gap); padding-left: 1.5rem; padding-right: 1.5rem; }
+  div.info-page.info-cols > * { break-inside: avoid; margin-bottom: 8px; }
+  div.info-page.info-cols > .info-span { column-span: all; max-width: 760px; margin-left: auto; margin-right: auto; }
+  div.info-page.info-cols > .info-full { column-span: all; }
+  div.info-page.info-cols p { font-size: 13px; }
+  div.info-page .info-grid3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 /* Friends: THIS WEEK'S RACE leads the page (2.8 TestFlight). One card, placed twice: under the headline
    below 1200 px, at the head of the left column on the three-column desktop grid. */
@@ -2624,19 +2697,9 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
   .fr-weekly-desk { display: block; }
   .fr-weekly-desk + * { margin-top: 0.75rem !important; }
 }
-/* Three columns once each one is at least phone-width (≥ 1200 px; 1024–1199
+/* Friends goes to three columns once each one is at least phone-width (≥ 1200 px; 1024–1199
    keeps the AG two columns under the top bar). */
 @media (min-width: 1200px) {
-  /* Leaderboard: picker | today's board | play card + your board + yesterday. */
-  .lb-desk {
-    display: grid;
-    grid-template-columns: minmax(300px, 360px) minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: var(--page-grid-gap);
-    align-items: start;
-  }
-  .lb-desk > .page-col { max-width: none; margin: 0; }
-  .lb-desk > .page-grid-2 { display: contents; }
-
   /* Friends: the headline across, then banner | the two AG columns. */
   .fr-desk {
     display: grid;
@@ -2663,6 +2726,12 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 @media (min-width: 1200px) and (min-height: 760px) {
   .lb-desk > .page-col,
   .fr-desk > .page-col { position: sticky; top: calc(var(--desk-hdr-h, 72px) + 12px); }
+}
+
+/* ── AppHeader deskOnly (VS lobby / bots / friend, a profile): the top bar belongs to the desktop website, so the
+   screen keeps its phone layout below 1024 px (the docked tab bar is its navigation there). ── */
+@media (max-width: 1023.98px) {
+  .app-hdr[data-desk-only] { display: none; }
 }
 
 /* ── Smoothness pass · a popup held on its first frame while its art decodes

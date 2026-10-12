@@ -41,6 +41,8 @@ export const SudokuBoard = memo(function SudokuBoard({ state, selected, onSelect
   const selBox = selected != null ? boxOf(selected) : -1;
   const selDigit = selected != null && state.board[selected] !== '0' ? state.board[selected] : null;
 
+  // The wide desktop board (maxSize past the phone's 420 px): the pencil marks grow with the cells.
+  const bigNotes = maxSize > 440 ? Math.round(maxSize / 9 * 0.2) : 0;
   const cell = (i: number) => {
     const r = Math.floor(i / 9), c = i % 9;
     const given = state.givens[i] !== '0';
@@ -85,7 +87,7 @@ export const SudokuBoard = memo(function SudokuBoard({ state, selected, onSelect
                 <span
                   key={d}
                   className="flex items-center justify-center font-bold"
-                  style={match ? { fontSize: 'clamp(9px, 2.1vw, 11px)', fontWeight: 900, color: '#6d28d9' } : { fontSize: 'clamp(8px, 1.9vw, 10px)' }}
+                  style={match ? { fontSize: bigNotes ? `${bigNotes + 1}px` : 'clamp(9px, 2.1vw, 11px)', fontWeight: 900, color: '#6d28d9' } : { fontSize: bigNotes ? `${bigNotes}px` : 'clamp(8px, 1.9vw, 10px)' }}
                 >
                   {notes & (1 << d) ? d + 1 : ''}
                 </span>

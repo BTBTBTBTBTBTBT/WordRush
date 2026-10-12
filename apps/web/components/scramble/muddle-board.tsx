@@ -75,10 +75,10 @@ export function useShortViewport(): boolean {
  * - `fixed` (finished): a plain card, 26vh tall but never under 150px.
  * - default (completed-more-board): a flex item, 96px floor, 26vh cap.
  */
-export const CartoonPanel = memo(function CartoonPanel({ src, alt, fixed = false, fill = false }: { src: string | null; alt: string; fixed?: boolean; fill?: boolean }) {
+export const CartoonPanel = memo(function CartoonPanel({ src, alt, fixed = false, fill = false, fixedHeight }: { src: string | null; alt: string; fixed?: boolean; fill?: boolean; /** Desktop finished panel: the fixed cartoon's height in px. */ fixedHeight?: number }) {
   const size: CSSProperties = fill
     ? { alignSelf: 'stretch', flexShrink: 0 }
-    : fixed ? { height: `max(${MUDDLE_CARTOON_MIN}px, 26vh)`, flexShrink: 0 } : { flex: '1 1 0%', minHeight: 96, maxHeight: '26vh' };
+    : fixed ? { height: fixedHeight ?? `max(${MUDDLE_CARTOON_MIN}px, 26vh)`, flexShrink: 0 } : { flex: '1 1 0%', minHeight: 96, maxHeight: '26vh' };
   return (
     // I4: the cream paper card keeps its tone, with the A1 border + soft shadow.
     <div className="rounded-2xl overflow-hidden" data-muddle-cartoon style={{ background: '#fdf8ec', border: softBorder(MUDDLE_ACCENT), boxShadow: softShadow(MUDDLE_ACCENT, 0.14), aspectRatio: '4 / 3', maxWidth: '100%', ...size }} role="img" aria-label={alt}>

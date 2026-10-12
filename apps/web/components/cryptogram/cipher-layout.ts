@@ -51,10 +51,11 @@ const lerp = (cell: number, atMin: number, atMax: number) =>
   Math.min(atMax, Math.max(atMin, atMin + ((cell - CIPHER_FONT_FLOOR) * (atMax - atMin)) / (CIPHER_CELL_MAX - CIPHER_FONT_FLOOR)));
 
 /** Every size on the board derived from the cell side, so they scale together. */
-export function cipherMetrics(cell: number): CipherMetrics {
-  const codeFont = Math.round(lerp(cell, 10, 14));
+/** `minFont`: a floor (px) for the code-letter and chip type — the desktop stage keeps every glyph at 12 px or more. */
+export function cipherMetrics(cell: number, minFont = 0): CipherMetrics {
+  const codeFont = Math.max(minFont, Math.round(lerp(cell, 10, 14)));
   const codeGap = 2;
-  const chipFont = Math.round(lerp(cell, 11, 14));
+  const chipFont = Math.max(minFont, Math.round(lerp(cell, 11, 14)));
   return {
     cell,
     cellGap: Math.max(2, Math.round(cell * 0.09)),
@@ -90,8 +91,8 @@ export function cipherWordWidth(word: string, m: CipherMetrics): number {
  * never split: a word wider than the line stands alone on its own line (and the
  * fit below steps the cell down until that no longer happens).
  */
-export function wrapCipherWords(cipher: string, cell: number, width: number): string[][] {
-  const m = cipherMetrics(cell);
+export function wrapCipherWords(cipher: string, cell: number, width: number, minFont = 0): string[][] {
+  const m = cipherMetrics(cell, minFont);
   const words = cipher.split(' ').filter((w) => w.length > 0);
   const lines: string[][] = [];
   let line: string[] = [];
@@ -107,26 +108,26 @@ export function wrapCipherWords(cipher: string, cell: number, width: number): st
 }
 
 /** Widest single word at this cell size — must fit the band width or the cell steps down. */
-export function cipherLongestWordWidth(cipher: string, cell: number): number {
-  const m = cipherMetrics(cell);
+export function cipherLongestWordWidth(cipher: string, cell: number, minFont = 0): number {
+  const m = cipherMetrics(cell, minFont);
   return cipher.split(' ').reduce((max, w) => Math.max(max, cipherWordWidth(w, m)), 0);
 }
 
 /** Estimated height of the frequency strip: `chipCount` chips wrapping at `width`. */
-export function cipherStripHeight(chipCount: number, cell: number, width: number): number {
+export function cipherStripHeight(chipCount: number, cell: number, width: number, minFont = 0): number {
   if (chipCount <= 0) return 0;
-  const m = cipherMetrics(cell);
+  const m = cipherMetrics(cell, minFont);
   const perLine = Math.max(1, Math.floor((width + m.chipGap) / (m.chipWidth + m.chipGap)));
   const lines = Math.ceil(chipCount / perLine);
   return lines * m.chipHeight + (lines - 1) * m.chipGap;
 }
 
 /** Height of the board + strip block at this cell size, wrapped at `width`. */
-export function cipherBlockHeight(cipher: string, cell: number, width: number, chipCount: number, withStrip = true): number {
-  const m = cipherMetrics(cell);
-  const lines = wrapCipherWords(cipher, cell, width).length;
+export function cipherBlockHeight(cipher: string, cell: number, width: number, chipCount: number, withStrip = true, minFont = 0): number {
+  const m = cipherMetrics(cell, minFont);
+  const lines = wrapCipherWords(cipher, cell, width, minFont).length;
   const board = lines * m.rowHeight + Math.max(0, lines - 1) * m.rowGap;
-  const strip = withStrip ? cipherStripHeight(chipCount, cell, width) : 0;
+  const strip = withStrip ? cipherStripHeight(chipCount, cell, width, minFont) : 0;
   return board + (strip > 0 ? CIPHER_STRIP_GAP + strip : 0);
 }
 
@@ -135,10 +136,10 @@ export function cipherBlockHeight(cipher: string, cell: number, width: number, c
  * 4 at a time until the wrapped cipher plus the strip fits the height and the
  * longest word fits the width; floor 40.
  */
-export function fitCipherCell(cipher: string, width: number, height: number, chipCount: number, withStrip = true): number {
+export function fitCipherCell(cipher: string, width: number, height: number, chipCount: number, withStrip = true, minFont = 0): number {
   for (let cell = CIPHER_CELL_MAX; cell > CIPHER_CELL_MIN; cell -= CIPHER_CELL_STEP) {
-    if (cipherLongestWordWidth(cipher, cell) > width) continue;
-    if (cipherBlockHeight(cipher, cell, width, chipCount, withStrip) <= height) return cell;
+    if (cipherLongestWordWidth(cipher, cell, minFont) > width) continue;
+    if (cipherBlockHeight(cipher, cell, width, chipCount, withStrip, minFont) <= height) return cell;
   }
   return CIPHER_CELL_MIN;
 }

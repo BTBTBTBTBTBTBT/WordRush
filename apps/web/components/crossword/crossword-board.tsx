@@ -146,16 +146,18 @@ interface CluesProps {
   activeEntry: CrosswordEntry | null;
   onPick: (e: CrosswordEntry) => void;
   finished: boolean;
+  /** Desktop right rail (founder 10-12): Across over Down in one column, a touch bigger type. */
+  stacked?: boolean;
 }
 
 /** Across and Down side by side (§13 round 10), centered under the board; solved entries dim. */
-export const ClueColumns = memo(function ClueColumns({ state, activeEntry, onPick, finished }: CluesProps) {
+export const ClueColumns = memo(function ClueColumns({ state, activeEntry, onPick, finished, stacked = false }: CluesProps) {
   const col = (dir: 'A' | 'D', title: string) => (
     // A1: each clue list is a tinted card with the game-card top bar (no plain white).
     <div className="min-w-0 overflow-hidden" style={softCard(CROSSWORD_ACCENT, { radius: 14 })}>
       <div style={cardBarStyle(CROSSWORD_ACCENT)} aria-hidden />
       <div className="px-1.5 pt-1.5 pb-2">
-        <h3 className="text-[10px] font-black tracking-widest uppercase mb-1 px-1" style={{ color: 'var(--color-text-muted)' }}>{title}</h3>
+        <h3 className={`${stacked ? 'text-[11px]' : 'text-[10px]'} font-black tracking-widest uppercase mb-1 px-1`} style={{ color: 'var(--color-text-muted)' }}>{title}</h3>
         <ul className="flex flex-col gap-1">
           {state.entries.filter((e) => e.dir === dir).map((e) => {
             const solved = crosswordEntryCells(state, e).every((i) => state.fill[i] === state.solution[i]);
@@ -164,8 +166,8 @@ export const ClueColumns = memo(function ClueColumns({ state, activeEntry, onPic
               <li key={`${e.n}${e.dir}`}>
                 <button type="button" onClick={() => onPick(e)} className="flex items-start gap-1.5 text-left w-full rounded-lg px-1 py-0.5"
                   style={isActive ? { background: softBackground(PURPLE, 0.16), boxShadow: `inset 0 0 0 1.5px ${alphaHex(PURPLE, 0.35)}` } : undefined}>
-                  <span className="shrink-0 rounded-md text-[10px] font-black w-5 h-5 flex items-center justify-center" style={{ background: '#ede9fe', color: PURPLE, boxShadow: `inset 0 0 0 1px #c4b5fd, inset 0 -2px 0 ${alphaHex(PURPLE, 0.2)}` }}>{e.n}</span>
-                  <span className={`text-xs leading-snug ${solved ? 'line-through opacity-50' : 'font-bold'}`} style={{ color: 'var(--color-text)' }}>{e.clue}{finished ? <span className="ml-1 font-black" style={{ color: SOFT_INK.value }}>{e.answer}</span> : ''}</span>
+                  <span className={`shrink-0 rounded-md ${stacked ? 'text-[11px] w-6 h-6' : 'text-[10px] w-5 h-5'} font-black flex items-center justify-center`} style={{ background: '#ede9fe', color: PURPLE, boxShadow: `inset 0 0 0 1px #c4b5fd, inset 0 -2px 0 ${alphaHex(PURPLE, 0.2)}` }}>{e.n}</span>
+                  <span className={`${stacked ? 'text-[13px]' : 'text-xs'} leading-snug ${solved ? 'line-through opacity-50' : 'font-bold'}`} style={{ color: 'var(--color-text)' }}>{e.clue}{finished ? <span className="ml-1 font-black" style={{ color: SOFT_INK.value }}>{e.answer}</span> : ''}</span>
                 </button>
               </li>
             );
@@ -175,7 +177,7 @@ export const ClueColumns = memo(function ClueColumns({ state, activeEntry, onPic
     </div>
   );
   return (
-    <div className="grid grid-cols-2 gap-x-2.5 gap-y-2 w-full max-w-[700px] mx-auto px-1">
+    <div className={`grid ${stacked ? 'grid-cols-1' : 'grid-cols-2'} gap-x-2.5 gap-y-2 w-full max-w-[700px] mx-auto px-1`}>
       {col('A', 'Across')}
       {col('D', 'Down')}
     </div>

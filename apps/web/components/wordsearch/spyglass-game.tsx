@@ -1,6 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { PuzzlePlayDesk } from '@/components/puzzles/play-desk';
+import { useDesktopStage } from '@/hooks/use-desktop-stage';
+import { useDeskBox } from '@/hooks/use-desk-box';
+import { deskSquare } from '@/lib/desktop-layout';
 import { MORE_HOME_HREF } from '@/lib/more-games';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
@@ -86,6 +90,10 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
 
   const status = state?.status ?? 'playing';
   // The header clock ticks on its own (PlayClock); the board re-renders only on play (founder, 2026-09-29).
+  // Desktop wide stage: the grid sizes to the left column's room.
+  const desk = useDesktopStage();
+  const deskMainRef = useRef<HTMLDivElement>(null);
+  const deskBox = useDeskBox(deskMainRef);
   const timer = useActivePlayTimer(!!state && status === 'playing' && !holdPlay, 0, { tick: false });
   const { elapsedSeconds, reset: resetTimer, getElapsed } = timer;
 
@@ -238,9 +246,26 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
 
   const renderWordList = (s: WordsearchState, done: boolean) => <SpyglassWordList state={s} done={done} />;
   const wordList = renderWordList(state, finished);
+  const controls = (
+    <div className={`shrink-0 px-2 pt-1 flex justify-center gap-2 ${desk ? 'flex-wrap' : ''}`} role="group" aria-label="Spyglass controls">
+      {/* Labels never change width (lib/hint-layout.ts): the hint count is a corner coin,
+          the toggles and the countdown keep their widest variant's width. */}
+      <button type="button" onClick={() => { haptic('light'); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint (${state.hintsUsed} used)` : 'Hint'}>
+        <FamIcon name="hint" /> Hint<HintCountBadge count={state.hintsUsed} />
+      </button>
+      <button type="button" onClick={() => { if (!state.wordsShown) { haptic('light'); showWords(); } }} className={capsule(!!state.wordsShown)} style={capsuleStyle(!!state.wordsShown)} aria-label="Show words" aria-disabled={!!state.wordsShown}>
+        <List className="w-3.5 h-3.5" /> <StableLabel value={state.wordsShown ? 'Words shown' : 'Show words'} reserve={['Show words', 'Words shown']} />
+      </button>
+      {/* Counts down on the clock's own tick, not the board's (founder, 2026-09-29). */}
+      <PlayClock timer={timer}>{(sec) => { const canReveal = sec >= REVEAL_AFTER_SECONDS; return (
+      <button type="button" onClick={() => { haptic('light'); reveal(); }} className={capsule(!canReveal)} style={capsuleStyle(!canReveal)} aria-label="Reveal" aria-disabled={!canReveal}>
+        <FamIcon name="eye" /> <StableLabel value={canReveal ? 'Reveal' : `Reveal · ${formatTime(REVEAL_AFTER_SECONDS - sec)}`} reserve={['Reveal · 0:00']} />
+      </button>); }}</PlayClock>
+    </div>
+  );
 
   return (
-    <GameBackground mode="WORDSEARCH" className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
+    <GameBackground mode="WORDSEARCH" wide className="h-screen-stable flex flex-col relative" style={finished || completion ? FINISHED_SHELL_PAD : undefined}>
       {showVictory && <VictoryAnimation mode="WORDSEARCH" onComplete={() => setShowVictory(false)} guesses={state.misses} guessLabel="Misses" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.misses} guessLabel="Misses" boardsSolved={state.found.length} totalBoards={state.words.length} timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
@@ -274,28 +299,35 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
         // Header only while daily_results is read: no fresh-grid flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : !finished ? (
+        desk ? (
+          // Desktop wide stage (founder 10-12): the grid as big as the left column allows; the word chips and
+          // the three buttons in the right rail.
+          <PuzzlePlayDesk
+            tall
+            railWidth={360}
+            main={
+              <div ref={deskMainRef} className="flex-1 min-h-0 overflow-hidden flex items-center justify-center pb-1">
+                <SpyglassGrid state={state} onSelect={onSelect} maxSize={deskSquare(deskBox)} />
+              </div>
+            }
+            rail={
+              <div className="flex-1 min-h-0 flex flex-col justify-center gap-4 overflow-y-auto">
+                <div className="text-center text-[11px] font-black uppercase" style={{ letterSpacing: '0.12em', color: 'var(--color-text-muted)' }}>Words to find</div>
+                {wordList}
+                {controls}
+              </div>
+            }
+          />
+        ) : (
         <>
           {/* Grid, word chips and the two capsules are one centered block (founder, 2026-09-24). */}
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center gap-3 px-3 pb-3">
             <SpyglassGrid state={state} onSelect={onSelect} />
             {wordList}
-          <div className="shrink-0 px-2 pt-1 flex justify-center gap-2" role="group" aria-label="Spyglass controls">
-            {/* Labels never change width (lib/hint-layout.ts): the hint count is a corner coin,
-                the toggles and the countdown keep their widest variant's width. */}
-            <button type="button" onClick={() => { haptic('light'); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint (${state.hintsUsed} used)` : 'Hint'}>
-              <FamIcon name="hint" /> Hint<HintCountBadge count={state.hintsUsed} />
-            </button>
-            <button type="button" onClick={() => { if (!state.wordsShown) { haptic('light'); showWords(); } }} className={capsule(!!state.wordsShown)} style={capsuleStyle(!!state.wordsShown)} aria-label="Show words" aria-disabled={!!state.wordsShown}>
-              <List className="w-3.5 h-3.5" /> <StableLabel value={state.wordsShown ? 'Words shown' : 'Show words'} reserve={['Show words', 'Words shown']} />
-            </button>
-            {/* Counts down on the clock's own tick, not the board's (founder, 2026-09-29). */}
-            <PlayClock timer={timer}>{(sec) => { const canReveal = sec >= REVEAL_AFTER_SECONDS; return (
-            <button type="button" onClick={() => { haptic('light'); reveal(); }} className={capsule(!canReveal)} style={capsuleStyle(!canReveal)} aria-label="Reveal" aria-disabled={!canReveal}>
-              <FamIcon name="eye" /> <StableLabel value={canReveal ? 'Reveal' : `Reveal · ${formatTime(REVEAL_AFTER_SECONDS - sec)}`} reserve={['Reveal · 0:00']} />
-            </button>); }}</PlayClock>
-          </div>
+            {controls}
           </div>
         </>
+        )
       ) : (
         // FINISH_SPEC R2: one screen — the result strip, the grid (found words
         // capsuled; after a reveal the missed ones outlined) scaled to the room
@@ -306,7 +338,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
               <ResultStrip won={won} guesses={state.misses} guessLabel={state.misses === 1 ? 'miss' : 'misses'} time={formatTime(elapsedSeconds)} points={points}
                 srText={`${won ? (gc === 10 ? 'Clean clear' : state.wordsShown ? 'Cleared with the list' : 'Grid cleared') : 'Revealed'}. ${state.found.length}/${state.words.length} found · ${missLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`} />
             }
-            board={<div className="px-1 pb-1"><SpyglassGrid state={state} onSelect={() => {}} disabled revealMissing={!won} /></div>}
+            board={(box) => <div className="px-1 pb-1 w-full"><SpyglassGrid state={state} onSelect={() => {}} disabled revealMissing={!won} maxSize={deskSquare(box)} /></div>}
             dock={
               <FinishedDock currentMode="WORDSEARCH" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
                 onNewPuzzle={mode !== 'daily' ? startPractice : undefined}

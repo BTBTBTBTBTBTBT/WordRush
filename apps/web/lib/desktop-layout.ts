@@ -45,6 +45,18 @@ export function wideStageCap(el: Element | null | undefined, desk: number, base?
   return el.closest('.game-wide') && window.matchMedia(minWidthQuery(DESKTOP_MIN)).matches ? desk : base;
 }
 
+/** Biggest square board on the wide stage (px): a puzzle grid (Sudocious, Starsweep, Spyglass) fills its column up to this. */
+export const DESK_SQUARE_MAX = 640;
+
+/**
+ * The side (px) of the biggest square that fits a measured room on the wide stage, capped at
+ * DESK_SQUARE_MAX; undefined when there is no desktop room (phones keep the board's own default).
+ */
+export function deskSquare(box: { w: number; h: number } | null | undefined, margin = 8, max = DESK_SQUARE_MAX): number | undefined {
+  if (!box || box.w <= 0 || box.h <= 0) return undefined;
+  return Math.max(120, Math.min(max, box.w - margin * 2, box.h - margin * 2));
+}
+
 export type LayoutTier = 'phone' | 'wide' | 'desktop';
 
 /** The layout tier for a viewport width (CSS px). */
@@ -64,7 +76,7 @@ export function tabPageColumns(page: 'home' | 'leaderboard' | 'stats' | 'friends
   const tier = layoutTier(width);
   if (tier === 'phone') return 1;
   if (tier === 'wide') return 2;
-  return (page === 'leaderboard' || page === 'friends') && width >= DESKTOP_3COL_MIN ? 3 : 2;
+  return page === 'friends' && width >= DESKTOP_3COL_MIN ? 3 : 2;
 }
 
 /** Whether the bottom tab bar shows (the desktop tab pages carry the tabs in the top bar instead). */

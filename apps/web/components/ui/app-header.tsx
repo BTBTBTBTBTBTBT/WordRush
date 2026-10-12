@@ -48,7 +48,11 @@ export interface HeaderShare {
   onShare: () => void;
 }
 
-export function AppHeader({ share }: { share?: HeaderShare } = {}) {
+/**
+ * `deskOnly`: screens that keep the docked tab bar on phones (the VS lobby / bots / friend screens, a profile) show
+ * this header on the desktop website only, so the tabs sit in the top bar and the dock hides there (globals.css).
+ */
+export function AppHeader({ share, deskOnly = false }: { share?: HeaderShare; deskOnly?: boolean } = {}) {
   const { profile, isProActive, isGuest, exitGuest } = useAuth();
   const [helpOpen, setHelpOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -188,7 +192,7 @@ export function AppHeader({ share }: { share?: HeaderShare } = {}) {
     <>
       {/* FINISH_SPEC AG: on desktop web the header is the 560 px centered column, so the cast row stays 90% of it.
           ≥ 1024 px it is the website's sticky top bar (globals.css .app-hdr). */}
-      <header className="app-hdr pb-1 page-col" ref={headerRef} data-tab-tint={tabTint(pathname)} data-condense={flagLive('header_condense') ? 'on' : 'off'} style={{ paddingTop: CAST_ROW.topMargin }}>
+      <header className="app-hdr pb-1 page-col" ref={headerRef} data-tab-tint={tabTint(pathname)} data-condense={flagLive('header_condense') ? 'on' : 'off'} data-desk-only={deskOnly ? '' : undefined} style={{ paddingTop: CAST_ROW.topMargin }}>
         {/* AS2 Row 1: the controls — the bare 3D counters left, help + settings right. */}
         <div className="hdr-row relative flex items-center justify-between gap-2 px-3">
           <div className="flex items-center gap-1 min-w-0">

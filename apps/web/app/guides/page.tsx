@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 
 export default function GuidesIndexPage() {
   return (
-    <InfoPageLayout title="Mode Guides" art="art-titlecast-guides" artLabel="Mode Guides">
-      <IntroCard title="How every game works">
+    <InfoPageLayout title="Mode Guides" art="art-titlecast-guides" artLabel="Mode Guides" cols>
+      <IntroCard span title="How every game works">
         <IntroText>
           Every Wordocious mode, explained properly — exact rules, the real scoring math, and the strategy that separates the leaderboard from the middle of the pack.
         </IntroText>
@@ -31,7 +31,7 @@ export default function GuidesIndexPage() {
         />
       ))}
 
-      <SectionCard heading="Which mode should you play first?" className="p-5 space-y-3">
+      <SectionCard span heading="Which mode should you play first?" className="p-5 space-y-3">
         <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
           The eight daily word games are really four families, and Puzzles adds a fifth. <strong>Single-board classics</strong> — Classic (5 letters), Six,
           and Seven — are pure deduction: one hidden word, six to eight guesses, and the only variable is word length. Longer words
@@ -65,7 +65,7 @@ export default function GuidesIndexPage() {
         </p>
       </SectionCard>
 
-      <InfoCard className="px-4 py-3">
+      <InfoCard span className="px-4 py-3">
         <p className="m-0 text-xs font-bold leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
           New to word puzzles entirely? Start with <Link href="/how-to-play" style={{ color: '#7c3aed', fontWeight: 700 }}>How to Play</Link> for
           the tile-color basics, then come back here when you want to climb the daily leaderboards.

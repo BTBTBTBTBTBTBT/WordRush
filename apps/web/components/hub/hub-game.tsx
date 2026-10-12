@@ -20,6 +20,9 @@ import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
+import { PuzzlePlayDesk } from '@/components/puzzles/play-desk';
+import { useDesktopStage } from '@/hooks/use-desktop-stage';
+import { useDeskBox } from '@/hooks/use-desk-box';
 import { HubRankBar, HubAllWordChips, HubHive, HubRareGem, hubRareLabel, HUB_ACCENT } from './hub-finished';
 import { GameTray } from '@/components/ui/game-tray';
 import { pieceSrc } from '@/lib/art';
@@ -362,6 +365,9 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const setFixed = (i: number) => (el: HTMLElement | null) => { fixedRefs.current[i] = el; };
   const [tile, setTile] = useState<number | null>(null);
   const hasState = !!state;
+  const desk = useDesktopStage();
+  const deskMainRef = useRef<HTMLDivElement>(null);
+  const deskBox = useDeskBox(deskMainRef);
   useEffect(() => {
     const col = colRef.current;
     if (!col || view !== 'board' || typeof ResizeObserver === 'undefined') return;
@@ -438,7 +444,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     const bonus = !pangram && hubIsBonus(state.bonusFound, w);
     const tint = pangram ? '#f5a524' : revealed ? '#8b5cf6' : '#7c3aed';
     return (
-      <span key={w} className={`relative inline-flex items-center gap-1 text-[11.5px] font-black px-2.5 py-1 rounded-lg ${dim ? 'opacity-60' : ''} ${!dim && idx === 0 && !prefersReducedMotion() ? 'gt-pop' : ''}`}
+      <span key={w} className={`relative inline-flex items-center gap-1 font-black rounded-lg ${desk ? 'text-[14px] px-3 py-1.5' : 'text-[11.5px] px-2.5 py-1'} ${dim ? 'opacity-60' : ''} ${!dim && idx === 0 && !prefersReducedMotion() ? 'gt-pop' : ''}`}
         aria-label={bonus ? hubRareLabel(w) : pangram ? `${w}, pangram` : undefined}
         style={{
           background: `linear-gradient(${softMix(tint, pangram ? 0.42 : 0.2)}, ${softMix(tint, pangram ? 0.26 : 0.12)})`,
@@ -467,64 +473,113 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       {w.slice(0, 2)}… · {w.length} letters
     </span>
   ));
-  const boardView = (
-    <div ref={colRef} className="flex-1 min-h-0 flex flex-col px-3">
-      <div ref={setFixed(0)} className="shrink-0 pt-1 pb-2">{rankBar}</div>
+  // Desktop wide stage (founder 10-12): the hive as big as the left column allows (tile up to 150 px).
+  const hiveTileCss = desk && deskBox ? `${Math.max(72, Math.min(150, Math.floor(Math.min((deskBox.h - 230) / 3.4, deskBox.w / 3.7))))}px` : tileCss;
+  const entryLine = (
+    <>
       {/* Entry line — 28px bold type, the centre letter in the accent; shakes and erases on a rejected word. */}
       {/* The feedback popup (+5, Rank up…) sits over this line, just above the hive — never on the title art. */}
       <div ref={setFixed(1)} className="shrink-0 pb-1 relative">
         <div className={`flex justify-center items-center min-h-[44px] ${shake ? 'animate-shake' : ''}`} aria-live="polite" aria-label={typing ? `Typing ${typing}` : 'Type a word'}>
           {typing
-            ? <span className="font-black uppercase tracking-wider leading-none break-all text-center" style={{ fontSize: 28, color: 'var(--color-text)' }}>
+            ? <span className="font-black uppercase tracking-wider leading-none break-all text-center" style={{ fontSize: desk ? 34 : 28, color: 'var(--color-text)' }}>
                 {typing.split('').map((ch, i) => <span key={i} style={ch === centre ? { color: HUB_ACCENT } : undefined}>{ch}</span>)}
               </span>
             : <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Tap letters or type · Space shuffles</span>}
         </div>
         <FeedbackToast message={message} seq={flashSeq} />
       </div>
-      {/* Cluster band — the hero. --tile drives the hexagons' side and type size together. */}
-      <div className="flex-1 flex items-center justify-center">
-        {/* FINISH_SPEC J1 + L: the honeycomb (center + six around) on the shared game tray. */}
-        <GameTray accent={HUB_ACCENT} state={state.ended ? (won ? 'won' : 'lost') : 'playing'} padding={10}>
-          <div ref={hiveRef} className="relative" role="group" aria-label="Hive letters"
-            style={{ '--tile': tileCss, width: `calc(var(--tile) * ${HIVE_BOX[0].toFixed(3)})`, height: `calc(var(--tile) * ${HIVE_BOX[1].toFixed(3)})` } as CSSProperties}>
-            {letterTile(centre, true)}
-            {(shown ?? outer).slice(0, 6).map((ch, i) => letterTile(ch, false, HIVE_OFFSETS[i]))}
+    </>
+  );
+  const hiveBand = (
+    // Cluster band — the hero. --tile drives the hexagons' side and type size together.
+    // Desktop: no stretch band — the entry line, hive and controls sit together as one centered group.
+    <div className={desk ? 'flex items-center justify-center' : 'flex-1 flex items-center justify-center'}>
+      {/* FINISH_SPEC J1 + L: the honeycomb (center + six around) on the shared game tray. */}
+      <GameTray accent={HUB_ACCENT} state={state.ended ? (won ? 'won' : 'lost') : 'playing'} padding={10}>
+        <div ref={hiveRef} className="relative" role="group" aria-label="Hive letters"
+          style={{ '--tile': hiveTileCss, width: `calc(var(--tile) * ${HIVE_BOX[0].toFixed(3)})`, height: `calc(var(--tile) * ${HIVE_BOX[1].toFixed(3)})` } as CSSProperties}>
+          {letterTile(centre, true)}
+          {(shown ?? outer).slice(0, 6).map((ch, i) => letterTile(ch, false, HIVE_OFFSETS[i]))}
+        </div>
+      </GameTray>
+    </div>
+  );
+  const controlRows = (
+    <div ref={setFixed(2)} className="shrink-0 flex flex-col items-center gap-2 pt-3 pb-2">
+      <div className="flex justify-center gap-2" role="group" aria-label="Entry controls">
+        <HelperButton tint={HUB_ACCENT} icon="delete" onClick={() => { haptic('light'); playDelete(); del(); }} aria-label="Delete">Delete</HelperButton>
+        <HelperButton tint={HUB_ACCENT} icon="shuffle" onClick={shuffle} aria-label="Shuffle">Shuffle</HelperButton>
+        {/* Enter is the primary: the solid tint. */}
+        <HelperButton tint={HUB_ACCENT} icon="enter" on onClick={() => { haptic('light'); submit(); }} aria-label="Enter">Enter</HelperButton>
+      </div>
+      <div className="flex justify-center gap-2" role="group" aria-label="Hints">
+        <HelperButton tint="#f5a524" icon="hint" onClick={hintStart} aria-label="Starts with">Starts with…</HelperButton>
+        <HelperButton tint="#f5a524" icon="eye" onClick={hintReveal} aria-label="Reveal a word">Reveal a word</HelperButton>
+      </div>
+    </div>
+  );
+  const foundBlock = (
+    // Found words — header, then a wrapping chip flow that fills the lower area and scrolls once it overflows.
+    <div className="flex-1 min-h-0 flex flex-col w-full max-w-md mx-auto">
+      <div ref={setFixed(3)} className="shrink-0 pb-1 flex justify-center" aria-label={HUB_FOUND_LABEL}>
+        {/* A label, never a second count: the header's hubWordsLabel is the one word count (Doug 10-05: 8 vs 18).
+            2.8 item 32: it is bubble lettering now (the game's color), not small caps. */}
+        <div style={{ width: 150 }}><BubbleText text={HUB_FOUND_LABEL} palette="celebrate" maxSize={22} minSize={16} level={2} className="w-full" /></div>
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        {/* Pending "Starts with…" hints lead the found-words flow (which already scrolls). As a row
+            under the hint buttons they were a fixed row, so the honeycomb shrank on every hint. */}
+        <div className="flex flex-wrap justify-center gap-x-1.5 gap-y-2.5 pt-2 pb-1">
+          {pendingHintChips}{wordChips(newestFound)}
+          {/* Desktop rail before the first word: faint chip-shaped slots (the rail is its own column there,
+              so a bare heading over an empty column read as unfinished). Phones keep the open flow. */}
+          {desk && newestFound.length === 0 && pendingHintChips.length === 0 && [64, 88, 56, 76, 96, 60, 84, 70, 58, 92, 66, 80].map((wd, i) => (
+            <span key={`ghost-${i}`} aria-hidden="true" className="inline-block rounded-lg" style={{ width: wd, height: 31, background: 'rgba(46, 16, 101, 0.55)', boxShadow: 'inset 0 -2px 0 rgba(0, 0, 0, 0.25)', opacity: 0.9 - i * 0.05 }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+  const endRow = (
+    <div ref={setFixed(4)} className="shrink-0 pb-3 pt-2 flex justify-center gap-3 text-xs font-bold">
+      {won
+        ? <button type="button" onClick={finish} className={candyClass({ color: 'amber' })}><Flag className="w-3.5 h-3.5" /> Finish</button>
+        : <QuietButton size="sm" icon="flag" onClick={async () => {
+            if (await confirmDialog({ title: 'End the puzzle?', message: 'You will see every word, and today’s Hubbub is over.', confirmText: 'End puzzle', cancelText: 'Keep playing' })) endPuzzle();
+          }}>End puzzle</QuietButton>}
+    </div>
+  );
+  const boardView = desk ? (
+    // Desktop: the rank bar, entry line, the big hive and its controls on the left; the found words and End in the right rail.
+    <PuzzlePlayDesk
+      tall
+      railWidth={360}
+      main={
+        <div ref={deskMainRef} className="flex-1 min-h-0 flex flex-col px-1">
+          <div className="shrink-0 pt-1 pb-2">{rankBar}</div>
+          <div className="flex-1 min-h-0 flex flex-col justify-center">
+            {entryLine}
+            {hiveBand}
+            {controlRows}
           </div>
-        </GameTray>
-      </div>
-      <div ref={setFixed(2)} className="shrink-0 flex flex-col items-center gap-2 pt-3 pb-2">
-        <div className="flex justify-center gap-2" role="group" aria-label="Entry controls">
-          <HelperButton tint={HUB_ACCENT} icon="delete" onClick={() => { haptic('light'); playDelete(); del(); }} aria-label="Delete">Delete</HelperButton>
-          <HelperButton tint={HUB_ACCENT} icon="shuffle" onClick={shuffle} aria-label="Shuffle">Shuffle</HelperButton>
-          {/* Enter is the primary: the solid tint. */}
-          <HelperButton tint={HUB_ACCENT} icon="enter" on onClick={() => { haptic('light'); submit(); }} aria-label="Enter">Enter</HelperButton>
         </div>
-        <div className="flex justify-center gap-2" role="group" aria-label="Hints">
-          <HelperButton tint="#f5a524" icon="hint" onClick={hintStart} aria-label="Starts with">Starts with…</HelperButton>
-          <HelperButton tint="#f5a524" icon="eye" onClick={hintReveal} aria-label="Reveal a word">Reveal a word</HelperButton>
+      }
+      rail={
+        <div className="flex-1 min-h-0 flex flex-col pt-6">
+          {foundBlock}
+          {endRow}
         </div>
-      </div>
-      {/* Found words — header, then a wrapping chip flow that fills the lower area and scrolls once it overflows. */}
-      <div className="flex-1 min-h-0 flex flex-col w-full max-w-md mx-auto">
-        <div ref={setFixed(3)} className="shrink-0 pb-1 flex justify-center" aria-label={HUB_FOUND_LABEL}>
-          {/* A label, never a second count: the header's hubWordsLabel is the one word count (Doug 10-05: 8 vs 18).
-              2.8 item 32: it is bubble lettering now (the game's color), not small caps. */}
-          <div style={{ width: 150 }}><BubbleText text={HUB_FOUND_LABEL} palette="celebrate" maxSize={22} minSize={16} level={2} className="w-full" /></div>
-        </div>
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          {/* Pending "Starts with…" hints lead the found-words flow (which already scrolls). As a row
-              under the hint buttons they were a fixed row, so the honeycomb shrank on every hint. */}
-          <div className="flex flex-wrap justify-center gap-x-1.5 gap-y-2.5 pt-2 pb-1">{pendingHintChips}{wordChips(newestFound)}</div>
-        </div>
-      </div>
-      <div ref={setFixed(4)} className="shrink-0 pb-3 pt-2 flex justify-center gap-3 text-xs font-bold">
-        {won
-          ? <button type="button" onClick={finish} className={candyClass({ color: 'amber' })}><Flag className="w-3.5 h-3.5" /> Finish</button>
-          : <QuietButton size="sm" icon="flag" onClick={async () => {
-              if (await confirmDialog({ title: 'End the puzzle?', message: 'You will see every word, and today’s Hubbub is over.', confirmText: 'End puzzle', cancelText: 'Keep playing' })) endPuzzle();
-            }}>End puzzle</QuietButton>}
-      </div>
+      }
+    />
+  ) : (
+    <div ref={colRef} className="flex-1 min-h-0 flex flex-col px-3">
+      <div ref={setFixed(0)} className="shrink-0 pt-1 pb-2">{rankBar}</div>
+      {entryLine}
+      {hiveBand}
+      {controlRows}
+      {foundBlock}
+      {endRow}
     </div>
   );
 
@@ -534,10 +589,10 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   // Every word (or the words found so far) and the breakdown sit under More.
   const pangramsFound = (s: HubState) => s.found.filter((w) => s.pangrams.includes(w)).length;
   // `words`: the other-device card has no strip, so it says the word count here; results don't (the strip does).
-  const hubFinishedBoard = (s: HubState, words = true) => (
-    <div className="flex flex-col items-center gap-2 px-1 pb-1">
+  const hubFinishedBoard = (s: HubState, words = true, box?: { w: number; h: number } | null) => (
+    <div className="flex flex-col items-center gap-2 px-1 pb-1 w-full">
       <div className="w-full">{renderRankBar(s)}</div>
-      <HubHive state={s} />
+      <HubHive state={s} tile={box ? Math.max(52, Math.min(130, Math.floor(Math.min((box.h - 150) / 3.3, box.w / 3.9)))) : undefined} />
       <div className="text-[11px] font-extrabold text-center" style={{ color: 'var(--color-text-muted)' }}>
         {words ? `${hubWordsLabel(s)} · ` : ''}{pangramsFound(s)}/{s.pangrams.length} pangram{s.pangrams.length === 1 ? '' : 's'} · {Math.floor((s.points * 100) / Math.max(1, s.max))}%
       </div>
@@ -561,7 +616,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
           <ResultStrip won={won} guesses={`${hubWordCount(state).found}/${hubWordCount(state).total}`} guessLabel="words" time={formatTime(scoredSeconds)} points={points}
             srText={`${won ? `${rankName}${rank === 9 ? ' — every word' : ''}` : `${rankName} — below Hubbub`}. ${state.points}/${state.max} pts · ${state.found.length}/${state.words.length} words · ${pangramsFound(state)}/${state.pangrams.length} pangram${state.pangrams.length === 1 ? '' : 's'} · ${formatTime(scoredSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`} />
         }
-        board={hubFinishedBoard(state, false)}
+        board={(box) => hubFinishedBoard(state, false, box)}
         beforeDock={!state.ended ? <CandyButton size="sm" color="purple" onClick={() => setView('board')}>Keep going</CandyButton> : undefined}
         dock={
           <FinishedDock currentMode="HUB" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
@@ -583,7 +638,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   );
 
   return (
-    <GameBackground mode="HUB" className="h-screen-stable flex flex-col relative" style={view === 'results' || completion ? FINISHED_SHELL_PAD : undefined}>
+    <GameBackground mode="HUB" wide className="h-screen-stable flex flex-col relative" style={view === 'results' || completion ? FINISHED_SHELL_PAD : undefined}>
       {/* Victory card (founder, 2026-09-28): the clock is paused under it; the time is the
           moment of the win. "Keep playing" resumes the hunt, "I'm done" ends the puzzle. */}
       {showVictory && <VictoryAnimation mode="HUB" onComplete={() => setShowVictory(false)} guesses={state.found.length} guessLabel="Words" timeSeconds={recordedSeconds || elapsedSeconds} points={points}

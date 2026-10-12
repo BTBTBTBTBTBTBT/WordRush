@@ -43,6 +43,9 @@ import { gameHeaderStyle } from '@/lib/art';
 import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { useBoardFit } from '@/hooks/use-board-fit';
+import { PuzzlePlayDesk } from '@/components/puzzles/play-desk';
+import { useDesktopStage } from '@/hooks/use-desktop-stage';
+import { DESK_SQUARE_MAX, deskSquare } from '@/lib/desktop-layout';
 import { softPill, softBackground, softBorder } from '@/lib/soft-surface';
 import { CandySegment } from '@/components/ui/candy-segment';
 
@@ -100,9 +103,11 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
   // and the pad (the shared rule, lib/board-fit.ts), capped at the old 420 px.
   const boardAreaRef = useRef<HTMLDivElement>(null);
   const boardN = state?.n ?? 8;
+  // Desktop wide stage (founder 10-12): the board grows to DESK_SQUARE_MAX in the big left column.
+  const deskWide = useDesktopStage();
   const boardFit = useBoardFit(
     boardAreaRef,
-    { cols: boardN, rows: boardN, gap: 0, extraWidth: STARSWEEP_BOARD_EXTRA.width, vPad: STARSWEEP_BOARD_EXTRA.height + 8, maxTile: 60, maxWidth: 440 },
+    { cols: boardN, rows: boardN, gap: 0, extraWidth: STARSWEEP_BOARD_EXTRA.width, vPad: STARSWEEP_BOARD_EXTRA.height + 8, maxTile: deskWide ? 96 : 60, maxWidth: deskWide ? DESK_SQUARE_MAX : 440 },
     `${status}-${holdPlay}-${state ? state.seed : ''}`,
   );
 
@@ -324,6 +329,7 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
   return (
     <GameBackground
       mode="REGIONS"
+      wide
       className="h-screen-stable flex flex-col relative"
       style={finished || completion ? FINISHED_SHELL_PAD : undefined}
     >
@@ -358,8 +364,8 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
         // Header only while daily_results is read: no fresh-board flash, no clock.
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : !finished ? (
-        <>
-          {mode !== 'daily' && isPro && (
+        <PuzzlePlayDesk
+          railTop={mode !== 'daily' && isPro && (
             // Button family §4: a three-way choice is the candy segmented (frosted track + glossy thumb).
             <div className="shrink-0 flex justify-center px-4 pb-2">
               <CandySegment label="Board size" height={32} itemPad={14}
@@ -367,23 +373,25 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
                 value={String(state.n)} onChange={(k) => { const n = Number(k) as RegionsSize; if (n !== state.n) startPractice(n); }} />
             </div>
           )}
-
-          <div ref={boardAreaRef} className="flex-1 min-h-0 overflow-hidden flex items-center justify-center pb-1">
-            {board}
-          </div>
-
-          <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-1.5">
-            <div className="text-center text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              {remaining === state.n && state.history.length === 0 ? REGIONS_TAP_HINT : `${remaining} star${remaining === 1 ? '' : 's'} left`}
+          main={
+            <div ref={boardAreaRef} className="flex-1 min-h-0 overflow-hidden flex items-center justify-center pb-1">
+              {board}
             </div>
-            <RegionsPad
-              onUndo={undo} onErase={erase} onToggleAutoCross={toggleAutoCross} onHint={hint}
-              autoCross={state.autoCross} canUndo={state.history.length > 0}
-              canErase={focused != null && state.board[focused] !== '.' && !(state.board[focused] === '*' && state.hintMask[focused] === '1')}
-              hintsUsed={state.hintsUsed}
-            />
-          </div>
-        </>
+          }
+          rail={
+            <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-1.5">
+              <div className="text-center text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                {remaining === state.n && state.history.length === 0 ? REGIONS_TAP_HINT : `${remaining} star${remaining === 1 ? '' : 's'} left`}
+              </div>
+              <RegionsPad
+                onUndo={undo} onErase={erase} onToggleAutoCross={toggleAutoCross} onHint={hint}
+                autoCross={state.autoCross} canUndo={state.history.length > 0}
+                canErase={focused != null && state.board[focused] !== '.' && !(state.board[focused] === '*' && state.hintMask[focused] === '1')}
+                hintsUsed={state.hintsUsed}
+              />
+            </div>
+          }
+        />
       ) : (
         // FINISH_SPEC R2: one screen — the result strip, the board scaled to the
         // room left (a lost board shows the missing stars muted, so nobody
@@ -396,7 +404,12 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
                   ? `${formatGuessStat('mistakes', 1, state.mistakes + 1)} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`
                   : `${remaining} star${remaining === 1 ? '' : 's'} left · ${formatTime(elapsedSeconds)}`}`} />
             }
-            board={<div className="px-1 pb-1">{board}</div>}
+            board={(box) => (
+              <div className="px-1 pb-1 w-full">
+                <RegionsBoard state={state} focused={null} onTap={tapCell} revealSolution={state.status === 'lost'} maxSize={deskSquare(box)}
+                  trayState={state.status === 'won' ? 'won' : 'lost'} />
+              </div>
+            )}
             dock={
               <FinishedDock currentMode="REGIONS" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
                 onNewPuzzle={mode !== 'daily' ? () => startPractice(state.n as RegionsSize) : undefined}

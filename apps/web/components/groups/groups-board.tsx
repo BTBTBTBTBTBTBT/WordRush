@@ -29,7 +29,7 @@ const CHIP_LIP = 4;
  * wash with the game-card top bar in the tier color — pips for the tier, the
  * label, the four words. A revealed (missed) group is dashed and a touch faded.
  */
-export const GroupBar = memo(function GroupBar({ group, revealed = false }: { group: GroupsGroup; revealed?: boolean }) {
+export const GroupBar = memo(function GroupBar({ group, revealed = false, big = false }: { group: GroupsGroup; revealed?: boolean; /** Desktop wide stage: larger type. */ big?: boolean }) {
   const st = TIER_STYLE[group.tier] ?? TIER_STYLE[1];
   const wash = TIER_WASH[group.tier] ?? TIER_WASH[1];
   const card = softCard(wash, { radius: 14 });
@@ -44,9 +44,9 @@ export const GroupBar = memo(function GroupBar({ group, revealed = false }: { gr
       <div className="px-3 pt-1.5 pb-2 flex flex-col items-center gap-0.5" style={{ color: 'var(--color-text)' }}>
         <div className="flex items-center gap-2">
           <span className="text-[8px] tracking-[2px]" style={{ color: wash }} aria-hidden>{'●'.repeat(group.tier)}</span>
-          <span className="text-sm font-black">{group.label}</span>
+          <span className={`${big ? 'text-lg' : 'text-sm'} font-black`}>{group.label}</span>
         </div>
-        <span className="text-xs font-bold tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{group.words.join(', ')}</span>
+        <span className={`${big ? 'text-sm' : 'text-xs'} font-bold tracking-wide`} style={{ color: 'var(--color-text-muted)' }}>{group.words.join(', ')}</span>
       </div>
     </div>
   );
@@ -58,6 +58,8 @@ interface TileGridProps {
   shaking: boolean;
   /** Measured tile box from the game's band fit (founder, 2026-09-28); null until the first measurement, when the vw clamp stands in. */
   fit?: { h: number; w: number } | null;
+  /** Desktop wide stage (founder 10-12): a wider tray and bigger word type. */
+  big?: boolean;
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -71,10 +73,10 @@ const GLYPH_EM = 0.66;
  * tier color, which would give the answer away; hinted pairs wear a ring.
  * The tray carries `data-groups-grid` so the game's band fit finds it.
  */
-export const TileGrid = memo(function TileGrid({ state, onToggle, shaking, fit = null }: TileGridProps) {
+export const TileGrid = memo(function TileGrid({ state, onToggle, shaking, fit = null, big = false }: TileGridProps) {
   const ringed = new Set(state.pairs.flat().filter((w) => state.tiles.includes(w)));
   return (
-    <GameTray accent={GROUPS_ACCENT} padding={8} className="w-full max-w-md" data-groups-grid="">
+    <GameTray accent={GROUPS_ACCENT} padding={8} className={`w-full ${big ? 'max-w-[640px]' : 'max-w-md'}`} data-groups-grid="">
       <div className={`grid grid-cols-4 gap-1.5 sm:gap-2 w-full ${shaking ? 'animate-shake' : ''}`} role="group" aria-label="Words">
         {state.tiles.map((w) => {
           const sel = state.selected.includes(w);
@@ -85,7 +87,7 @@ export const TileGrid = memo(function TileGrid({ state, onToggle, shaking, fit =
           let fontSize: number | undefined;
           let oneLine = false;
           if (fit) {
-            const base = long ? clamp(fit.h * 0.18, 10, 13) : clamp(fit.h * 0.22, 12, 15);
+            const base = big ? (long ? clamp(fit.h * 0.2, 12, 17) : clamp(fit.h * 0.22, 14, 22)) : long ? clamp(fit.h * 0.18, 10, 13) : clamp(fit.h * 0.22, 12, 15);
             const fitted = Math.min(base, (fit.w - 8) / (GLYPH_EM * w.length));
             oneLine = fitted >= 9;
             fontSize = oneLine ? Math.floor(fitted * 2) / 2 : base;

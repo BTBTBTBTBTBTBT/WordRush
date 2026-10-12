@@ -769,6 +769,7 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
   return (
     <GameBackground
       mode="PROPERNOUNDLE"
+      wide
       className={`h-screen-stable flex flex-col relative ${gameStatus !== 'playing' || completion ? FINISHED_NAV_CLEAR : ''}`}
     >
       {showVictory && popupReady && <VictoryAnimation mode="PROPERNOUNDLE" onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', true, guesses.length, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
