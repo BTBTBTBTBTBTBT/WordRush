@@ -46,7 +46,7 @@ export function PodiumStageCard({ place, tone, open, onOpenChange }: { place: Po
   const ownBackdrop = AVATAR_BACKDROPS.some((b) => b.id === look.config.bg);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hideClose className="pod-sheet p-0 max-w-[320px] overflow-hidden rounded-[28px] border-0 gap-0" style={{ background: 'var(--pod-band-bot)' }}>
+      <DialogContent hideClose onOpenAutoFocus={(e) => { e.preventDefault(); (e.currentTarget as HTMLElement | null)?.focus(); }} className="pod-sheet p-0 max-w-[320px] overflow-hidden rounded-[28px] border-0 gap-0" style={{ background: 'var(--pod-band-bot)' }}>
         <style>{SHEET_CSS}</style>
         <DialogTitle className="sr-only">{place.username}, place {place.rank}</DialogTitle>
         <DialogDescription className="sr-only">A closer look at this player&apos;s mascot.</DialogDescription>
