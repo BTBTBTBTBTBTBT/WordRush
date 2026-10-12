@@ -2,8 +2,9 @@
 // layout math every share renderer (lib/share-image.ts, lib/vs-share-image.ts)
 // draws from. The canvas is 1080 wide and exactly as tall as its content —
 // title art, one info line, the board block, the stat windows and the cast
-// wordmark — clamped between 4:5 (1350) and 9:16 (1920); a board too tall for
-// that is scaled down by height. The cast row (the ten heroes W·O·R·D·O·C·I·O·U·S
+// wordmark — clamped between 4:5 (1350) and 3:4 (1440; founder 10-12: iMessage
+// center-crops an image taller than ~3:4, which cut the title and the stat chips;
+// the 'story' frame stays 9:16); a board too tall for that is scaled down by height. The cast row (the ten heroes W·O·R·D·O·C·I·O·U·S
 // standing together, the Home header's .castrow) is the only wordmark.
 // No DOM, no canvas: unit-tested in share-fit.test.ts.
 
@@ -19,8 +20,8 @@ import type {
 export const SHARE_W = 1080;
 /** 4:5 — the shortest card. */
 export const SHARE_H_MIN = 1350;
-/** 9:16 — the tallest card. */
-export const SHARE_H_MAX = 1920;
+/** 3:4 — the tallest message card (iMessage crops anything taller than ~3:4). The 'story' frame is 9:16 (1920). */
+export const SHARE_H_MAX = 1440;
 /** The board block fills ~88% of the width. */
 export const BOARD_W = Math.round(SHARE_W * 0.88);
 /** The gap between boards in a multi-board grid (~4% of the width). */
@@ -39,23 +40,23 @@ export const TITLE_FALLBACK_H = 96;
 
 /** Vertical rhythm of every card (canvas px). */
 export const SHARE_SPACE = {
-  top: 40,
+  top: 32,
   /** Title → info line (or the header rows that replace it). */
-  titleGap: 16,
+  titleGap: 12,
   /** The compact info line. */
   info: 44,
   /** Header → board. */
-  headGap: 28,
+  headGap: 20,
   /** Board → stat windows. */
-  boardGap: 34,
+  boardGap: 24,
   /** The three stat windows. */
-  stats: 136,
+  stats: 120,
   /** Last block → cast row. */
-  castGap: 44,
+  castGap: 24,
   /** Cast row → "wordocious.com". */
-  urlGap: 14,
-  url: 28,
-  bottom: 30,
+  urlGap: 12,
+  url: 26,
+  bottom: 24,
 } as const;
 
 export function clampShareHeight(h: number, frame: ShareFrame = 'message'): number {
@@ -96,7 +97,7 @@ export function titleFitsCard(r: Rect, height: number, below = height): boolean 
 // ── The cast wordmark (S3) ──────────────────────────────────────────────────
 
 /** The Home header's .castrow: margin-right -2.2% of the row, even characters lifted 7 px on ~46 px characters. */
-export const CAST_ROW = { widthFrac: 0.9, overlap: 0.022, liftFrac: 7 / 46, shadowFrac: 0.1 } as const;
+export const CAST_ROW = { widthFrac: 0.8, overlap: 0.022, liftFrac: 7 / 46, shadowFrac: 0.1 } as const;
 
 export interface CastSlot {
   id: MascotId;
@@ -137,7 +138,7 @@ export function castRowLayout(rowW: number, cx: number, baseY: number): CastRowL
   return { charH, lift, height: charH + lift, rowW, slots };
 }
 
-/** The cast row at its share size (90% of the card). */
+/** The cast row at its share size (80% of the card; 3:4 budget). */
 export function shareCastRow(cx = SHARE_W / 2, baseY = 0): CastRowLayout {
   return castRowLayout(Math.round(SHARE_W * CAST_ROW.widthFrac), cx, baseY);
 }
@@ -159,7 +160,7 @@ export interface ShareStackSpec {
   footH: number;
   /** Item 46: the sender's hero band under the title (shareHeroBand: height + gap); 0 / absent = none. */
   heroH?: number;
-  /** The card's frame: 'message' (4:5 .. 9:16, the default) or 'story' (exactly 9:16). Square is a re-framing of a message card. */
+  /** The card's frame: 'message' (4:5 .. 3:4, the default) or 'story' (exactly 9:16). Square is a re-framing of a message card. */
   frame?: ShareFrame;
 }
 
@@ -176,7 +177,7 @@ export interface SharePlan {
   boardH: number;
   /** The board's measured height inside the box. */
   contentH: number;
-  /** contentH / natural height: < 1 when the board was scaled down to fit 9:16. */
+  /** contentH / natural height: < 1 when the board was scaled down to fit the frame. */
   boardScale: number;
   footTop: number;
   /** The cast row's feet. */

@@ -10,7 +10,9 @@ import { MODES } from './modes.generated';
 import { gameShareArt } from './share-look';
 import { shareCardArt, shareCardPlan } from './share-image';
 import { planVsShareCard } from './vs-share-image';
-import { SHARE_SAMPLES, VS_SHARE_SAMPLE } from './share-samples';
+import { shareHookLine } from './leaderboard-share';
+import { SHARE_EXTRA_SAMPLES, SHARE_SAMPLES, VS_SHARE_SAMPLE } from './share-samples';
+import { SHARE_FRAMES, SHARE_HERO_GAP, SHARE_HERO_H } from '@wordle-duel/core';
 import { CAST } from './mascots';
 import type { ShareImageInput, TileStateString } from './share-image';
 
@@ -19,14 +21,16 @@ const rows = (r: number, c: number): TileStateString[][] =>
 
 const GAME_HEAD = { titleH: 180, headH: 44, footH: 136 };
 
-describe('canvas clamp (S2: 4:5 … 9:16)', () => {
-  it('clamps the height to [1350, 1920] at width 1080', () => {
+describe('canvas clamp (S2: 4:5 … 3:4)', () => {
+  it('clamps the height to [1350, 1440] at width 1080 (iMessage crops anything taller than 3:4)', () => {
     expect(SHARE_W).toBe(1080);
     expect(clampShareHeight(900)).toBe(SHARE_H_MIN);
-    expect(clampShareHeight(1500.2)).toBe(1501);
+    expect(clampShareHeight(1400.2)).toBe(1401);
+    expect(clampShareHeight(1500.2)).toBe(SHARE_H_MAX);
     expect(clampShareHeight(2600)).toBe(SHARE_H_MAX);
     expect(SHARE_H_MIN / SHARE_W).toBeCloseTo(5 / 4);
-    expect(SHARE_H_MAX / SHARE_W).toBeCloseTo(16 / 9);
+    expect(SHARE_H_MAX / SHARE_W).toBeCloseTo(4 / 3);
+    expect(SHARE_H_MAX).toBe(1440);
   });
 
   it('title art fits the card width inside 90 px margins, never taller than its cap', () => {
@@ -39,11 +43,11 @@ describe('canvas clamp (S2: 4:5 … 9:16)', () => {
 
 describe('content-height sum + clamp', () => {
   it('a board that fits makes the card exactly the sum of its blocks', () => {
-    const plan = planShareCard(GAME_HEAD, () => 600);
     const fixed = shareFixedHeight(GAME_HEAD);
-    expect(fixed + 600).toBeGreaterThan(SHARE_H_MIN);
-    expect(plan.height).toBe(clampShareHeight(fixed + 600));
-    expect(plan.boardH).toBe(600);
+    const board = 1400 - fixed;
+    const plan = planShareCard(GAME_HEAD, () => board);
+        expect(plan.height).toBe(1400);
+    expect(plan.boardH).toBe(board);
     expect(plan.boardScale).toBe(1);
   });
 
@@ -172,9 +176,9 @@ describe('cast row spacing (S3: the cast IS the wordmark)', () => {
     expect(row.lift).toBeGreaterThan(0);
   });
 
-  it('spans ~90% of the card, big enough to read', () => {
+  it('spans ~80% of the card, big enough to read', () => {
     const row = shareCastRow();
-    expect(row.rowW).toBe(Math.round(SHARE_W * 0.9));
+    expect(row.rowW).toBe(Math.round(SHARE_W * 0.8));
     expect(row.charH).toBeGreaterThan(100);
   });
 });
@@ -243,5 +247,70 @@ describe('title art sits fully on the card (founder 10-06: CLASSIC was cut off a
     expect(titleFitsCard({ x: 100, y: -20, w: 800, h: 200 }, 1500)).toBe(false);
     expect(titleFitsCard({ x: 100, y: 40, w: 800, h: 200 }, 1500, 200)).toBe(false);
     expect(titleFitsCard({ x: 100, y: 40, w: 800, h: 200 }, 1500)).toBe(true);
+  });
+});
+
+// ── Founder 10-12: iMessage center-crops an image taller than ~3:4 ──────────
+
+const natOf = (input: ShareImageInput): readonly [number, number] | null => {
+  const t = shareCardArt(input).title;
+  return t ? ART_SIZE[t as keyof typeof ART_SIZE] ?? null : null;
+};
+
+describe('message cards never pass 3:4 (iMessage crops taller images: the title and the stat chips were cut off)', () => {
+  const all = [...SHARE_SAMPLES, ...SHARE_EXTRA_SAMPLES];
+  // 0 = a guest's card (no hero), the band's height = a signed-in sender's.
+  const heroBands = [0, SHARE_HERO_H + SHARE_HERO_GAP];
+
+  it('every card (all games, Octo included; with and without the hero band) is at most 1440 tall', () => {
+    expect(SHARE_FRAMES.message.maxH).toBe(1440);
+    for (const { id, input } of all) {
+      for (const heroH of heroBands) {
+        for (const nat of [natOf(input), null]) {
+          const { plan } = shareCardPlan(input, nat, { heroH });
+          expect(plan.height, `${id} hero ${heroH}`).toBeLessThanOrEqual(1440);
+          expect(plan.height, `${id} hero ${heroH}`).toBeGreaterThanOrEqual(SHARE_H_MIN);
+        }
+      }
+    }
+  });
+
+  it('title, hero, board, stat windows and the cast wordmark all end inside the card, in order', () => {
+    for (const { id, input } of all) {
+      for (const heroH of heroBands) {
+        const { plan, titleH } = shareCardPlan(input, natOf(input), { heroH });
+        const footH = input.layout === 'profile' || input.layout === 'moment' ? 0
+          : input.layout === 'leaderboard' ? (shareHookLine(input.footer) ? 44 : 0) : SHARE_SPACE.stats;
+        const tag = `${id} hero ${heroH}`;
+        expect(plan.titleTop + titleH, tag).toBeLessThanOrEqual(plan.heroTop + 0.5);
+        expect(plan.heroTop + heroH, tag).toBeLessThanOrEqual(plan.headTop + 0.5);
+        expect(plan.boardTop + plan.boardH, tag).toBeLessThanOrEqual(plan.footTop + 0.5);
+        // The stat block's bottom is inside the card (the founder's chips were cut at the bottom).
+        expect(plan.footTop + footH, tag).toBeLessThanOrEqual(plan.height);
+        expect(plan.castBase, tag).toBeLessThan(plan.urlY);
+        expect(plan.urlY + SHARE_SPACE.url / 2 + SHARE_SPACE.bottom, tag).toBeLessThanOrEqual(plan.height + 1);
+        expect(plan.boardH, tag).toBeGreaterThanOrEqual(plan.contentH - 0.5);
+      }
+    }
+  });
+
+  it('the board is not tiny even under the hero band (>= 400 px of the 1440)', () => {
+    for (const { id, input } of SHARE_SAMPLES) {
+      const { plan } = shareCardPlan(input, natOf(input), { heroH: SHARE_HERO_H + SHARE_HERO_GAP });
+      expect(plan.contentH, id).toBeGreaterThanOrEqual(400);
+    }
+  });
+
+  it('the VS card is inside 1440 too', () => {
+    for (const n of [ART_SIZE['art-title-vs'], null]) {
+      const { plan } = planVsShareCard(VS_SHARE_SAMPLE, n, null, VS_AVATAR_BLOCK);
+      expect(plan.height).toBeLessThanOrEqual(1440);
+      expect(plan.urlY + SHARE_SPACE.url / 2 + SHARE_SPACE.bottom).toBeLessThanOrEqual(plan.height + 1);
+    }
+  });
+
+  it("the 'story' frame is still exactly 9:16", () => {
+    const { plan } = shareCardPlan(SHARE_SAMPLES[0].input, null, { heroH: SHARE_HERO_H + SHARE_HERO_GAP, frame: 'story' });
+    expect(plan.height).toBe(1920);
   });
 });

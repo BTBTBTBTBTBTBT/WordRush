@@ -6,7 +6,7 @@
  * tinted window (purple you, pink them) with a soft number, and up to 2 glossy
  * color-only boards per side — and the cast wordmark (the ten heroes standing
  * together) over "wordocious.com". The canvas is 1080 wide and as tall as that
- * stack (4:5 … 9:16, lib/share-fit.ts). Colors only = no daily-VS spoilers.
+ * stack (4:5 … 3:4, lib/share-fit.ts). Colors only = no daily-VS spoilers.
  * Every image is optional: a failed load draws the plain fallback in its spot.
  */
 import { evaluateGuess } from '@wordle-duel/core';

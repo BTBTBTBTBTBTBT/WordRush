@@ -1,6 +1,7 @@
 // Renders every game's web share card into docs/design/share/out/ (founder
 // 10-06: the title art must sit fully on the card). Usage, from the repo root:
 //   node docs/design/share/render.mjs [path/to/playwright-core]
+// (macOS: uses /Applications/Google Chrome.app headless; PLAYWRIGHT_CHROMIUM overrides.)
 // Bundles entry.ts with esbuild, serves apps/web/public, draws the cards in
 // headless Chromium (/opt/pw-browsers or PLAYWRIGHT_CHROMIUM) and writes PNGs.
 import { createServer } from 'node:http';
@@ -43,17 +44,21 @@ const server = createServer(async (req, res) => {
 }).listen(0);
 const port = server.address().port;
 
-const exe = process.env.PLAYWRIGHT_CHROMIUM ?? ['/opt/pw-browsers/chromium', ...readdirSync('/opt/pw-browsers').filter((d) => d.startsWith('chromium-')).map((d) => `/opt/pw-browsers/${d}/chrome-linux/chrome`)].find((p) => existsSync(p) && !p.endsWith('/chromium'));
+const MAC_CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const exe = process.env.PLAYWRIGHT_CHROMIUM ?? (existsSync(MAC_CHROME) ? MAC_CHROME : null) ?? ['/opt/pw-browsers/chromium', ...readdirSync('/opt/pw-browsers').filter((d) => d.startsWith('chromium-')).map((d) => `/opt/pw-browsers/${d}/chrome-linux/chrome`)].find((p) => existsSync(p) && !p.endsWith('/chromium'));
 const browser = await chromium.launch({ executablePath: exe });
 const page = await browser.newPage({ deviceScaleFactor: 1 });
 page.on('pageerror', (e) => console.error('page error:', e.message));
 await page.goto(`http://localhost:${port}/`);
-const cards = await page.evaluate(() => window.renderAll());
 await mkdir(join(here, 'out'), { recursive: true });
-for (const { id, url } of cards) {
-  if (!url) { console.error(`${id}: no image`); continue; }
-  await writeFile(join(here, 'out', `web-${id}.png`), Buffer.from(url.split(',')[1], 'base64'));
-  console.log(`web-${id}.png`);
+// Pass 1: a guest's cards (no hero band) -> web-<id>.png; pass 2: a signed-in sender's -> webhero-<id>.png.
+for (const [withHero, prefix] of [[false, 'web'], [true, 'webhero']]) {
+  const cards = await page.evaluate((h) => window.renderAll(h), withHero);
+  for (const { id, url } of cards) {
+    if (!url) { console.error(`${id}: no image`); continue; }
+    await writeFile(join(here, 'out', `${prefix}-${id}.png`), Buffer.from(url.split(',')[1], 'base64'));
+    console.log(`${prefix}-${id}.png`);
+  }
 }
 await browser.close();
 server.close();

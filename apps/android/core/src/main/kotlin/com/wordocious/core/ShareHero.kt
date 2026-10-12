@@ -23,8 +23,8 @@ object ShareHero {
     const val GLOW_GOLD = "#FCD34D"
     const val GLOW_HALLOWEEN = "#FB923C"
     const val GLOW_SPORT = "#94A3B8"
-    const val HEIGHT = 300f
-    const val GAP = 12f
+    const val HEIGHT = 190f
+    const val GAP = 8f
 
     fun spec(r: Result, halloween: Boolean): Spec {
         val base = if (halloween) GLOW_HALLOWEEN else GLOW_NORMAL
@@ -46,8 +46,8 @@ object ShareHero {
     /** Height the band adds to a card (band + gap), 0 when the card has no hero. */
     fun band(hasHero: Boolean): Float = if (hasHero) HEIGHT + GAP else 0f
 
-    /** The frames (width is always 1080): "message" is the long-standing 4:5 .. 9:16 clamp. */
+    /** The frames (width is always 1080): "message" is 4:5 .. 3:4 (iMessage crops anything taller). */
     val frames: Map<String, Pair<Float, Float>> = mapOf(
-        "message" to (1350f to 1920f), "story" to (1920f to 1920f), "square" to (1080f to 1080f),
+        "message" to (1350f to 1440f), "story" to (1920f to 1920f), "square" to (1080f to 1080f),
     )
 }

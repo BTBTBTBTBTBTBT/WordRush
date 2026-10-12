@@ -6,7 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** FINISH_SPEC S2 / S3: the share card fits its content inside 4:5 … 9:16, and the cast spans ~90%. */
+/** FINISH_SPEC S2 / S3: the share card fits its content inside 4:5 … 3:4 (1440), and the cast spans ~80%. */
 class ShareCardLayoutTest {
     private fun body(w: Float, h: Float, frac: Float = ShareCard.BODY_FRAC) = ShareCard.Body(w, h, frac) {}
 
@@ -32,17 +32,20 @@ class ShareCardLayoutTest {
 
     @Test
     fun fittingContentIsItsOwnHeight() {
-        // A square Sudoku body (0.88 width square).
-        val l = ShareCard.layout(titleH = 170f, body = body(950f, 950f), hasStats = true)
+        // A body that fits at full width inside 3:4: the card is exactly the sum of its blocks (no slack spread).
+        val probe = ShareCard.layout(titleH = 170f, body = body(950f, 4000f), hasStats = true)
+        val fixed = ShareCard.MAX_H - probe.bodyH
+        val bodyH = 1400f - fixed
+        val l = ShareCard.layout(titleH = 170f, body = body(950f, bodyH), hasStats = true)
         assertTrue(l.height in ShareCard.MIN_H..ShareCard.MAX_H)
         assertEquals(ShareCard.W * ShareCard.BODY_FRAC, l.bodyW, 0.5f)
-        assertEquals(l.bodyW, l.bodyH, 0.5f)
+        assertEquals(950f / bodyH, l.bodyW / l.bodyH, 0.01f)
         assertEquals(l.height.toFloat(), l.urlTop + ShareCard.URL_H + ShareCard.BOTTOM, 1f)
         assertOrdered(l, true)
     }
 
     @Test
-    fun tallBoardsScaleByHeightToStayInside9by16() {
+    fun tallBoardsScaleByHeightToStayInside3by4() {
         // An OctoWord-like column of boards far taller than wide.
         val l = ShareCard.layout(titleH = 170f, body = body(950f, 4000f), hasStats = true)
         assertEquals(ShareCard.MAX_H, l.height)
@@ -66,7 +69,7 @@ class ShareCardLayoutTest {
     }
 
     @Test
-    fun theCastWordmarkSpans90PercentWithTheTuck() {
+    fun theCastWordmarkSpans80PercentWithTheTuck() {
         val span = ShareCard.W * ShareCard.CAST_FRAC
         val h = ShareCard.castFigureHeight(span)
         val widths = Mascots.cast.sumOf { (CastCrops.crops.getValue(it).aspect * h).toDouble() }.toFloat()
@@ -129,7 +132,7 @@ class ShareCardLayoutTest {
             assertTrue(l.height in ShareCard.MIN_H..ShareCard.MAX_H)
             assertTrue("hero below the title", l.heroTop >= l.titleTop + 170f)
             assertTrue("hero above the info line", l.heroTop + band <= l.infoTop + 0.5f)
-            // The band is paid for by the body / gaps, never by overflowing 9:16.
+            // The band is paid for by the body / gaps, never by overflowing 3:4.
             assertTrue(l.bodyH <= plain.bodyH + 0.5f)
             assertTrue(l.urlTop + ShareCard.URL_H <= l.height + 1f)
         }
@@ -137,6 +140,36 @@ class ShareCardLayoutTest {
         val a = ShareCard.layout(170f, body(544f, 211f), hasStats = true)
         val z = ShareCard.layout(170f, body(544f, 211f), hasStats = true, heroBand = 0f)
         assertEquals(a, z)
+    }
+
+    @Test
+    fun everyCardIsAtMost3by4WithTheStatBlockInside() {
+        // Founder 10-12: iMessage center-crops an image taller than ~3:4 (the CLASSIC title and the stat chips were cut off).
+        assertEquals(1440, ShareCard.MAX_H)
+        assertEquals(1440f, com.wordocious.core.ShareHero.frames.getValue("message").second, 0f)
+        val bands = listOf(0f, com.wordocious.core.ShareHero.band(true))
+        // Classic, Six, QuadWord / Succession, OctoWord (8 boards), Gauntlet, Sudoku, a tiny board, a column of 4000.
+        val bodies = listOf(
+            body(544f, 680f), body(700f, 880f), body(742f, 1240f), body(934f, 1160f), body(960f, 560f),
+            body(950f, 950f), body(120f, 60f), body(300f, 2600f), body(950f, 4000f),
+        )
+        for ((name, a) in titles) for (hero in bands) for (b in bodies) for (stats in listOf(true, false)) {
+            val l = ShareCard.layout(ShareCard.titleHeight(a), b, hasStats = stats, heroBand = hero)
+            val tag = "$name hero=$hero ${b.w}x${b.h} stats=$stats"
+            assertTrue(tag, l.height <= 1440)
+            assertTrue(tag, l.height >= ShareCard.MIN_H)
+            // Title, hero, info, body, the stat block, the cast and the url line all end inside the card.
+            assertTrue(tag, l.bodyTop + l.bodyH <= l.statsTop + 0.5f)
+            if (stats) assertTrue(tag, l.statsTop + ShareFinish.STATS_H <= l.height)
+            assertTrue(tag, l.urlTop + ShareCard.URL_H + ShareCard.BOTTOM <= l.height + 1f)
+        }
+    }
+
+    @Test
+    fun anOctoBodyUnderTheHeroBandStaysReadable() {
+        val l = ShareCard.layout(ShareCard.titleHeight(1200f / 255), body(934f, 1160f), hasStats = true, heroBand = com.wordocious.core.ShareHero.band(true))
+        assertEquals(1440, l.height)
+        assertTrue("board height ${l.bodyH}", l.bodyH >= 500f)
     }
 
     @Test

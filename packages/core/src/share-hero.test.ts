@@ -29,8 +29,8 @@ describe('share hero (item 46)', () => {
     expect(shareHeroResultFor(undefined)).toBe('neutral');
     expect([1, 2, 3, 4, null].map(shareHeroResultForRank)).toEqual(['rank1', 'rank2', 'rank3', 'ranked', 'ranked']);
   });
-  it('frames: message keeps the old clamp, story is 9:16, square is 1:1 and has no hero band', () => {
-    expect(SHARE_FRAMES.message).toEqual({ minH: 1350, maxH: 1920 });
+  it('frames: message is 4:5 .. 3:4, story is 9:16, square is 1:1 and has no hero band', () => {
+    expect(SHARE_FRAMES.message).toEqual({ minH: 1350, maxH: 1440 });
     expect(SHARE_FRAMES.story.minH).toBe(1920);
     expect(SHARE_FRAMES.square).toEqual({ minH: 1080, maxH: 1080 });
     expect(shareHeroBand('message', true)).toBe(SHARE_HERO_H + SHARE_HERO_GAP);

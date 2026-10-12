@@ -26,19 +26,23 @@ import kotlin.math.roundToInt
  *   the WHOLE title art (card width inside [TITLE_MARGIN], ≤ [TITLE_MAX_H] tall, pinned at
  *   the top — founder 10-06: the CLASSIC title was cut off) · one compact info line (date · guesses · time · W/L badge)
  *   · the body block (~88% width; tall bodies scale by height) · the E1 stat windows
- *   · the cast wordmark (S3: W·O·R·D·O·C·I·O·U·S standing together, ~90% width,
+ *   · the cast wordmark (S3: W·O·R·D·O·C·I·O·U·S standing together, ~80% width,
  *   soft ground shadow) · one tiny "wordocious.com" line.
  *
  * The canvas is 1080 wide; its height is the sum of those, clamped between 4:5
- * (1350) and 9:16 (1920). There is no separate "WORDOCIOUS" text wordmark: the cast
+ * (1350) and 3:4 (1440). There is no separate "WORDOCIOUS" text wordmark: the cast
  * is the only wordmark. The heights math is pure ([layout]) and unit-tested.
  */
 internal object ShareCard {
     const val W = 1080
     /** 4:5. */
     const val MIN_H = 1350
-    /** 9:16. */
-    const val MAX_H = 1920
+    /**
+     * 3:4. Founder 10-12: iMessage shows an image in a bubble of at most ~3:4 and center-crops anything taller (the
+     * title and the stat chips were cut off a card that had grown to 9:16 under the hero band), so a card never
+     * passes 1440; a tall body scales by height instead.
+     */
+    const val MAX_H = 1440
 
     /** S2 the board block fills ~88% of the width. */
     const val BODY_FRAC = 0.88f
@@ -51,23 +55,24 @@ internal object ShareCard {
     const val TITLE_MAX_H = 210f
     /** The lettered title's band when the art doesn't decode. */
     const val TITLE_FALLBACK_H = 96f
-    /** S3 the cast row spans ~90% of the width. */
-    const val CAST_FRAC = 0.90f
+    /** S3 the cast row spans ~80% of the width (3:4 budget; web CAST_ROW.widthFrac, iOS ShareCardPlan.castW). */
+    const val CAST_FRAC = 0.80f
     /** S3 neighbors overlap by ~6% of a figure (the Home header row's tuck). */
     const val CAST_OVERLAP = 0.06f
     /** S3 the ground shadow's reach below the feet (fraction of the figure height). */
     const val CAST_SHADOW = 0.07f
 
     // Base gaps (3× the 360 px mockup units).
-    const val TOP = 14f * U
+    // Tightened 10-12 for the 3:4 cap (web SHARE_SPACE, iOS ShareCardPlan).
+    const val TOP = 32f
     const val G_TITLE = 4f * U
     const val INFO_H = 15f * U
-    const val G_INFO = 8f * U
-    const val G_BODY = 9f * U
-    const val G_STATS = 9f * U
+    const val G_INFO = 20f
+    const val G_BODY = 24f
+    const val G_STATS = 24f
     const val G_URL = 3f * U
     const val URL_H = 10f * U
-    const val BOTTOM = 10f * U
+    const val BOTTOM = 24f
 
     /** A body block at its natural (reference) size, drawn in 0..[w] × 0..[h] and scaled to fit. */
     class Body(
@@ -122,7 +127,7 @@ internal object ShareCard {
 
     /**
      * Pure S2 layout: sums the sections, scales a too-tall body by height so the card
-     * stays inside 9:16, and spreads any shortfall under 4:5 across the gaps.
+     * stays inside 3:4, and spreads any shortfall under 4:5 across the gaps.
      */
     fun layout(titleH: Float, body: Body, hasStats: Boolean, statsH: Float = ShareFinish.STATS_H, heroBand: Float = 0f): Layout {
         val figH = castFigureHeight(W * CAST_FRAC)

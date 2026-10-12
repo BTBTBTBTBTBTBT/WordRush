@@ -557,9 +557,9 @@ enum LeaderboardShareBuilder {
 struct LeaderboardShareCardView: View {
     let input: LbShareInput
 
-    // §S2: the canvas is sized to its rows (4:5 … 9:16).
+    // §S2: the canvas is sized to its rows (4:5 … 3:4; iMessage crops taller images, founder 10-12).
     private static let rowBand: CGFloat = 110
-    private static let castW: CGFloat = 972
+    private static let castW = CGFloat(ShareCardPlan.castW)
     private var castH: CGFloat { ShareCastWordmark.height(Self.castW) }
 
     /// The title art's drawn size: ~70% of the width, height capped (the day
@@ -579,7 +579,7 @@ struct LeaderboardShareCardView: View {
         let n = CGFloat(input.rows.count + (input.you != nil ? 1 : 0))
         let panel = 14 + 32 + Self.rowBand * n + (input.you != nil ? 46 : 0)
         let h = 30 + titleH + 46 + 26 + 56 + 30 + panel + 40 + castH + 40
-        return CGSize(width: 1080, height: min(1920, max(1350, h)).rounded())
+        return CGSize(width: 1080, height: min(CGFloat(ShareCardPlan.maxHeight), max(CGFloat(ShareCardPlan.minHeight), h)).rounded())
     }
 
     // Per-variant identity: lavender for the daily board + podium, mint/teal
@@ -1091,7 +1091,7 @@ struct LeaderboardShareCardView: View {
         }
 
         // §S3: the cast IS the wordmark — the ten heroes standing together
-        // (6% overlap) across ~90% of the width on a soft ground shadow, then the
+        // (6% overlap) across ~80% of the width on a soft ground shadow, then the
         // one tiny "wordocious.com" line.
         let side = ShareCastWordmark.heroSide(Self.castW)
         let rowX = (cw - Self.castW) / 2

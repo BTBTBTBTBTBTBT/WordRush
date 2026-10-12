@@ -19,8 +19,8 @@ public enum ShareHero {
     }
 
     public static let glowNormal = "#A78BFA", glowGold = "#FCD34D", glowHalloween = "#FB923C", glowSport = "#94A3B8"
-    public static let height: Double = 300
-    public static let gap: Double = 12
+    public static let height: Double = 190
+    public static let gap: Double = 8
 
     public static func spec(_ r: Result, halloween: Bool) -> Spec {
         let base = halloween ? glowHalloween : glowNormal
@@ -47,8 +47,8 @@ public enum ShareHero {
     /// Height the band adds to a card (band + gap), 0 when the card has no hero.
     public static func band(hasHero: Bool) -> Double { hasHero ? height + gap : 0 }
 
-    /// The frames (width is always 1080): 'message' is the long-standing 4:5 .. 9:16 clamp.
+    /// The frames (width is always 1080): 'message' is 4:5 .. 3:4 (iMessage crops anything taller).
     public static let frames: [String: (minH: Double, maxH: Double)] = [
-        "message": (1350, 1920), "story": (1920, 1920), "square": (1080, 1080),
+        "message": (1350, 1440), "story": (1920, 1920), "square": (1080, 1080),
     ]
 }

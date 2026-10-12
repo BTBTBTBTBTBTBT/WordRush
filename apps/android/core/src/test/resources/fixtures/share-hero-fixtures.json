@@ -149,7 +149,7 @@
   "frames": {
     "message": {
       "minH": 1350,
-      "maxH": 1920
+      "maxH": 1440
     },
     "story": {
       "minH": 1920,
@@ -161,7 +161,7 @@
     }
   },
   "hero": {
-    "height": 300,
-    "gap": 12
+    "height": 190,
+    "gap": 8
   }
 }

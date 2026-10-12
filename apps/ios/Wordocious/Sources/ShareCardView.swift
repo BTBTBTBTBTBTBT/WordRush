@@ -95,13 +95,15 @@ struct ShareCardView: View {
     // MARK: §S2 layout — the canvas is sized to its content
 
     static let width: CGFloat = 1080
-    /// The board block's target width (88%); the 4:5 … 9:16 clamp lives in ShareCardPlan.
+    /// The board block's target width (88%); the 4:5 … 3:4 clamp lives in ShareCardPlan.
     private static let boardWidth: CGFloat = 950
 
-    private static let infoH: CGFloat = 50
-    private static let windowH: CGFloat = 124
-    private static let castW: CGFloat = 972
-    private static let bottomPad: CGFloat = 40
+    // Founder 10-12: the 3:4 cap (iMessage crops taller images) — the spacing lives in Core ShareCardPlan
+    // so web, Android and the plan tests share it.
+    private static let infoH = CGFloat(ShareCardPlan.infoH)
+    private static let windowH = CGFloat(ShareCardPlan.windowH)
+    private static let castW = CGFloat(ShareCardPlan.castW)
+    private static let bottomPad = CGFloat(ShareCardPlan.bottomPad)
 
     /// The title art's aspect (nil = the lettered fallback).
     private var titleAspect: Double? {
@@ -117,9 +119,7 @@ struct ShareCardView: View {
 
     /// Everything but the board.
     private var fixedH: CGFloat {
-        CGFloat(ShareCardPlan.fixedHeight(titleAspect: titleAspect, rest: Double(
-            18 + Self.infoH + 30 + 34 + Self.windowH + 40
-                + ShareCastWordmark.height(Self.castW) + Self.bottomPad + Double(heroBand))))
+        CGFloat(ShareCardPlan.fixedHeight(titleAspect: titleAspect, rest: ShareCardPlan.standardRest(hero: Double(heroBand))))
     }
 
     /// The board body's natural size (measured, else estimated).
@@ -168,7 +168,7 @@ struct ShareCardView: View {
                                text: modeLabel, color: accent)
                     .padding(.top, CGFloat(ShareCardPlan.topPad))
                 if heroBand > 0 { ShareHeroBand(result: heroResult) }
-                infoRow.frame(height: Self.infoH).padding(.top, 18)
+                infoRow.frame(height: Self.infoH).padding(.top, CGFloat(ShareCardPlan.infoGap))
 
                 // The board block in its planned box (the 4:5 floor's slack centers it).
                 body(for: kind)
@@ -177,13 +177,13 @@ struct ShareCardView: View {
                     .scaleEffect(scale)
                     .frame(width: n.width * scale, height: boardH)
                     .frame(height: boardH + CGFloat(p.slack))
-                    .padding(.top, 30)
+                    .padding(.top, CGFloat(ShareCardPlan.headGap))
 
                 ShareStatRow(items: windows, height: Self.windowH)
                     .padding(.horizontal, 54)
-                    .padding(.top, 34)
+                    .padding(.top, CGFloat(ShareCardPlan.boardGap))
                 ShareCastWordmark(width: Self.castW)
-                    .padding(.top, 40)
+                    .padding(.top, CGFloat(ShareCardPlan.castGap))
                     .padding(.bottom, Self.bottomPad)
             }
             // Pinned to the top: anything taller than the canvas runs off the bottom,

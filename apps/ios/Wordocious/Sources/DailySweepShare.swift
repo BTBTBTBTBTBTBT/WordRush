@@ -97,18 +97,29 @@ struct DailySweepCardView: View {
     }
     private var titleH: CGFloat { titleBox.height }
 
-    // §S2: the canvas is sized to its rows (4:5 … 9:16).
-    private var rowGap: CGFloat { rows.count > 8 ? 10 : 12 }
-    private var rowH: CGFloat { rows.count > 8 ? 84 : 92 }
+    // §S2: the canvas is sized to its rows (4:5 … 3:4; iMessage crops taller images, founder 10-12): the rows
+    // shrink to the room the fixed blocks leave under the 1440 cap (web stackGeometry: natural 112 → min 48).
+    private var rowGap: CGFloat { rows.count > 8 ? 8 : 12 }
+    private var rowH: CGFloat {
+        let n = CGFloat(max(rows.count, 1))
+        let room = CGFloat(ShareCardPlan.maxHeight) - fixedH
+        return max(44, min(rows.count > 8 ? 84 : 92, floor((room - rowGap * (n - 1)) / n)))
+    }
     private var rowsH: CGFloat {
         let n = CGFloat(max(rows.count, 1))
         return rowH * n + rowGap * (n - 1)
     }
-    private let castW: CGFloat = 972
+    private let castW = CGFloat(ShareCardPlan.castW)
+    private static let headlineH: CGFloat = 56
+    private static let dateH: CGFloat = 34
+    private static let statsH: CGFloat = 112
     private var fixedH: CGFloat {
-        40 + titleH + 8 + 112 + 40 + 26 + 30 + 120 + 40 + ShareCastWordmark.height(castW) + 40 + heroBand
+        CGFloat(ShareCardPlan.topPad) + titleH + 8 + Self.headlineH + Self.dateH + 16 + Self.statsH + 24
+            + 24 + ShareCastWordmark.height(castW) + CGFloat(ShareCardPlan.bottomPad) + heroBand
     }
-    var size: CGSize { CGSize(width: 1080, height: min(1920, max(1350, fixedH + rowsH)).rounded()) }
+    var size: CGSize {
+        CGSize(width: 1080, height: min(CGFloat(ShareCardPlan.maxHeight), max(CGFloat(ShareCardPlan.minHeight), fixedH + rowsH)).rounded())
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -120,35 +131,35 @@ struct DailySweepCardView: View {
                 }
                 if heroBand > 0 { ShareHeroBand(result: heroResult) }
                 Text(title ?? (flawless ? "FLAWLESS VICTORY" : "DAILY SWEEP"))
-                    .font(Brand.fixedFont(48, .black))
+                    .font(Brand.fixedFont(44, .black))
                     .foregroundStyle(LinearGradient(colors: titleColors, startPoint: .leading, endPoint: .trailing))
                     .shadow(color: .white.opacity(0.85), radius: 0, x: 0, y: 3)
                     // The home share titles the card with the banner headline
                     // ("WORDOCIOUS SWEPT! 10 PUZZLES LEFT"): two lines, then shrink.
                     .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.5)
                     .padding(.horizontal, 48)
-                    .frame(height: 112)
-                    .padding(.top, titleH > 0 ? 8 : 48)
+                    .frame(height: Self.headlineH)
+                    .padding(.top, titleH > 0 ? 8 : 40)
                 ShareDateLine(text: ShareCast.dateLine(dateStr), size: 28)
-                    .frame(height: 40)
+                    .frame(height: Self.dateH)
 
                 VStack(spacing: rowGap) {
                     ForEach(rows) { row in rowView(row) }
                 }
                 .padding(.horizontal, 64)
                 .frame(maxHeight: .infinity)
-                .padding(.top, 26)
+                .padding(.top, 16)
 
                 ShareStatRow(items: [
                     ("\(won)/\(total)", "WON", .purple),
                     (fmt(totalTimeSeconds), "TIME", .blue),
                     (totalScore.formatted(), "POINTS", .gold),
-                ], height: 120)
+                ], height: Self.statsH)
                 .padding(.horizontal, 54)
-                .padding(.top, 30)
+                .padding(.top, 24)
                 ShareCastWordmark(width: castW)
-                    .padding(.top, 40)
-                    .padding(.bottom, 40)
+                    .padding(.top, 24)
+                    .padding(.bottom, CGFloat(ShareCardPlan.bottomPad))
             }
             // Pinned to the top: an overflow runs off the bottom, never over the title.
             .frame(width: size.width, height: size.height, alignment: .top)
@@ -329,7 +340,8 @@ struct ProfileShareCardView: View {
     /// §S2: 4:5 (the content fits it; the clamp's floor).
     var heroEnabled = false
     private var heroBand: CGFloat { CGFloat(ShareHero.band(hasHero: heroEnabled)) }
-    var size: CGSize { CGSize(width: 1080, height: 1350 + heroBand) }
+    /// 4:5 for a guest's card, 3:4 with the sender's hero band (never taller: iMessage crops, founder 10-12).
+    var size: CGSize { CGSize(width: 1080, height: heroBand > 0 ? CGFloat(ShareCardPlan.maxHeight) : CGFloat(ShareCardPlan.minHeight)) }
 
     private var accent: Color { Color(hex: input.accentHex) }
 
@@ -381,16 +393,16 @@ struct ProfileShareCardView: View {
                 VStack(spacing: 22) {
                     ForEach(0..<3, id: \.self) { r in
                         HStack(spacing: 22) {
-                            ShareStatWindow(value: tiles[r * 2].0, label: tiles[r * 2].1, tone: tiles[r * 2].2, height: 160)
-                            ShareStatWindow(value: tiles[r * 2 + 1].0, label: tiles[r * 2 + 1].1, tone: tiles[r * 2 + 1].2, height: 160)
+                            ShareStatWindow(value: tiles[r * 2].0, label: tiles[r * 2].1, tone: tiles[r * 2].2, height: 144)
+                            ShareStatWindow(value: tiles[r * 2 + 1].0, label: tiles[r * 2 + 1].1, tone: tiles[r * 2 + 1].2, height: 144)
                         }
                     }
                 }
                 .padding(.horizontal, 64)
                 Spacer(minLength: 24)
 
-                ShareCastWordmark(width: 972)
-                    .padding(.bottom, 40)
+                ShareCastWordmark(width: CGFloat(ShareCardPlan.castW))
+                    .padding(.bottom, CGFloat(ShareCardPlan.bottomPad))
             }
             .frame(width: size.width, height: size.height, alignment: .top)
         }

@@ -15,7 +15,8 @@ struct MomentShareCardView: View {
     var heroEnabled = false
 
     private var heroBand: CGFloat { CGFloat(ShareHero.band(hasHero: heroEnabled)) }
-    var size: CGSize { CGSize(width: 1080, height: 1350 + heroBand) }
+    /// 4:5 for a guest's card, 3:4 with the sender's hero band (never taller: iMessage crops, founder 10-12).
+    var size: CGSize { CGSize(width: 1080, height: heroBand > 0 ? CGFloat(ShareCardPlan.maxHeight) : CGFloat(ShareCardPlan.minHeight)) }
 
     private var accent: Color { Color(hexString: moment.accentHex) ?? Color(hex: 0x7C3AED) }
 
@@ -58,8 +59,8 @@ struct MomentShareCardView: View {
                 }
                 Spacer(minLength: 20)
 
-                ShareCastWordmark(width: 972)
-                    .padding(.bottom, 40)
+                ShareCastWordmark(width: CGFloat(ShareCardPlan.castW))
+                    .padding(.bottom, CGFloat(ShareCardPlan.bottomPad))
             }
             .frame(width: size.width, height: size.height, alignment: .top)
         }

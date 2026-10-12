@@ -100,6 +100,33 @@ export const SHARE_SAMPLES: ShareSample[] = [
   },
 ];
 
+/**
+ * The cards that are not a single game's result (founder 10-12: every message card stays inside 3:4): the ten-row
+ * Puzzles (More Games) sweep, the stats card, the moment cards and the daily leaderboard.
+ */
+export const SHARE_EXTRA_SAMPLES: ShareSample[] = [
+  {
+    id: 'puzzles-sweep',
+    input: {
+      layout: 'daily-sweep', mode: 'Sudocious', title: 'PUZZLES', flawless: false, total: 10, won: 9, totalGuesses: 0, totalTimeSeconds: 2400, totalScore: 9100, date: DATE,
+      games: (['Sudocious', 'Starsweep', 'Letter Ladder', 'Spyglass', 'Hubbub', 'Codebreaker', 'Kindred', 'Crosswordocious', 'Muddle', 'ProperNoundle'] as const).map((mode, i) => ({
+        mode, modeLabel: mode, won: i !== 6, guesses: 0, timeSeconds: 120 + i * 30, score: 800 + i * 20,
+      })),
+    },
+  },
+  { id: 'profile', input: { layout: 'profile', mode: 'Classic', username: 'Ava', level: 12, tier: 'Gold', accentHex: '#7c3aed', totalWins: 120, winRate: 64, currentStreak: 5, dailyStreak: 9, gold: 3, silver: 2, bronze: 1, achievementsUnlocked: 20, achievementsTotal: 60, date: DATE } },
+  { id: 'moment-levelup', input: { layout: 'moment', mode: 'Classic', kind: 'levelUp', title: 'LEVEL UP!', accentHex: '#7c3aed', big: '12', bigLabel: 'LEVEL', lines: ['Gold tier', 'Next: 13', 'Keep going'], date: DATE } },
+  { id: 'moment-streak', input: { layout: 'moment', mode: 'Classic', kind: 'streak', title: 'ON A STREAK', accentHex: '#7c3aed', big: '7', bigLabel: 'DAY STREAK', lines: ['Best: 21 days', 'Nice', 'Keep it up'], dots: [true, true, false, true, true, true, true], date: DATE } },
+  {
+    id: 'leaderboard',
+    input: {
+      layout: 'leaderboard', mode: 'Classic', variant: 'solo', modeChip: 'Classic', dateChip: 'Oct 12, 2026', footer: 'Can you beat them? Play free at wordocious.com',
+      rows: [1, 2, 3, 4, 5].map((rank) => ({ rank, name: `Player ${rank}`, scoreDisplay: '1,200', subline: '4 guesses · 3:44 · Win' })),
+      you: { rank: 12, name: 'You', scoreDisplay: '900', subline: '5 guesses · 4:10 · Win', isYou: true }, youRankLine: '#12 of 87', date: DATE,
+    },
+  },
+];
+
 /** The VS head-to-head (Classic VS, 6 rows each side). */
 export const VS_SHARE_SAMPLE: VsShareInput = {
   modeLabel: 'VS CLASSIC',

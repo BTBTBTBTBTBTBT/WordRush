@@ -303,8 +303,8 @@ internal object ShareFinish {
 
     data class Stat(val value: String, val label: String, val window: Window)
 
-    /** The `.sc-stats` card height at 3×: 13 + 20 value + label + 7. */
-    const val STATS_H = 150f
+    /** The `.sc-stats` card height (founder 10-12: tightened from 150 so a 3:4 card keeps a big board; web 120, iOS 124). */
+    const val STATS_H = 126f
 
     /** A row of tinted stat windows across [left]..[right], [top] down, [h] tall (soft-number values). */
     fun drawStats(c: Canvas, fonts: Fonts, stats: List<Stat>, left: Float, right: Float, top: Float, h: Float = STATS_H, gap: Float = 6f * U, valueSize: Float = 20f * U) {

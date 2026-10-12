@@ -66,16 +66,20 @@ export function shareHeroResultForRank(rank: number | null | undefined): ShareHe
 
 export type ShareFrame = 'message' | 'story' | 'square';
 
-/** Canvas height limits per frame (width is always 1080). 'message' is the long-standing 4:5 .. 9:16 clamp. */
+/**
+ * Canvas height limits per frame (width is always 1080). 'message' is 4:5 .. 3:4 (1350 .. 1440): founder 10-12, iMessage
+ * shows an image in a bubble of at most ~3:4 and center-crops anything taller (the title and the stat chips were cut
+ * off), so the message card never passes 1080 x 1440. 'story' is the 9:16 Instagram frame.
+ */
 export const SHARE_FRAMES: Record<ShareFrame, { minH: number; maxH: number }> = {
-  message: { minH: 1350, maxH: 1920 },
+  message: { minH: 1350, maxH: 1440 },
   story: { minH: 1920, maxH: 1920 },
   square: { minH: 1080, maxH: 1080 },
 };
 
 /** The hero band's height (canvas px) and the gap under it; a square card has no room for one. */
-export const SHARE_HERO_H = 300;
-export const SHARE_HERO_GAP = 12;
+export const SHARE_HERO_H = 190;
+export const SHARE_HERO_GAP = 8;
 
 /** Height the hero band adds to a card in `frame` (0 when it has none). */
 export function shareHeroBand(frame: ShareFrame, hasHero: boolean): number {

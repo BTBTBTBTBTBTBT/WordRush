@@ -24,8 +24,10 @@ final class ShareCardPlanTests: XCTestCase {
         .init(width: 960, height: 730), .init(width: 300, height: 2600), .init(width: 120, height: 60),
     ]
 
-    /// ShareCardView's non-board blocks below the title (info, gaps, stats, cast, bottom pad).
-    private let rest: Double = 18 + 50 + 30 + 34 + 124 + 40 + 146.6 + 40
+    /// ShareCardView's non-board blocks below the title (info, gaps, stats, cast, bottom pad), no hero band.
+    private let rest: Double = ShareCardPlan.standardRest()
+    /// The same with a signed-in sender's hero band (band + gap).
+    private let restWithHero: Double = ShareCardPlan.standardRest(hero: ShareHero.band(hasHero: true))
 
     func testTitleFitsWidthInsideMargins() {
         XCTAssertEqual(ShareCardPlan.titleMaxW, 900)
@@ -56,6 +58,40 @@ final class ShareCardPlanTests: XCTestCase {
                 }
             }
         }
+    }
+
+    /// Founder 10-12: iMessage center-crops an image taller than ~3:4, which cut the CLASSIC title and the
+    /// stat chips. Every card, hero band or not, is at most 1440 tall with the stat block inside it.
+    func testEveryCardIsAtMost3by4AndTheStatBlockIsInside() {
+        XCTAssertEqual(ShareCardPlan.maxHeight, 1440)
+        XCTAssertEqual(ShareCardPlan.minHeight, 1350)
+        XCTAssertEqual(ShareHero.frames["message"]?.maxH, 1440)
+        for r in [rest, restWithHero] {
+            for (name, a) in titles {
+                for aspect in [a, nil] as [Double?] {
+                    for b in boards {
+                        let fixed = ShareCardPlan.fixedHeight(titleAspect: aspect, rest: r)
+                        let card = ShareCardPlan.plan(titleAspect: aspect, fixed: fixed, board: b)
+                        XCTAssertLessThanOrEqual(card.height, 1440, "\(name) \(b)")
+                        // Title, hero, info, board, stat windows, cast: the column ends inside the card.
+                        XCTAssertLessThanOrEqual(card.columnHeight(fixed: fixed), card.height + 1, "\(name) \(b)")
+                        // The stat block's bottom (everything under the board: gap + windows + cast + pad) is inside.
+                        let statsBottom = fixed - ShareCardPlan.castGap - ShareCardPlan.castBlockHeight(ShareCardPlan.castW)
+                            - ShareCardPlan.bottomPad + card.boardH + card.slack
+                        XCTAssertLessThanOrEqual(statsBottom, card.height, "\(name) \(b)")
+                    }
+                }
+            }
+        }
+    }
+
+    /// Octo (8 boards, ~934 x 1160 natural) under the hero band: scaled down, still a real board.
+    func testOctoUnderTheHeroBandStaysReadable() {
+        let fixed = ShareCardPlan.fixedHeight(titleAspect: titles["octoword"], rest: restWithHero)
+        let card = ShareCardPlan.plan(titleAspect: titles["octoword"], fixed: fixed, board: .init(width: 934, height: 1160))
+        XCTAssertEqual(card.height, 1440)
+        XCTAssertGreaterThanOrEqual(card.boardH, 500)
+        XCTAssertTrue(ShareCardPlan.titleFits(card))
     }
 
     func testTallBoardsScaleDownInsteadOfPushingTheTitle() {

@@ -634,7 +634,7 @@ function formatTime(seconds: number): string {
 // the card, the game's title art (~70% wide), ONE compact info line with a
 // W / L badge, the board block (~88% wide), three tinted stat windows, and the
 // cast wordmark over "wordocious.com". The canvas is exactly as tall as that
-// stack (lib/share-fit.ts planShareCard, clamped 4:5 … 9:16). Every image is
+// stack (lib/share-fit.ts planShareCard, clamped 4:5 … 3:4). Every image is
 // optional: when one fails to load (offline, slow) the card draws its plain
 // fallback in that spot.
 // ──────────────────────────────────────────────────────────────────────────
@@ -1065,7 +1065,7 @@ function drawMulti(ctx: CanvasRenderingContext2D, input: ShareMultiInput, width:
 
 // Gauntlet: the stage stack — one tinted window per stage (lilac cleared /
 // rose failed) with its number, name, boards + guesses, and a glossy check or
-// cross. Scales by height so all five fit the 9:16 clamp.
+// cross. Scales by height so all five fit the 3:4 clamp.
 function drawGauntlet(ctx: CanvasRenderingContext2D, input: ShareGauntletInput, width: number, box: Box): void {
   const n = input.stages.length;
   if (!n) return;

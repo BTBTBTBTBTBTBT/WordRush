@@ -90,12 +90,18 @@ struct VSShareCardView: View {
     private let mePurple = Color(hex: 0x7C3AED), oppPink = Color(hex: 0xEC4899)
 
     /// The column's measured natural height (`ShareService.naturalSize(card.column)`),
-    /// set before rendering so the canvas fits it (4:5 … 9:16); nil = 4:5.
+    /// set before rendering so the canvas fits it (4:5 … 3:4); nil = 4:5.
     var columnNatural: CGFloat? = nil
 
     var size: CGSize {
         let h = min(CGFloat(ShareCardPlan.maxHeight), max(CGFloat(ShareCardPlan.minHeight), columnNatural ?? 0))
         return CGSize(width: 1080, height: h.rounded())
+    }
+
+    /// < 1 when the measured column is taller than the card's 3:4 cap.
+    private var fitScale: CGFloat {
+        guard let n = columnNatural, n > size.height + 0.5 else { return 1 }
+        return size.height / n
     }
 
     private var titleAspect: Double? {
@@ -112,8 +118,11 @@ struct VSShareCardView: View {
     var body: some View {
         ZStack(alignment: .top) {
             ShareWall(tint: .vs)
+            // Pinned to the top. A column taller than the 3:4 cap (iMessage crops taller images, founder 10-12)
+            // is scaled down to fit, so the stat windows and the cast are never cut off.
             columnView(spacer: true)
-                // Pinned to the top: an overflow runs off the bottom, never over the title.
+                .frame(width: 1080, height: size.height / fitScale, alignment: .top)
+                .scaleEffect(fitScale, anchor: .top)
                 .frame(width: size.width, height: size.height, alignment: .top)
         }
         .frame(width: size.width, height: size.height, alignment: .top)
@@ -149,8 +158,8 @@ struct VSShareCardView: View {
                 (value: isDraw ? "DRAW" : (isWin ? "WIN" : "LOSS"), label: "RESULT", tone: .gold),
             ], height: 100)
             .padding(.horizontal, 60)
-            ShareCastWordmark(width: 972)
-                .padding(.top, 40).padding(.bottom, 40)
+            ShareCastWordmark(width: CGFloat(ShareCardPlan.castW))
+                .padding(.top, CGFloat(ShareCardPlan.castGap)).padding(.bottom, CGFloat(ShareCardPlan.bottomPad))
         }
         .frame(width: 1080)
     }
