@@ -11,7 +11,9 @@ import { ACHIEVEMENT_CATALOG } from '@/lib/achievement-service';
 // (achievement_key, unlocked_at) — the apps order unlocks by unlocked_at.
 // Unlock DETECTION stays per-platform (it's key-string logic, independent of this
 // array). Adding an achievement's display entry = edit ACHIEVEMENTS here.
-export const runtime = 'edge';
+// Node runtime: on Vercel's edge runtime this route's import graph (lib/achievement-service) failed with a 500
+// (10-12), so the apps never got the catalog — and a stale one silently dropped the new tune achievements.
+export const runtime = 'nodejs';
 export const revalidate = 300;
 
 export function GET() {
