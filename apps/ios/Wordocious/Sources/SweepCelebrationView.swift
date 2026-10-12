@@ -66,8 +66,12 @@ struct SweepCelebrationView: View {
         let still = envReduce || Theme.reduceMotion
         let dark = Theme.isDark
         ZStack {
-            // §G3: a full-screen tinted overlay in the moment's color.
-            LinearGradient(colors: dark ? [Color(hex: 0x17111F).opacity(0.94), accent.opacity(0.35)]
+            // 2.8.1: a static dim scrim (no blur) over the Home wall behind the popup, so its lettering + chips read cleanly.
+            Color(hex: 0x0E091B).opacity(dark ? 0.55 : 0.12)
+                .ignoresSafeArea()
+                .onTapGesture { onClose() }
+            // §G3: a full-screen tinted overlay in the moment's color (dark: the ends stay solid enough that Home's text never reads through).
+            LinearGradient(colors: dark ? [Color(hex: 0x17111F).opacity(0.97), accent.opacity(0.75)]
                                         : [accent.wash(0.22).opacity(0.96), accent.wash(0.40).opacity(0.96)],
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
@@ -81,24 +85,27 @@ struct SweepCelebrationView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 10) {
                     // ART_SPEC §6: SWEEP! / FLAWLESS! lettering above the art; the text title is the fallback.
-                    MomentLettering(flawless ? .flawless : .sweep) {
-                        Text(title)
-                            .font(Brand.font(more ? 24 : 28, .black)).minimumScaleFactor(0.7).lineLimit(1)
-                            .foregroundStyle(accentText)
-                    }
-                    // 2.8 item 7 kit: streamers swing in either side, one sparkle trail sweeps across it (props only).
-                    .overlay(alignment: .topLeading) { kitImage("celebrate-streamers-pair", width: 56).offset(x: -4, y: -22)
-                        .rotationEffect(.degrees(kitIn || still ? 0 : -24), anchor: .topTrailing).opacity(kitIn || still ? 1 : 0) }
-                    .overlay(alignment: .topTrailing) { kitImage("celebrate-streamers-pair", width: 56).scaleEffect(x: -1, y: 1).offset(x: 4, y: -22)
-                        .rotationEffect(.degrees(kitIn || still ? 0 : 24), anchor: .topLeading).opacity(kitIn || still ? 1 : 0) }
-                    .overlay {
-                        if !still {
-                            GeometryReader { g in
-                                kitImage("celebrate-sparkle-sweep", width: g.size.height * 1.2)
-                                    .offset(x: g.size.width * sweepX, y: -g.size.height * 0.1)
-                            }
-                            .clipped().allowsHitTesting(false)
+                    // 2.8.1: the streamers swing in BESIDE the lettering (a row: streamer · lettering · streamer), so they frame
+                    // it from outside and never cross a letter at any width; one sparkle trail sweeps across the lettering.
+                    HStack(alignment: .center, spacing: 0) {
+                        kitImage("celebrate-streamers-pair", width: 40).frame(width: 40, height: 53)
+                            .rotationEffect(.degrees(kitIn || still ? 0 : -24), anchor: .topTrailing).opacity(kitIn || still ? 1 : 0)
+                        MomentLettering(flawless ? .flawless : .sweep) {
+                            Text(title)
+                                .font(Brand.font(more ? 24 : 28, .black)).minimumScaleFactor(0.7).lineLimit(1)
+                                .foregroundStyle(accentText)
                         }
+                        .overlay {
+                            if !still {
+                                GeometryReader { g in
+                                    kitImage("celebrate-sparkle-sweep", width: g.size.height * 1.2)
+                                        .offset(x: g.size.width * sweepX, y: -g.size.height * 0.1)
+                                }
+                                .clipped().allowsHitTesting(false)
+                            }
+                        }
+                        kitImage("celebrate-streamers-pair", width: 40).frame(width: 40, height: 53).scaleEffect(x: -1, y: 1)
+                            .rotationEffect(.degrees(kitIn || still ? 0 : 24), anchor: .topLeading).opacity(kitIn || still ? 1 : 0)
                     }
                     // §G3: the big art springing in.
                     if ArtAsset.exists(artName) {

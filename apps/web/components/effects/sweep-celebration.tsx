@@ -9,7 +9,6 @@ import { computeDailyTotals } from '@/lib/daily-service';
 import { shareDailySweep, shareMoreSweep } from '@/lib/daily-share';
 import { computeMoreTotals, moreSweepTier, MORE_SWEEP_COPY } from '@/lib/more-games';
 import type { ShareMode } from '@/lib/share-image';
-import { MODE_SHARE_GLYPH } from '@/lib/share-grid';
 import { MODE_BY_DBKEY, MORE_GAME_MODES, sweepModesFor } from '@/lib/modes.generated';
 import { getTodayLocal } from '@/lib/daily-service';
 import { MomentArt } from '@/components/ui/art-title';
@@ -40,19 +39,22 @@ import { useSeason } from '@/lib/season';
 //   • More Games Sweep   → indigo.
 //   • Flawless (either)  → pink.
 
-interface ModeMeta { dbKey: string; mode: ShareMode; label: string; accent: string }
+interface ModeMeta { dbKey: string; mode: ShareMode; label: string; accent: string; glyph: string }
 // The sweep set comes from the catalog's era table for today, so the tile row
 // is eight word games from 2026-09-25 (ProperNoundle lives under More Games).
+// The tile's glyph comes from the catalog row itself: MODE_SHARE_GLYPH is keyed by `title` ("Six") while `mode` is the
+// shareLabel ("Classic Six"), so a lookup by label returned undefined for Six / Seven and crashed the popup.
+const glyphOf = (m: { glyph?: string | null; shortTitle: string }): string => m.glyph || m.shortTitle.slice(0, 1);
 const MODES: ModeMeta[] = sweepModesFor(getTodayLocal())
   .map((k) => MODE_BY_DBKEY[k])
   .filter(Boolean)
-  .map((m) => ({ dbKey: m.dbKey as string, mode: m.shareLabel as ShareMode, label: m.shortTitle, accent: m.accentHex }));
+  .map((m) => ({ dbKey: m.dbKey as string, mode: m.shareLabel as ShareMode, label: m.shortTitle, accent: m.accentHex, glyph: glyphOf(m) }));
 // More Games Sweep / Flawless (founder, 2026-09-26): the same celebration over the
 // ten More Games dailies, in indigo (sweep) or gold (flawless). Purely visual — it
 // never awards anything, and it never uses the Daily Sweep wording.
 const MORE_MODES: ModeMeta[] = MORE_GAME_MODES
   .filter((m) => m.dailyEligible && m.dbKey)
-  .map((m) => ({ dbKey: m.dbKey as string, mode: m.shareLabel as ShareMode, label: m.shortTitle, accent: m.accentHex }));
+  .map((m) => ({ dbKey: m.dbKey as string, mode: m.shareLabel as ShareMode, label: m.shortTitle, accent: m.accentHex, glyph: glyphOf(m) }));
 
 function fmtTime(s: number): string {
   const m = Math.floor(s / 60);
@@ -144,10 +146,12 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
   return (
     <div
       ref={entranceRef}
-      className={`fixed inset-0 z-[60] overflow-y-auto animate-fade-in${waiting ? ' motion-wait' : ''}`}
-      style={{ background: look.overlay }}
+      className={`sweep-celebration fixed inset-0 z-[60] overflow-y-auto animate-fade-in${waiting ? ' motion-wait' : ''}`}
+      style={{ background: `linear-gradient(var(--sweep-scrim), var(--sweep-scrim)), ${look.overlay}` }}
       onClick={onClose}
     >
+      {/* 2.8.1: a static dim scrim (no blur) under the popup: a touch on light themes, more on dark (iOS / Android parity). */}
+      <style>{SCRIM_CSS}</style>
       <Confetti colors={CANDY_CONFETTI[look.confetti]} />
 
       <div className="min-h-full flex items-center justify-center px-5 py-8">
@@ -162,16 +166,22 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
           <span aria-hidden="true" className="text-[12px] font-black uppercase text-white" style={{ letterSpacing: 1.6, textShadow: INK_SHADOW }}>
             {more ? 'Puzzles' : 'Daily'}
           </span>
-          <div className="relative w-full flex justify-center" style={{ overflow: 'visible' }}>
-            <MomentArt moment={flawless ? 'flawless' : 'sweep'} label={title} maxHeight={84} widthPct={86} />
-            {/* the streamers swing in either side of the lettering; a sparkle trail sweeps across it once */}
+          {/* 2.8.1: a row — streamer · lettering · streamer — so the streamers frame the lettering from outside and
+              never cross a letter at any width; one sparkle trail sweeps across the lettering once. */}
+          <div className="relative z-10 w-full flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img aria-hidden="true" alt="" src={prop('streamers-pair')} width={62} className="absolute celebrate-streamer-l pointer-events-none" style={{ left: -6, top: -26 }} draggable={false} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img aria-hidden="true" alt="" src={prop('streamers-pair')} width={62} className="absolute celebrate-streamer-r pointer-events-none" style={{ right: -6, top: -26 }} draggable={false} />
-            <span aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+            <img aria-hidden="true" alt="" src={prop('streamers-pair')} width={40} className="shrink-0 celebrate-streamer-l pointer-events-none" style={{ width: 40, height: 'auto' }} draggable={false} />
+            <div className="relative min-w-0 flex-1 flex justify-center px-1.5">
+              <MomentArt moment={flawless ? 'flawless' : 'sweep'} label={title} maxHeight={84} widthPct={100} />
+              <span aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img alt="" src="/art/celebrate-sparkle-sweep.webp" className="absolute celebrate-sweep" style={{ height: '120%', top: '-10%', left: 0, width: 'auto' }} draggable={false} />
+              </span>
+            </div>
+            {/* the right one is the left one mirrored about its OWN center (the -r class flips about an edge, which swings it over the letters) */}
+            <span aria-hidden="true" className="shrink-0 inline-flex" style={{ width: 40, transform: 'scaleX(-1)' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img alt="" src="/art/celebrate-sparkle-sweep.webp" className="absolute celebrate-sweep" style={{ height: '120%', top: '-10%', left: 0, width: 'auto' }} draggable={false} />
+              <img alt="" src={prop('streamers-pair')} width={40} className="celebrate-streamer-l pointer-events-none" style={{ width: 40, height: 'auto' }} draggable={false} />
             </span>
           </div>
 
@@ -254,9 +264,9 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
                 <div key={m.dbKey} className="flex items-center gap-1.5 px-1.5 py-1" style={softPill(m.accent, { radius: 10, bar: false })}>
                   <span
                     className="flex items-center justify-center font-black text-white shrink-0"
-                    style={{ width: 22, height: 22, borderRadius: 7, background: m.accent, fontSize: MODE_SHARE_GLYPH[m.mode].length >= 3 ? 9 : 12 }}
+                    style={{ width: 22, height: 22, borderRadius: 7, background: m.accent, fontSize: m.glyph.length >= 3 ? 9 : 12 }}
                   >
-                    {MODE_SHARE_GLYPH[m.mode]}
+                    {m.glyph}
                   </span>
                   <span className="text-[12px] font-bold truncate text-left" style={{ color: 'var(--color-text)' }}>{m.label}</span>
                   {/* each game's W / L badge stamps in one by one */}
@@ -288,6 +298,9 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
     </div>
   );
 }
+
+/** The dim scrim (near-black violet #0e091b) layered over the moment's tint. */
+const SCRIM_CSS = '.sweep-celebration{--sweep-scrim:rgba(14,9,27,0.1)}html[data-theme="dark"] .sweep-celebration{--sweep-scrim:rgba(14,9,27,0.3)}';
 
 /** The scene art's height (px). */
 const ART_H = 200;

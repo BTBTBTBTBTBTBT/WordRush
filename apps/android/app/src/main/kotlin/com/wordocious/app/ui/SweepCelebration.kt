@@ -182,39 +182,48 @@ fun SweepCelebration(
                 PopupClose(closeAndMaybeReview, tint = if (dark) WTheme.text else ink)
             }
             // Moment lettering (ART_SPEC §6): SWEEP! / FLAWLESS!, read as the full title.
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                MomentTitle(
-                    if (flawless) MomentArt.FLAWLESS else MomentArt.SWEEP,
-                    contentDescription = titleCaseLabel(title),
-                    widthFraction = 0.82f, maxHeight = 84.dp,
-                )
-                // the streamers swing in either side; one sparkle trail sweeps across the lettering
-                val streamers = kitRes("celebrate-streamers-pair")
+            // 2.8.1: a row — streamer · lettering · streamer — so the streamers frame the lettering from outside and never
+            // cross a letter at any width; one sparkle trail sweeps across the lettering.
+            val streamers = kitRes("celebrate-streamers-pair")
+            @Composable fun Streamer(left: Boolean) {
                 if (streamers != 0) {
-                    for (left in listOf(true, false)) {
+                    // the right one is the left one mirrored about its OWN center (a flip about the edge would swing it over the letters)
+                    Box(Modifier.width(40.dp).graphicsLayer { scaleX = if (left) 1f else -1f }) {
                         Image(
                             painterResource(streamers), null, contentScale = ContentScale.Fit,
-                            modifier = Modifier.align(if (left) Alignment.TopStart else Alignment.TopEnd).width(56.dp).offset(y = (-22).dp)
+                            modifier = Modifier.fillMaxWidth()
                                 .graphicsLayer {
                                     val k = kit.value.coerceIn(0f, 1f)
                                     alpha = k
-                                    rotationZ = (1f - k) * (if (left) -24f else 24f)
-                                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(if (left) 1f else 0f, 0f)
-                                    scaleX = if (left) 1f else -1f
+                                    rotationZ = (1f - k) * -24f
+                                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)
                                 },
                         )
                     }
+                } else {
+                    Spacer(Modifier.width(40.dp))
                 }
-                val sparkle = kitRes("celebrate-sparkle-sweep")
-                if (sparkle != 0 && !still) {
-                    Box(Modifier.matchParentSize().clipToBounds()) {
-                        Image(
-                            painterResource(sparkle), null, contentScale = ContentScale.FillHeight,
-                            modifier = Modifier.height(100.dp).align(Alignment.CenterStart)
-                                .graphicsLayer { translationX = sweep.value * size.width * 1.2f },
-                        )
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Streamer(left = true)
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    MomentTitle(
+                        if (flawless) MomentArt.FLAWLESS else MomentArt.SWEEP,
+                        contentDescription = titleCaseLabel(title),
+                        widthFraction = 1f, maxHeight = 84.dp,
+                    )
+                    val sparkle = kitRes("celebrate-sparkle-sweep")
+                    if (sparkle != 0 && !still) {
+                        Box(Modifier.matchParentSize().clipToBounds()) {
+                            Image(
+                                painterResource(sparkle), null, contentScale = ContentScale.FillHeight,
+                                modifier = Modifier.height(100.dp).align(Alignment.CenterStart)
+                                    .graphicsLayer { translationX = sweep.value * size.width * 1.2f },
+                            )
+                        }
                     }
                 }
+                Streamer(left = false)
             }
             // G3: the big scene art springing in with a bounce on a soft glow.
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
