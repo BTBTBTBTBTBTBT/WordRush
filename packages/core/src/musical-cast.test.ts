@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO, activeMelodies, melodyIntervals, MELODY_GAP_MS, MELODY_START, MUSICAL_ACHIEVEMENT_KEYS, MUSICAL_CAST_FLAG, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_SCALE, matchMelody, melodyTap,
   midiNoteName, musicalCastEnabled, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState,
+  MELODY_REPLAY, melodyReplay, melodyReplayDuration,
 } from './musical-cast';
 import { NEW_ACHIEVEMENTS, SECRET_ACHIEVEMENT_KEYS, achievementListed } from './achievement-rules';
 
@@ -156,5 +157,23 @@ describe('the Halloween tunes (item 49)', () => {
   it('no copyrighted Halloween songs are named anywhere', () => {
     const text = JSON.stringify([HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO]).toLowerCase();
     for (const bad of ['monster mash', 'ghostbusters', 'thriller', 'this is halloween', 'addams']) expect(text).not.toContain(bad);
+  });
+});
+
+describe('melody playback (founder 10-12)', () => {
+  it('maps every note of every tune to a cast figure, one beat apart after the lead-in', () => {
+    for (const m of [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES]) {
+      const r = melodyReplay(m);
+      expect(r).toHaveLength(m.notes.length);
+      r.forEach((step, i) => {
+        expect(step.atMs).toBe(MELODY_REPLAY.leadInMs + i * MELODY_REPLAY.beatMs);
+        expect(musicalNote(step.castId)!.midi).toBe(m.notes[i]);
+      });
+      expect(melodyReplayDuration(m)).toBe(MELODY_REPLAY.leadInMs + m.notes.length * MELODY_REPLAY.beatMs);
+    }
+  });
+  it('plays Mary Had a Little Lamb on R O W O R R R · O O O · R O O', () => {
+    const mary = MUSICAL_MELODIES.find((m) => m.id === 'mary')!;
+    expect(melodyReplay(mary).map((s) => s.castId)).toEqual(['r', 'o1', 'w', 'o1', 'r', 'r', 'r', 'o1', 'o1', 'o1', 'r', 'o2', 'o2']);
   });
 });

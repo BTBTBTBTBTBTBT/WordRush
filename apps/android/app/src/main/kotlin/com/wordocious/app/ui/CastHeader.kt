@@ -140,6 +140,8 @@ fun LivingCastHeader(
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val taps = remember { androidx.compose.runtime.mutableStateMapOf<MascotId, Long>() }
     var wake by remember { mutableStateOf(0) }
+    /** A completed tune being sung back (founder 10-12); null when none. */
+    var playback by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     fun busy(now: Long): Boolean {
         if (musicalOn && musicalBusy(musicalFx, now)) return true
         val b = rigs ?: return false
@@ -199,16 +201,33 @@ fun LivingCastHeader(
             }
         }
     }
-    /** Musical mode: a note in this hero's voice (silent with sound off) + a selection haptic + a hop (no laugh) + a floating note. */
-    fun playNote(id: MascotId) {
+    /**
+     * Musical mode: a note in this hero's voice (silent with sound off) + a selection haptic + a hop (no laugh) + a floating
+     * note. [fromPlayback]: the cast singing a completed tune back (no haptic, never fed to the matcher).
+     */
+    fun playNote(id: MascotId, fromPlayback: Boolean = false) {
         val now = System.nanoTime() / 1_000_000
         com.wordocious.app.data.SoundManager.castNote(id.key)
-        com.wordocious.app.data.Haptics.selection(view)
+        if (!fromPlayback) com.wordocious.app.data.Haptics.selection(view)
         musicalFx.note(id.key, now, still = still)
+        wake++
+        if (fromPlayback) return
         MusicalCastState.tap(id.key, SeasonSkins.current())?.let { tune ->
             scope.launch { com.wordocious.app.data.AchievementService.unlockTune(tune.achievement) }
+            // Founder 10-12: the cast sings the completed tune back once, cleanly (even beat, each note on its figure),
+            // every time — the achievement itself unlocks once. Taps wait while it plays.
+            playback?.cancel()
+            playback = scope.launch {
+                var at = 0L
+                for ((castId, atMs) in com.wordocious.core.MusicalCast.replay(tune)) {
+                    delay(atMs - at)
+                    at = atMs
+                    if (!MusicalCastState.on) break
+                    MascotId.entries.firstOrNull { it.key == castId }?.let { playNote(it, fromPlayback = true) }
+                }
+                playback = null
+            }
         }
-        wake++
     }
     /** The long-press: all ten change over, rippling out from [id] (instant under Reduce Motion). */
     fun toggleMusical(id: MascotId) {
@@ -278,7 +297,8 @@ fun LivingCastHeader(
                 val front = (puppetsOn && (gestures.containsKey(id) || taps.containsKey(id))) || (musicalOn && musicalFx.has(id.key))
                 val figureTap = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                 // The long-press detector outlives recompositions: it calls the latest handlers.
-                val onDown by androidx.compose.runtime.rememberUpdatedState { if (MusicalCastState.on) { playNote(id); true } else false }
+                // While the cast sings a completed tune back, taps wait (the long-press still turns the mode off).
+                val onDown by androidx.compose.runtime.rememberUpdatedState { if (MusicalCastState.on) { if (playback == null) playNote(id); true } else false }
                 val onTap by androidx.compose.runtime.rememberUpdatedState { tapFigure(id) }
                 val onLong by androidx.compose.runtime.rememberUpdatedState { toggleMusical(id) }
                 Box(

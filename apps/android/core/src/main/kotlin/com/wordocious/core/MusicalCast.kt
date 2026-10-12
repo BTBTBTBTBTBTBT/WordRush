@@ -207,6 +207,19 @@ object MusicalCast {
 
     /** The secret achievement keys (achievement-rules NEW_ACHIEVEMENTS, `secret`: shown only once unlocked). */
     val ACHIEVEMENT_KEYS: List<String> = (MELODIES + HALLOWEEN_MELODIES).map { it.achievement }
+
+    /**
+     * The playback (founder 10-12): a completed tune is sung back once, cleanly — [REPLAY_LEAD_IN_MS] after the last tap,
+     * then a note every [REPLAY_BEAT_MS], each on its own figure. Mirrors core `MELODY_REPLAY` / `melodyReplay`.
+     */
+    const val REPLAY_LEAD_IN_MS = 450L
+    const val REPLAY_BEAT_MS = 300L
+
+    /** The completed tune as the cast plays it back: (cast id, ms after the last tap) per note. */
+    fun replay(m: MusicalMelody): List<Pair<String, Long>> = m.notes.mapIndexedNotNull { i, midi ->
+        val k = SCALE.indexOf(midi)
+        if (k < 0) null else CAST_IDS[k] to (REPLAY_LEAD_IN_MS + i * REPLAY_BEAT_MS)
+    }
 }
 
 // ── Achievement listing (achievement-rules.ts SECRET_ACHIEVEMENT_KEYS / achievementListed) ─────────────────

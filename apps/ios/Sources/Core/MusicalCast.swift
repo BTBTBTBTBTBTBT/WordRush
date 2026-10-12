@@ -163,6 +163,19 @@ public enum MusicalCast {
 
     /// The secret achievement keys (achievement-rules NEW_ACHIEVEMENTS, `secret`: shown only once unlocked).
     public static let achievementKeys: [String] = (melodies + halloweenMelodies).map(\.achievement)
+
+    /// The playback (founder 10-12): a completed tune is sung back once, cleanly — `replayLeadInMs` after the last tap,
+    /// then a note every `replayBeatMs`, each on its own figure. Mirrors core `MELODY_REPLAY` / `melodyReplay`.
+    public static let replayLeadInMs = 450
+    public static let replayBeatMs = 300
+
+    /// The completed tune as the cast plays it back: which figure sings each note and when (ms after the last tap).
+    public static func replay(_ m: MusicalMelody) -> [(castId: String, atMs: Int)] {
+        m.notes.enumerated().compactMap { i, midi in
+            guard let k = scale.firstIndex(of: midi) else { return nil }
+            return (ids[k], replayLeadInMs + i * replayBeatMs)
+        }
+    }
 }
 
 /// How long a press must hold to toggle musical mode, and the transform's timing (same perf rules as the puppets).

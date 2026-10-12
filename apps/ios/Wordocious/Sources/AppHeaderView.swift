@@ -291,6 +291,8 @@ struct LivingCastHeader: View {
     /// This touch's start and the last long-press: a touch that toggled the mode never also taps.
     @State private var pressBegan: Date?
     @State private var lastLongPress: Date?
+    /// A completed tune being sung back (founder 10-12); taps wait until it ends.
+    @State private var playback: Task<Void, Never>?
     static let maxFloats = 12
     /// The ripple delays (ms, WORDOCIOUS order) from each pressed figure, worked out once (core transformDelays).
     static let rippleDelays: [MascotID: [Int]] = Dictionary(uniqueKeysWithValues: Mascots.cast.map {
@@ -408,9 +410,9 @@ struct LivingCastHeader: View {
         .modifier(ProCrownAccessibility(pro: pro) { showProSheet = true })
         .softSheet(isPresented: $showProSheet) { ProMemberSheet() }
         .onChange(of: debugSeason) { _ in CastSkin.invalidate() }
-        .onChange(of: musicalStore.flipped) { rippleToggle($0) }
+        .onChange(of: musicalStore.flipped) { rippleToggle($0); if !musical { playback?.cancel(); playback = nil } }
         .onAppear { onScreen = true }
-        .onDisappear { onScreen = false }
+        .onDisappear { onScreen = false; playback?.cancel(); playback = nil }
         .task { await runMoves() }
         // 2.8 item 13: when your mascot celebrates a Sweep / Flawless the whole cast hops with it (the living mascot switch gates
         // the post itself; Reduce Motion / Low Power: nothing).
@@ -637,14 +639,32 @@ struct LivingCastHeader: View {
     private func musicalPressing(_ m: MascotID, _ pressing: Bool) {
         guard pressing else { return }
         pressBegan = Date()
-        if musical { playNote(m) }
+        // While the cast sings a completed tune back, taps wait (the long-press still turns the mode off).
+        if musical && playback == nil { playNote(m) }
+    }
+
+    /// Founder 10-12: a completed tune is sung back once, cleanly (even beat, each note on its figure), so the player
+    /// hears that the keys made a song — every time, not only the first (the achievement itself unlocks once).
+    private func playBack(_ tune: MusicalMelody) {
+        playback?.cancel()
+        let steps = MusicalCast.replay(tune)
+        playback = Task { @MainActor in
+            var at = 0
+            for step in steps {
+                try? await Task.sleep(nanoseconds: UInt64(max(0, step.atMs - at)) * 1_000_000)
+                at = step.atMs
+                if Task.isCancelled || !musical { break }
+                if let m = MascotID(rawValue: step.castId) { playNote(m, fromPlayback: true) }
+            }
+            playback = nil
+        }
     }
 
     /// One note: the voice (silent with Sound off), a selection haptic, the hop (no laugh), a floating note, and the
     /// melody matcher — a finished tune unlocks its secret achievement (signed-in players; guests nothing).
-    private func playNote(_ m: MascotID) {
+    private func playNote(_ m: MascotID, fromPlayback: Bool = false) {
         SoundManager.shared.castNote(m.rawValue)
-        Haptics.selection()
+        if !fromPlayback { Haptics.selection() }
         let now = Date()
         if !still {
             noteTap[m] = now
@@ -664,6 +684,8 @@ struct LivingCastHeader: View {
                 floats.removeAll { $0.id == f.id }
             }
         }
+        // The playback is the cast singing a completed tune: never fed back to the matcher.
+        if fromPlayback { return }
         // Item 49: season-aware, so the Halloween tunes only count in season (and sound with the spooky voicing).
         let r = MusicalCast.tap(musicalStore.melody, castId: m.rawValue, atMs: ProcessInfo.processInfo.systemUptime * 1000,
                                 season: SeasonKit.current?.id)
@@ -671,6 +693,7 @@ struct LivingCastHeader: View {
         if let tune = r.matched {
             let key = tune.achievement
             Task { await AchievementService.unlockTune(key) }
+            playBack(tune)
         }
     }
 

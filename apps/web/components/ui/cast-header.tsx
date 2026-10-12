@@ -16,7 +16,7 @@ import { MASCOT_MOMENT_EVENT } from '@/lib/living-mascot';
 import { useFlags } from '@/hooks/use-flags';
 import { haptic } from '@/lib/haptics';
 import { castLaugh, castNote } from '@/lib/sounds';
-import { MELODY_START, MUSICAL_POP_KEYS, MUSICAL_TIMING, melodyTap, musicalTransformDelays, type MelodyState } from '@wordle-duel/core';
+import { MELODY_START, MUSICAL_POP_KEYS, MUSICAL_TIMING, melodyReplay, melodyTap, musicalTransformDelays, type MelodyState, type MusicalMelody } from '@wordle-duel/core';
 import { MUSICAL_CAST_ON, NOTE_SVG, noteColor, unlockTune } from '@/lib/musical-cast';
 import { melodyCell, toggleMusicalOn, useMusical } from '@/lib/musical-store';
 
@@ -109,8 +109,13 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
   const melody = melodyCell;
   const press = useRef<{ id: string; x: number; y: number; timer: ReturnType<typeof setTimeout> } | null>(null);
   const floats = useRef(0);
+  /** The playback of a completed tune in flight (its timers); taps wait until it ends. */
+  const replay = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const stopReplay = () => { replay.current.forEach(clearTimeout); replay.current = []; };
   const cancelPress = () => { if (press.current) { clearTimeout(press.current.timer); press.current = null; } };
-  useEffect(() => () => cancelPress(), []);
+  useEffect(() => () => { cancelPress(); stopReplay(); }, []);
+  // Leaving musical mode stops a playback mid-tune.
+  useEffect(() => { if (!musical) stopReplay(); }, [musical]);
 
   /** Long-press: all ten change over, rippling out from the pressed hero (instant under Reduce Motion). */
   const toggleMusical = (from: string) => {
@@ -132,10 +137,27 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
     });
   };
 
-  /** One note: the voice (silent with sound off), a selection haptic, the hop, a floating note, the melody matcher. */
-  const playNote = (id: MascotId, el: HTMLElement) => {
+  /**
+   * Founder 10-12: a completed tune is sung back once, cleanly (even beat, each note on its figure), so the player hears
+   * that the keys made a song — every time, not only the first (the achievement itself unlocks once).
+   */
+  const playBack = (tune: MusicalMelody) => {
+    stopReplay();
+    const steps = melodyReplay(tune);
+    steps.forEach((step, i) => {
+      replay.current.push(setTimeout(() => {
+        const el = rowRef.current?.querySelector<HTMLElement>(`[data-cast="${step.castId}"]`);
+        if (el && musicalRef.current) playNote(step.castId as MascotId, el, true);
+        if (i === steps.length - 1) replay.current = [];
+      }, step.atMs));
+    });
+  };
+
+  /** One note: the voice (silent with sound off), a selection haptic, the hop, a floating note, the melody matcher
+   *  (`fromPlayback`: the cast singing a completed tune back — no haptic, never fed to the matcher). */
+  const playNote = (id: MascotId, el: HTMLElement, fromPlayback = false) => {
     castNote(id, season);
-    haptic('selection');
+    if (!fromPlayback) haptic('selection');
     const reduce = prefersReducedMotion();
     if (puppetsOnRef.current) puppets.tap(id, { silent: true });
     else if (!reduce && typeof el.animate === 'function') {
@@ -160,9 +182,13 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
         a.onfinish = done; a.oncancel = done;
       } else setTimeout(done, 600);
     }
+    if (fromPlayback) return;
     const r = melodyTap(melody.current, id, performance.now(), season);
     melody.current = r.state;
-    if (r.matched) void unlockTune(r.matched.achievement);
+    if (r.matched) {
+      void unlockTune(r.matched.achievement);
+      playBack(r.matched);
+    }
   };
 
   useEffect(() => {
@@ -311,7 +337,8 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
                 if (MUSICAL_CAST_ON) {
                   cancelPress();
                   press.current = { id, x: e.clientX, y: e.clientY, timer: setTimeout(() => { press.current = null; toggleMusical(id); }, MUSICAL_TIMING.longPressMs) };
-                  if (musicalRef.current) { playNote(id, e.currentTarget); return; }
+                  // While the cast sings a completed tune back, taps wait (the long-press still turns the mode off).
+                  if (musicalRef.current) { if (replay.current.length === 0) playNote(id, e.currentTarget); return; }
                 }
                 if (season === null) { puppets.tap(id); return; }
                 // In season: the costume hops (squash + stretch, no face swap).

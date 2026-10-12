@@ -188,5 +188,25 @@ export function melodyTap(state: MelodyState, castId: string, atMs: number, seas
   return { state: { notes: matched ? [] : notes, lastAt: atMs }, note, matched };
 }
 
+/**
+ * The playback (founder 10-12): every time a tune is completed the cast sings it back once, cleanly — even beat,
+ * each note on its own figure — so the player hears that the keys made a song. `leadInMs` after the last tap, then a
+ * note every `beatMs`. Taps during the playback are ignored (they never feed the matcher).
+ */
+export const MELODY_REPLAY = { leadInMs: 450, beatMs: 300 } as const;
+
+/** The completed tune as the cast plays it back: which figure sings each note and when (ms after the last tap). */
+export function melodyReplay(m: MusicalMelody): Array<{ castId: string; atMs: number }> {
+  return m.notes.flatMap((midi, i) => {
+    const k = (MUSICAL_SCALE as readonly number[]).indexOf(midi);
+    return k < 0 ? [] : [{ castId: MUSICAL_CAST_IDS[k], atMs: MELODY_REPLAY.leadInMs + i * MELODY_REPLAY.beatMs }];
+  });
+}
+
+/** The whole playback's length (ms after the last tap): the last note's start + one beat. */
+export function melodyReplayDuration(m: MusicalMelody): number {
+  return MELODY_REPLAY.leadInMs + m.notes.length * MELODY_REPLAY.beatMs;
+}
+
 /** The secret achievement keys (achievement-rules NEW_ACHIEVEMENTS, `secret`: shown only once unlocked). */
 export const MUSICAL_ACHIEVEMENT_KEYS: readonly string[] = [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES].map((m) => m.achievement);
