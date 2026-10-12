@@ -1431,9 +1431,12 @@ private struct SpinningCoin: View {
     @State private var glow = false
     @State private var shownFace: CoinFace?
     @State private var flipTask: Task<Void, Never>?
+    @State private var lastKey: Int?
 
     var body: some View {
-        let landed = shownFace ?? face
+        // Founder 10-12 (it showed heads under "it landed tails"): once the coin has settled it always shows the real
+        // result; mid-flip it shows the face the running flip is heading for.
+        let landed = settled ? face : (shownFace ?? face)
         VStack(spacing: 8) {
             ZStack {
                 if let shadow = PocketArt.coinShadow {
@@ -1469,16 +1472,20 @@ private struct SpinningCoin: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(settled ? (face == .heads ? "Coin, heads" : "Coin, tails") : "Coin flipping")   // §AB
-        .onChange(of: spinKey) { _ in flip() }
+        // The new flip's face comes from the change itself: the onChange closure can carry the previous render's
+        // `face` (the first flip of a match read the .heads placeholder and spun to heads).
+        .onChange(of: CoinSpin(key: spinKey, face: face)) { spin in
+            if spin.key != lastKey { lastKey = spin.key; flip(to: spin.face) } else if settled { shownFace = spin.face }
+        }
+        .onAppear { if lastKey == nil { lastKey = spinKey } }
         .onDisappear { flipTask?.cancel() }
     }
 
     private func wait(_ s: Double) async { try? await Task.sleep(nanoseconds: UInt64(s * 1_000_000_000)) }
 
-    private func flip() {
+    private func flip(to result: CoinFace) {
         flipTask?.cancel()
-        guard !Theme.reduceMotion else { shownFace = face; settled = true; return }
-        let result = face
+        guard !Theme.reduceMotion else { shownFace = result; settled = true; return }
         // Start from whatever face is showing now; end on the result after five whole turns (+ a half if it changes).
         let before = shownFace ?? (result == .heads ? .tails : .heads)
         settled = false
@@ -1530,6 +1537,12 @@ private struct SpinningCoin: View {
             withAnimation(.easeIn(duration: 0.5)) { glow = false }
         }
     }
+}
+
+/// One coin flip as onChange sees it: the round count and the face it landed on, read together.
+private struct CoinSpin: Equatable {
+    let key: Int
+    let face: CoinFace
 }
 
 /// The coin turning end over end around its horizontal axis: the visible face is picked from the angle each frame, the
