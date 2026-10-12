@@ -24,7 +24,7 @@ import { useAuth } from '@/lib/auth-context';
 import { getFriends, loadFriends, onFriendsChange } from '@/lib/friends-service';
 import { fetchGame, getRecentGames, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
 import { FR, KIND_COLOR, KIND_GRADIENT, friendOnline, gameSubLine, scoreOf, screenHeadline } from '@/lib/friends-play';
-import { ChainBoard, CoinBoard, GhostBoard, PassBoard, RpsBoard, TttBoard, type Player } from './friendly-boards';
+import { ChainBoard, CoinBoard, GhostBoard, PassBoard, RpsBoard, TttBoard, YourTurnLabel, type Player } from './friendly-boards';
 import { FriendAvatar, GameGlyph, Sheet } from './friends-ui';
 import { BrandEmptyState } from '@/components/ui/brand-empty-state';
 import { CastLoader } from '@/components/ui/cast-loader';
@@ -67,6 +67,8 @@ export function FriendlyGameScreen({ id }: { id: string }) {
   const { user, profile, loading: authLoading } = useAuth();
   const [game, setGame] = useState<GameView | null>(null);
   const [missing, setMissing] = useState(false);
+  /** The game could not be read yet (offline / server error) and nothing is on screen: say so (iOS parity), keep polling. */
+  const [loadFailed, setLoadFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
@@ -179,6 +181,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
     let alive = true;
     gameRef.current = null;
     snapRef.current = emptySnapshot<GameView>();
+    setLoadFailed(false);
     const tick = async (first = false) => {
       if (!first) {
         if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
@@ -188,7 +191,8 @@ export function FriendlyGameScreen({ id }: { id: string }) {
       const g = await fetchGame(id);
       if (!alive) return;
       if (g === null) setMissing(true);
-      else if (g !== 'error') accept(g);
+      else if (g === 'error') { if (!gameRef.current) setLoadFailed(true); }
+      else { setLoadFailed(false); accept(g); }
     };
     void tick(true);
     // Live play on + socket up: a slow keep-alive (it also stamps "watching" and repairs a missed
@@ -328,6 +332,24 @@ export function FriendlyGameScreen({ id }: { id: string }) {
       </Shell>
     );
   }
+  if (!game && loadFailed) {
+    return (
+      <Shell>
+        {topBar}
+        <BrandEmptyState
+          scene={PAGE_SCENES.notFound}
+          accent="friends"
+          className="py-10"
+          title="CAN'T LOAD THIS GAME"
+          line="Check your connection. It opens by itself once you're back online."
+          actionLabel="Back to Friends"
+          actionColor="peach"
+          actionIcon="arrow"
+          onAction={() => router.push('/friends')}
+        />
+      </Shell>
+    );
+  }
   if (!game) {
     return (
       <Shell>
@@ -399,8 +421,11 @@ export function FriendlyGameScreen({ id }: { id: string }) {
     );
   };
 
+  // Pass, Ghost and Word Chain show a move's error right above their keyboard (iOS parity); the others under the header.
+  const keyboardGame = game.kind === 'pass' || game.kind === 'ghost' || game.kind === 'chain';
+  const myMove = active && (turn === me || turn === 'both');
   const boardProps = {
-    me, you, them, active, busy, revealKey, onMove,
+    me, you, them, active, busy, revealKey, onMove, error: keyboardGame ? error : null,
     accent: KIND_COLOR[game.kind],
     tray: youWon ? 'won' as const : theyWon ? 'lost' as const : 'playing' as const,
   };
@@ -434,7 +459,10 @@ export function FriendlyGameScreen({ id }: { id: string }) {
         </div>
       </div>
 
-      {error && <p className="text-center text-[12.5px] font-bold" style={{ color: '#dc2626' }}>{error}</p>}
+      {error && !keyboardGame && <p className="text-center text-[12.5px] font-bold" role="alert" style={{ color: '#dc2626' }}>{error}</p>}
+
+      {/* YOUR TURN over every pocket board while the move is yours (iOS / Android parity). */}
+      {myMove && <div className="flex justify-center"><YourTurnLabel /></div>}
 
       {/* 2.8 item 22: their turn = the quiet lobby strip (status line, a live clock under an hour, a keepy tile). */}
       {active && turn !== null && turn !== 'both' && turn !== me && (

@@ -62,6 +62,8 @@ interface BoardProps<S> {
   accent: string;
   /** The tray's wash: playing, or purple / slate once the match is won / lost. */
   tray: TrayState;
+  /** The last move's error (keyboard games show it right above their keyboard, iOS parity). */
+  error?: string | null;
 }
 
 const PICKS: RpsPick[] = ['rock', 'paper', 'scissors'];
@@ -84,7 +86,7 @@ function PocketPiece({ name, height, style, className }: { name: ArtName; height
 }
 
 /** "YOUR TURN" over a pocket board while it is your move: a gold capsule (flag + words) that pops in once, then rests (iOS / Android parity). */
-function YourTurnLabel() {
+export function YourTurnLabel() {
   return (
     <div role="status" aria-label="Your turn" className={`inline-flex items-center gap-[5px] rounded-full px-3 py-[5px] ${prefersReducedMotion() ? '' : 'gt-pop'}`}
       style={{ background: 'linear-gradient(#fde68a, #f5b82e)', border: '1px solid rgba(255, 255, 255, 0.55)', boxShadow: '0 3px 10px rgba(245, 158, 11, 0.35)', color: '#3b2300' }}>
@@ -130,11 +132,12 @@ function ArtTile({ tone, size, fontSize, radius = 8, pop = false, style, childre
   return (
     <span
       className={`relative inline-flex items-center justify-center font-black uppercase ${pop && !prefersReducedMotion() ? 'gt-pop' : ''}`}
-      style={{ width: size, height: size, fontSize, borderRadius: radius, color: '#2a1650', ...style }}
+      // iOS PocketTile: house ink on the white tile, white letters on purple / gold (dark ink on the purple art was unreadable).
+      style={{ width: size, height: size, fontSize, borderRadius: radius, color: tone === 'white' ? '#2a1650' : '#ffffff', ...style }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={artSrc(`art-pocket-tile-${tone}` as ArtName)} alt="" aria-hidden="true" draggable={false} decoding="async" className="absolute inset-0 w-full h-full pointer-events-none" style={{ objectFit: 'fill' }} />
-      <span className="relative" style={{ textShadow: tone === 'white' ? undefined : '0 1px 0 rgba(255,255,255,0.45)' }}>{children}</span>
+      <span className="relative" style={{ textShadow: tone === 'white' ? undefined : '0 1px 1px rgba(0,0,0,0.3)' }}>{children}</span>
     </span>
   );
 }
@@ -467,8 +470,6 @@ export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }
 
   return (
     <div className="flex flex-col items-center gap-3">
-      {/* YOUR TURN (founder 10-10, x3: the blank lavender flag art read as a stray icon): a gold capsule label. */}
-      {myTurn && <YourTurnLabel />}
       <GameTray accent={accent} state={tray}>
       <div className="relative grid grid-cols-3" style={{ gap: TTT_GAP }}>
         {board.map((m, i) => {
@@ -598,7 +599,7 @@ function passTileStyle(st: 'correct' | 'present' | 'absent'): React.CSSPropertie
   return { background: TILE.absent, color: '#475569' };
 }
 
-export function PassBoard({ state, me, you, them, active, busy, onMove, answer, accent, tray }: BoardProps<PassState> & { answer: string | null }) {
+export function PassBoard({ state, me, you, them, active, busy, onMove, answer, accent, tray, error }: BoardProps<PassState> & { answer: string | null }) {
   const [input, setInput] = useState('');
   const [hint, setHint] = useState<string | null>(null);
   const myTurn = active && whoseTurn(state) === me;
@@ -619,20 +620,7 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer, 
     if (/^[A-Z]$/.test(key)) setInput((v) => (v.length < 5 ? v + key : v));
   };
 
-  // Physical keyboard on desktop.
-  useEffect(() => {
-    if (!active) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
-      if (e.key === 'Enter') onKey('ENTER');
-      else if (e.key === 'Backspace') onKey('BACK');
-      else if (/^[a-zA-Z]$/.test(e.key)) onKey(e.key.toUpperCase());
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  });
+  usePhysicalKeys(active, onKey);
 
   const chip = (p: Player | null, faded = false) => (
     <span className="shrink-0 flex items-center justify-center" style={{ width: 28, opacity: faded ? 0.4 : 1 }}>
@@ -684,7 +672,7 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer, 
       </div>
       </GameTray>
 
-      {hint && <p className="text-[12px] font-bold" style={{ color: '#dc2626' }}>{hint}</p>}
+      {(hint || error) && <p className="text-[12px] font-bold" role="alert" style={{ color: '#dc2626' }}>{hint ?? error}</p>}
       {answer && (
         <p className="text-[12px] font-black uppercase" style={{ color: FR.ink, letterSpacing: 0.8 }}>
           The word was <span style={{ color: TILE.you, letterSpacing: 2 }}>{answer}</span>
@@ -761,7 +749,7 @@ const sideGlow = (mine: boolean) => (mine ? '0 0 6px rgba(124,58,237,0.4)' : '0 
 
 // ── Ghost ───────────────────────────────────────────────────────────────────
 
-export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, accent, tray }: BoardProps<GhostState>) {
+export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, accent, tray, error }: BoardProps<GhostState>) {
   const myTurn = active && whoseTurn(state) === me;
   const [pick, setPick] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
@@ -831,7 +819,7 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, a
       </div>
       </GameTray>
 
-      {hint && <p className="text-[12px] font-bold" style={{ color: '#dc2626' }}>{hint}</p>}
+      {(hint || error) && <p className="text-[12px] font-bold" role="alert" style={{ color: '#dc2626' }}>{hint ?? error}</p>}
 
       {active && (
         <>
@@ -860,7 +848,7 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, a
 const CHAIN_TILE = 30;
 const INPUT_TILE = 40;
 
-export function ChainBoard({ state, me, you, them, active, busy, onMove, accent, tray }: BoardProps<ChainState>) {
+export function ChainBoard({ state, me, you, them, active, busy, onMove, accent, tray, error }: BoardProps<ChainState>) {
   const myTurn = active && whoseTurn(state) === me;
   const locked = chainNeededLetter(state);
   const [typed, setTyped] = useState('');
@@ -885,6 +873,15 @@ export function ChainBoard({ state, me, you, them, active, busy, onMove, accent,
     if (/^[A-Z]$/.test(key)) setTyped((v) => (v.length < room ? v + key : v));
   };
   usePhysicalKeys(active, onKey);
+
+  // A new word keeps the chain's end in view (iOS parity): the newest word, then your input, never scrolled away.
+  const endRef = useRef<HTMLDivElement>(null);
+  const wordCount = useRef(state.words.length);
+  useEffect(() => {
+    if (state.words.length === wordCount.current) return;
+    wordCount.current = state.words.length;
+    endRef.current?.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+  }, [state.words.length]);
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -955,7 +952,7 @@ export function ChainBoard({ state, me, you, them, active, busy, onMove, accent,
         </div>
       )}
 
-      {hint && <p className="text-[12px] font-bold" style={{ color: '#dc2626' }}>{hint}</p>}
+      {(hint || error) && <p className="text-[12px] font-bold" role="alert" style={{ color: '#dc2626' }}>{hint ?? error}</p>}
 
       {active && (
         <>
@@ -964,7 +961,7 @@ export function ChainBoard({ state, me, you, them, active, busy, onMove, accent,
               ? locked ? `Your word. It starts with ${locked}.` : 'Your word. Any word opens the chain.'
               : locked ? `${them.name} needs a word starting with ${locked}. It lands here live.` : `${them.name} is opening the chain. It lands here live.`}
           </p>
-          <div className="w-full" style={{ opacity: myTurn ? 1 : 0.55 }}>
+          <div ref={endRef} className="w-full" style={{ opacity: myTurn ? 1 : 0.55 }}>
             <Keyboard onKey={onKey} />
           </div>
         </>

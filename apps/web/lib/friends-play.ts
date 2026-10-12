@@ -326,7 +326,8 @@ export function gameSubLine(s: FriendlyState, me: Side, them: string, online: bo
       break;
     }
     case 'ttt': {
-      parts.push('BEST OF 3');
+      // iOS parity: which game of the (at most five) the match is on.
+      parts.push(`BEST OF 3 · GAME ${Math.min(s.games.length + 1, 5)}`);
       const last = s.games[s.games.length - 1];
       if (last) parts.push(last.winner === null ? `GAME ${s.games.length} DRAWN` : `${last.winner === me ? 'YOU' : THEM} TOOK GAME ${s.games.length}`);
       break;
@@ -338,7 +339,7 @@ export function gameSubLine(s: FriendlyState, me: Side, them: string, online: bo
       break;
     }
     case 'pass':
-      parts.push('ONE BOARD, TAKE TURNS');
+      parts.push('ONE BOARD · SIX GUESSES');
       break;
     case 'ghost': {
       parts.push('BEST OF 3');

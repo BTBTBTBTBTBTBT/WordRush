@@ -516,7 +516,8 @@ private fun subLineFor(g: FriendlyGamesService.GameView, theyOn: Boolean): Strin
             }
         }
         is TttState -> {
-            parts += "BEST OF 3"
+            // iOS parity: which game of the (at most five) the match is on.
+            parts += "BEST OF 3 · GAME ${minOf(s.games.size + 1, 5)}"
             if (s.games.isNotEmpty()) {
                 val n = s.games.size
                 val w = s.games.last()
@@ -527,7 +528,7 @@ private fun subLineFor(g: FriendlyGamesService.GameView, theyOn: Boolean): Strin
             parts += "BEST OF 5"
             s.rounds.lastOrNull()?.let { r -> parts += "${r.flip.raw.uppercase()} · ${if (r.winner == me) "YOU" else them} WON IT" }
         }
-        is PassState -> parts += "ONE BOARD, TAKE TURNS"
+        is PassState -> parts += "ONE BOARD · SIX GUESSES"
         is GhostState -> {
             parts += "BEST OF 3"
             s.rounds.lastOrNull()?.let { r -> parts += "${if (r.loser == me) them else "YOU"} TOOK ROUND ${s.rounds.size}" }

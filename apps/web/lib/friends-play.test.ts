@@ -121,8 +121,8 @@ describe('game screen words', () => {
     expect(gameSubLine(rps, 'b', 'doug', true)).toBe('BEST OF 3 · LIVE, DOUG IS ON · DOUG TOOK ROUND 1');
     const coin: FriendlyState = { kind: 'coin', caller: 'b', rounds: [{ caller: 'a', call: 'heads', flip: 'tails', winner: 'b' }], score: { a: 0, b: 1 }, stake: 'Bragging rights' };
     expect(gameSubLine(coin, 'a', 'amy', false)).toBe('BEST OF 5 · TAILS · AMY WON IT');
-    expect(gameSubLine(newFriendlyState('pass'), 'a', 'amy', false)).toBe('ONE BOARD, TAKE TURNS');
-    expect(gameSubLine(newFriendlyState('ttt'), 'a', 'amy', false)).toBe('BEST OF 3');
+    expect(gameSubLine(newFriendlyState('pass'), 'a', 'amy', false)).toBe('ONE BOARD · SIX GUESSES');
+    expect(gameSubLine(newFriendlyState('ttt'), 'a', 'amy', false)).toBe('BEST OF 3 · GAME 1');
   });
 
   it('headline covers resign and expiry; scores from my side', () => {
