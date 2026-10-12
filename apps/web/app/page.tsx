@@ -509,7 +509,7 @@ export default function HomePage() {
         </div>
         </div>
 
-        <div className="page-grid-2 flex flex-col gap-2">
+        <div className="home-duo page-grid-2 flex flex-col gap-2">
         {/* Word of the Day, now a quick quiz under its own section header
             (§12; see components/home/word-of-the-day.tsx). */}
         <div className="flex flex-col gap-2">
@@ -526,7 +526,9 @@ export default function HomePage() {
           return (
             <div className="flex flex-col gap-1.5">
             {/* FINISH_SPEC O1: VS BATTLE gets its own section title; BJ7: the compact DAILIES / PUZZLES size. */}
-            <HomeSectionTitle name="art-titlecast-vsbattle" label="VS Battle" compact />
+            <HomeSectionTitle name="art-titlecast-vsbattle" label="VS Battle" compact
+              /* Side by side with Word of the Day: holds the height of its "Past words" line so both cards start level. */
+              below={<span aria-hidden="true" className="home-duo-spacer text-[10px] font-bold">Past words →</span>} />
             <VSLiveTile
               card={vs}
               livePlayerCount={livePlayerCount}

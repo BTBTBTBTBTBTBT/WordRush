@@ -56,14 +56,14 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
     // shadow, inner padding, 10 px top band) in the VS accent.
     <div
       data-squish="card"
-      className="relative w-full shrink-0 overflow-hidden"
+      className="vs-live relative w-full shrink-0 overflow-hidden"
       style={modeCardSurface(accent, { done })}
       role="group"
       aria-label="VS Battle"
     >
       <ModeCardBand accent={accent} />
       {/* BJ7: the text column top-aligned beside the faceoff. */}
-      <div className="flex items-start gap-2.5" style={{ padding: `${MODE_CARD.padY}px ${MODE_CARD.padX}px` }}>
+      <div className="vs-live-body flex items-start gap-2.5" style={{ padding: `${MODE_CARD.padY}px ${MODE_CARD.padX}px` }}>
         <button type="button" onClick={onOpen} className="shrink-0 block" style={{ width: '40%', maxWidth: 170 }} aria-label="Open VS Battle">
           <Image
             src={artSrc(FACEOFF)}

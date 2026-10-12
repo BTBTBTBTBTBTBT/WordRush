@@ -2836,3 +2836,30 @@ html[data-season-tone="dark"] { --ink-lift: 65%; }
   --offer-sub: #d8c8f0;
   background: linear-gradient(90deg, var(--offer-from-dark), rgba(139, 92, 246, 0.24)), var(--color-card-base);
 }
+
+/* ── Home bottom row + last-row centering (founder 10-12) ──
+   Word of the Day and VS Battle sit side by side from 900 px: the VS title reserves the same "Past words" line the
+   WOTD title has, and both cards stretch to the row's height, so the two read as one even pair. The game grids
+   center a short last row: one card in the middle of 3 or 4 columns, two cards in the middle two of 4. */
+.home-duo-spacer { visibility: hidden; }
+@media (max-width: 899.98px) {
+  div:has(> .home-duo-spacer) { display: none; }
+}
+@media (min-width: 900px) {
+  .home-duo { align-items: stretch; }
+  .home-duo > * { display: flex; flex-direction: column; gap: 0; }
+  /* Stretched beside a taller Word of the Day (its quiz), the VS card centers its content instead of leaving a hole. */
+  .home-duo .vs-live { display: flex; flex-direction: column; }
+  .home-duo .vs-live-body { flex: 1; align-items: center; }
+  .home-duo > * > section { flex: 1; display: flex; flex-direction: column; }
+  .home-duo > * > section > :last-child,
+  .home-duo > * > :last-child:not(section) { flex: 1; }
+}
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .home-cards.grid > :nth-child(3n + 1):last-child { grid-column: 2; }
+}
+@media (min-width: 1280px) {
+  .home-cards.grid > :nth-child(4n + 1):nth-last-child(2) { grid-column: 2; }
+  /* A lone last card: across the middle two columns at one column's width, centered. */
+  .home-cards.grid > :nth-child(4n + 1):last-child { grid-column: 2 / span 2; justify-self: center; width: calc((100% - 10px) / 2); }
+}
