@@ -1,7 +1,7 @@
 'use client';
 
-import { memo, useRef } from 'react';
-import type { RegionsState } from '@wordle-duel/core';
+import { memo, useMemo, useRef } from 'react';
+import { regionColorSlots, type RegionsState } from '@wordle-duel/core';
 import { starsweepSrc } from '@/lib/art';
 import { TRAY, traySeam, type TrayState } from '@/lib/game-tray';
 import { GameTray } from '@/components/ui/game-tray';
@@ -72,6 +72,8 @@ interface CellMotion { kind: StarsweepMotion; seq: number }
 export const RegionsBoard = memo(function RegionsBoard({ state, focused, onTap, revealSolution = false, maxSize = 440, trayState = 'playing' }: RegionsBoardProps) {
   const n = state.n;
   const reg = state.regions;
+  // Which palette color each region wears: touching regions get the pair that reads furthest apart (core regionColorSlots).
+  const slots = useMemo(() => regionColorSlots(n, reg), [n, reg]);
   const solutionStars = new Set<number>();
   if (revealSolution) for (let r = 0; r < n; r++) solutionStars.add(r * n + (state.solution.charCodeAt(r) - 48));
 
@@ -134,7 +136,7 @@ export const RegionsBoard = memo(function RegionsBoard({ state, focused, onTap, 
                   className="ss-cell"
                   data-focus={i === focused ? 'true' : undefined}
                   style={{
-                    ...TINT_VARS[g % TINT_VARS.length],
+                    ...TINT_VARS[(slots[g] ?? g) % TINT_VARS.length],
                     marginTop: m(seam.top, r === 0),
                     marginRight: m(seam.right, c === n - 1),
                     marginBottom: m(seam.bottom, r === n - 1),

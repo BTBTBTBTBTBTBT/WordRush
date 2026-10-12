@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   generateRegions, countRegionsSolutions, regionsN4, regionsSizeForDay, regionsSizeForSeed, regionsDailyNumber,
-  createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, regionsRuledOut, regionsRemaining, REGIONS_MAX_MISTAKES, normalizeRegionsState,
+  createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, regionsRuledOut, regionColorSlots, REGION_COLOR_DIST, regionsRemaining, REGIONS_MAX_MISTAKES, normalizeRegionsState,
 } from './regions';
 
 const cells = (s: string) => Array.from(s, (ch) => ch.charCodeAt(0) - 48);
@@ -167,5 +167,38 @@ describe('Starsweep reducer', () => {
     s = regionsReduce(s, { type: 'TAP', cell: star(0) });
     const others = regionsRuledOut(n, p.regions, star(0));
     expect(others.every((i) => s.board[i] === '.')).toBe(true);
+  });
+});
+
+describe('Starsweep region color slots', () => {
+  it('table is symmetric with a zero diagonal and every pair clearly apart', () => {
+    REGION_COLOR_DIST.forEach((row, i) => row.forEach((v, j) => {
+      expect(v).toBe(REGION_COLOR_DIST[j][i]);
+      if (i === j) expect(v).toBe(0); else expect(v).toBeGreaterThanOrEqual(20);
+    }));
+  });
+
+  it('gives each region its own color and never worse than the plain order for touching regions', () => {
+    for (const [seed, n] of [['a', 7], ['b', 8], ['c', 9], ['d', 7], ['e', 8], ['f', 9]] as Array<[string, number]>) {
+      const p = generateRegions(seed, n)!;
+      const slots = regionColorSlots(n, p.regions);
+      expect([...slots].sort((x, y) => x - y)).toEqual(Array.from({ length: n }, (_, i) => i));
+      const worst = (m: (g: number) => number) => {
+        let w = 1e9;
+        for (let i = 0; i < n * n; i++) for (const k of [i + 1, i + n]) {
+          if (k >= n * n || (k === i + 1 && i % n === n - 1)) continue;
+          const g = p.regions.charCodeAt(i) - 48, h = p.regions.charCodeAt(k) - 48;
+          if (g !== h) w = Math.min(w, REGION_COLOR_DIST[m(g)][m(h)]);
+        }
+        return w;
+      };
+      expect(worst((g) => slots[g]), seed).toBeGreaterThanOrEqual(worst((g) => g));
+    }
+  });
+
+  it('is deterministic and tolerant of odd input', () => {
+    const p = generateRegions('a', 7)!;
+    expect(regionColorSlots(7, p.regions)).toEqual(regionColorSlots(7, p.regions));
+    expect(regionColorSlots(7, '')).toEqual([]);
   });
 });

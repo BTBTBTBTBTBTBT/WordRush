@@ -28,7 +28,8 @@ class RegionsFixtureTest {
     private data class Script(val name: String, val seed: String, val n: Int, val actions: List<Act>, val expect: Expect, val row: Row, val reconstruct: Recon?)
     private data class Ruled(val cell: Int, val cells: List<Int>)
     private data class Size(val day: String, val n: Int)
-    private data class Fixtures(val generation: List<Gen>, val reducer: List<Script>, val ruledOut: List<Ruled>, val sizes: List<Size>, val malformed: Recon?)
+    private data class Slots(val seed: String, val n: Int, val regions: String, val slots: List<Int>)
+    private data class Fixtures(val generation: List<Gen>, val reducer: List<Script>, val ruledOut: List<Ruled>, val sizes: List<Size>, val colorDist: List<List<Int>>, val colorSlots: List<Slots>, val malformed: Recon?)
 
     private fun action(a: Act): RegionsAction = when (a.type) {
         "TAP" -> RegionsAction.Tap(a.cell!!)
@@ -91,5 +92,13 @@ class RegionsFixtureTest {
         for (s in f.sizes) assertEquals("size(${s.day})", s.n, regionsSizeForDay(s.day))
         assertEquals(9, regionsSizeForSeed("unlimited-REGIONS-1-9"))
         assertEquals(1, regionsDailyNumber(REGIONS_DAILY_EPOCH))
+    }
+
+    @Test
+    fun region_color_table_and_slots_match_shared_fixtures() {
+        val f = Gson().fromJson(loadFixture("regions-fixtures.json"), Fixtures::class.java)
+        assertEquals(f.colorDist, REGION_COLOR_DIST)
+        assertTrue(f.colorSlots.isNotEmpty())
+        for (c in f.colorSlots) assertEquals("slots(${c.seed})", c.slots, regionColorSlots(c.n, c.regions))
     }
 }

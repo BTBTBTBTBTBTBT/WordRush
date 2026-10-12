@@ -1,45 +1,52 @@
 // Starsweep in the new look (docs/FINISH_SPEC.md H): the pure pieces the
-// board draws from — the region pastels (one friendly hue per region, a
-// deterministic pick by region index), the cell state → candy piece mapping
+// board draws from — the region tints (one clear hue per region, picked by
+// regionColorSlots so touching regions read furthest apart), the cell state → candy piece mapping
 // (art-starsweep-*), the region seams, and which motion a cell plays when its
 // mark changes. No React here; tested in starsweep-look.test.ts.
 
 import type { StarsweepPiece } from './art';
 import { softMix } from './soft-surface';
 
-/** One region's candy-tile colors: face, the lighter top of its gradient, the darker bottom lip, and the region bed behind the tiles. */
+/** One region's candy-tile colors: face, the lighter top of its gradient, the darker bottom lip, the region bed behind the tiles, and the saturated `deep` color the dark theme starts from. */
 export interface RegionTint {
   name: string;
   face: string;
   top: string;
   lip: string;
   bed: string;
+  deep: string;
 }
 
-/** The light-theme pastels, in pick order (lilac and lavender only meet on a 9 × 9 board). */
+/**
+ * The light-theme tints, in pick order. Nine hues spread around the wheel (founder 10-12: two greens that touched were
+ * hard to tell apart), ordered so the first 7 / 8 / 9 are each as far apart as the hues allow; a board's regions take
+ * them through regionColorSlots (touching regions get the pair that reads furthest apart). Light: face = deep at 55% over
+ * white. Dark: deep at 64% over the card base (darkTint), which is what the pairwise CIEDE2000 table in core is built on.
+ */
 export const STARSWEEP_TINTS: readonly RegionTint[] = [
-  { name: 'lilac', face: '#c7a8ff', top: '#e3d3ff', lip: '#9a72e6', bed: '#b58ffa' },
-  { name: 'peach', face: '#ffb98a', top: '#ffd9bf', lip: '#e08a52', bed: '#fba673' },
-  { name: 'mint', face: '#8ee6b4', top: '#c2f3d6', lip: '#4fbf86', bed: '#72daa0' },
-  { name: 'sky', face: '#9ccbff', top: '#cde4ff', lip: '#5e9be6', bed: '#82bafb' },
-  { name: 'butter', face: '#ffdd66', top: '#ffeeaa', lip: '#d9ae2a', bed: '#fbd04a' },
-  { name: 'pink', face: '#ffa6cf', top: '#ffd0e6', lip: '#e06fa3', bed: '#fb8ebf' },
-  { name: 'aqua', face: '#84e3dc', top: '#bdf1ed', lip: '#3fbdb3', bed: '#66d7cd' },
-  { name: 'coral', face: '#ffa096', top: '#ffcdc7', lip: '#e66a5d', bed: '#fb8a7e' },
-  { name: 'lavender', face: '#b4b9ff', top: '#d8dbff', lip: '#7c83e6', bed: '#9ba1fa' },
+  { name: 'violet', face: '#ae99d6', top: '#d7ccea', lip: '#8b7aab', bed: '#a08cc5', deep: '#6c45b4' },
+  { name: 'orange', face: '#fac78d', top: '#fde3c6', lip: '#c89f71', bed: '#e6b782', deep: '#f69930' },
+  { name: 'green', face: '#b6f5be', top: '#dbfade', lip: '#92c498', bed: '#a8e1ae', deep: '#7bec88' },
+  { name: 'blue', face: '#92c6f9', top: '#c9e3fc', lip: '#759fc7', bed: '#86b6e5', deep: '#3998f4' },
+  { name: 'yellow', face: '#fcf379', top: '#fdf9bc', lip: '#c9c261', bed: '#e8df70', deep: '#f9e90c' },
+  { name: 'pink', face: '#ffc0df', top: '#ffdfef', lip: '#cc99b2', bed: '#ebb0cd', deep: '#ff8cc4' },
+  { name: 'cyan', face: '#a5fbfe', top: '#d2fdfe', lip: '#84c8cb', bed: '#98e7ea', deep: '#5cf7fd' },
+  { name: 'red', face: '#fe928e', top: '#fec8c7', lip: '#cb7472', bed: '#ea8683', deep: '#fd3832' },
+  { name: 'slate', face: '#d8dbdf', top: '#ecedef', lip: '#adafb2', bed: '#c7cacd', deep: '#b9bec5' },
 ];
 
-/** The dark theme's card base the dark pastels are mixed toward ([data-theme="dark"] --color-card-base). */
+/** The dark theme's card base the dark tints are mixed toward ([data-theme="dark"] --color-card-base). */
 export const STARSWEEP_DARK_BASE = '#252542';
 
-/** The same pastel, deeper and dimmer for the dark theme (still clearly that hue, never white). */
+/** The same tint on the dark theme: the deep color over the card base (iOS StarsweepTone, Android StarsweepPalette: top 78%, face 64%, lip 45%, bed 34%). */
 export function darkTint(t: RegionTint): RegionTint {
   return {
     name: t.name,
-    face: softMix(t.face, 0.7, STARSWEEP_DARK_BASE),
-    top: softMix(t.top, 0.74, STARSWEEP_DARK_BASE),
-    lip: softMix(t.lip, 0.55, STARSWEEP_DARK_BASE),
-    bed: softMix(t.bed, 0.5, STARSWEEP_DARK_BASE),
+    face: softMix(t.deep, 0.64, STARSWEEP_DARK_BASE),
+    top: softMix(t.deep, 0.78, STARSWEEP_DARK_BASE),
+    lip: softMix(t.deep, 0.45, STARSWEEP_DARK_BASE),
+    bed: softMix(t.deep, 0.34, STARSWEEP_DARK_BASE),
+    deep: t.deep,
   };
 }
 

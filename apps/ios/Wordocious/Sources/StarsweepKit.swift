@@ -3,8 +3,8 @@ import WordociousCore
 
 // FINISH_SPEC §H — Starsweep in the new look (founder 10-02), plus §L's shared
 // game tray for its board. The pieces Starsweep's board draws:
-//   - `StarsweepPalette`: nine friendly pastels (lilac, peach, mint, sky, butter,
-//     pink, aqua, coral, lavender), region index → color deterministically.
+//   - `StarsweepPalette`: nine clearly different hues (violet, orange, green, blue, yellow,
+//     pink, cyan, red, slate); a board's regions take them via core `regionColorSlots`.
 //   - `StarsweepGlyph`: the glossy piece art (`art-starsweep-*`) at ~78% of a cell.
 //   - `StarsweepCell`: one soft glossy candy tile (rounded 6–8 pt, faint top gloss,
 //     1.5-pt darker lip) on its region's bed; region borders read as a slightly
@@ -27,28 +27,33 @@ struct StarsweepTone {
     var faceTop: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.78) : Color.white.mixed(over: pastel, 0.45) }
     var faceBottom: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.64) : pastel }
     /// The 1.5-pt bottom lip.
-    var lip: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.45) : deep.wash(0.50) }
+    var lip: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.45) : deep.wash(0.80) }
     /// The region's bed (shows in the small gaps between tiles of one region).
-    var bed: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.34) : deep.wash(0.30) }
+    var bed: Color { Theme.isDark ? deep.mixed(over: Self.darkBase, 0.34) : deep.wash(0.45) }
 
     private static var darkBase: Color { Theme.surface }
 }
 
 enum StarsweepPalette {
-    /// Fixed, in order: lilac, peach, mint, sky, butter, pink, aqua, coral, lavender.
+    /// Fixed, in order: violet, orange, green, blue, yellow, pink, cyan, red, slate. Founder 10-12 ("the two green ones are hard
+    /// to tell apart"): nine hues spread around the wheel, ordered so the first 7 / 8 / 9 are each as far apart as the hues
+    /// allow (CIEDE2000 >= 20 on the dark board). `pastel` = the light theme's face (`deep` at 55% over white). Which region
+    /// wears which color is `regionColorSlots` (core): touching regions get the pair that reads furthest apart. Same values as
+    /// the web STARSWEEP_TINTS and the Android StarsweepPalette.
     static let tones: [StarsweepTone] = [
-        StarsweepTone(pastel: Color(hex: 0xC7A8FF), deep: Color(hex: 0xA78BFA)),   // lilac
-        StarsweepTone(pastel: Color(hex: 0xFFB98A), deep: Color(hex: 0xFB923C)),   // peach
-        StarsweepTone(pastel: Color(hex: 0x8EE6B4), deep: Color(hex: 0x34D399)),   // mint
-        StarsweepTone(pastel: Color(hex: 0x9CCBFF), deep: Color(hex: 0x60A5FA)),   // sky
-        StarsweepTone(pastel: Color(hex: 0xFFDD66), deep: Color(hex: 0xEAB308)),   // butter
-        StarsweepTone(pastel: Color(hex: 0xFFA6CF), deep: Color(hex: 0xF472B6)),   // pink
-        StarsweepTone(pastel: Color(hex: 0x84E3DC), deep: Color(hex: 0x2DD4BF)),   // aqua
-        StarsweepTone(pastel: Color(hex: 0xFFA096), deep: Color(hex: 0xFB7185)),   // coral
-        StarsweepTone(pastel: Color(hex: 0xB4B9FF), deep: Color(hex: 0x818CF8)),   // lavender
+        StarsweepTone(pastel: Color(hex: 0xAE99D6), deep: Color(hex: 0x6C45B4)),   // violet
+        StarsweepTone(pastel: Color(hex: 0xFAC78D), deep: Color(hex: 0xF69930)),   // orange
+        StarsweepTone(pastel: Color(hex: 0xB6F5BE), deep: Color(hex: 0x7BEC88)),   // green
+        StarsweepTone(pastel: Color(hex: 0x92C6F9), deep: Color(hex: 0x3998F4)),   // blue
+        StarsweepTone(pastel: Color(hex: 0xFCF379), deep: Color(hex: 0xF9E90C)),   // yellow
+        StarsweepTone(pastel: Color(hex: 0xFFC0DF), deep: Color(hex: 0xFF8CC4)),   // pink
+        StarsweepTone(pastel: Color(hex: 0xA5FBFE), deep: Color(hex: 0x5CF7FD)),   // cyan
+        StarsweepTone(pastel: Color(hex: 0xFE928E), deep: Color(hex: 0xFD3832)),   // red
+        StarsweepTone(pastel: Color(hex: 0xD8DBDF), deep: Color(hex: 0xB9BEC5)),   // slate
     ]
 
-    static func tone(_ region: Int) -> StarsweepTone { tones[max(0, region) % tones.count] }
+    /// The tone for a color index (a region's `regionColorSlots` entry; wraps).
+    static func tone(_ color: Int) -> StarsweepTone { tones[max(0, color) % tones.count] }
 }
 
 // MARK: - Glyphs

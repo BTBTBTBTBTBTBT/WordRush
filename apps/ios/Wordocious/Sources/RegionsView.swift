@@ -455,6 +455,8 @@ struct RegionsBoardView: View {
             let side = cell * CGFloat(n)
             let reg = Array(state.regions), b = Array(state.board), h = Array(state.hintMask), w = Array(state.wrongMask)
             let sol = Array(state.solution)
+            // Which palette color each region wears: touching regions get the pair that reads furthest apart (core).
+            let slots = regionColorSlots(n, state.regions)
             VStack(spacing: 0) {
                 ForEach(0..<n, id: \.self) { r in
                     HStack(spacing: 0) {
@@ -467,7 +469,7 @@ struct RegionsBoardView: View {
                                                        leading: c > 0 && reg[i - 1] != reg[i],
                                                        trailing: c < n - 1 && reg[i + 1] != reg[i])
                             cellView(i, mark: b[i], hinted: h[i] == "1", isWrong: w[i] == "1",
-                                     missing: missing, cell: cell, region: g, edges: edges)
+                                     missing: missing, cell: cell, region: g, color: slots[g], edges: edges)
                         }
                     }
                 }
@@ -487,11 +489,11 @@ struct RegionsBoardView: View {
 
     @ViewBuilder
     private func cellView(_ i: Int, mark: Character, hinted: Bool, isWrong: Bool, missing: Bool, cell: CGFloat,
-                          region: Int, edges: StarsweepEdges) -> some View {
+                          region: Int, color: Int, edges: StarsweepEdges) -> some View {
         let n = state.n
         Button { onTap(i) } label: {
             StarsweepCell(mark: mark, hinted: hinted, wrong: isWrong, missing: missing, focused: i == focused,
-                          region: region, edges: edges, cell: cell)
+                          region: color, edges: edges, cell: cell)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.squish)

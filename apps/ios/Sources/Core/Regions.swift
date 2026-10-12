@@ -239,6 +239,73 @@ private func pushHistory(_ s: RegionsState) -> [RegionsSnapshot] {
     return h
 }
 
+/// Starsweep region colors (founder 10-12: two touching greens read as one). Nine hues in a fixed order; how far
+/// apart each pair reads on a dark board, CIEDE2000 rounded (the web palette test recomputes it). Port of regions.ts.
+public let regionColorDist: [[Int]] = [
+    [0, 48, 53, 22, 71, 26, 45, 33, 29],
+    [48, 0, 38, 44, 25, 36, 42, 25, 29],
+    [53, 38, 0, 44, 24, 59, 25, 62, 29],
+    [22, 44, 44, 0, 63, 32, 27, 42, 20],
+    [71, 25, 24, 63, 0, 57, 39, 52, 37],
+    [26, 36, 59, 32, 57, 0, 47, 24, 21],
+    [45, 42, 25, 27, 39, 47, 0, 65, 23],
+    [33, 25, 62, 42, 52, 24, 65, 0, 33],
+    [29, 29, 29, 20, 37, 21, 23, 33, 0],
+]
+
+/// Which palette color each region wears: one of the first min(regions, 9) colors, none repeated, so touching regions
+/// read as far apart as possible (greedy start + the plain order, each improved by pair swaps; the better one wins,
+/// greedy on a tie). Exact port of `regionColorSlots` in regions.ts. `regions` is one digit char per cell.
+public func regionColorSlots(_ n: Int, _ regions: String) -> [Int] {
+    let cs = Array(regions.utf8)
+    var count = 0
+    for c in cs { count = max(count, Int(c) - 47) }
+    let palette = regionColorDist.count
+    let k = min(count, palette)
+    var nb = [[Bool]](repeating: [Bool](repeating: false, count: count), count: count)
+    for i in 0..<min(n * n, cs.count) {
+        let g = Int(cs[i]) - 48
+        if i % n < n - 1 && i + 1 < cs.count { let h = Int(cs[i + 1]) - 48; if h != g { nb[g][h] = true; nb[h][g] = true } }
+        if i + n < cs.count { let h = Int(cs[i + n]) - 48; if h != g { nb[g][h] = true; nb[h][g] = true } }
+    }
+    let degree = nb.map { $0.filter { $0 }.count }
+    let order = (0..<count).sorted { degree[$0] != degree[$1] ? degree[$0] > degree[$1] : $0 < $1 }
+    var greedy = [Int](repeating: -1, count: count)
+    var used = [Bool](repeating: false, count: max(k, 0))
+    for g in order {
+        if g >= k { greedy[g] = g % palette; continue }
+        var best = -1, bestScore = -1
+        for c in 0..<k where !used[c] {
+            var score = 1000
+            for h in 0..<count where nb[g][h] && greedy[h] >= 0 { score = min(score, regionColorDist[c][greedy[h]]) }
+            if score > bestScore { bestScore = score; best = c }
+        }
+        greedy[g] = best; used[best] = true
+    }
+    func grade(_ slot: [Int]) -> (Int, Int) {
+        var lo = 1000, sum = 0
+        for g in 0..<count { for h in (g + 1)..<max(count, g + 1) where nb[g][h] { let d = regionColorDist[slot[g]][slot[h]]; lo = min(lo, d); sum += d } }
+        return (lo, sum)
+    }
+    func better(_ a: (Int, Int), _ b: (Int, Int)) -> Bool { a.0 > b.0 || (a.0 == b.0 && a.1 > b.1) }
+    func improve(_ start: [Int]) -> [Int] {
+        var slot = start
+        var cur = grade(slot), moved = true
+        while moved {
+            moved = false
+            for i in 0..<k { for j in (i + 1)..<max(k, i + 1) {
+                slot.swapAt(i, j)
+                let g = grade(slot)
+                if better(g, cur) { cur = g; moved = true } else { slot.swapAt(i, j) }
+            } }
+        }
+        return slot
+    }
+    let a = improve(greedy)
+    let b = improve((0..<count).map { $0 % palette })
+    return better(grade(b), grade(a)) ? b : a
+}
+
 /// Cells a star rules out: its row, column, region and the eight neighbors.
 public func regionsRuledOut(_ n: Int, _ regions: String, _ cell: Int) -> [Int] {
     let r = cell / n, c = cell % n

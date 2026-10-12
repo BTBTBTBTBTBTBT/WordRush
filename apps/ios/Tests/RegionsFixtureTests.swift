@@ -17,7 +17,8 @@ final class RegionsFixtureTests: XCTestCase {
     private struct Script: Decodable { let name: String; let seed: String; let n: Int; let actions: [Act]; let expect: Expect; let row: Row; let reconstruct: Recon? }
     private struct Ruled: Decodable { let cell: Int; let cells: [Int] }
     private struct Size: Decodable { let day: String; let n: Int }
-    private struct Fixtures: Decodable { let generation: [Gen]; let reducer: [Script]; let ruledOut: [Ruled]; let sizes: [Size]; let malformed: Recon? }
+    private struct Slots: Decodable { let seed: String; let n: Int; let regions: String; let slots: [Int] }
+    private struct Fixtures: Decodable { let generation: [Gen]; let reducer: [Script]; let ruledOut: [Ruled]; let sizes: [Size]; let colorDist: [[Int]]; let colorSlots: [Slots]; let malformed: Recon? }
 
     private func load() throws -> Fixtures {
         guard let url = Bundle.module.url(forResource: "regions-fixtures", withExtension: "json", subdirectory: "Fixtures") else {
@@ -85,5 +86,12 @@ final class RegionsFixtureTests: XCTestCase {
         for s in f.sizes { XCTAssertEqual(regionsSizeForDay(s.day), s.n, "size(\(s.day))") }
         XCTAssertEqual(regionsSizeForSeed("unlimited-REGIONS-1-9"), 9)
         XCTAssertEqual(regionsDailyNumber(REGIONS_DAILY_EPOCH), 1)
+    }
+
+    func testRegionColorTableAndSlotsMatchSharedFixtures() throws {
+        let f = try load()
+        XCTAssertEqual(f.colorDist, regionColorDist)
+        XCTAssertFalse(f.colorSlots.isEmpty)
+        for c in f.colorSlots { XCTAssertEqual(regionColorSlots(c.n, c.regions), c.slots, "slots(\(c.seed))") }
     }
 }

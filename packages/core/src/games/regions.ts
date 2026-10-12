@@ -253,6 +253,83 @@ function pushHistory(s: RegionsState): RegionsSnapshot[] {
   return h.length > HISTORY_CAP ? h.slice(h.length - HISTORY_CAP) : h;
 }
 
+/**
+ * Starsweep region colors (founder 10-12: "the two green ones are hard to tell apart"). The palette has nine hues in a
+ * fixed order (violet, orange, green, blue, yellow, pink, cyan, red, slate: each prefix of 7 / 8 / 9 is as far apart as
+ * the hues allow); this is how far apart each pair reads on a dark board, CIEDE2000 rounded to a whole number, with
+ * every platform's palette pinned to it (apps/web/lib/starsweep-look.test.ts recomputes the table from the hex values).
+ */
+export const REGION_COLOR_DIST: readonly (readonly number[])[] = [
+  [0, 48, 53, 22, 71, 26, 45, 33, 29],
+  [48, 0, 38, 44, 25, 36, 42, 25, 29],
+  [53, 38, 0, 44, 24, 59, 25, 62, 29],
+  [22, 44, 44, 0, 63, 32, 27, 42, 20],
+  [71, 25, 24, 63, 0, 57, 39, 52, 37],
+  [26, 36, 59, 32, 57, 0, 47, 24, 21],
+  [45, 42, 25, 27, 39, 47, 0, 65, 23],
+  [33, 25, 62, 42, 52, 24, 65, 0, 33],
+  [29, 29, 29, 20, 37, 21, 23, 33, 0],
+];
+
+/**
+ * Which palette color each region wears: one of the first min(regions, 9) colors, none repeated, so touching regions
+ * read as far apart as possible. Start A is greedy (most-bordered regions first, ties lower index; each takes the free
+ * color whose nearest already-colored neighbor is furthest, ties lower slot), start B is the plain order; each is then
+ * improved by swapping pairs of regions' colors (i < j, repeat while a swap helps) and the better one wins (A on a tie).
+ * "Better" = a larger smallest distance across touching pairs, then a larger total. Integer math only, so the ports
+ * match exactly. `regions` is one digit char per cell, index = cell (row-major).
+ */
+export function regionColorSlots(n: number, regions: string): number[] {
+  let count = 0;
+  for (let i = 0; i < regions.length; i++) count = Math.max(count, regions.charCodeAt(i) - 47);
+  const palette = REGION_COLOR_DIST.length;
+  const k = Math.min(count, palette);
+  const nb: boolean[][] = Array.from({ length: count }, () => new Array(count).fill(false));
+  for (let i = 0; i < n * n && i < regions.length; i++) {
+    const g = regions.charCodeAt(i) - 48;
+    if (i % n < n - 1 && i + 1 < regions.length) { const h = regions.charCodeAt(i + 1) - 48; if (h !== g) { nb[g][h] = true; nb[h][g] = true; } }
+    if (i + n < regions.length) { const h = regions.charCodeAt(i + n) - 48; if (h !== g) { nb[g][h] = true; nb[h][g] = true; } }
+  }
+  const degree = nb.map((row) => row.filter(Boolean).length);
+  const order = Array.from({ length: count }, (_, g) => g).sort((a, b) => degree[b] - degree[a] || a - b);
+  const greedy = new Array<number>(count).fill(-1);
+  const used = new Array<boolean>(Math.max(k, 0)).fill(false);
+  for (const g of order) {
+    if (g >= k) { greedy[g] = g % palette; continue; }
+    let best = -1, bestScore = -1;
+    for (let c = 0; c < k; c++) {
+      if (used[c]) continue;
+      let score = 1000;
+      for (let h = 0; h < count; h++) if (nb[g][h] && greedy[h] >= 0) score = Math.min(score, REGION_COLOR_DIST[c][greedy[h]]);
+      if (score > bestScore) { bestScore = score; best = c; }
+    }
+    greedy[g] = best; used[best] = true;
+  }
+  // [smallest distance across touching pairs, total over touching pairs]
+  const grade = (slot: number[]): [number, number] => {
+    let lo = 1000, sum = 0;
+    for (let g = 0; g < count; g++) for (let h = g + 1; h < count; h++) if (nb[g][h]) { const d = REGION_COLOR_DIST[slot[g]][slot[h]]; lo = Math.min(lo, d); sum += d; }
+    return [lo, sum];
+  };
+  const better = (a: [number, number], b: [number, number]) => a[0] > b[0] || (a[0] === b[0] && a[1] > b[1]);
+  const improve = (start: number[]): number[] => {
+    const slot = start.slice();
+    let cur = grade(slot), moved = true;
+    while (moved) {
+      moved = false;
+      for (let i = 0; i < k; i++) for (let j = i + 1; j < k; j++) {
+        [slot[i], slot[j]] = [slot[j], slot[i]];
+        const g = grade(slot);
+        if (better(g, cur)) { cur = g; moved = true; } else [slot[i], slot[j]] = [slot[j], slot[i]];
+      }
+    }
+    return slot;
+  };
+  const a = improve(greedy);
+  const b = improve(Array.from({ length: count }, (_, g) => g % palette));
+  return better(grade(b), grade(a)) ? b : a;
+}
+
 /** Cells a correct star rules out: its row, column, region and the eight neighbors. */
 export function regionsRuledOut(n: number, regions: string, cell: number): number[] {
   const r = Math.floor(cell / n), c = cell % n, g = regions[cell];

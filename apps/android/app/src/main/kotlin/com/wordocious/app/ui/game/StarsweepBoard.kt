@@ -37,6 +37,7 @@ import com.wordocious.app.ui.TintMath
 import com.wordocious.app.ui.squishClickable
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.RegionsState
+import com.wordocious.core.regionColorSlots
 import kotlinx.coroutines.launch
 
 // FINISH_SPEC H — Starsweep in the new look (founder 10-02): every region a soft pastel
@@ -46,31 +47,48 @@ import kotlinx.coroutines.launch
 // (B3 type), playing it flips and glows (purple when right, red + a small shake when
 // wrong), a hint glows gold twice. Mirrors the web and iOS Starsweep boards.
 
-/** H the region pastels (pure, unit-tested): lilac, peach, mint, sky, butter, pink, aqua, coral, lavender. */
+/**
+ * H the region colors (pure, unit-tested). Founder 10-12 ("the two green ones are hard to tell apart"): nine hues spread around
+ * the wheel (violet, orange, green, blue, yellow, pink, cyan, red, slate), ordered so the first 7 / 8 / 9 are each as far
+ * apart as the hues allow. PASTELS = the light theme's tile faces (DEEPS at 55% over white); DEEPS = the saturated colors the
+ * dark theme mixes over the night surface. Which region wears which color is `regionColorSlots` (core): touching regions get
+ * the pair that reads furthest apart. Same values as the web STARSWEEP_TINTS and the iOS StarsweepPalette.
+ */
 object StarsweepPalette {
     val PASTELS: List<Color> = listOf(
-        Color(0xFFC7A8FF), // lilac
-        Color(0xFFFFB98A), // peach
-        Color(0xFF8EE6B4), // mint
-        Color(0xFF9CCBFF), // sky
-        Color(0xFFFFDD66), // butter
-        Color(0xFFFFA6CF), // pink
-        Color(0xFF84E3DC), // aqua
-        Color(0xFFFFA096), // coral
-        Color(0xFFB4B9FF), // lavender
+        Color(0xFFAE99D6), // violet
+        Color(0xFFFAC78D), // orange
+        Color(0xFFB6F5BE), // green
+        Color(0xFF92C6F9), // blue
+        Color(0xFFFCF379), // yellow
+        Color(0xFFFFC0DF), // pink
+        Color(0xFFA5FBFE), // cyan
+        Color(0xFFFE928E), // red
+        Color(0xFFD8DBDF), // slate
+    )
+    val DEEPS: List<Color> = listOf(
+        Color(0xFF6C45B4), // violet
+        Color(0xFFF69930), // orange
+        Color(0xFF7BEC88), // green
+        Color(0xFF3998F4), // blue
+        Color(0xFFF9E90C), // yellow
+        Color(0xFFFF8CC4), // pink
+        Color(0xFF5CF7FD), // cyan
+        Color(0xFFFD3832), // red
+        Color(0xFFB9BEC5), // slate
     )
     private const val NIGHT = 0xFF1E1730.toInt()
 
     /**
      * Founder 10-10 ("Starsweep board is too dark ... too faded, needs to pop"): on a dark board a region carries much more of
-     * its own color over the night surface — face top 78%, face bottom 64%, lip 45% (they sat at ~32-40%). iOS StarsweepTone.
+     * its own color over the night surface — face top 78%, face bottom 64%, lip 45% (they sat at ~32-40%). iOS StarsweepTone. [g] = a color index (core regionColorSlots).
      */
     const val DARK_TOP = 0.78f
     const val DARK_BOTTOM = 0.64f
     const val DARK_LIP = 0.45f
 
     private fun darkMix(g: Int, share: Float): Color =
-        Color(TintMath.over(PASTELS[Math.floorMod(g, PASTELS.size)].toArgb(), share, NIGHT))
+        Color(TintMath.over(DEEPS[Math.floorMod(g, DEEPS.size)].toArgb(), share, NIGHT))
 
     /** Region [g]'s pastel (the face's bottom color); dark mode = the region's color at [DARK_BOTTOM] over the night surface. */
     fun pastel(g: Int, dark: Boolean): Color =
@@ -123,6 +141,8 @@ fun StarsweepBoard(
 ) {
     val n = state.n
     val dark = WTheme.isDark
+    // Which palette color each region wears (core): touching regions get the pair that reads furthest apart.
+    val slots = remember(state.regions) { regionColorSlots(n, state.regions) }
     val seam = if (dark) Color(0xFF120D1F) else GameTrayStyle.seam(GameTrayStyle.tint(STAR_ACCENT, trayState))
     Box(
         Modifier.fillMaxWidth().widthIn(max = 420.dp).aspectRatio(1f)
@@ -146,7 +166,7 @@ fun StarsweepBoard(
                         val top = StarsweepPalette.halfGap(r > 0 && same(i - n), r == 0)
                         val bottom = StarsweepPalette.halfGap(r < n - 1 && same(i + n), r == n - 1)
                         StarsweepCell(
-                            state = state, i = i, r = r, c = c,
+                            state = state, slots = slots, i = i, r = r, c = c,
                             focused = i == focused, revealSolution = revealSolution, onTap = onTap,
                             modifier = Modifier.weight(1f).fillMaxSize()
                                 .padding(start = left.dp, end = right.dp, top = top.dp, bottom = bottom.dp),
@@ -161,6 +181,7 @@ fun StarsweepBoard(
 @Composable
 private fun StarsweepCell(
     state: RegionsState,
+    slots: List<Int>,
     i: Int,
     r: Int,
     c: Int,
@@ -170,7 +191,8 @@ private fun StarsweepCell(
     modifier: Modifier,
 ) {
     val n = state.n
-    val g = state.regions[i] - '0'
+    val region = state.regions[i] - '0'
+    val g = slots.getOrElse(region) { region }
     val mark = state.board[i]
     val wrong = state.wrongMask[i] == '1'
     val hinted = state.hintMask[i] == '1'
@@ -226,7 +248,7 @@ private fun StarsweepCell(
         else -> Color(0xFF965AFF)
     }
     val spoken = buildString {
-        append("Row ${r + 1}, column ${c + 1}, region ${g + 1}")
+        append("Row ${r + 1}, column ${c + 1}, region ${region + 1}")
         when {
             mark == '*' && wrong -> append(", wrong star")
             mark == '*' && hinted -> append(", hint star")

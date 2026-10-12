@@ -203,6 +203,77 @@ private fun pushHistory(s: RegionsState): List<RegionsSnapshot> {
     return if (h.size > REGIONS_HISTORY_CAP) h.takeLast(REGIONS_HISTORY_CAP) else h
 }
 
+/**
+ * Starsweep region colors (founder 10-12: two touching greens read as one). Nine hues in a fixed order; how far
+ * apart each pair reads on a dark board, CIEDE2000 rounded (the web palette test recomputes it). Port of regions.ts.
+ */
+val REGION_COLOR_DIST: List<List<Int>> = listOf(
+    listOf(0, 48, 53, 22, 71, 26, 45, 33, 29),
+    listOf(48, 0, 38, 44, 25, 36, 42, 25, 29),
+    listOf(53, 38, 0, 44, 24, 59, 25, 62, 29),
+    listOf(22, 44, 44, 0, 63, 32, 27, 42, 20),
+    listOf(71, 25, 24, 63, 0, 57, 39, 52, 37),
+    listOf(26, 36, 59, 32, 57, 0, 47, 24, 21),
+    listOf(45, 42, 25, 27, 39, 47, 0, 65, 23),
+    listOf(33, 25, 62, 42, 52, 24, 65, 0, 33),
+    listOf(29, 29, 29, 20, 37, 21, 23, 33, 0),
+)
+
+/**
+ * Which palette color each region wears: one of the first min(regions, 9) colors, none repeated, so touching regions
+ * read as far apart as possible (greedy start + the plain order, each improved by pair swaps; the better one wins,
+ * greedy on a tie). Exact port of `regionColorSlots` in regions.ts. [regions] is one digit char per cell.
+ */
+fun regionColorSlots(n: Int, regions: String): List<Int> {
+    var count = 0
+    for (ch in regions) count = maxOf(count, ch.code - 47)
+    val palette = REGION_COLOR_DIST.size
+    val k = minOf(count, palette)
+    val nb = Array(count) { BooleanArray(count) }
+    for (i in 0 until minOf(n * n, regions.length)) {
+        val g = regions[i].code - 48
+        if (i % n < n - 1 && i + 1 < regions.length) { val h = regions[i + 1].code - 48; if (h != g) { nb[g][h] = true; nb[h][g] = true } }
+        if (i + n < regions.length) { val h = regions[i + n].code - 48; if (h != g) { nb[g][h] = true; nb[h][g] = true } }
+    }
+    val degree = IntArray(count) { g -> nb[g].count { it } }
+    val order = (0 until count).sortedWith { a, b -> if (degree[a] != degree[b]) degree[b] - degree[a] else a - b }
+    val greedy = IntArray(count) { -1 }
+    val used = BooleanArray(maxOf(k, 0))
+    for (g in order) {
+        if (g >= k) { greedy[g] = g % palette; continue }
+        var best = -1; var bestScore = -1
+        for (c in 0 until k) {
+            if (used[c]) continue
+            var score = 1000
+            for (h in 0 until count) if (nb[g][h] && greedy[h] >= 0) score = minOf(score, REGION_COLOR_DIST[c][greedy[h]])
+            if (score > bestScore) { bestScore = score; best = c }
+        }
+        greedy[g] = best; used[best] = true
+    }
+    fun grade(slot: IntArray): Pair<Int, Int> {
+        var lo = 1000; var sum = 0
+        for (g in 0 until count) for (h in g + 1 until count) if (nb[g][h]) { val d = REGION_COLOR_DIST[slot[g]][slot[h]]; lo = minOf(lo, d); sum += d }
+        return lo to sum
+    }
+    fun better(a: Pair<Int, Int>, b: Pair<Int, Int>) = a.first > b.first || (a.first == b.first && a.second > b.second)
+    fun improve(start: IntArray): IntArray {
+        val slot = start.copyOf()
+        var cur = grade(slot); var moved = true
+        while (moved) {
+            moved = false
+            for (i in 0 until k) for (j in i + 1 until k) {
+                val t = slot[i]; slot[i] = slot[j]; slot[j] = t
+                val g = grade(slot)
+                if (better(g, cur)) { cur = g; moved = true } else { val u = slot[i]; slot[i] = slot[j]; slot[j] = u }
+            }
+        }
+        return slot
+    }
+    val a = improve(greedy)
+    val b = improve(IntArray(count) { it % palette })
+    return (if (better(grade(b), grade(a))) b else a).toList()
+}
+
 /** Cells a star rules out: its row, column, region and the eight neighbors. */
 fun regionsRuledOut(n: Int, regions: String, cell: Int): List<Int> {
     val r = cell / n; val c = cell % n; val g = regions[cell]

@@ -578,6 +578,7 @@ struct ShareCardView: View {
         let cell = (side - pad * 2 - gap * CGFloat(count - 1)) / CGFloat(count)
         let reg = Array(regions), b = Array(board), h = Array(hintMask)
         let ok = reg.count == count * count
+        let slots = ok ? regionColorSlots(count, regions) : []
         return VStack(spacing: gap) {
             ForEach(0..<count, id: \.self) { r in
                 HStack(spacing: gap) {
@@ -585,7 +586,7 @@ struct ShareCardView: View {
                         let i = r * count + c
                         let g = ok ? Int(reg[i].asciiValue ?? 48) - 48 : 0
                         ZStack {
-                            ShareTile(fill: .color(StarsweepPalette.tone(g).pastel), size: cell)
+                            ShareTile(fill: .color(StarsweepPalette.tone(slots.indices.contains(g) ? slots[g] : g).pastel), size: cell)
                             if b.count == count * count && b[i] == "*" {
                                 Circle().fill(h.count == count * count && h[i] == "1" ? Color(hex: 0x8B5CF6) : ShareInk.number)
                                     .frame(width: cell * 0.48, height: cell * 0.48)
