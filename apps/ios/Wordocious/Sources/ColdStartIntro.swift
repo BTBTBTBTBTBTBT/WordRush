@@ -20,10 +20,17 @@ struct ColdStartIntroHost: View {
             // (never under it), only for players who have never played.
             OnboardingHost(introDone: !visible)
             if visible {
-                ColdStartIntro {
+                ColdStartIntro { flourish in
                     ColdStartIntroHost.played = true
                     visible = false
-                    LaunchGate.open()   // §AU5: the deferred startup work runs now
+                    // §AU5: the deferred startup work runs now — but after the landing flourish (founder 10-12: a
+                    // "stutter drop" right after the cast lands; recorded, the hops drew every 3-8 frames while the
+                    // auth / network / cache work started in the same frame). The 4.5 s fail-safe still applies.
+                    if flourish {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + CastMoves.flourishDuration() + 0.1) { LaunchGate.open() }
+                    } else {
+                        LaunchGate.open()
+                    }
                 }
                 .onAppear {
                     ColdStartIntroHost.played = true
@@ -205,7 +212,8 @@ struct CastFramesKey: PreferenceKey {
 }
 
 private struct ColdStartIntro: View {
-    let onDone: () -> Void
+    /// Called once the intro is removed; `true` when the landing flourish is playing.
+    let onDone: (Bool) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
     @ObservedObject private var handoff = CastHandoff.shared
@@ -296,7 +304,7 @@ private struct ColdStartIntro: View {
                     guard !finishing else { return }
                     finishing = true
                     withAnimation(.easeOut(duration: 0.2)) { fade = 0 }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { onDone() }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { onDone(false) }
                 }
             } else {
                 DispatchQueue.main.asyncAfter(deadline: .now() + Self.landing) { land() }
@@ -313,7 +321,7 @@ private struct ColdStartIntro: View {
         t.disablesAnimations = true
         withTransaction(t) {
             handoff.land(flourish: !still)
-            onDone()
+            onDone(!still)
         }
     }
 
