@@ -686,12 +686,18 @@ struct BannerSweep: View {
         GeometryReader { geo in
             let w = geo.size.width
             let band = w * 0.38
+            let tall = geo.size.height * 1.4
+            // The skew pulls the band's bottom left by tan(18°) x its height (on a tall banner ~190 pt). Founder 10-12:
+            // the old path ended once the TOP had left, so the slanted bottom parked in the bottom-right corner (the
+            // ease-out slowed it right there) and then blinked out. Now it starts and ends with the whole band off
+            // the card (Android's bannerShimmer path).
+            let skew = tall * tan(18 * .pi / 180)
             LinearGradient(colors: [.white.opacity(0), .white.opacity(0.55), .white.opacity(0)],
                            startPoint: .leading, endPoint: .trailing)
-                .frame(width: band, height: geo.size.height * 1.4)
+                .frame(width: band, height: tall)
                 .transformEffect(CGAffineTransform(a: 1, b: 0, c: tan(-18 * .pi / 180), d: 1, tx: 0, ty: 0))
-                // From fully off the left edge to fully off the right edge.
-                .offset(x: -band * 1.5 + phase * (w + band * 2), y: -geo.size.height * 0.2)
+                // From fully off the left edge to fully off the right edge, slanted bottom included.
+                .offset(x: -band + phase * (w + band + skew), y: -geo.size.height * 0.2)
         }
         .task {
             while !Task.isCancelled {
