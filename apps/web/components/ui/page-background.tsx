@@ -41,6 +41,9 @@ interface PageBackgroundProps {
   children?: React.ReactNode;
 }
 
+/** The desktop game stage opt-in (globals.css `.page-col.game-wide`, desktop block): see GameBackground `wide`. */
+export const GAME_WIDE_CLASS = 'game-wide';
+
 export function PageBackground({
   tint = 'home', scheme = 'auto', colors, wall, dim = WALL_OVERLAY.dark, className = '', style, children,
 }: PageBackgroundProps) {
@@ -85,10 +88,18 @@ export function PageBackground({
  * matches. The game's root element: it takes the className / style the old
  * flat-background div had.
  */
-export function GameBackground({ mode, className = '', ...rest }: Omit<PageBackgroundProps, 'tint' | 'colors' | 'wall' | 'dim'> & {
+export function GameBackground({ mode, className: baseClass = '', wide = false, ...rest }: Omit<PageBackgroundProps, 'tint' | 'colors' | 'wall' | 'dim'> & {
   /** The mode's db key (DUEL, QUORDLE, SCRAMBLE, …). */
   mode: string;
+  /**
+   * Desktop website (≥ 1024 px, founder 10-12): opt in to the WIDE game stage — the column grows
+   * from 560 px to ~1000 px while playing (bigger boards + keyboard) and ~1180 px once finished,
+   * where FinishedDeskLayout splits it into the game (left) and a results panel (right). Phones
+   * and tablets (< 1024 px) ignore it. Contract: components/game/finished-kit.tsx FinishedDeskLayout.
+   */
+  wide?: boolean;
 }) {
+  const className = wide ? `${GAME_WIDE_CLASS} ${baseClass}` : baseClass;
   return (
     <PageBackground
       colors={gameTintForDbKey(mode) ?? undefined}

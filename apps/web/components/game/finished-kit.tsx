@@ -469,3 +469,28 @@ export function FinishedDock({ currentMode, isDaily, onShare, copied, onNewPuzzl
   );
 }
 
+
+// ── Desktop website (≥ 1024 px, founder 10-12): the two-column finished layout ──
+
+/**
+ * The reusable two-column finished layout for desktop (globals.css, desktop block,
+ * `.fin-desk-*`). THE CONTRACT:
+ *   - The game screen's root is `<GameBackground wide …>` (page-col + game-wide) whose children are
+ *     the header (`.game-art-header`) and this layout — and nothing else in flow (fixed popups,
+ *     the docked BottomNav and toasts are fine). On desktop `:has(> .fin-desk-wrap)` turns that
+ *     root into a 2/3 | 1/3 grid ~1180 px wide: the header art sits above `main` (left column).
+ *   - `main` is the game itself — board(s), recap — in a definite-height box (`flex-1 min-h-0`
+ *     inside a flex column, like FinishedScreen's board area): the board fills it and measures it.
+ *   - `side` is the results panel: chips, rank pill, Share / Next / Ranks, Unlimited, the score
+ *     breakdown OPEN inline, the next-daily CTA — vertically centered, 420 px max wide, no boxes.
+ *   - Only render this when `useDesktopStage()` is true (hooks/use-desktop-stage.ts); below 1024 px
+ *     keep today's single column. FinishedScreen does this for the word games.
+ */
+export function FinishedDeskLayout({ main, side }: { main: ReactNode; side: ReactNode }) {
+  return (
+    <div className="fin-desk-wrap animate-fade-in-up">
+      <div className="fin-desk-main">{main}</div>
+      <aside className="fin-desk-side">{side}</aside>
+    </div>
+  );
+}

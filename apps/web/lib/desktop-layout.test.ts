@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
 import {
-  DESKTOP_3COL_MIN, DESKTOP_MAX, DESKTOP_MIN, DESKTOP_XL_MIN, WIDE_MIN,
+  DESKTOP_3COL_MIN, DESKTOP_MAX, GAME_WIDE_DONE, GAME_WIDE_PLAY, DESKTOP_MIN, DESKTOP_XL_MIN, WIDE_MIN,
   homeCardColumns, layoutTier, minWidthQuery, showsBottomTabs, tabPageColumns,
 } from './desktop-layout';
 
@@ -106,6 +106,22 @@ describe('desktop block (globals.css)', () => {
     expect(block).toMatch(/\.fr-desk \{[^}]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
     expect(block).toMatch(/\.fr-desk > \.page-grid-2 \{ display: contents; \}/);
     expect(block).toMatch(/\.page-grid-2\.stats-desk \{[^}]*minmax\(320px, 380px\)/);
+  });
+
+  it('opts game screens in to the wide stage: 1000 px playing, 1180 px finished in a 2/3 | 1/3 grid', () => {
+    expect(GAME_WIDE_PLAY).toBe(1000);
+    expect(GAME_WIDE_DONE).toBe(1180);
+    expect(block).toMatch(/--game-wide-play: 1000px;/);
+    expect(block).toMatch(/--game-wide-done: 1180px;/);
+    expect(block).toMatch(/\.page-col\.game-wide \{[^}]*--page-col: var\(--game-wide-play\)/);
+    expect(block).toMatch(/\.page-col\.game-wide:has\(> \.fin-desk-wrap\) \{ --page-col: var\(--game-wide-done\); \}/);
+    expect(block).toMatch(/:has\(> \.fin-desk-wrap\) \{[^}]*grid-template-columns: minmax\(0, 2fr\) minmax\(300px, 1fr\)/);
+    expect(block).toMatch(/\.fin-desk-wrap \{ display: contents; \}/);
+    expect(block).toMatch(/\.fin-desk-side \{[^}]*grid-row: 1 \/ -1/);
+    // Nothing of it leaks outside the desktop media query.
+    const head = block.slice(0, block.indexOf('@media')).replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(head).not.toMatch(/game-wide|fin-desk/);
+    expect(read('components/ui/page-background.tsx')).toMatch(/wide \? `\$\{GAME_WIDE_CLASS\} /);
   });
 
   it('uses the wide wallpaper on every desktop width', () => {

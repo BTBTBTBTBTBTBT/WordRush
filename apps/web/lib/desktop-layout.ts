@@ -11,8 +11,9 @@
 //   DAILIES and PUZZLES grids in 3–4 columns); Leaderboard and Friends in three
 //   columns from 1200 px (two below), Stats in two; tab-page content up to 1180 px.
 //
-// Game screens keep the 560 px column at every width (the board never
-// stretches); popups stay capped at 440 px. Pure numbers + helpers so the test
+// Game screens keep the 560 px column at every width unless they opt in to the
+// wide game stage (GameBackground `wide`, desktop only: 1000 px while playing,
+// 1180 px finished in two columns); popups stay capped at 440 px. Pure numbers + helpers so the test
 // can hold the stylesheet to them.
 
 /** The AG wide tier starts here (px). */
@@ -25,6 +26,14 @@ export const DESKTOP_3COL_MIN = 1200;
 export const DESKTOP_XL_MIN = 1280;
 /** The desktop content box (px): tab pages and the top bar's content. */
 export const DESKTOP_MAX = 1180;
+
+/** The wide game stage's width while playing / once finished (px, ≥ 1024 only). */
+export const GAME_WIDE_PLAY = 1000;
+export const GAME_WIDE_DONE = 1180;
+/** Biggest tiles on the wide stage (px): a single board / each tile of a multi-board grid / a finished-recap tile. */
+export const DESK_TILE_SINGLE = 96;
+export const DESK_TILE_MULTI = 72;
+export const DESK_TILE_RECAP = 48;
 
 export type LayoutTier = 'phone' | 'wide' | 'desktop';
 

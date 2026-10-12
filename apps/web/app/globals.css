@@ -2471,7 +2471,15 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
      (.lb-desk); Friends: banner | the two AG columns (.fr-desk). Stats: the AG
      two columns, the left one phone-width
      (.stats-desk). Side columns stay in view under the bar on tall windows.
-   - Game screens keep the 560 px column; popups stay capped at 440 px. ── */
+   - Game screens keep the 560 px column unless they opt in to the WIDE game
+     stage (founder 10-12: "look more like a website", GameBackground `wide`
+     → `.page-col.game-wide`): the column grows to --game-wide-play (1000 px,
+     boards and keyboard get big) while playing and --game-wide-done (1180 px)
+     once finished, where components/game/finished-kit.tsx FinishedDeskLayout
+     (.fin-desk-wrap) turns the root into a 2/3 | 1/3 grid: the game's header
+     art + board(s) on the left (.fin-desk-main), the results panel on the
+     right (.fin-desk-side: chips, rank, Share / Next, Unlimited, the score
+     breakdown open). Popups stay capped at 440 px. ── */
 :root {
   --desk-max: 1180px;
   --desk-gutter: 24px;
@@ -2559,6 +2567,40 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
     grid-template-columns: minmax(320px, 380px) minmax(0, 760px);
     justify-content: center;
   }
+
+  /* The WIDE game stage (founder 10-12). Opt-in per game screen (GameBackground wide).
+     The custom property is set on the element itself, so .page-col's max-width and
+     --game-col-w (the header art's measure, lib/art.ts gameHeaderArtHeight) follow it. */
+  .page-col.game-wide {
+    --game-wide-play: 1000px;
+    --game-wide-done: 1180px;
+    --page-col: var(--game-wide-play);
+    --game-title-cap: 132px;
+  }
+  .page-col.game-wide:has(> .fin-desk-wrap) { --page-col: var(--game-wide-done); }
+  /* The docked tab bar keeps its phone-width row of four tabs, centered. */
+  .page-col.game-wide .tab-dock { --page-col: 560px; }
+
+  /* Finished, two columns. FinishedDeskLayout renders .fin-desk-wrap as a direct child of the
+     game root (display: contents), so the root's own header and the two panes share one grid. */
+  .page-col.game-wide:has(> .fin-desk-wrap) {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: 28px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .page-col.game-wide:has(> .fin-desk-wrap) > .game-art-header { grid-column: 1; grid-row: 1; }
+  .fin-desk-wrap { display: contents; }
+  .fin-desk-main { grid-column: 1; grid-row: 2; min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column; }
+  .fin-desk-side {
+    grid-column: 2; grid-row: 1 / -1; min-width: 0; min-height: 0;
+    display: flex; flex-direction: column; justify-content: center; align-items: stretch; gap: 12px;
+    padding: 12px 0;
+    overflow-y: auto; scrollbar-width: none;
+  }
+  .fin-desk-side > * { max-width: 420px; width: 100%; margin-left: auto; margin-right: auto; }
 }
 /* Friends: THIS WEEK'S RACE leads the page (2.8 TestFlight). One card, placed twice: under the headline
    below 1200 px, at the head of the left column on the three-column desktop grid. */
