@@ -16,6 +16,7 @@
 //
 //   node apps/web/scripts/wordsearch/build-bank.mjs [--daily=400] [--extra=150]
 import { addNear } from './add-near.mjs';
+import { realWords, loadDictionary, loadBlocked } from './add-real.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { DATA, readJSON, rngFor, below, shuffle, neverAnswer, wordset, gateBank } from '../more-games/lib.mjs';
@@ -146,6 +147,10 @@ for (let i = 0; i < EXTRA_COUNT; i++) {
 }
 
 const bank = addNear({ version: 1, epoch: EPOCH, daily, extra }, themes); // close calls (add-near.mjs)
+{ // real words (add-real.mjs): everyday words in each grid are never a miss
+  const dict = loadDictionary(DATA), blocked = loadBlocked(path.join(DATA, '..', '..', '..'));
+  for (const p of [...bank.daily, ...bank.extra]) p.real = realWords(p, dict, blocked);
+}
 const out = path.join(DATA, 'wordsearch-puzzles.json');
 // Content gate (docs/CONTENT-SAFETY.md): refuses offensive / British-only / obscure words in unseen puzzles.
 await gateBank('spyglass', bank);

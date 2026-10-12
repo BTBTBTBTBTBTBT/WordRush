@@ -34,7 +34,7 @@ import { cryptogramPuzzleForDay, cryptogramPuzzleForSeed, cryptogramDailyNumber,
 import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, countRegionsSolutions, regionsSizeForDay, regionsRuledOut, regionColorSlots, REGION_COLOR_DIST, type RegionsAction } from '../src/games/regions';
 import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
 import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
-import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, wordsearchNearWord, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
+import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, wordsearchNearWord, wordsearchSelection, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
 import { streakHeadline } from '../src/streak-headline';
 import { ageGateView, AGE_GATE_MAX_WAIT_MS } from '../src/age-check';
 import { flawlessSealLabel, headlineLabel, mascotLabel, placeWord, podiumOpenSpotLabel, podiumPlaceLabel, podiumStageCardLabel, progressLabel } from '../src/a11y-labels';
@@ -572,7 +572,17 @@ export function renderWordsearchFixtures() {
   const nearActions: WordsearchAction[] = [{ type: 'SELECT', from: 98, to: 58 }, { type: 'SELECT', from: 98, to: 68 }, { type: 'SELECT', from: 0, to: 3 }];
   for (const a of nearActions) nsState = wordsearchReduce(nsState, a, 1000);
   const near = { id: ns.id, list: ns.near ?? [], cases: nearCases, actions: nearActions, expect: { misses: nsState.misses, events: nsState.events, found: nsState.found } };
-  return { epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, days, seeds, puzzle: p, reducer, geometry, placements, malformed: reconstructWordsearch(['nope'], []), near };
+  // Forgiving selections (founder, 2026-10-12): Winter Day (ws0020) — SLEDDING on row 9 (c2..c9), WOOLENS on row 8
+  // (c2..c8), YELL (a real word) on row 5 (c0..c3); an early start, a short stop, one extra cell, two extra cells, a junk line.
+  const wd = bank.daily.find((q) => q.id === 'ws0020')!;
+  const wdState = createWordsearchState(wd, 'fixture', 0);
+  const selectionCases = [[91, 98], [92, 97], [91, 99], [90, 99], [82, 85], [50, 53], [53, 50], [0, 12], [10, 13], [92, 92], [92, 93]]
+    .map(([from, to]) => ({ from, to, ...wordsearchSelection(wdState, from, to) }));
+  let wdRun = wdState;
+  const forgiveActions: WordsearchAction[] = [[91, 98], [82, 85], [50, 53], [91, 99], [10, 13]].map(([from, to]) => ({ type: 'SELECT', from, to }) as WordsearchAction);
+  for (const a of forgiveActions) wdRun = wordsearchReduce(wdRun, a, 1000);
+  const forgiving = { id: wd.id, real: wd.real ?? [], cases: selectionCases, actions: forgiveActions, expect: { misses: wdRun.misses, events: wdRun.events, found: wdRun.found } };
+  return { epoch: bank.epoch, dailyCount: bank.daily.length, extraCount: bank.extra.length, days, seeds, puzzle: p, reducer, geometry, placements, malformed: reconstructWordsearch(['nope'], []), near, forgiving };
 }
 
 // More Games §12: Hubbub. Bank lookups use the REAL shipped bank; scoring

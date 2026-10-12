@@ -118,6 +118,41 @@
     ],
     "near": [
       "MEADOWS"
+    ],
+    "real": [
+      "ACKER",
+      "AERO",
+      "AGNEL",
+      "AMEN",
+      "BLANK",
+      "COOK",
+      "COOKIE",
+      "CRACK",
+      "CRACKER",
+      "DOWSE",
+      "HADE",
+      "HADER",
+      "HEEL",
+      "KILN",
+      "LANK",
+      "LATE",
+      "LEAP",
+      "MEAD",
+      "MENSE",
+      "MERSE",
+      "NEAL",
+      "NEMA",
+      "NIOG",
+      "PLAT",
+      "PORE",
+      "RACK",
+      "RACKER",
+      "SCASE",
+      "SHADER",
+      "SHINE",
+      "TANA",
+      "THERM",
+      "THERMO"
     ]
   },
   "reducer": [
@@ -1426,6 +1461,140 @@
         "x 0,0>0,3"
       ],
       "found": []
+    }
+  },
+  "forgiving": {
+    "id": "ws0020",
+    "real": [
+      "AIRE",
+      "BLIZZ",
+      "CATE",
+      "CHIL",
+      "CREA",
+      "ENAM",
+      "FLURR",
+      "GETA",
+      "HILL",
+      "HOVE",
+      "HOVEL",
+      "IZZARD",
+      "LEVO",
+      "LURRY",
+      "MANE",
+      "MILO",
+      "MITT",
+      "MITTEN",
+      "RIFT",
+      "SHOVE",
+      "WOOL",
+      "WOOLEN",
+      "YELL",
+      "ZOEAL"
+    ],
+    "cases": [
+      {
+        "from": 91,
+        "to": 98,
+        "kind": "partial",
+        "word": "SLEDDING"
+      },
+      {
+        "from": 92,
+        "to": 97,
+        "kind": "partial",
+        "word": "SLEDDING"
+      },
+      {
+        "from": 91,
+        "to": 99,
+        "kind": "found",
+        "word": "SLEDDING"
+      },
+      {
+        "from": 90,
+        "to": 99,
+        "kind": "miss",
+        "word": null
+      },
+      {
+        "from": 82,
+        "to": 85,
+        "kind": "partial",
+        "word": "WOOLENS"
+      },
+      {
+        "from": 50,
+        "to": 53,
+        "kind": "real",
+        "word": "YELL"
+      },
+      {
+        "from": 53,
+        "to": 50,
+        "kind": "real",
+        "word": "YELL"
+      },
+      {
+        "from": 0,
+        "to": 12,
+        "kind": "none",
+        "word": null
+      },
+      {
+        "from": 10,
+        "to": 13,
+        "kind": "miss",
+        "word": null
+      },
+      {
+        "from": 92,
+        "to": 92,
+        "kind": "none",
+        "word": null
+      },
+      {
+        "from": 92,
+        "to": 93,
+        "kind": "partial",
+        "word": "SLEDDING"
+      }
+    ],
+    "actions": [
+      {
+        "type": "SELECT",
+        "from": 91,
+        "to": 98
+      },
+      {
+        "type": "SELECT",
+        "from": 82,
+        "to": 85
+      },
+      {
+        "type": "SELECT",
+        "from": 50,
+        "to": 53
+      },
+      {
+        "type": "SELECT",
+        "from": 91,
+        "to": 99
+      },
+      {
+        "type": "SELECT",
+        "from": 10,
+        "to": 13
+      }
+    ],
+    "expect": {
+      "misses": 1,
+      "events": [
+        "+SLEDDING",
+        "x 1,0>1,3"
+      ],
+      "found": [
+        "SLEDDING"
+      ]
     }
   }
 }

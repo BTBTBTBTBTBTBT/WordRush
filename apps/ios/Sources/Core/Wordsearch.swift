@@ -11,6 +11,9 @@ import Foundation
 // Close calls (founder, 2026-09-30): a selection spelling one of the puzzle's `near` words — a theme
 // word or plural that really sits in the grid but is not on the list — is never a miss; the UI says
 // it fits the theme but isn't one of today's 10.
+// Forgiving selections (founder, 2026-10-12): wordsearchSelection classifies a drag — 'found' (a list word, or one
+// list word's cells plus at most one extra end cell), 'partial' (on a list word's cells, or all but one end cell —
+// never a miss), 'near', 'real' (an everyday word in the grid, the puzzle's `real` list — never a miss), 'miss', 'none'.
 
 public let WORDSEARCH_DAILY_EPOCH = "2026-09-23"
 public let WORDSEARCH_N = 10
@@ -39,8 +42,10 @@ public struct WordsearchPuzzle: Codable, Equatable {
     public let words: [WordsearchPlacement]
     /// Close calls: theme words / plurals in the grid that are not list words (never a miss).
     public let near: [String]?
-    public init(id: String, theme: String, family: String, title: String, grid: String, words: [WordsearchPlacement], near: [String]? = nil) {
-        self.id = id; self.theme = theme; self.family = family; self.title = title; self.grid = grid; self.words = words; self.near = near
+    /// Everyday words in the grid that are neither list words nor close calls (never a miss).
+    public let real: [String]?
+    public init(id: String, theme: String, family: String, title: String, grid: String, words: [WordsearchPlacement], near: [String]? = nil, real: [String]? = nil) {
+        self.id = id; self.theme = theme; self.family = family; self.title = title; self.grid = grid; self.words = words; self.near = near; self.real = real
     }
 }
 
@@ -100,6 +105,8 @@ public struct WordsearchState: Codable, Equatable {
     public let words: [WordsearchPlacement]
     /// Close calls from the puzzle (saves from before 2026-09-30 lack it — decoded as []).
     public let near: [String]
+    /// Real words from the puzzle (saves from before 2026-10-12 lack it — decoded as []).
+    public let real: [String]
     public var found: [String]
     public var misses: Int
     public var hintsUsed: Int
@@ -114,17 +121,18 @@ public struct WordsearchState: Codable, Equatable {
     public var endTime: Double?
 
     public init(puzzle: WordsearchPuzzle, seed: String, startTime: Double) {
-        self.seed = seed; id = puzzle.id; title = puzzle.title; n = WORDSEARCH_N; grid = puzzle.grid; words = puzzle.words; near = puzzle.near ?? []
+        self.seed = seed; id = puzzle.id; title = puzzle.title; n = WORDSEARCH_N; grid = puzzle.grid; words = puzzle.words; near = puzzle.near ?? []; real = puzzle.real ?? []
         found = []; misses = 0; hintsUsed = 0; hinted = []; wordsShown = false; lateFinds = 0; events = []; status = .playing; self.startTime = startTime; endTime = nil
     }
 
     // Saves written before Show words / close calls existed lack those keys — decode them as their zero values.
-    private enum CodingKeys: String, CodingKey { case seed, id, title, n, grid, words, near, found, misses, hintsUsed, hinted, wordsShown, lateFinds, events, status, startTime, endTime }
+    private enum CodingKeys: String, CodingKey { case seed, id, title, n, grid, words, near, real, found, misses, hintsUsed, hinted, wordsShown, lateFinds, events, status, startTime, endTime }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         seed = try c.decode(String.self, forKey: .seed); id = try c.decode(String.self, forKey: .id); title = try c.decode(String.self, forKey: .title)
         n = try c.decode(Int.self, forKey: .n); grid = try c.decode(String.self, forKey: .grid); words = try c.decode([WordsearchPlacement].self, forKey: .words)
         near = try c.decodeIfPresent([String].self, forKey: .near) ?? []
+        real = try c.decodeIfPresent([String].self, forKey: .real) ?? []
         found = try c.decode([String].self, forKey: .found); misses = try c.decode(Int.self, forKey: .misses); hintsUsed = try c.decode(Int.self, forKey: .hintsUsed)
         hinted = try c.decode([String].self, forKey: .hinted)
         wordsShown = try c.decodeIfPresent(Bool.self, forKey: .wordsShown) ?? false
@@ -159,25 +167,49 @@ public func wordsearchNearWord(_ s: WordsearchState, from: Int, to: Int) -> Stri
     return s.near.first { $0 == letters || $0 == reversed }
 }
 
+public enum WordsearchSelectionKind: String, Equatable { case found, partial, near, real, miss, none }
+
+/// What a drag from `from` to `to` means (core wordsearchSelection): the kind and, for found / partial / near / real, the word.
+public func wordsearchSelection(_ s: WordsearchState, from: Int, to: Int) -> (kind: WordsearchSelectionKind, word: String?) {
+    guard let line = wordsearchLine(s.n, from: from, to: to) else { return (.none, nil) }
+    let chars = Array(s.grid)
+    let letters = String(line.map { chars[$0] })
+    let reversed = String(letters.reversed())
+    if let exact = s.words.first(where: { $0.w == letters || $0.w == reversed }) { return (.found, exact.w) }
+    let onLine = Set(line)
+    // An overshoot: one list word's cells plus at most one extra cell (unfound words first; a stable order otherwise).
+    let covered = s.words.filter { line.count <= $0.w.count + 1 && wordsearchCells(s.n, $0).allSatisfy { onLine.contains($0) } }
+    if let pick = covered.first(where: { !s.found.contains($0.w) }) ?? covered.first { return (.found, pick.w) }
+    // Short of a word: every cell (or all but one end cell) lies on one list word.
+    if line.count >= 2 {
+        for p in s.words {
+            let cells = Set(wordsearchCells(s.n, p))
+            let inside = line.filter { cells.contains($0) }.count
+            let endsOff = (cells.contains(line[0]) ? 0 : 1) + (cells.contains(line[line.count - 1]) ? 0 : 1)
+            if inside == line.count || (inside == line.count - 1 && endsOff == 1 && inside >= 2) { return (.partial, p.w) }
+        }
+    }
+    if line.count < WORDSEARCH_MIN_MISS_LENGTH { return (.none, nil) }
+    if let near = s.near.first(where: { $0 == letters || $0 == reversed }) { return (.near, near) }
+    if let real = s.real.first(where: { $0 == letters || $0 == reversed }) { return (.real, real) }
+    return (.miss, nil)
+}
+
 public func wordsearchReduce(_ s: WordsearchState, _ a: WordsearchAction, now: Double = 0) -> WordsearchState {
     if case .finish = a { if s.status == .playing { return s }; var n = s; n.endTime = s.endTime ?? now; return n }
     guard s.status == .playing else { return s }
     switch a {
     case .select(let from, let to):
-        guard let line = wordsearchLine(s.n, from: from, to: to) else { return s }
-        let chars = Array(s.grid)
-        let letters = String(line.map { chars[$0] })
-        let reversed = String(letters.reversed())
-        if let hit = s.words.first(where: { $0.w == letters || $0.w == reversed }) {
-            if s.found.contains(hit.w) { return s }
+        let sel = wordsearchSelection(s, from: from, to: to)
+        if sel.kind == .found, let w = sel.word {
+            if s.found.contains(w) { return s }
             var n = s
             let late = s.wordsShown
-            n.found.append(hit.w); if late { n.lateFinds += 1 }; n.events.append("\(late ? "~" : "+")\(hit.w)")
+            n.found.append(w); if late { n.lateFinds += 1 }; n.events.append("\(late ? "~" : "+")\(w)")
             if n.found.count == s.words.count { n.status = .won; n.endTime = now }
             return n
         }
-        if line.count < WORDSEARCH_MIN_MISS_LENGTH { return s }
-        if s.near.contains(where: { $0 == letters || $0 == reversed }) { return s } // close call: never a miss
+        guard sel.kind == .miss else { return s } // partial, close call, real word, too short or crooked: never a miss
         var n = s
         n.misses += 1
         n.events.append("x \(from / s.n),\(from % s.n)>\(to / s.n),\(to % s.n)")

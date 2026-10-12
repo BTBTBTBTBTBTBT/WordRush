@@ -124,9 +124,16 @@ final class SpyglassVM: ObservableObject {
 
     func select(from: Int, to: Int) {
         guard !isFinished else { return }
-        // A theme word hiding in the filler (founder, 2026-09-30: STARS in Night Sky) — never a miss.
-        if let near = wordsearchNearWord(state, from: from, to: to) {
-            SoundManager.shared.playKeyTap(); flash("\(near) fits the theme, but it's not one of today's 10"); return
+        // Never a miss (core wordsearchSelection): a theme word in the filler (STARS in Night Sky, 09-30), an everyday
+        // word (WOOL, 10-12), or a drag that falls a cell short of a list word (10-12).
+        let sel = wordsearchSelection(state, from: from, to: to)
+        switch sel.kind {
+        case .near: SoundManager.shared.playKeyTap(); flash("\(sel.word ?? "") fits the theme, but it's not one of today's 10"); return
+        case .real: SoundManager.shared.playKeyTap(); flash("\(sel.word ?? "") is a word, but not one of today's 10"); return
+        case .partial:
+            if let w = sel.word, !state.found.contains(w) { SoundManager.shared.playKeyTap(); flash("So close! Trace the whole word") }
+            return
+        default: break
         }
         let before = state
         dispatch(.select(from: from, to: to))

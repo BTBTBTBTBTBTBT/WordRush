@@ -32,6 +32,14 @@ import { bankIndexForDay, bankIndexForSeed, bankDayIndex } from '../bank';
  * Close calls (founder, 2026-09-30): a selection spelling one of the puzzle's `near` words — a theme
  * word or plural that really sits in the grid but is not on the list (precomputed by
  * scripts/wordsearch/add-near.mjs) — is never a miss; the UI says it fits but isn't one of today's ten.
+ *
+ * Forgiving selections (founder, 2026-10-12: a player's off-by-one drags were costing misses, and WOOL — a real word,
+ * not a theme word — cost one too). wordsearchSelection classifies a drag:
+ *  - 'found': it spells a list word, or covers one list word's cells plus at most ONE extra cell at an end (an overshoot);
+ *  - 'partial': it lies on a list word's cells (all, or all but one end cell — started a cell early), ≥ 2 cells — never a miss;
+ *  - 'near': a close-call theme word (above) — never a miss;
+ *  - 'real': one of the puzzle's `real` words (everyday words in the grid, scripts/wordsearch/add-real.mjs) — never a miss;
+ *  - 'miss': a straight line of ≥ 4 cells that is none of those; 'none': anything else (too short, crooked).
  */
 
 export const WORDSEARCH_DAILY_EPOCH = '2026-09-23';
@@ -56,6 +64,8 @@ export interface WordsearchPuzzle {
   words: WordsearchPlacement[];
   /** Close calls: theme words / plurals in the grid that are not list words (never a miss). */
   near?: string[];
+  /** Everyday words in the grid that are neither list words nor close calls (never a miss). */
+  real?: string[];
 }
 
 export interface WordsearchBank {
@@ -115,6 +125,8 @@ export interface WordsearchState {
   words: WordsearchPlacement[];
   /** Close calls from the puzzle (optional: saves from before 2026-09-30 lack it). */
   near?: string[];
+  /** Real words from the puzzle (optional: saves from before 2026-10-12 lack it). */
+  real?: string[];
   /** List words found so far, in the order found. */
   found: string[];
   misses: number;
@@ -140,7 +152,7 @@ export type WordsearchAction =
 
 export function createWordsearchState(puzzle: WordsearchPuzzle, seed: string, startTime: number): WordsearchState {
   return {
-    seed, id: puzzle.id, title: puzzle.title, n: WORDSEARCH_N, grid: puzzle.grid, words: puzzle.words, near: puzzle.near ?? [],
+    seed, id: puzzle.id, title: puzzle.title, n: WORDSEARCH_N, grid: puzzle.grid, words: puzzle.words, near: puzzle.near ?? [], real: puzzle.real ?? [],
     found: [], misses: 0, hintsUsed: 0, hinted: [], wordsShown: false, lateFinds: 0, events: [], status: 'playing', startTime, endTime: null,
   };
 }
@@ -169,29 +181,57 @@ export function wordsearchNearWord(s: WordsearchState, from: number, to: number)
   return near.find((w) => w === letters || w === reversed) ?? null;
 }
 
+export type WordsearchSelectionKind = 'found' | 'partial' | 'near' | 'real' | 'miss' | 'none';
+
+/** What a drag from `from` to `to` means (see the header): the kind and, for found / partial / near / real, the word. */
+export function wordsearchSelection(s: WordsearchState, from: number, to: number): { kind: WordsearchSelectionKind; word: string | null } {
+  const line = wordsearchLine(s.n, from, to);
+  if (!line) return { kind: 'none', word: null };
+  const letters = line.map((i) => s.grid[i]).join('');
+  const reversed = letters.split('').reverse().join('');
+  const exact = s.words.find((p) => p.w === letters || p.w === reversed);
+  if (exact) return { kind: 'found', word: exact.w };
+  const onLine = new Set(line);
+  // An overshoot: one list word's cells plus at most one extra cell (unfound words first).
+  const covered = s.words
+    .filter((p) => line.length <= p.w.length + 1 && wordsearchCells(s.n, p).every((c) => onLine.has(c)))
+    .sort((x, y) => Number(s.found.includes(x.w)) - Number(s.found.includes(y.w)));
+  if (covered.length) return { kind: 'found', word: covered[0].w };
+  // Short of a word: every cell (or all but one end cell) lies on one list word.
+  if (line.length >= 2) {
+    for (const p of s.words) {
+      const cells = new Set(wordsearchCells(s.n, p));
+      const inside = line.filter((c) => cells.has(c)).length;
+      const endsOff = (cells.has(line[0]) ? 0 : 1) + (cells.has(line[line.length - 1]) ? 0 : 1);
+      if (inside === line.length || (inside === line.length - 1 && endsOff === 1 && inside >= 2)) return { kind: 'partial', word: p.w };
+    }
+  }
+  if (line.length < WORDSEARCH_MIN_MISS_LENGTH) return { kind: 'none', word: null };
+  const near = (s.near ?? []).find((w) => w === letters || w === reversed);
+  if (near) return { kind: 'near', word: near };
+  const real = (s.real ?? []).find((w) => w === letters || w === reversed);
+  if (real) return { kind: 'real', word: real };
+  return { kind: 'miss', word: null };
+}
+
 export function wordsearchReduce(s: WordsearchState, a: WordsearchAction, now = 0): WordsearchState {
   if (a.type === 'FINISH') return s.status === 'playing' ? s : { ...s, endTime: s.endTime ?? now };
   if (s.status !== 'playing') return s;
 
   switch (a.type) {
     case 'SELECT': {
-      const line = wordsearchLine(s.n, a.from, a.to);
-      if (!line) return s;
-      const letters = line.map((i) => s.grid[i]).join('');
-      const reversed = letters.split('').reverse().join('');
-      const hit = s.words.find((p) => p.w === letters || p.w === reversed);
-      if (hit) {
-        if (s.found.includes(hit.w)) return s;
-        const found = [...s.found, hit.w];
+      const sel = wordsearchSelection(s, a.from, a.to);
+      if (sel.kind === 'found' && sel.word) {
+        if (s.found.includes(sel.word)) return s;
+        const found = [...s.found, sel.word];
         const won = found.length === s.words.length;
         const late = !!s.wordsShown;
         return {
           ...s, found, lateFinds: (s.lateFinds ?? 0) + (late ? 1 : 0),
-          events: [...s.events, `${late ? '~' : '+'}${hit.w}`], status: won ? 'won' : 'playing', endTime: won ? now : null,
+          events: [...s.events, `${late ? '~' : '+'}${sel.word}`], status: won ? 'won' : 'playing', endTime: won ? now : null,
         };
       }
-      if (line.length < WORDSEARCH_MIN_MISS_LENGTH) return s;
-      if ((s.near ?? []).some((w) => w === letters || w === reversed)) return s; // close call: never a miss
+      if (sel.kind !== 'miss') return s; // partial, close call, real word, too short or crooked: never a miss
       const r0 = Math.floor(a.from / s.n), c0 = a.from % s.n, r1 = Math.floor(a.to / s.n), c1 = a.to % s.n;
       return { ...s, misses: s.misses + 1, events: [...s.events, `x ${r0},${c0}>${r1},${c1}`] };
     }

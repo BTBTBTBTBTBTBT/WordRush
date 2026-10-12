@@ -8,7 +8,7 @@ const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-a
 import { Clock, List } from 'lucide-react';
 import { FamIcon } from '@/components/ui/family-button';
 import {
-  wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, wordsearchGuessCount, wordsearchNearWord,
+  wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, wordsearchGuessCount, wordsearchSelection,
   generateDailySeed, type WordsearchState, type WordsearchAction, type WordsearchBank, type WordsearchPuzzle,
 } from '@wordle-duel/core';
 import { bankSession } from '@/lib/bank-loader';
@@ -160,9 +160,12 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
       if (!s) return s;
       const next = wordsearchReduce(s, a, Date.now());
       if (a.type === 'SELECT') {
-        // A theme word hiding in the filler (founder, 2026-09-30: STARS in Night Sky) — never a miss.
-        const near = next === s ? wordsearchNearWord(s, a.from, a.to) : null;
-        if (near) { playKeyTap(); flash(`${near} fits the theme, but it's not one of today's 10`, 2600); }
+        // Never a miss (core wordsearchSelection): a theme word in the filler (STARS in Night Sky, 09-30), an everyday
+        // word (WOOL, 10-12), or a drag that falls a cell short of a list word (10-12).
+        const sel = next === s ? wordsearchSelection(s, a.from, a.to) : null;
+        if (sel?.kind === 'near') { playKeyTap(); flash(`${sel.word} fits the theme, but it's not one of today's 10`, 2600); }
+        else if (sel?.kind === 'real') { playKeyTap(); flash(`${sel.word} is a word, but not one of today's 10`, 2600); }
+        else if (sel?.kind === 'partial' && !s.found.includes(sel.word ?? '')) { playKeyTap(); flash('So close! Trace the whole word', 2000); }
         else if (next.found.length > s.found.length) { haptic('light'); playSuccess(); }
         else if (next.misses > s.misses) { haptic('medium'); playInvalid(); flash('Not one of the words'); }
       } else if (a.type === 'HINT' && next.hintsUsed > s.hintsUsed) { playKeyTap(); }

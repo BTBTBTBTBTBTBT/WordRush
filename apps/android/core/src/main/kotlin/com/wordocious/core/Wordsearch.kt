@@ -37,6 +37,8 @@ data class WordsearchPuzzle(
     val id: String, val theme: String, val family: String, val title: String, val grid: String, val words: List<WordsearchPlacement>,
     /** Close calls: theme words / plurals in the grid that are not list words (never a miss). Optional in the bank. */
     val near: List<String> = emptyList(),
+    /** Everyday words in the grid that are neither list words nor close calls (never a miss). Optional in the bank. */
+    val real: List<String> = emptyList(),
 )
 
 @Serializable
@@ -95,6 +97,8 @@ data class WordsearchState(
     val lateFinds: Int = 0,
     /** Close calls from the puzzle (saves from before 2026-09-30 lack them). */
     val near: List<String> = emptyList(),
+    /** Real words from the puzzle (saves from before 2026-10-12 lack them). */
+    val real: List<String> = emptyList(),
 ) {
     /** guess_count for the result row: 10 clean, +1 per miss and per late find, capped at 15. */
     val guessCount: Int get() = minOf(WORDSEARCH_WORDS + WORDSEARCH_MAX_MISSES, WORDSEARCH_WORDS + maxOf(0, misses) + maxOf(0, lateFinds))
@@ -104,7 +108,7 @@ data class WordsearchState(
     companion object {
         fun create(p: WordsearchPuzzle, seed: String, startTime: Long) = WordsearchState(
             seed, p.id, p.title, WORDSEARCH_N, p.grid, p.words, emptyList(), 0, 0, emptyList(), emptyList(), WordsearchStatus.PLAYING, startTime, null,
-            near = p.near,
+            near = p.near, real = p.real,
         )
     }
 }
@@ -127,23 +131,50 @@ fun wordsearchNearWord(s: WordsearchState, from: Int, to: Int): String? {
     return s.near.firstOrNull { it == letters || it == reversed }
 }
 
+enum class WordsearchSelectionKind(val key: String) { FOUND("found"), PARTIAL("partial"), NEAR("near"), REAL("real"), MISS("miss"), NONE("none") }
+
+/**
+ * What a drag from `from` to `to` means (core wordsearchSelection, founder 2026-10-12): 'found' (a list word, or one list
+ * word's cells plus at most one extra end cell), 'partial' (on a list word's cells, or all but one end cell — never a
+ * miss), 'near', 'real' (an everyday word in the grid — never a miss), 'miss', 'none'.
+ */
+fun wordsearchSelection(s: WordsearchState, from: Int, to: Int): Pair<WordsearchSelectionKind, String?> {
+    val line = wordsearchLine(s.n, from, to) ?: return WordsearchSelectionKind.NONE to null
+    val letters = line.map { s.grid[it] }.joinToString("")
+    val reversed = letters.reversed()
+    s.words.firstOrNull { it.w == letters || it.w == reversed }?.let { return WordsearchSelectionKind.FOUND to it.w }
+    val onLine = line.toSet()
+    // An overshoot: one list word's cells plus at most one extra cell (unfound words first; a stable order otherwise).
+    val covered = s.words.filter { line.size <= it.w.length + 1 && wordsearchCells(s.n, it).all { c -> c in onLine } }
+    (covered.firstOrNull { it.w !in s.found } ?: covered.firstOrNull())?.let { return WordsearchSelectionKind.FOUND to it.w }
+    // Short of a word: every cell (or all but one end cell) lies on one list word.
+    if (line.size >= 2) {
+        for (p in s.words) {
+            val cells = wordsearchCells(s.n, p).toSet()
+            val inside = line.count { it in cells }
+            val endsOff = (if (line.first() in cells) 0 else 1) + (if (line.last() in cells) 0 else 1)
+            if (inside == line.size || (inside == line.size - 1 && endsOff == 1 && inside >= 2)) return WordsearchSelectionKind.PARTIAL to p.w
+        }
+    }
+    if (line.size < WORDSEARCH_MIN_MISS_LENGTH) return WordsearchSelectionKind.NONE to null
+    s.near.firstOrNull { it == letters || it == reversed }?.let { return WordsearchSelectionKind.NEAR to it }
+    s.real.firstOrNull { it == letters || it == reversed }?.let { return WordsearchSelectionKind.REAL to it }
+    return WordsearchSelectionKind.MISS to null
+}
+
 fun wordsearchReduce(s: WordsearchState, a: WordsearchAction, now: Long = 0): WordsearchState {
     if (a is WordsearchAction.Finish) return if (s.status == WordsearchStatus.PLAYING) s else s.copy(endTime = s.endTime ?: now)
     if (s.status != WordsearchStatus.PLAYING) return s
     return when (a) {
         is WordsearchAction.Select -> {
-            val line = wordsearchLine(s.n, a.from, a.to) ?: return s
-            val letters = line.map { s.grid[it] }.joinToString("")
-            val reversed = letters.reversed()
-            val hit = s.words.firstOrNull { it.w == letters || it.w == reversed }
-            if (hit != null) {
-                if (hit.w in s.found) return s
-                val found = s.found + hit.w
+            val (kind, word) = wordsearchSelection(s, a.from, a.to)
+            if (kind == WordsearchSelectionKind.FOUND && word != null) {
+                if (word in s.found) return s
+                val found = s.found + word
                 val won = found.size == s.words.size
                 val late = s.wordsShown
-                s.copy(found = found, lateFinds = s.lateFinds + (if (late) 1 else 0), events = s.events + "${if (late) "~" else "+"}${hit.w}", status = if (won) WordsearchStatus.WON else WordsearchStatus.PLAYING, endTime = if (won) now else null)
-            } else if (line.size < WORDSEARCH_MIN_MISS_LENGTH) s
-            else if (s.near.any { it == letters || it == reversed }) s // close call: never a miss
+                s.copy(found = found, lateFinds = s.lateFinds + (if (late) 1 else 0), events = s.events + "${if (late) "~" else "+"}$word", status = if (won) WordsearchStatus.WON else WordsearchStatus.PLAYING, endTime = if (won) now else null)
+            } else if (kind != WordsearchSelectionKind.MISS) s // partial, close call, real word, too short or crooked: never a miss
             else s.copy(misses = s.misses + 1, events = s.events + "x ${a.from / s.n},${a.from % s.n}>${a.to / s.n},${a.to % s.n}")
         }
         is WordsearchAction.Hint -> {
