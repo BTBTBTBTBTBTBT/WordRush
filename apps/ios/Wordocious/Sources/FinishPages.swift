@@ -510,6 +510,9 @@ struct PodiumView: View {
     var onTap: ((PodiumEntry) -> Void)? = nil
     /// 2.8 item 13: tapping another player's standing mascot opens their mini Stage card.
     @State private var stageTarget: PodiumStageTarget?
+    /// Founder 10-12: podiums with no tap handler of their own (Yesterday's ledge) still offer View profile on the Stage card,
+    /// through the page's profile route when it supplies one.
+    @Environment(\.lbOpenProfile) private var openProfile
     private var cardOn: Bool { FlagsService.shared.isLive("podium_stage_card") }
     private var burstOn: Bool { FlagsService.shared.isLive("podium_burst") }
 
@@ -531,8 +534,9 @@ struct PodiumView: View {
         .padding(.horizontal, 10).padding(.top, stage == nil ? 0 : 8)
         .background { if let stage { PodiumStage(accent: stage) } }
         .softSheet(item: $stageTarget) { t in
-            PodiumStageCard(entry: t.entry, place: t.place, onProfile: onTap.map { tap in { tap(t.entry) } })
-                .presentationDetents([.height(400), .large])
+            PodiumStageCard(entry: t.entry, place: t.place,
+                            onProfile: onTap.map { tap in { tap(t.entry) } } ?? openProfile.map { open in { open(t.entry.id) } })
+                .presentationDetents([.height(412), .large])
         }
     }
 
@@ -1107,11 +1111,13 @@ struct PodiumStageCard: View {
                                             mascot: nil, accentHex: LetterTileAvatar.defaultAccentHex(username: entry.username, accentHex: entry.accentHex),
                                             lookup: true).resolved
         let posed: AvatarConfig = { var c = r.config; c.pose = AvatarPose.placePose(place); return c }()
+        let dark = Theme.isDark
         VStack(spacing: 0) {
             DressStage(config: posed, initial: AvatarCatalog.initial(entry.username),
                        photo: r.photoUrl != nil ? (r.photoUrl, entry.username, entry.id) : nil,
                        height: 250, mascotSize: 160, mascotLabel: A11yLabels.mascot(own: false, name: entry.name),
-                       glow: [Color(hex: 0xFCD34D), Color(hex: 0xE2E8F0), Color(hex: 0xFB923C)][min(max(place, 1), 3) - 1]) {
+                       glow: [Color(hex: 0xFCD34D), Color(hex: 0xE2E8F0), Color(hex: 0xFB923C)][min(max(place, 1), 3) - 1],
+                       finish: true) {
                 VStack {
                     HStack {
                         Spacer(minLength: 0)
@@ -1134,11 +1140,13 @@ struct PodiumStageCard: View {
                         .padding(.top, 6)
                 }
             }
-            .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 16)
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 18)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            // Founder 10-12: the band continues the stage's gradient (it fades into the same top color) down to the sheet's foot,
+            // so there is no seam and no empty slab.
+            .background(PodiumSheetPalette.band(dark).ignoresSafeArea(.container, edges: .bottom))
         }
-        .background(Theme.isDark ? Theme.surface : Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .background(PodiumSheetPalette.bandBottom(dark).ignoresSafeArea())
         .accessibilityElement(children: .contain)
     }
 }

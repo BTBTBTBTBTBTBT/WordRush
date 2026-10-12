@@ -465,14 +465,18 @@ private fun PodiumStageCard(spot: BoardPodiumSpot, place: Int, onDismiss: () -> 
     val initial = remember(spot.username, spot.name) { com.wordocious.app.data.MascotConfigRules.initialOf(spot.username ?: spot.name) }
     Dialog(onDismissRequest = onDismiss) {
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(if (dark) WTheme.surface else Color.White),
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(PodiumSheetPalette.bandBottom(dark)),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             DressStage(posed, initial, photoUrl = resolved.photoUrl, height = 250.dp, mascotSize = 160.dp, mascotDescription = A11yLabels.mascot(false, spot.name),
-                glow = listOf(Color(0xFFFCD34D), Color(0xFFE2E8F0), Color(0xFFFB923C))[place.coerceIn(1, 3) - 1]) {
+                glow = listOf(Color(0xFFFCD34D), Color(0xFFE2E8F0), Color(0xFFFB923C))[place.coerceIn(1, 3) - 1], finish = true) {
                 StageCloseButton(label = "Close", modifier = Modifier.align(Alignment.TopEnd).padding(8.dp), onClick = onDismiss)
             }
-            Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            // Founder 10-12: the band continues the stage's gradient (the stage fades into the same top color): no seam, no empty slab.
+            Column(
+                Modifier.fillMaxWidth().background(PodiumSheetPalette.band(dark)).padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 // Founder 10-09 ("no more plain text anywhere"): the name and the points in the bubble lettering, the name in the
                 // player's own color (their backdrop), and View profile as the family cast button.
                 BubbleText(

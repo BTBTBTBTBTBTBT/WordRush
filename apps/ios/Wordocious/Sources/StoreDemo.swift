@@ -605,6 +605,21 @@ enum StoreDemoDriver {
                                              headToHead: HeadToHeadRecord(myWins: 7, theirWins: 5, draws: 0), onDone: {})),
                     full: true)
         case "mascot": present(AnyView(StoreDemoMascotPage()))
+        // 2.8.1: the podium Stage card sheet (`podiumcard` = a player with no backdrop of their own, `podiumcard2` = one with a backdrop).
+        case "podiumcard", "podiumcard2":
+            PerfTour.send(.selectTab(.leaderboard))
+            let who = StoreDemo.shot == "podiumcard2" ? StoreDemo.people[0] : nil
+            let entry = PodiumEntry(id: who?.id ?? StoreDemo.uid(77), name: who?.name ?? "Oliver", username: who?.name ?? "Oliver",
+                                    value: "2,171", rank: 1)
+            presentCard(AnyView(PodiumStageCard(entry: entry, place: 1, onProfile: {})))
+        // 2.8.1: the "All 8 Dailies won today!" celebration over Home (`-storeShot flawless`; `flawlesslost` = a plain Daily Sweep).
+        case "flawless", "flawlesslost":
+            var by: [String: DailyCompletion] = [:]
+            for (i, m) in DailySweepCatalog.modes.enumerated() {
+                by[m.dbKey] = DailyCompletion(gameMode: m.dbKey, completed: StoreDemo.shot == "flawless" || i != 2, guessCount: 3 + i % 3,
+                                              timeSeconds: 152, score: 1759)
+            }
+            presentOver(AnyView(SweepCelebrationView(byMode: by, onClose: {}, flawlessStreak: 3)))
         // 10-05 family action menu checks: a friend row's long-press menu / a profile's More menu.
         case "friendmenu":
             PerfTour.send(.selectTab(.friends))
@@ -711,6 +726,30 @@ enum StoreDemoDriver {
                                           config: AvatarConfigRaw(fields: StoreDemo.config(p)),
                                           castId: StoreDemo.castId(p), frame: StoreDemo.frame(p), accent: nil)
         }
+    }
+
+    /// A transparent cover over the live screen (the way Home presents the celebrations), so what is behind shows through.
+    private static func presentOver(_ root: AnyView) {
+        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+        guard var top = scene?.windows.first(where: \.isKeyWindow)?.rootViewController ?? scene?.windows.first?.rootViewController
+        else { return }
+        while let next = top.presentedViewController { top = next }
+        let host = UIHostingController(rootView: root)
+        host.view.backgroundColor = .clear
+        host.modalPresentationStyle = .overFullScreen
+        top.present(host, animated: false)
+    }
+
+    /// The Stage card the way the podium sheets it: a page sheet at its 412 pt detent over the live screen.
+    private static func presentCard(_ root: AnyView) {
+        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+        guard var top = scene?.windows.first(where: \.isKeyWindow)?.rootViewController ?? scene?.windows.first?.rootViewController
+        else { return }
+        while let next = top.presentedViewController { top = next }
+        let host = UIHostingController(rootView: root)
+        host.modalPresentationStyle = .pageSheet
+        host.sheetPresentationController?.detents = [.custom { _ in 412 }, .large()]
+        top.present(host, animated: false)
     }
 
     private static func present(_ root: AnyView, full: Bool = false) {

@@ -121,6 +121,8 @@ struct LeaderboardTab: View {
                 .wideColumn(.page)   // §AG: iPad column, centered on the wallpaper
             }
             .environment(\.pageTint, .leaderboard)
+            // Founder 10-12: Yesterday's podium (no tap handler of its own) opens a player's profile from its Stage card too.
+            .environment(\.lbOpenProfile, { path.append($0) })
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
             .gameCover(item: $lbGame, hint: { $0.mode.rawValue }) { g in

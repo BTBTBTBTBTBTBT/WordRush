@@ -351,6 +351,48 @@ fun StageArt(res: Int, height: Dp, modifier: Modifier = Modifier, width: Dp? = n
 }
 
 /**
+ * Founder 10-12: the podium Stage card's colors. Static gradients only (no blur, no animation). Dark / season: deep violet with a warm
+ * gold spotlight behind the pedestal; light: lavender to pink. The stage fades into the band under it (the same top color), so there
+ * is no seam. iOS: PodiumSheetPalette (DressUp.swift), web: podium-stage-card.tsx.
+ */
+object PodiumSheetPalette {
+    private fun pick(dark: Boolean, d: Long, l: Long) = Color(if (dark) d else l)
+    fun bandTop(dark: Boolean) = pick(dark, 0xFF2B1559, 0xFFFBDDEE)
+    fun bandBottom(dark: Boolean) = pick(dark, 0xFF180A38, 0xFFFEEFF7)
+    fun band(dark: Boolean) = Brush.verticalGradient(listOf(bandTop(dark), bandBottom(dark)))
+
+    @Composable
+    fun StageBackdropFinish(bg: String, baseHex: String?, modifier: Modifier = Modifier) {
+        val dark = WTheme.isDark
+        Box(modifier) {
+            if (avatarBackdrop(bg) != null) {
+                // Their own backdrop stays (it is their look); a vignette seats it in the theme.
+                StageBackdrop(bg, baseHex, Modifier.fillMaxSize())
+                Box(Modifier.fillMaxSize().drawBehind {
+                    val r = size.height * 1.05f
+                    drawRect(Brush.radialGradient(
+                        0f to Color.Transparent, 0.33f to Color.Transparent, 1f to pick(dark, 0xFF1A0B3D, 0xFFC4B5FD).copy(alpha = if (dark) 0.5f else 0.32f),
+                        center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f), radius = r,
+                    ))
+                })
+            } else {
+                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(pick(dark, 0xFF1F0E45, 0xFFEEE6FF), pick(dark, 0xFF4A2392, 0xFFF6D3EC)))))
+            }
+            // the spotlight: warm light on the pedestal, fading out
+            Box(Modifier.fillMaxSize().drawBehind {
+                val r = size.height * 0.85f
+                drawRect(Brush.radialGradient(
+                    listOf(if (dark) Color(0xFFFFD36B).copy(alpha = 0.34f) else Color.White.copy(alpha = 0.6f), Color.Transparent),
+                    center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height), radius = r,
+                ))
+            })
+            // the foot fades into the band
+            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.68f to Color.Transparent, 1f to bandTop(dark))))
+        }
+    }
+}
+
+/**
  * The Stage: the player's backdrop, soft curtains at the sides, a spotlight, the podium (ChatGPT stage
  * set) and the living mascot — or the framed photo — standing on it. [overlay] sits on top (header).
  */
@@ -373,6 +415,8 @@ fun DressStage(
     mascotDescription: String = "Your mascot",
     /** Founder 10-09: a soft halo behind the figure (the podium Stage card glows in the place's metal). */
     glow: Color? = null,
+    /** Founder 10-12: the podium Stage card's finish: a themed gradient + spotlight (a soft vignette over the player's own backdrop) and a foot that fades into the card's band ([PodiumSheetPalette]). */
+    finish: Boolean = false,
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val podiumW = minOf(StageMetrics.podiumWidth, mascotSize * 1.34f)
@@ -383,11 +427,14 @@ fun DressStage(
         modifier.fillMaxWidth().height(height).then(if (living && followFinger) Modifier.trackMascotFinger(finger) else Modifier),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        StageBackdrop(config.bg, avatarColorHex(config.color), Modifier.fillMaxSize())
-        Box(Modifier.fillMaxSize().background(Brush.radialGradient(
-            listOf(Color.White.copy(alpha = if (WTheme.isDark) 0.16f else 0.42f), Color.Transparent),
-            center = androidx.compose.ui.geometry.Offset.Unspecified, radius = 900f,
-        )))
+        if (finish) PodiumSheetPalette.StageBackdropFinish(config.bg, avatarColorHex(config.color), Modifier.fillMaxSize())
+        else {
+            StageBackdrop(config.bg, avatarColorHex(config.color), Modifier.fillMaxSize())
+            Box(Modifier.fillMaxSize().background(Brush.radialGradient(
+                listOf(Color.White.copy(alpha = if (WTheme.isDark) 0.16f else 0.42f), Color.Transparent),
+                center = androidx.compose.ui.geometry.Offset.Unspecified, radius = 900f,
+            )))
+        }
         if (curtains) {
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.SpaceBetween) {
                 StageArt(R.drawable.art_dress_curtain_l, height * 0.78f)

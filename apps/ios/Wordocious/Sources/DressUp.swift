@@ -306,6 +306,9 @@ struct DressStage<Overlay: View>: View {
     var mascotLabel: String? = nil
     /// Founder 10-09: a soft halo behind the figure (the podium Stage card glows in the place's metal).
     var glow: Color? = nil
+    /// Founder 10-12: the podium Stage card's finish: a themed gradient + spotlight where the player has no backdrop of their own,
+    /// a soft vignette over the one they do, and a fade at the foot into the card's band (`PodiumSheetPalette`).
+    var finish = false
     @ViewBuilder var overlay: () -> Overlay
 
     var body: some View {
@@ -314,10 +317,14 @@ struct DressStage<Overlay: View>: View {
         let podiumW = min(StageMetrics.podiumWidth, mascotSize * 1.34)
         let podiumH = podiumW * 241 / 555
         ZStack(alignment: .bottom) {
-            MascotBackdrop(bg: config.bg, base: base, dark: dark)
-            // the spotlight: a soft cream pool on the podium
-            RadialGradient(colors: [Color.white.opacity(dark ? 0.16 : 0.42), .clear], center: .bottom,
-                           startRadius: 4, endRadius: height * 0.75)
+            if finish {
+                PodiumSheetPalette.stageBackdrop(bg: config.bg, base: base, dark: dark, height: height).frame(height: height)
+            } else {
+                MascotBackdrop(bg: config.bg, base: base, dark: dark)
+                // the spotlight: a soft cream pool on the podium
+                RadialGradient(colors: [Color.white.opacity(dark ? 0.16 : 0.42), .clear], center: .bottom,
+                               startRadius: 4, endRadius: height * 0.75)
+            }
             if curtains {
                 HStack(spacing: 0) {
                     StageArt("art-dress-curtain-l", height: height * 0.92)
@@ -409,6 +416,38 @@ struct StageCloseButton: View {
         }
         .buttonStyle(RoundIconButtonStyle())   // 2.8 item 23: the family round icon
         .accessibilityLabel(label)
+    }
+}
+
+/// Founder 10-12: the podium Stage card's colors. Static gradients only (no blur, no animation). Dark / season: deep violet with a
+/// warm gold spotlight behind the pedestal; light: lavender to pink. The stage fades into the band under it (same two end
+/// colors), so there is no seam. Android: PodiumSheetPalette (BoardPodium.kt), web: podium-stage-card.tsx.
+enum PodiumSheetPalette {
+    static func hex(_ dark: Bool, _ d: UInt, _ l: UInt) -> Color { Color(hex: dark ? d : l) }
+    /// The band's top (= where the stage fades to) and bottom.
+    static func bandTop(_ dark: Bool) -> Color { hex(dark, 0x2B1559, 0xFBDDEE) }
+    static func bandBottom(_ dark: Bool) -> Color { hex(dark, 0x180A38, 0xFEEFF7) }
+    static func band(_ dark: Bool) -> LinearGradient {
+        LinearGradient(colors: [bandTop(dark), bandBottom(dark)], startPoint: .top, endPoint: .bottom)
+    }
+
+    @ViewBuilder static func stageBackdrop(bg: String, base: Color, dark: Bool, height: CGFloat) -> some View {
+        ZStack {
+            if AvatarCatalog.backdrop(bg) != nil {
+                // Their own backdrop stays (it is their look); a vignette seats it in the theme.
+                MascotBackdrop(bg: bg, base: base, dark: dark)
+                RadialGradient(colors: [.clear, hex(dark, 0x1A0B3D, 0xC4B5FD).opacity(dark ? 0.5 : 0.32)], center: .center,
+                               startRadius: height * 0.35, endRadius: height * 1.05)
+            } else {
+                LinearGradient(colors: [hex(dark, 0x1F0E45, 0xEEE6FF), hex(dark, 0x4A2392, 0xF6D3EC)], startPoint: .top, endPoint: .bottom)
+            }
+            // the spotlight: warm light on the pedestal, fading out
+            RadialGradient(colors: [dark ? Color(hex: 0xFFD36B).opacity(0.34) : Color.white.opacity(0.6), .clear], center: .bottom,
+                           startRadius: 4, endRadius: height * 0.85)
+            // the foot fades into the band
+            LinearGradient(stops: [.init(color: .clear, location: 0.62), .init(color: bandTop(dark), location: 0.94)],
+                           startPoint: .top, endPoint: .bottom)
+        }
     }
 }
 
