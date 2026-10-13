@@ -69,7 +69,9 @@ enum AdsConfig {
     /// (allow tracking when asked). Paste the ID as a string HERE, AND in
     /// LevelPlay dashboard → Setup → Test devices. Both, before that device
     /// runs a build with the "ads" flag live. Currently empty: no devices added yet.
-    static let testDeviceIDFAs: [String] = []
+    static let testDeviceIDFAs: [String] = [
+        "9FA1D3A0-F2FB-4C0D-A2AC-6018863D16CF", // Brian (BMT) iPhone, registered 2026-10-13
+    ]
 
     /// True when this device's IDFA is in `testDeviceIDFAs`. Without tracking
     /// authorization the IDFA reads as all zeros and never matches, which is
