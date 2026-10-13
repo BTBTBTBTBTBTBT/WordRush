@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { gunzipSync } from 'node:zlib';
+import { addAppleSalesDay, emptyAppleSalesWeek, type AppleSalesWeek } from '@/lib/apple-sales-summary';
 import { verifyAdmin } from '@/lib/admin-auth';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { PRO_PLANS } from '@/lib/payment/types';
@@ -109,9 +110,34 @@ function parseAppleSubscriptionReport(tsv: string) {
   };
 }
 
+/**
+ * The last 7 days of Apple's SALES / SUMMARY report (founder 10-13). Shown while Apple has no SUBSCRIPTION report for
+ * the vendor yet (no App Store subscription activity): Apple then answers SUBSCRIPTION with 400 "Invalid vendor number".
+ */
+async function fetchAppleSalesWeek(jwt: string, vendor: string): Promise<{ through: string } & AppleSalesWeek> {
+  let week = emptyAppleSalesWeek();
+  let through = '';
+  for (let daysAgo = 1; daysAgo <= 7; daysAgo++) {
+    const reportDate = new Date(Date.now() - daysAgo * 86400000).toISOString().slice(0, 10);
+    const qs = new URLSearchParams({
+      'filter[frequency]': 'DAILY', 'filter[reportDate]': reportDate, 'filter[reportSubType]': 'SUMMARY',
+      'filter[reportType]': 'SALES', 'filter[vendorNumber]': vendor, 'filter[version]': '1_1',
+    });
+    const r = await fetch(`https://api.appstoreconnect.apple.com/v1/salesReports?${qs}`, {
+      headers: { Authorization: `Bearer ${jwt}`, Accept: 'application/a-gzip' },
+    });
+    if (r.status === 404) continue; // no sales that day / not published yet
+    if (!r.ok) throw new Error(`Apple sales report (vendor ${vendor}): HTTP ${r.status} ${await appleErrorDetail(r)}`.trim());
+    week = addAppleSalesDay(week, gunzipSync(Buffer.from(await r.arrayBuffer())).toString('utf8'));
+    if (!through) through = reportDate;
+  }
+  return { through, ...week };
+}
+
 async function fetchAppleSubscriptions(): Promise<
   | { connected: false; missing: AscEnvVar[] }
   | { connected: true; error: string }
+  | ({ connected: true; noSubscriptionReport: true; sales: { through: string } & AppleSalesWeek })
   | ({ connected: true; reportDate: string } & ReturnType<typeof parseAppleSubscriptionReport>)
 > {
   const missing = missingAscEnv();
@@ -163,6 +189,11 @@ async function fetchAppleSubscriptions(): Promise<
         const latest = detail.match(/latest version for this report is (\d+_\d+)/i)?.[1];
         if (r.status === 400 && latest && latest !== version) { version = latest; daysAgo--; continue; }
         if (r.status === 400 && /invalid vendor number/i.test(detail) && vi < vendors.length - 1) { vi++; daysAgo--; continue; }
+        // Every vendor refused: Apple has no SUBSCRIPTION report yet (it appears after the first App Store subscription
+        // activity) — show the week's sales report instead of the misleading error (founder 10-13).
+        if (r.status === 400 && /invalid vendor number/i.test(detail)) {
+          return { connected: true as const, noSubscriptionReport: true as const, sales: await fetchAppleSalesWeek(jwt, vendors[0]) };
+        }
         return { connected: true as const, error: `Apple salesReports (vendor ${vendors[vi]}): HTTP ${r.status}${detail ? ` — ${detail}` : ''}` };
       }
       const tsv = gunzipSync(Buffer.from(await r.arrayBuffer())).toString('utf8');
