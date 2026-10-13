@@ -12,7 +12,7 @@ const RELEASE = '2026-10-13';
 const epoch = Date.parse(`${bank.epoch}T00:00:00Z`);
 const dayOf = (i: number) => new Date(epoch + i * 86400000).toISOString().slice(0, 10);
 const live = [...bank.daily.filter((_, i) => dayOf(i) >= RELEASE), ...bank.extra];
-const REPORTED = ['RECOLLECT', 'RECYCLER', 'REELECT', 'FUTON', 'AUNTY', 'AUNT'];
+const REPORTED = ['RECOLLECT', 'RECYCLER', 'REELECT', 'FUTON', 'AUNTY', 'AUNT', 'RAFTED']; // RAFTED: founder 10-13 (#21 was already served)
 const fits = (w: string, letters: string) => w.includes(letters[0]) && [...w].every((ch) => letters.includes(ch));
 
 describe('Hubbub accepts everyday words', () => {
