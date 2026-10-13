@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -198,7 +199,8 @@ private fun PocketPicture(p: PocketHelpPicture, piece: Dp = 44.dp) {
     ) {
         p.art.forEachIndexed { i, name ->
             val res = remember(name) { pocketPieceRes(context, name) }
-            if (res != 0) Image(artPainter(res, piece * (if (big) 1.5f else 1f)), null, contentScale = ContentScale.Fit, modifier = Modifier.size(if (big) piece * 1.5f else piece))
+            // Founder 10-13: a one-piece picture is a whole board (ring, # grid, trays): shown big, aspect kept.
+            if (res != 0) Image(artPainter(res, if (big) 220.dp else piece), null, contentScale = ContentScale.Fit, modifier = if (big) Modifier.width(220.dp).height(64.dp) else Modifier.size(piece))
             p.joiners.getOrNull(i)?.let {
                 Text(it, fontSize = 11.sp, fontWeight = FontWeight.Black, color = FriendsPink.muted, maxLines = 1)
             }

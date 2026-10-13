@@ -122,8 +122,10 @@ struct PocketHelpSheet: View {
                     PocketBubble(text: pic.joiners[i - 1], color: accent, size: 13, fixed: true)
                 }
                 if ArtAsset.exists(name) {
+                    // Founder 10-13: a one-piece picture is a whole board (ring, # grid, trays): shown big, aspect kept.
+                    let board = pic.art.count == 1
                     Image(name).resizable().interpolation(.high).scaledToFit()
-                        .frame(width: 40, height: 40).accessibilityHidden(true)
+                        .frame(width: board ? 220 : 40, height: board ? 64 : 40).accessibilityHidden(true)
                 }
             }
         }

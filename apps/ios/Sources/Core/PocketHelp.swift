@@ -60,7 +60,7 @@ public enum PocketHelp {
             kind: .rps, key: "pocket-rps", title: "Rock Paper Scissors",
             steps: [
                 s("Pick rock, paper or scissors. Your pick stays hidden.", p(["art-pocket-rps-rock", "art-pocket-rps-paper", "art-pocket-rps-scissors"])),
-                s("When you both have picked, the hands flip over together.", p(["art-pocket-rps-rock", "art-pocket-clash-burst", "art-pocket-rps-scissors"])),
+                s("When you both have picked, the hands flip over together.", p(["art-pocket-ring"])),
                 s("Rock beats scissors, scissors beat paper, paper beats rock.", p(["art-pocket-rps-rock", "art-pocket-rps-scissors"], ["beats"])),
             ],
             win: "First to win 2 rounds takes the match.",
@@ -70,7 +70,7 @@ public enum PocketHelp {
             steps: [
                 s("Take turns placing your tile on the 3 by 3 board. You are the purple X.", p(["art-pocket-ttt-x", "art-pocket-ttt-o"])),
                 s("Three of your tiles in a row, across, down or corner to corner, wins the game.", p(["art-pocket-ttt-x", "art-pocket-ttt-x", "art-pocket-ttt-x"])),
-                s("Fill the board with no line and the game is a draw.", p(["art-pocket-ttt-board"])),
+                s("Fill the board with no line and the game is a draw.", p(["art-pocket-ttt-grid"])),
             ],
             win: "Win 2 games, out of at most 5, to take the match.",
             turns: turnsLine),
@@ -79,7 +79,7 @@ public enum PocketHelp {
             steps: [
                 s("Call heads or tails before the flip.", p(["art-pocket-coin-heads-w", "art-pocket-coin-tails-crest"])),
                 s("The coin flips. Call it right and the round is yours.", p(["art-pocket-coin-heads-w", "art-pocket-coin-tilt", "art-pocket-coin-tails-crest"])),
-                s("You swap who calls each round. Heads is the W, tails is the crest.", p(["art-pocket-coin-sparkle-ring"])),
+                s("You swap who calls each round. Heads is the W, tails is the crest.", p(["art-pocket-coin-stage"])),
             ],
             win: "First to win 3 flips takes the match, and the stake you picked.",
             turns: turnsLine),
@@ -88,7 +88,7 @@ public enum PocketHelp {
             steps: [
                 s("You and your friend share one hidden word and one board.", p(Array(repeating: "art-pocket-tile-white", count: 5))),
                 s("Take turns guessing. Purple is the right spot, gold is the wrong spot.", p(["art-pocket-tile-purple", "art-pocket-tile-gold", "art-pocket-tile-white"])),
-                s("Use what the last guess showed. There are 6 guesses in all.", p(["art-pocket-puzzle-piece"])),
+                s("Use what the last guess showed. There are 6 guesses in all.", p(["art-pocket-pass-tray"])),
             ],
             win: "Whoever finds the word wins. Nobody finds it in 6, it is a draw.",
             turns: turnsLine),
@@ -97,15 +97,15 @@ public enum PocketHelp {
             steps: [
                 s("Take turns adding one letter to a growing word fragment.", p(["art-pocket-tile-purple", "art-pocket-tile-gold", "art-pocket-tile-purple"])),
                 s("Every fragment must still be able to become a real word.", p(["art-pocket-tile-white", "art-pocket-tile-white", "art-pocket-tile-white"])),
-                s("Finish a real word, or play a dead end, and you lose the round.", p(["art-pocket-ghost-marker"])),
+                s("Finish a real word, or play a dead end, and you lose the round.", p(["art-pocket-ghost-tray"])),
             ],
             win: "Win 2 rounds, out of at most 5, to take the match.",
             turns: turnsLine),
         .chain: PocketHelpCard(
             kind: .chain, key: "pocket-chain", title: "Word Chain",
             steps: [
-                s("Play a word that starts with the last letter of the word before it.", p(["art-pocket-tile-purple", "art-pocket-chain-connector", "art-pocket-tile-gold"])),
-                s("Any word of 5 to 15 letters: longer words score more points. No word can be played twice.", p(["art-pocket-chain-links"])),
+                s("Play a word that starts with the last letter of the word before it.", p(["art-pocket-tile-purple", "art-pocket-chain-link", "art-pocket-tile-gold"])),
+                s("Any word of 5 to 15 letters: longer words score more points. No word can be played twice.", p(["art-pocket-chain-board"])),
                 s("Build the chain back and forth with your friend.", p(["art-pocket-tile-purple", "art-pocket-tile-gold", "art-pocket-tile-purple"])),
             ],
             win: "First to 50 points wins.",

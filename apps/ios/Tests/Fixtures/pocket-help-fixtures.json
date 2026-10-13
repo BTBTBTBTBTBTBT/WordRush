@@ -21,9 +21,7 @@
           "text": "When you both have picked, the hands flip over together.",
           "picture": {
             "art": [
-              "art-pocket-rps-rock",
-              "art-pocket-clash-burst",
-              "art-pocket-rps-scissors"
+              "art-pocket-ring"
             ],
             "joiners": []
           }
@@ -74,7 +72,7 @@
           "text": "Fill the board with no line and the game is a draw.",
           "picture": {
             "art": [
-              "art-pocket-ttt-board"
+              "art-pocket-ttt-grid"
             ],
             "joiners": []
           }
@@ -113,7 +111,7 @@
           "text": "You swap who calls each round. Heads is the W, tails is the crest.",
           "picture": {
             "art": [
-              "art-pocket-coin-sparkle-ring"
+              "art-pocket-coin-stage"
             ],
             "joiners": []
           }
@@ -155,7 +153,7 @@
           "text": "Use what the last guess showed. There are 6 guesses in all.",
           "picture": {
             "art": [
-              "art-pocket-puzzle-piece"
+              "art-pocket-pass-tray"
             ],
             "joiners": []
           }
@@ -195,7 +193,7 @@
           "text": "Finish a real word, or play a dead end, and you lose the round.",
           "picture": {
             "art": [
-              "art-pocket-ghost-marker"
+              "art-pocket-ghost-tray"
             ],
             "joiners": []
           }
@@ -214,7 +212,7 @@
           "picture": {
             "art": [
               "art-pocket-tile-purple",
-              "art-pocket-chain-connector",
+              "art-pocket-chain-link",
               "art-pocket-tile-gold"
             ],
             "joiners": []
@@ -224,7 +222,7 @@
           "text": "Any word of 5 to 15 letters: longer words score more points. No word can be played twice.",
           "picture": {
             "art": [
-              "art-pocket-chain-links"
+              "art-pocket-chain-board"
             ],
             "joiners": []
           }

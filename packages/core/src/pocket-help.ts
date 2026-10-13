@@ -53,7 +53,7 @@ export const POCKET_HELP: Record<FriendlyKind, PocketHelp> = {
     kind: 'rps', key: 'pocket-rps', title: 'Rock Paper Scissors',
     steps: [
       { text: 'Pick rock, paper or scissors. Your pick stays hidden.', picture: p(['art-pocket-rps-rock', 'art-pocket-rps-paper', 'art-pocket-rps-scissors']) },
-      { text: 'When you both have picked, the hands flip over together.', picture: p(['art-pocket-rps-rock', 'art-pocket-clash-burst', 'art-pocket-rps-scissors']) },
+      { text: 'When you both have picked, the hands flip over together.', picture: p(['art-pocket-ring']) },
       { text: 'Rock beats scissors, scissors beat paper, paper beats rock.', picture: p(['art-pocket-rps-rock', 'art-pocket-rps-scissors'], ['beats']) },
     ],
     win: 'First to win 2 rounds takes the match.',
@@ -64,7 +64,7 @@ export const POCKET_HELP: Record<FriendlyKind, PocketHelp> = {
     steps: [
       { text: 'Take turns placing your tile on the 3 by 3 board. You are the purple X.', picture: p(['art-pocket-ttt-x', 'art-pocket-ttt-o']) },
       { text: 'Three of your tiles in a row, across, down or corner to corner, wins the game.', picture: p(['art-pocket-ttt-x', 'art-pocket-ttt-x', 'art-pocket-ttt-x']) },
-      { text: 'Fill the board with no line and the game is a draw.', picture: p(['art-pocket-ttt-board']) },
+      { text: 'Fill the board with no line and the game is a draw.', picture: p(['art-pocket-ttt-grid']) },
     ],
     win: 'Win 2 games, out of at most 5, to take the match.',
     turns: POCKET_TURNS_LINE,
@@ -74,7 +74,7 @@ export const POCKET_HELP: Record<FriendlyKind, PocketHelp> = {
     steps: [
       { text: 'Call heads or tails before the flip.', picture: p(['art-pocket-coin-heads-w', 'art-pocket-coin-tails-crest']) },
       { text: 'The coin flips. Call it right and the round is yours.', picture: p(['art-pocket-coin-heads-w', 'art-pocket-coin-tilt', 'art-pocket-coin-tails-crest']) },
-      { text: 'You swap who calls each round. Heads is the W, tails is the crest.', picture: p(['art-pocket-coin-sparkle-ring']) },
+      { text: 'You swap who calls each round. Heads is the W, tails is the crest.', picture: p(['art-pocket-coin-stage']) },
     ],
     win: 'First to win 3 flips takes the match, and the stake you picked.',
     turns: POCKET_TURNS_LINE,
@@ -84,7 +84,7 @@ export const POCKET_HELP: Record<FriendlyKind, PocketHelp> = {
     steps: [
       { text: 'You and your friend share one hidden word and one board.', picture: p(['art-pocket-tile-white', 'art-pocket-tile-white', 'art-pocket-tile-white', 'art-pocket-tile-white', 'art-pocket-tile-white']) },
       { text: 'Take turns guessing. Purple is the right spot, gold is the wrong spot.', picture: p(['art-pocket-tile-purple', 'art-pocket-tile-gold', 'art-pocket-tile-white']) },
-      { text: 'Use what the last guess showed. There are 6 guesses in all.', picture: p(['art-pocket-puzzle-piece']) },
+      { text: 'Use what the last guess showed. There are 6 guesses in all.', picture: p(['art-pocket-pass-tray']) },
     ],
     win: 'Whoever finds the word wins. Nobody finds it in 6, it is a draw.',
     turns: POCKET_TURNS_LINE,
@@ -94,7 +94,7 @@ export const POCKET_HELP: Record<FriendlyKind, PocketHelp> = {
     steps: [
       { text: 'Take turns adding one letter to a growing word fragment.', picture: p(['art-pocket-tile-purple', 'art-pocket-tile-gold', 'art-pocket-tile-purple']) },
       { text: 'Every fragment must still be able to become a real word.', picture: p(['art-pocket-tile-white', 'art-pocket-tile-white', 'art-pocket-tile-white']) },
-      { text: 'Finish a real word, or play a dead end, and you lose the round.', picture: p(['art-pocket-ghost-marker']) },
+      { text: 'Finish a real word, or play a dead end, and you lose the round.', picture: p(['art-pocket-ghost-tray']) },
     ],
     win: 'Win 2 rounds, out of at most 5, to take the match.',
     turns: POCKET_TURNS_LINE,
@@ -102,8 +102,8 @@ export const POCKET_HELP: Record<FriendlyKind, PocketHelp> = {
   chain: {
     kind: 'chain', key: 'pocket-chain', title: 'Word Chain',
     steps: [
-      { text: 'Play a word that starts with the last letter of the word before it.', picture: p(['art-pocket-tile-purple', 'art-pocket-chain-connector', 'art-pocket-tile-gold']) },
-      { text: 'Any word of 5 to 15 letters: longer words score more points. No word can be played twice.', picture: p(['art-pocket-chain-links']) },
+      { text: 'Play a word that starts with the last letter of the word before it.', picture: p(['art-pocket-tile-purple', 'art-pocket-chain-link', 'art-pocket-tile-gold']) },
+      { text: 'Any word of 5 to 15 letters: longer words score more points. No word can be played twice.', picture: p(['art-pocket-chain-board']) },
       { text: 'Build the chain back and forth with your friend.', picture: p(['art-pocket-tile-purple', 'art-pocket-tile-gold', 'art-pocket-tile-purple']) },
     ],
     win: 'First to 50 points wins.',

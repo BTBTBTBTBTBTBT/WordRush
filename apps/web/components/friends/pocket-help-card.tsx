@@ -22,11 +22,17 @@ import { SOFT_INK, alphaHex, darken, softMix } from '@/lib/soft-surface';
 
 const PIECE_H = 46;
 
-function Piece({ name }: { name: string }) {
+// Founder 10-13: a one-piece picture is a whole board (ring, # grid, trays): shown big (up to 220 x 64), aspect kept.
+const BOARD_H = 64;
+const BOARD_W = 220;
+
+function Piece({ name, board = false }: { name: string; board?: boolean }) {
   const size = ART_SIZE[name as ArtName];
-  const w = size ? Math.round((PIECE_H * size[0]) / size[1]) : PIECE_H;
+  let h = board ? BOARD_H : PIECE_H;
+  let w = size ? Math.round((h * size[0]) / size[1]) : h;
+  if (board && w > BOARD_W) { h = Math.round((h * BOARD_W) / w); w = BOARD_W; }
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={artSrc(name)} alt="" width={w} height={PIECE_H} draggable={false} loading="lazy" decoding="async" style={{ width: w, height: PIECE_H, objectFit: 'contain' }} />;
+  return <img src={artSrc(name)} alt="" width={w} height={h} draggable={false} loading="lazy" decoding="async" style={{ width: w, height: h, objectFit: 'contain' }} />;
 }
 
 export function PocketHelpCard({ kind, onClose, firstPlay = false }: { kind: FriendlyKind; onClose: () => void; firstPlay?: boolean }) {
@@ -91,7 +97,7 @@ export function PocketHelpCard({ kind, onClose, firstPlay = false }: { kind: Fri
                           {j > 0 && step.picture.joiners[j - 1] && (
                             <span className="text-[10px] font-black uppercase" style={{ color: SOFT_INK.label, letterSpacing: 0.6 }}>{step.picture.joiners[j - 1]}</span>
                           )}
-                          <span className={still ? undefined : 'art-pop'} style={still ? undefined : { animationDelay: `${i * 160 + j * 90}ms` }}><Piece name={a} /></span>
+                          <span className={still ? undefined : 'art-pop'} style={still ? undefined : { animationDelay: `${i * 160 + j * 90}ms` }}><Piece name={a} board={step.picture.art.length === 1} /></span>
                         </span>
                       ))}
                     </div>

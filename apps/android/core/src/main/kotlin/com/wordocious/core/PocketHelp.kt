@@ -48,7 +48,7 @@ object PocketHelp {
             FriendlyKind.RPS, "pocket-rps", "Rock Paper Scissors",
             listOf(
                 s("Pick rock, paper or scissors. Your pick stays hidden.", p(listOf("art-pocket-rps-rock", "art-pocket-rps-paper", "art-pocket-rps-scissors"))),
-                s("When you both have picked, the hands flip over together.", p(listOf("art-pocket-rps-rock", "art-pocket-clash-burst", "art-pocket-rps-scissors"))),
+                s("When you both have picked, the hands flip over together.", p(listOf("art-pocket-ring"))),
                 s("Rock beats scissors, scissors beat paper, paper beats rock.", p(listOf("art-pocket-rps-rock", "art-pocket-rps-scissors"), listOf("beats"))),
             ),
             "First to win 2 rounds takes the match.", POCKET_TURNS_LINE,
@@ -58,7 +58,7 @@ object PocketHelp {
             listOf(
                 s("Take turns placing your tile on the 3 by 3 board. You are the purple X.", p(listOf("art-pocket-ttt-x", "art-pocket-ttt-o"))),
                 s("Three of your tiles in a row, across, down or corner to corner, wins the game.", p(listOf("art-pocket-ttt-x", "art-pocket-ttt-x", "art-pocket-ttt-x"))),
-                s("Fill the board with no line and the game is a draw.", p(listOf("art-pocket-ttt-board"))),
+                s("Fill the board with no line and the game is a draw.", p(listOf("art-pocket-ttt-grid"))),
             ),
             "Win 2 games, out of at most 5, to take the match.", POCKET_TURNS_LINE,
         ),
@@ -67,7 +67,7 @@ object PocketHelp {
             listOf(
                 s("Call heads or tails before the flip.", p(listOf("art-pocket-coin-heads-w", "art-pocket-coin-tails-crest"))),
                 s("The coin flips. Call it right and the round is yours.", p(listOf("art-pocket-coin-heads-w", "art-pocket-coin-tilt", "art-pocket-coin-tails-crest"))),
-                s("You swap who calls each round. Heads is the W, tails is the crest.", p(listOf("art-pocket-coin-sparkle-ring"))),
+                s("You swap who calls each round. Heads is the W, tails is the crest.", p(listOf("art-pocket-coin-stage"))),
             ),
             "First to win 3 flips takes the match, and the stake you picked.", POCKET_TURNS_LINE,
         ),
@@ -76,7 +76,7 @@ object PocketHelp {
             listOf(
                 s("You and your friend share one hidden word and one board.", p(List(5) { "art-pocket-tile-white" })),
                 s("Take turns guessing. Purple is the right spot, gold is the wrong spot.", p(listOf("art-pocket-tile-purple", "art-pocket-tile-gold", "art-pocket-tile-white"))),
-                s("Use what the last guess showed. There are 6 guesses in all.", p(listOf("art-pocket-puzzle-piece"))),
+                s("Use what the last guess showed. There are 6 guesses in all.", p(listOf("art-pocket-pass-tray"))),
             ),
             "Whoever finds the word wins. Nobody finds it in 6, it is a draw.", POCKET_TURNS_LINE,
         ),
@@ -85,15 +85,15 @@ object PocketHelp {
             listOf(
                 s("Take turns adding one letter to a growing word fragment.", p(listOf("art-pocket-tile-purple", "art-pocket-tile-gold", "art-pocket-tile-purple"))),
                 s("Every fragment must still be able to become a real word.", p(List(3) { "art-pocket-tile-white" })),
-                s("Finish a real word, or play a dead end, and you lose the round.", p(listOf("art-pocket-ghost-marker"))),
+                s("Finish a real word, or play a dead end, and you lose the round.", p(listOf("art-pocket-ghost-tray"))),
             ),
             "Win 2 rounds, out of at most 5, to take the match.", POCKET_TURNS_LINE,
         ),
         FriendlyKind.CHAIN to PocketHelpCard(
             FriendlyKind.CHAIN, "pocket-chain", "Word Chain",
             listOf(
-                s("Play a word that starts with the last letter of the word before it.", p(listOf("art-pocket-tile-purple", "art-pocket-chain-connector", "art-pocket-tile-gold"))),
-                s("Any word of 5 to 15 letters: longer words score more points. No word can be played twice.", p(listOf("art-pocket-chain-links"))),
+                s("Play a word that starts with the last letter of the word before it.", p(listOf("art-pocket-tile-purple", "art-pocket-chain-link", "art-pocket-tile-gold"))),
+                s("Any word of 5 to 15 letters: longer words score more points. No word can be played twice.", p(listOf("art-pocket-chain-board"))),
                 s("Build the chain back and forth with your friend.", p(listOf("art-pocket-tile-purple", "art-pocket-tile-gold", "art-pocket-tile-purple"))),
             ),
             "First to 50 points wins.", POCKET_TURNS_LINE,
