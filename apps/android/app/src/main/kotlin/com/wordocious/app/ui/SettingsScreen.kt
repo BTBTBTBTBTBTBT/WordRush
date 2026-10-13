@@ -279,6 +279,8 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                         ChoiceTile(s.title, "Show the ${s.title} art today (admin preview)", SettingsAccent.theme, active = SeasonSkins.preview == s.id,
                             preview = { SeasonPreviewW(s.id) }) { SeasonSkins.pick(s.id) }
                     }
+                    Divider(SettingsAccent.theme)
+                    AdsAdminRows()
                 }
             }
 
@@ -722,6 +724,69 @@ private fun LinkRow(title: String, onClick: () -> Unit = {}) {
 @Composable
 private fun Divider(accent: Color) {
     Box(Modifier.fillMaxWidth().height(1.dp).background(accentLine(accent, 0.24f)))
+}
+
+/**
+ * ADMIN → Ads (is_admin only, with the Season preview above it): this device's advertising ID with a Copy button
+ * (paste it into AdsManager.TEST_DEVICE_GAIDS AND LevelPlay → Test devices), LevelPlay's Integration Test Suite
+ * (initializes the SDK only on this tap), and a one-line gate status.
+ */
+@Composable
+private fun AdsAdminRows() {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val flags by com.wordocious.app.data.FlagsService.flags.collectAsState()
+    val profile by AuthService.profile.collectAsState()
+    var adId by remember { mutableStateOf<com.wordocious.app.data.AdsManager.AdId?>(null) }
+    var note by remember { mutableStateOf<String?>(null) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { adId = com.wordocious.app.data.AdsManager.fetchAdId(ctx) }
+    val id = adId
+    val idLine = when {
+        id == null -> "Loading…"
+        id.error != null -> "Unavailable: ${id.error}"
+        id.id == null -> "None: ad tracking is limited (or the ID is zeros), so this device cannot be a test device"
+        id.limited -> "${id.id} (ad tracking limited)"
+        else -> id.id ?: ""
+    }
+    Text("Ads", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text,
+        modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 4.dp))
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("My ad ID", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
+            Text(idLine, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        }
+        QuietButton("Copy", enabled = id?.id != null, size = CandySize.SMALL, contentDescription = "Copy my ad ID", onClick = {
+            val gaid = id?.id ?: return@QuietButton
+            runCatching {
+                val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("Ad ID", gaid))
+                note = "Ad ID copied"
+            }.onFailure { note = "Could not copy" }
+        })
+    }
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Ads test suite", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
+            Text("LevelPlay's Integration Test Suite. Starts the SDK only when you tap.", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        }
+        QuietButton("Open", size = CandySize.SMALL, contentDescription = "Open the ads test suite", onClick = {
+            val act = ctx as? android.app.Activity
+            if (act == null) { note = "No activity to launch from"; return@QuietButton }
+            note = "Starting LevelPlay…"
+            com.wordocious.app.data.AdsManager.launchTestSuite(act) { err -> note = err ?: "Test suite opened" }
+        })
+    }
+    // profile?.role only subscribes this status line to the profile (exempt flips when it lands).
+    val status = remember(flags, profile?.role, profile?.isAdmin, id?.id) {
+        com.wordocious.app.data.AdsManager.statusLine(ctx, id?.id, flags)
+    }
+    Text(status, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+    note?.let {
+        Text(it, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text,
+            modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp))
+    }
 }
 
 /** A8 a Settings dialog: a tinted container (A1) with candy buttons. */

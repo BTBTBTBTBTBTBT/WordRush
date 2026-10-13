@@ -215,9 +215,14 @@ class MainActivity : ComponentActivity() {
                 com.wordocious.app.data.FlagsService.flags,
             ) { _, _ -> com.wordocious.app.data.AgeCheckStore.isCleared }.first { it }
             com.wordocious.app.data.AgeCheckStore.startServices(this@MainActivity)
-            // LevelPlay: region gate -> privacy flags -> init -> preload the
-            // game-start interstitial. Dormant until the dashboard keys exist.
-            com.wordocious.app.data.AdsManager.start(this@MainActivity)
+            // LevelPlay: remote `ads` flag -> region gate -> privacy flags -> init -> preload the
+            // game-start interstitial. Dormant unless the flag is live for this player (and never for an
+            // admin/tester). start() is idempotent, so re-ask whenever the flags table or the profile
+            // (tester/admin status) lands or changes; the first install has no cached flags yet.
+            kotlinx.coroutines.flow.combine(
+                com.wordocious.app.data.FlagsService.flags,
+                com.wordocious.app.data.AuthService.profile,
+            ) { _, _ -> Unit }.collect { com.wordocious.app.data.AdsManager.start(this@MainActivity) }
         }
         // AU5: decode every intro figure BEFORE the first intro frame, holding the plain
         // launch color (the system splash / the lilac window) until ready — max ~300 ms.

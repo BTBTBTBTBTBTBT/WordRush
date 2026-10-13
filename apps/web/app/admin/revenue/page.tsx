@@ -1,15 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { DollarSign, CreditCard, Smartphone, Globe, ExternalLink, Receipt, CheckCircle2, HelpCircle } from 'lucide-react';
+import Link from 'next/link';
+import { DollarSign, CreditCard, Smartphone, Megaphone, ExternalLink, Receipt, CheckCircle2, HelpCircle } from 'lucide-react';
 import { useDrill } from '../components/drill-panel';
 import { EXPENSES, expenseTotals } from '@/lib/expenses';
+import type { AdTotals, AdWindow, LevelPlayResult, LevelPlayEnvVar } from '@/lib/levelplay-reporting';
 
 // Revenue across every rail, each number labeled by its source: Stripe is a
 // live API, subscription counts come from the entitlement DB (the cross-rail
-// truth), AdMob is live only after the one-time OAuth grant, and web ads are
-// NOT CONNECTED by design until a provider replaces the closed AdSense
-// accounts — every unconnected card says so instead of showing fabricated zeros.
+// truth), and app ads come from the Unity LevelPlay reporting API once its two
+// server env vars exist. The web serves no ads (AdSense is closed for good).
+// Every unconnected card says so instead of showing fabricated zeros.
 interface StoreRailEstimate { count: number; mrr: number; mrrIfAllYearly: number }
 
 // Active non-Stripe Pro split into comped ($0: admin gifts, referral trials,
@@ -61,9 +63,9 @@ interface RevenueData {
     chargesCapped?: boolean;
     dayPasses30d?: number;
   };
-  admob: { connected?: boolean; error?: string; currency?: string; total30d?: number; apps?: { app: string; earnings: number; impressions: number }[] } | null;
-  webAds: { connected: boolean };
-  adsConnected: boolean;
+  levelPlay: LevelPlayResult;
+  /** The `ads` kill switch row (and any `ads.*` rows) from app_flags — the apps serve only while `ads` is live. */
+  adFlags: { key: string; enabled: boolean; audience: string; note: string | null }[];
 }
 
 type AscEnvName = 'ASC_KEY_ID' | 'ASC_ISSUER_ID' | 'ASC_PRIVATE_KEY' | 'ASC_VENDOR_NUMBER';
@@ -172,70 +174,8 @@ export default function AdminRevenuePage() {
         )}
       </div>
 
-      {/* Ad networks */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-              <Smartphone className="w-4 h-4" /> AdMob (iOS + Android)
-            </h2>
-            <SourceTag kind={data.adsConnected && !data.admob?.error ? 'live' : 'off'} />
-          </div>
-          {!data.adsConnected ? (
-            <p className="text-xs font-bold text-gray-400 leading-relaxed">
-              Google&apos;s AdMob reporting API only accepts a personal OAuth grant (service accounts are
-              not supported), so live numbers need a one-time authorization: run
-              <code className="mx-1 px-1 bg-gray-100 rounded">node scripts/revenue-oauth.mjs</code>
-              and approve with the AdMob Google account. Until then:
-              <a href="https://apps.admob.com" target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">AdMob dashboard <ExternalLink className="w-3 h-3" /></a>
-            </p>
-          ) : data.admob?.error ? (
-            <p className="text-sm font-bold text-red-500">{data.admob.error}</p>
-          ) : (
-            <>
-              <p className="text-2xl font-black text-gray-900">{usd(data.admob?.total30d)} <span className="text-xs font-bold text-gray-400">last 30 days</span></p>
-              <div className="mt-2 space-y-1">
-                {data.admob?.apps?.map((a) => (
-                  <div key={a.app} className="flex justify-between text-xs">
-                    <span className="font-bold text-gray-500">{a.app}</span>
-                    <span className="font-black text-gray-900">{usd(a.earnings)} · {a.impressions.toLocaleString()} impr.</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-              <Globe className="w-4 h-4" /> Web ads
-            </h2>
-            <SourceTag kind={data.webAds?.connected ? 'live' : 'off'} />
-          </div>
-          <p className="text-xs font-bold text-gray-400 leading-relaxed">
-            No web ad network is connected. Both AdSense accounts are permanently closed, so that card
-            and its report fetch are gone; the replacement provider is being chosen. When it is, its card
-            needs two things from the provider:
-          </p>
-          <ul className="mt-2 space-y-1 text-xs font-bold text-gray-500 list-disc pl-4">
-            <li>
-              a <span className="text-gray-700">server-side reporting credential</span> stored as Vercel env
-              vars (an API key or service account for reporting — never the publisher/site key that ships
-              to browsers);
-            </li>
-            <li>
-              a <span className="text-gray-700">daily earnings endpoint</span> the route can call for the last
-              30 days — estimated earnings plus impressions, ideally per site — to fill the same
-              &quot;$ last 30 days · impressions&quot; line the other ad card shows.
-            </li>
-          </ul>
-          <p className="text-[11px] font-bold text-gray-300 mt-2">
-            The public site loads no ad script meanwhile; the AdGate / ad-free logic is unchanged and Pro
-            still means no ads.
-          </p>
-        </div>
-      </div>
+      {/* App ads: Unity LevelPlay in the iOS + Android apps */}
+      <AppAdsCard levelPlay={data.levelPlay} adFlags={data.adFlags ?? []} />
 
       {/* Apple-reported subscription revenue (real, once ASC env exists) */}
       <AppleSalesCard apple={data.apple} />
@@ -257,6 +197,143 @@ export default function AdminRevenuePage() {
       </div>
 
       <ExpensesSection />
+    </div>
+  );
+}
+
+const LEVELPLAY_ENV: LevelPlayEnvVar[] = ['LEVELPLAY_SECRET_KEY', 'LEVELPLAY_REFRESH_TOKEN'];
+const adUsd = (n: number) => `$${n.toFixed(2)}`;
+const pct = (n: number | null) => (n == null ? '—' : `${(n * 100).toFixed(1)}%`);
+
+// Daily revenue as a tiny inline SVG area line — no chart dependency, and the
+// page has no other chart to reuse.
+function Sparkline({ points }: { points: { date: string; revenue: number }[] }) {
+  const w = 240;
+  const h = 40;
+  const max = Math.max(...points.map((p) => p.revenue), 0.01);
+  const x = (i: number) => (points.length < 2 ? 0 : (i / (points.length - 1)) * w);
+  const y = (v: number) => h - 3 - (v / max) * (h - 6);
+  const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(p.revenue).toFixed(1)}`).join(' ');
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-10" preserveAspectRatio="none" role="img" aria-label="Daily ad revenue, last 30 days">
+      <path d={`${line} L${w},${h} L0,${h} Z`} className="fill-purple-100" />
+      <path d={line} className="stroke-purple-500 fill-none" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
+function AdStatRow({ label, t }: { label: string; t: AdTotals }) {
+  return (
+    <tr className="border-t border-gray-50">
+      <td className="py-1.5 pr-3 text-xs font-bold text-gray-500">{label}</td>
+      <td className="py-1.5 px-2 text-right text-sm font-black text-gray-900">{adUsd(t.revenue)}</td>
+      <td className="py-1.5 px-2 text-right text-xs font-bold text-gray-500">{t.impressions.toLocaleString()}</td>
+      <td className="py-1.5 px-2 text-right text-xs font-bold text-gray-500">{t.ecpm == null ? '—' : adUsd(t.ecpm)}</td>
+      <td className="py-1.5 pl-2 text-right text-xs font-bold text-gray-500">{pct(t.fillRate)}</td>
+    </tr>
+  );
+}
+
+function AdWindowTable({ w }: { w: AdWindow }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[420px]">
+        <thead>
+          <tr className="text-[10px] font-black text-gray-400 uppercase tracking-wide">
+            <th className="text-left pb-1 pr-3">Last {w.days} days</th>
+            <th className="text-right pb-1 px-2">Revenue</th>
+            <th className="text-right pb-1 px-2">Impressions</th>
+            <th className="text-right pb-1 px-2">eCPM</th>
+            <th className="text-right pb-1 pl-2">Fill</th>
+          </tr>
+        </thead>
+        <tbody>
+          <AdStatRow label="All app ads" t={w.total} />
+          <AdStatRow label="iOS" t={w.byPlatform.ios} />
+          <AdStatRow label="Android" t={w.byPlatform.android} />
+          <AdStatRow label="Game Start Interstitial" t={w.byAdFormat.interstitial} />
+          <AdStatRow label="Rewarded" t={w.byAdFormat.rewarded} />
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Unity LevelPlay (ironSource) reporting for the iOS + Android apps, or a calm
+// setup card until the two server env vars exist. Also shows the app_flags
+// The `ads` row is the apps' remote kill switch (unknown/missing = off).
+function AppAdsCard({ levelPlay, adFlags }: { levelPlay: LevelPlayResult | undefined; adFlags: RevenueData['adFlags'] }) {
+  const status = levelPlay?.status ?? 'not_connected';
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+          <Megaphone className="w-4 h-4" /> App ads — LevelPlay
+        </h2>
+        <SourceTag kind={status === 'ok' ? 'live' : 'off'} />
+      </div>
+
+      {levelPlay?.status === 'ok' ? (
+        <div className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-6">
+            <AdWindowTable w={levelPlay.summary.last7} />
+            <AdWindowTable w={levelPlay.summary.last30} />
+          </div>
+          <div>
+            <Sparkline points={levelPlay.summary.daily} />
+            <p className="text-[11px] font-bold text-gray-300 mt-1">
+              Daily revenue, last 30 days (UTC){levelPlay.summary.throughDate ? ` · data through ${levelPlay.summary.throughDate}` : ' · no data in this window yet'}.
+              Today&apos;s figure is partial and LevelPlay revises recent days.
+            </p>
+          </div>
+        </div>
+      ) : levelPlay?.status === 'error' ? (
+        <p className="text-sm font-bold text-red-500">{levelPlay.error}</p>
+      ) : (
+        <div className="text-xs font-bold text-gray-400 leading-relaxed">
+          <p>
+            Add <code className="px-1 bg-gray-100 rounded">LEVELPLAY_SECRET_KEY</code> and{' '}
+            <code className="px-1 bg-gray-100 rounded">LEVELPLAY_REFRESH_TOKEN</code> in Vercel (LevelPlay → Account → API),
+            then redeploy. The card connects on its next load.
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            {LEVELPLAY_ENV.map((name) => {
+              const isMissing = !levelPlay || levelPlay.status !== 'not_connected' || levelPlay.missing.includes(name);
+              return (
+                <li key={name} className="flex items-baseline gap-1.5">
+                  <code className={`px-1 rounded ${isMissing ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>{name}</code>
+                  <span className={`text-[10px] font-black uppercase ${isMissing ? 'text-amber-600' : 'text-green-600'}`}>{isMissing ? 'missing' : 'set'}</span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-2">
+            Until then:
+            <a href="https://platform.ironsrc.com" target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">LevelPlay dashboard <ExternalLink className="w-3 h-3" /></a>
+          </p>
+        </div>
+      )}
+
+      <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-bold text-gray-500">
+        <span className="text-[10px] font-black text-gray-400 uppercase tracking-wide">Ads flag</span>
+        {adFlags.length === 0 ? (
+          <span className="text-gray-400">no <code className="px-1 bg-gray-100 rounded">ads</code> flag row (ads stay off)</span>
+        ) : (
+          adFlags.map((f) => (
+            <span key={f.key} className="inline-flex items-center gap-1.5">
+              <code className="px-1 bg-gray-100 rounded">{f.key}</code>
+              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded uppercase ${f.enabled ? 'text-green-700 bg-green-50' : 'text-gray-500 bg-gray-100'}`}>
+                {f.enabled ? `on · ${f.audience}` : 'off'}
+              </span>
+            </span>
+          ))
+        )}
+        <Link href="/admin/flags" className="ml-auto inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">Admin → Flags</Link>
+      </div>
+      <p className="text-[11px] font-bold text-gray-300 mt-2">
+        iOS app key 28b3f4525, Android 28b3fb835. Revenue is LevelPlay&apos;s own estimate across all mediated networks; eCPM and fill are
+        recomputed from totals (fill = ad-source fills ÷ requests). Pro means no ads. The web serves no ads.
+      </p>
     </div>
   );
 }
@@ -332,7 +409,7 @@ function EstimatedRevenueCard({ data }: { data: RevenueData }) {
 
 // Apple's own subscription numbers via the App Store Connect salesReports API —
 // real prices and active counts from a daily snapshot, or a NOT CONNECTED
-// state with the exact setup step (same honesty pattern as AdMob).
+// state with the exact setup step (same honesty pattern as the app-ads card).
 function AppleSalesCard({ apple }: { apple: RevenueData['apple'] }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">

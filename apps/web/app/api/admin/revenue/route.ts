@@ -5,6 +5,7 @@ import { verifyAdmin } from '@/lib/admin-auth';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { PRO_PLANS } from '@/lib/payment/types';
 import { buildAscJwt, missingAscEnv, type AscEnvVar } from '@/lib/asc-jwt';
+import { fetchLevelPlaySummary } from '@/lib/levelplay-reporting';
 import {
   REFERRAL_TRIAL_DAYS,
   INSTANT_REWARD_DAYS,
@@ -22,15 +23,11 @@ export const dynamic = 'force-dynamic';
 //   Subscriptions DB-derived — profiles is the entitlement authority all three
 //                 clients read, so counts here are the truth about who HAS Pro,
 //                 regardless of which store billed them.
-//   AdMob         LIVE API only after a ONE-TIME user OAuth grant: Google does
-//                 not allow service accounts for its reporting API, so until
-//                 the founder runs scripts/revenue-oauth.mjs the card says
-//                 "not connected" instead of showing fabricated zeros.
-//   Web ads       NOT CONNECTED by design (2026-09-23): both AdSense accounts
-//                 are permanently closed (§252), so the AdSense fetch is gone.
-//                 The replacement provider is unchosen; its card will need a
-//                 server-side reporting credential in env plus a daily
-//                 earnings endpoint — see the Web ads card on the page.
+//   App ads       LIVE API once LEVELPLAY_SECRET_KEY + LEVELPLAY_REFRESH_TOKEN
+//                 exist (lib/levelplay-reporting.ts): Unity LevelPlay is the ad
+//                 network in the iOS + Android apps. AdSense and AdMob (closed by
+//                 Google's 2026-08 ban) are gone; the web serves no ads. Until the env
+//                 vars exist the card says "not connected" with the setup step.
 //
 // Store DOLLARS come in two tiers of honesty:
 //
@@ -65,74 +62,6 @@ const PLAN_MONTHLY_CENTS: Record<string, number> = {
 
 // Apple/Google commission on subscriptions — 15% small-business tier (§194).
 const STORE_CUT = 0.15;
-
-async function googleAccessToken(): Promise<string | null> {
-  const id = process.env.REVENUE_GOOGLE_CLIENT_ID;
-  const secret = process.env.REVENUE_GOOGLE_CLIENT_SECRET;
-  const refresh = process.env.REVENUE_GOOGLE_REFRESH_TOKEN;
-  if (!id || !secret || !refresh) return null;
-  try {
-    const r = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: id,
-        client_secret: secret,
-        refresh_token: refresh,
-        grant_type: 'refresh_token',
-      }),
-    });
-    if (!r.ok) return null;
-    const j = (await r.json()) as { access_token?: string };
-    return j.access_token ?? null;
-  } catch {
-    return null;
-  }
-}
-
-/** AdMob earnings, last 30 days, by app — needs the one-time OAuth grant. */
-async function fetchAdmob(token: string) {
-  const acctRes = await fetch('https://admob.googleapis.com/v1/accounts', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!acctRes.ok) return { error: `AdMob accounts: HTTP ${acctRes.status}` };
-  const accts = (await acctRes.json()) as { account?: { name: string; currencyCode?: string }[] };
-  const account = accts.account?.[0];
-  if (!account) return { error: 'No AdMob account visible to this grant' };
-
-  const end = new Date();
-  const start = new Date(end.getTime() - 30 * 86400000);
-  const d = (x: Date) => ({ year: x.getUTCFullYear(), month: x.getUTCMonth() + 1, day: x.getUTCDate() });
-  const repRes = await fetch(`https://admob.googleapis.com/v1/${account.name}/networkReport:generate`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      reportSpec: {
-        dateRange: { startDate: d(start), endDate: d(end) },
-        // APP alone was ambiguous — both apps are named "Wordocious", so the
-        // two rows were indistinguishable. PLATFORM disambiguates them.
-        dimensions: ['APP', 'PLATFORM'],
-        metrics: ['ESTIMATED_EARNINGS', 'IMPRESSIONS'],
-      },
-    }),
-  });
-  if (!repRes.ok) return { error: `AdMob report: HTTP ${repRes.status}` };
-  const rows = (await repRes.json()) as {
-    row?: { dimensionValues?: { APP?: { displayLabel?: string }; PLATFORM?: { value?: string } }; metricValues?: { ESTIMATED_EARNINGS?: { microsValue?: string }; IMPRESSIONS?: { integerValue?: string } } };
-  }[];
-  const apps = rows
-    .filter((r) => r.row)
-    .map((r) => ({
-      app: `${r.row!.dimensionValues?.APP?.displayLabel ?? 'unknown'}${r.row!.dimensionValues?.PLATFORM?.value ? ` (${r.row!.dimensionValues.PLATFORM.value})` : ''}`,
-      earnings: Number(r.row!.metricValues?.ESTIMATED_EARNINGS?.microsValue ?? 0) / 1e6,
-      impressions: Number(r.row!.metricValues?.IMPRESSIONS?.integerValue ?? 0),
-    }));
-  return {
-    currency: account.currencyCode ?? 'USD',
-    apps,
-    total30d: apps.reduce((a, b) => a + b.earnings, 0),
-  };
-}
 
 // ── Apple App Store Connect: real subscription revenue ──────────────────────
 // The salesReports SUBSCRIPTION report is a daily snapshot of every active
@@ -454,14 +383,13 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── AdMob: live only once the one-time grant exists ───────────────────────
-  // (The AdSense half of this block is gone — both accounts are permanently
-  // closed; the web-ads card explains what a replacement needs.)
-  const token = await googleAccessToken();
-  const [admob, apple] = await Promise.all([
-    token ? fetchAdmob(token) : Promise.resolve(null),
+  // ── App ads (LevelPlay) + the ads flag rows, alongside Apple ──────────────
+  const [levelPlay, apple, adFlagRes] = await Promise.all([
+    fetchLevelPlaySummary(),
     fetchAppleSubscriptions(),
+    admin.from('app_flags').select('key, enabled, audience, note').or('key.eq.ads,key.like.ads.%').order('key'),
   ]);
+  const adFlags = (adFlagRes.data ?? []) as { key: string; enabled: boolean; audience: string; note: string | null }[];
 
   // All-rails MRR headline: Stripe's live number where we have it, plus the
   // store estimate (paid-classified only — comped users contribute $0 here by
@@ -479,10 +407,7 @@ export async function GET(request: NextRequest) {
     combined,
     stripe,
     apple,
-    admob: token ? admob : { connected: false },
-    // No web ad provider is wired; the page renders a neutral "not connected"
-    // card from this flag alone so a future provider slots in here.
-    webAds: { connected: false as const },
-    adsConnected: !!token,
+    levelPlay,
+    adFlags,
   });
 }

@@ -128,6 +128,8 @@ struct SettingsView: View {
                                     }
                                 }
                                 .padding(.vertical, 4)
+                                G5Divider(accent: G5Accent.coral)
+                                AdsAdminSection()
                             }
                         }
                         // Which providers open this account + link Google / Apple
