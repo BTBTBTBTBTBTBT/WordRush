@@ -994,6 +994,12 @@ html[data-season-tone="dark"] [data-page-tint="vs"] {
 }
 /* The soft numbers (lettering in the deep purple) take their light twin on a dark season's night glass, on every
    page (the VS / Friends pages pin the light scheme, so the [data-page-scheme="auto"] rule doesn't reach them). */
+/* Short phones (e.g. 375x667): the score window compacts (no sub-line, no TO PLAY chip, tighter padding) so Pass / Word Chain fit above their keyboard. */
+@media (max-height: 720px) and (max-width: 1023px) {
+  .pk-sc-sub, .pk-sc-chip { display: none !important; }
+  .pk-sc-head { padding: 8px 12px 6px !important; }
+  .pk-sc-half { padding: 6px 8px 6px !important; }
+}
 /* Founder 10-13: the small plain-caps captions on the pocket screens get a soft dark shadow over the night art (none in the light theme). */
 html[data-season-tone="dark"] .pk-caps :is(p, .pk-cap):not([role="dialog"] *) { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); }
 html[data-season-tone="dark"] .soft-num { color: #e9ddff; text-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); }

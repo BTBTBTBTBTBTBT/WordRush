@@ -406,7 +406,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
     const presenceChip = !isMe && !!presence && presence !== 'away' && !(toPlay && presence !== 'thinking');
     const tone = presence === 'left' ? '#94a3b8' : presence === 'here' ? '#16a34a' : FR.solid;
     return (
-    <div className="flex-1 flex flex-col items-center gap-1.5" style={{ padding: '12px 8px 14px' }}>
+    <div className="pk-sc-half flex-1 flex flex-col items-center gap-1.5" style={{ padding: '12px 8px 14px' }}>
       <FriendAvatar name={p.name} userId={p.userId} url={p.url} accent={p.accent} config={p.config} castId={p.castId} frame={p.frame} pro={p.pro} size={40} online={!isMe && theirOnline} pulse={!isMe && presence === 'thinking'} />
       <span className="flex items-center gap-1 text-[10px] font-black uppercase truncate max-w-full" style={{ color: isMe ? '#4c1d95' : '#92400e', letterSpacing: 0.8 }}>
         {won && <Icon3D name="trophy" size={14} className="shrink-0" />}
@@ -414,7 +414,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
       </span>
       {value !== null && <SoftNum size={34}>{value}</SoftNum>}
       <span
-        className="text-[9.5px] font-black px-2 rounded-full"
+        className="pk-sc-chip text-[9.5px] font-black px-2 rounded-full"
         style={{
           height: 18, display: 'flex', alignItems: 'center', letterSpacing: 0.6,
           background: presenceChip ? softMix(tone, 0.12) : toPlay ? softMix('#ec4899', 0.14) : 'transparent',
@@ -457,9 +457,9 @@ export function FriendlyGameScreen({ id }: { id: string }) {
             <div className="absolute" style={{ top: '-20%', left: 0, width: '38%', height: '140%', background: 'linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.55), rgba(255,255,255,0))', animation: 'banner-shimmer 2.6s ease-in-out 1 both' }} />
           </div>
         )}
-        <div className="relative flex flex-col gap-1" style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
+        <div className="pk-sc-head relative flex flex-col gap-1" style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
           <span className="font-black" style={{ fontSize: 16, letterSpacing: 0.4, lineHeight: 1.2, color: FR.ink }}>{headline}</span>
-          <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: FR.mid }}>{sub}</span>
+          <span className="pk-sc-sub font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: FR.mid }}>{sub}</span>
         </div>
         <div className="relative flex">
           {half('YOU', you, true, score ? score.mine : null, turn === me || turn === 'both', youWon)}

@@ -696,7 +696,28 @@ export function CoinBoard({ state, me, them, active, busy, revealKey, onMove }: 
 // ── Pass the Puzzle ─────────────────────────────────────────────────────────
 
 export function PassBoard({ state, me, you, them, active, busy, onMove, answer, error }: BoardProps<PassState> & { answer: string | null }) {
-  const [boxRef, boxW] = useBoardWidth(400, 560);
+  const [boxRef, boxW0] = useBoardWidth(400, 560);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // Phones: the tray narrows (aspect kept) so tray + hint + keyboard fit the screen without scrolling (iOS lands ~70%). The room is
+  // measured ONCE per screen size (mount / resize / rotation), never per move, so nothing shifts while playing.
+  const [fitW, setFitW] = useState<number | null>(null);
+  useEffect(() => {
+    const measure = () => {
+      const root = rootRef.current; const box = boxRef.current;
+      if (!root || !box || !active || window.matchMedia('(min-width: 1024px)').matches) { setFitW(null); return; }
+      const bt = box.getBoundingClientRect(); const rt = root.getBoundingClientRect();
+      const below = rt.bottom - bt.bottom;                // hint + text + keyboard + gaps (independent of the tray's size)
+      const docTop = bt.top + window.scrollY;             // the board's top in the page (the page starts scrolled at 0)
+      const room = window.innerHeight - docTop - below - 8;
+      setFitW(Math.max(150, Math.floor((room * PASS_TRAY_W) / PASS_TRAY_H)));
+    };
+    measure();
+    const t = window.setTimeout(measure, 350); // once more after fonts / art settle
+    window.addEventListener('resize', measure);
+    return () => { window.clearTimeout(t); window.removeEventListener('resize', measure); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
+  const boxW = fitW !== null ? Math.min(boxW0, fitW) : boxW0;
   const [input, setInput] = useState('');
   const [hint, setHint] = useState<string | null>(null);
   const myTurn = active && whoseTurn(state) === me;
@@ -736,7 +757,7 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer, 
   );
 
   return (
-    <div className="pk-root flex flex-col items-center gap-3">
+    <div ref={rootRef} className="pk-root flex flex-col items-center gap-2">
       <div ref={boxRef} className="pk-board w-full flex justify-center">
       <div className="relative" style={{ width: TW, height: TH }}>
         <BoardArt name="art-pocket-pass-tray" width={TW} />
@@ -764,7 +785,6 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer, 
       </div>
       </div>
 
-      <HintSlot text={hint ?? error} />
       {answer && (
         <p className="text-[12px] font-black uppercase" style={{ color: FR.ink, letterSpacing: 0.8 }}>
           The word was <span style={{ color: TILE.you, letterSpacing: 2 }}>{answer}</span>
@@ -772,8 +792,9 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer, 
       )}
       {active && (
         <>
-          <p className="text-[12px] font-bold text-center" style={{ color: FR.label, minHeight: 16 }}>
-            {myTurn ? 'Your guess. Then it passes to ' + them.name + '.' : `${them.name} is guessing. The board fills in live.`}
+          {/* ONE fixed line: a refused guess / error (red) replaces the instruction while it shows, so nothing moves. */}
+          <p className="text-[12px] font-bold text-center w-full" role={hint ?? error ? 'alert' : undefined} style={{ color: hint ?? error ? '#dc2626' : FR.label, height: 16, lineHeight: '16px' }}>
+            {hint ?? error ?? (myTurn ? 'Your guess. Then it passes to ' + them.name + '.' : `${them.name} is guessing. The board fills in live.`)}
           </p>
           <div className="w-full" style={{ opacity: myTurn ? 1 : 0.55 }}>
             <Keyboard onKey={onKey} letterStates={keyStates} />
