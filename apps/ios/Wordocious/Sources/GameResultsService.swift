@@ -391,7 +391,12 @@ enum GameResultsService {
     /// hint-UI dict (GameViewModel.persistHintUI) — same approximation the
     /// restored post-game breakdown shows.
     private static func persistedHintsUsed(state: GameState, mode: GameMode, seed: String) -> Int {
-        let base = state.boards.first?.hintEvaluations?.count ?? 0
+        persistedHintsUsed(boards: state.boards, mode: mode, seed: seed)
+    }
+
+    /// The hints a finished save used (hint rows + Six/Seven's zero-candidate "—" reveals) — what the record charged.
+    static func persistedHintsUsed(boards: [BoardState], mode: GameMode, seed: String) -> Int {
+        let base = boards.first?.hintEvaluations?.count ?? 0
         guard mode == .duel6 || mode == .duel7,
               let d = UserDefaults.standard.dictionary(forKey: "wordocious-hints-\(mode.rawValue)-\(seed)") as? [String: String]
         else { return base }

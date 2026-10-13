@@ -150,7 +150,7 @@ internal fun GauntletFinishScreen(
                     more = {
                         ScoreBreakdownCard(
                             mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses,
-                            elapsedSeconds = totalTimeMs / 1000, boardsSolved = cumBoards, totalBoards = cumTotal,
+                            elapsedSeconds = elapsedSeconds.takeIf { it > 0 } ?: (totalTimeMs / 1000), boardsSolved = cumBoards, totalBoards = cumTotal,  // the run clock the leaderboard recorded (10-13)
                             hintsUsed = hintsUsed, stagesCompleted = cleared,
                             day = com.wordocious.core.getDailySeedDate(seed),
                         )

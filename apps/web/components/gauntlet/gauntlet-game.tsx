@@ -627,7 +627,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             const totalBoards = gauntlet.stages.reduce((s, st) => s + st.boardCount, 0) || 21;
             const boards = won.reduce((s, r) => s + (gauntlet.stages[r.stageIndex]?.boardCount ?? 0), 0);
             return computeScoreBreakdown('GAUNTLET', true, rs.reduce((s, r) => s + r.guesses, 0),
-              Math.floor(rs.reduce((s, r) => s + r.timeMs, 0) / 1000), boards, totalBoards, 0, won.length).total;
+              elapsedTime, boards, totalBoards, 0, won.length).total;  // the frozen run clock the record used (10-13)
           })()}
         />
       )}

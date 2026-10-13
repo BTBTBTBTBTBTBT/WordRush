@@ -708,7 +708,7 @@ export default function StatsPage() {
                   <div className="flex items-center gap-3 pl-4 pr-2.5 py-2" style={{ ...softPill(accentColor, { radius: 16 }), paddingTop: 10 }}>
                     <span className="text-[10px] font-black uppercase tracking-wider shrink-0 tint-ink" style={{ color: accentColor }}>Today</span>
                     <span className="text-xs font-extrabold flex-1 min-w-0 truncate" style={{ color: 'var(--color-text)' }}>
-                      {`${today.won ? 'Won' : 'Lost'} · ${matchStat(selected, today.guesses)}${today.timeSeconds > 0 ? ` · ${formatDuration(today.timeSeconds)}` : ''} · ${today.score.toLocaleString()} pts`}
+                      {`${today.won ? 'Won' : 'Lost'} · ${matchStat(selected, today.guesses)}${today.timeSeconds > 0 ? ` · ${formatDuration(today.timeSeconds)}` : ''} · ${Math.trunc(today.score).toLocaleString()} pts`}
                     </span>
                     <CandyLink href={href} color="peach" size="sm" icon="eye" className="shrink-0" aria-label={`Open today's ${meta.title}`}>Open</CandyLink>
                   </div>

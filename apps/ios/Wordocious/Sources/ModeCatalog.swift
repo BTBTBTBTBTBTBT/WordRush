@@ -149,7 +149,7 @@ struct MoreTotals { var completed = 0, won = 0, total = 0; var totalTimeSeconds 
 func moreTotals(byMode: [String: DailyCompletion], modes: [HomeMode] = moreModes) -> MoreTotals {
     var t = MoreTotals(); let daily = moreDailyModes(modes); t.total = daily.count
     for m in daily { guard let c = byMode[m.dbKey!] else { continue }
-        t.completed += 1; if c.completed { t.won += 1 }; t.totalTimeSeconds += c.timeSeconds; t.totalScore += c.score }
+        t.completed += 1; if c.completed { t.won += 1 }; t.totalTimeSeconds += c.timeSeconds; t.totalScore += c.score.rounded(.towardZero) }
     return t
 }
 

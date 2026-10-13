@@ -192,7 +192,7 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
       params.set('won', String(input.won));
       params.set('tot', String(input.total));
       params.set('t', String(input.totalTimeSeconds));
-      params.set('pts', String(input.totalScore));
+      params.set('pts', String(Math.trunc(input.totalScore)));
       params.set('w', '1080');
       params.set('h', '1350');
       params.set('v', `${input.flawless ? 'f' : 's'}${input.won}-${input.totalTimeSeconds}-${input.totalScore}`);
@@ -249,7 +249,7 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
       params.set('ts', String(input.totalStages));
     } else if (input.layout === 'sudoku' || input.layout === 'regions' || input.layout === 'ladder' || input.layout === 'wordsearch' || input.layout === 'hub' || input.layout === 'cryptogram' || input.layout === 'groups' || input.layout === 'crossword' || input.layout === 'scramble') {
       // Non-guess modes: the unfurl names score, time and mistakes / par / misses / rank (§18d).
-      if (input.points != null) params.set('pts', String(Math.round(input.points)));
+      if (input.points != null) params.set('pts', String(Math.trunc(input.points)));
       if (input.puzzleNumber) params.set('n', String(input.puzzleNumber));
       if (input.layout === 'ladder') params.set('par', String(input.par));
       if (input.layout === 'cryptogram' || input.layout === 'crossword') params.set('ck', String(input.checks));

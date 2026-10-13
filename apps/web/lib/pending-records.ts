@@ -225,7 +225,7 @@ export function pendingTodayCompletions(userId: string, today: string): Map<stri
       won: !!g.won,
       guesses: g.guessCount,
       timeSeconds,
-      score: Math.round(calculateCompositeScore(
+      score: Math.trunc(calculateCompositeScore(
         p.gameMode, g.won, g.guessCount, timeSeconds, boards, total, g.hintsUsed ?? 0,
         g.stagesCompleted, g.bestCorrectLetters, today,
       )),

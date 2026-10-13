@@ -63,11 +63,12 @@ class WidgetStatsTest {
     }
 
     @Test
-    fun pointsAreSumOfRounds() {
-        // 1.5 + 1.5 rounds to 2 + 2 = 4 per mode (never round(3.0) = 3), the app's rule.
-        assertEquals(4, WidgetStats.pointsSum(listOf(1.5, 1.5)))
+    fun pointsAreSumOfWholeNumbers() {
+        // Each mode counts its own whole number (truncated like its card and the leaderboard, founder 10-13):
+        // 1.5 + 1.5 = 1 + 1 = 2, never 3 (the sum's) or 4 (rounded).
+        assertEquals(2, WidgetStats.pointsSum(listOf(1.5, 1.5)))
         assertEquals(0, WidgetStats.pointsSum(emptyList()))
-        assertEquals(1_235, WidgetStats.pointsSum(listOf(1_000.4, 234.6)))
+        assertEquals(1_234, WidgetStats.pointsSum(listOf(1_000.4, 234.6)))
     }
 
     @Test

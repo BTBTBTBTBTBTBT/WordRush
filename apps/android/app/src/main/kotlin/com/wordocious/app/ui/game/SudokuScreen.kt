@@ -783,7 +783,8 @@ fun CustomCompletedDailyCard(mode: GameMode) {
         if (expanded) {
             Column(Modifier.padding(horizontal = 14.dp).padding(bottom = 14.dp, top = 4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 board?.let { FinishedBoardView(it) }
-                ScoreBreakdownCard(mode, won, guessCount, r.player1Time, if (won) 1 else 0, 1, 0, day = todayLocalDate())
+                val (solved, total) = board?.recordedBoards() ?: ((if (won) 1 else 0) to 1)
+                ScoreBreakdownCard(mode, won, guessCount, r.player1Time, solved, total, r.hintsUsed ?: 0, day = todayLocalDate())
             }
         }
     }

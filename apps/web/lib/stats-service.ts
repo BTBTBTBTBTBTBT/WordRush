@@ -234,7 +234,7 @@ export function noteGuestDailyFinish(
   if (!isPlausibleDailyResult(won, guessCount, timeSeconds, total, gameMode)) return;
   dispatchDailyCompletion({
     gameMode, won, guesses: guessCount, timeSeconds, guest: true,
-    score: Math.round(calculateCompositeScore(
+    score: Math.trunc(calculateCompositeScore(
       gameMode, won, guessCount, timeSeconds, boards, total, hintsUsed,
       stagesCompleted, bestCorrectLetters, today,
     )),
@@ -324,7 +324,7 @@ export async function recordGameResult(
   if (isTodaysSoloDaily && !retry && isPlausibleDailyResult(won, guessCount, timeSeconds, total, gameMode)) {
     dispatchDailyCompletion({
       gameMode, won, guesses: guessCount, timeSeconds,
-      score: Math.round(calculateCompositeScore(
+      score: Math.trunc(calculateCompositeScore(
         gameMode, won, guessCount, timeSeconds, boards, total, hintsUsed,
         stagesCompleted, bestCorrectLetters, getDailySeedDate(seed!) ?? today,
       )),
@@ -505,7 +505,7 @@ export async function recordGameResult(
     // Confirmed: tell the DailyCompletionsProvider (Home, sweep banner) — this
     // also refreshes Home after a queued retry lands. ONLY for TODAY's puzzle.
     if (daily.outcome === 'written' && isTodaysSoloDaily) {
-      dispatchDailyCompletion({ gameMode, won, guesses: guessCount, timeSeconds, score: Math.round(daily.score ?? 0) });
+      dispatchDailyCompletion({ gameMode, won, guesses: guessCount, timeSeconds, score: Math.trunc(daily.score ?? 0) });
     }
     // After the solo daily row lands, see whether this was the 7th
     // of the day and award the one-shot Daily Sweep / Flawless
@@ -1901,7 +1901,7 @@ export async function fetchDailyPointsOverTime(userId: string, days = 30): Promi
   const perDay = new Map<string, { word: number; puzzle: number; pPlayed: Set<string>; pWon: Set<string> }>();
   for (const r of rows) {
     const d = perDay.get(r.day) ?? { word: 0, puzzle: 0, pPlayed: new Set<string>(), pWon: new Set<string>() };
-    const pts = Math.round(r.composite_score ?? 0);
+    const pts = Math.trunc(r.composite_score ?? 0);
     if (puzzleKeys.has(r.game_mode)) {
       d.puzzle += pts;
       d.pPlayed.add(r.game_mode);

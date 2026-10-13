@@ -32,6 +32,13 @@ struct CompletedDailyCard: View {
     }
 
     private var boardCount: Int { localBoards?.count ?? data?.solutions.count ?? 1 }
+    /// A loss's solved boards (founder 10-13: the card showed 0 where the leaderboard credited 2/4): the local
+    /// boards when this device played it, else every solution that appears among the recorded guesses.
+    private func solvedBoards(_ d: MatchStatsService.SolvedDaily) -> Int {
+        if let lb = localBoards { return lb.filter { $0.status == .won }.count }
+        let guessed = Set(d.guesses.map { $0.uppercased() })
+        return d.solutions.filter { guessed.contains($0.uppercased()) }.count
+    }
 
     /// Header summary: gauntlet shows stages/guesses/time, others guesses·time.
     private func summaryLabel(_ d: MatchStatsService.SolvedDaily) -> String {
@@ -147,7 +154,10 @@ struct CompletedDailyCard: View {
                                         : (d.solutions.first ?? "")
                                     let s = Array(solRaw.uppercased())
                                     guard !s.isEmpty else { return 0 }
-                                    return d.guesses.reduce(0) { best, gw in
+                                    let hintRows = localBoards?.first?.hintEvaluations   // hint rows never earn near-miss credit (record parity)
+                                    return d.guesses.enumerated().reduce(0) { best, pair in
+                                        if hintRows?[String(pair.offset)] != nil { return best }
+                                        let gw = pair.element
                                         let raw = mode == .propernoundle ? ProperNoundle.normalize(gw) : gw
                                         let g = Array(raw.uppercased())
                                         return max(best, zip(g, s).filter { $0 == $1 }.count)
@@ -155,7 +165,7 @@ struct CompletedDailyCard: View {
                                 }()
                                 ScoreBreakdownView(gameMode: mode.rawValue, completed: won,
                                                    guessCount: d.guessCount, timeSeconds: d.timeSeconds,
-                                                   boardsSolved: won ? boardCount : 0, totalBoards: boardCount,
+                                                   boardsSolved: won ? boardCount : solvedBoards(d), totalBoards: boardCount,
                                                    hintsUsed: d.hintsUsed,
                                                    bestCorrectLetters: bestCorrect,
                                                    day: LeaderboardService.todayLocal())
@@ -203,7 +213,7 @@ struct CompletedDailyCard: View {
                     won: st == .won,
                     guessCount: bs.map(\.guesses.count).max() ?? 0,
                     timeSeconds: savedMs / 1000,
-                    hintsUsed: bs.first?.hintEvaluations?.count ?? 0)
+                    hintsUsed: GameResultsService.persistedHintsUsed(boards: bs, mode: mode, seed: seed))
             }
             elapsedMs = savedMs > 0 ? savedMs : (data?.timeSeconds ?? 0) * 1000
             if let fresh = await MatchStatsService.solvedDaily(mode: mode, seed: seed) {

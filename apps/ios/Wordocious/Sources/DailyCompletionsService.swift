@@ -64,10 +64,10 @@ struct DailyTotals {
             if c.completed { won += 1 }
             totalGuesses += c.guessCount
             totalTimeSeconds += c.timeSeconds
-            // Web parity (daily-service.ts fetchTodayDailyCompletions): each
-            // mode's score is rounded BEFORE summing — sum-of-rounds, not
-            // round-of-sum, or the two platforms' sweep totals drift by ±1.
-            totalScore += c.score.rounded()
+            // Web parity (daily-service.ts fetchTodayDailyCompletions): each mode's
+            // score is cut to its whole number BEFORE summing — the number its own
+            // card and the leaderboard show (truncated, founder 10-13).
+            totalScore += c.score.rounded(.towardZero)
         }
     }
 }
@@ -105,6 +105,9 @@ final class DailyCompletionsStore: ObservableObject {
     /// NotificationService decide whether tonight's reminder is still needed.
     /// The cache is day-keyed, so a stale (yesterday's) cache reads as 0.
     static func cachedTodayCount() -> Int { readCache()?.count ?? 0 }
+    /// Today's recorded completion for one mode from the day-keyed cache (its `score` is the stored
+    /// daily_results.composite_score — the leaderboard's own number). nil when not cached.
+    static func cachedToday(_ gameMode: String) -> DailyCompletion? { readCache()?[gameMode] }
     var wonCount: Int { byMode.filter { Self.sweepKeys.contains($0.key) && $0.value.completed }.count }
     var allDone: Bool { completedCount >= Self.totalDailyModes }
     var flawless: Bool { allDone && wonCount >= Self.totalDailyModes }

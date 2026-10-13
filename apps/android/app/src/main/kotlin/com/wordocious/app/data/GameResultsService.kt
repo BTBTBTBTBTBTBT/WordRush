@@ -189,6 +189,8 @@ object GameResultsService {
          *  Completed-Today card rebuilds the finished board from it with the core
          *  reconstruct* functions (founder, 2026-09-29). Null on word-game rows. */
         val solutions: List<String>? = null,
+        /** Founder 10-13: the reopened cards' points must match the leaderboard, which charged these hints. */
+        @SerialName("hints_used") val hintsUsed: Int? = null,
     )
 
     // ── G6: session prefetch of recorded daily matches ────────────────────────────
@@ -248,7 +250,7 @@ object GameResultsService {
         val uid = AuthService.userId ?: return null
         return runCatching {
             client.postgrest["matches"]
-                .select(Columns.raw("player1_guesses,player1_time,winner_id,solutions")) {
+                .select(Columns.raw("player1_guesses,player1_time,winner_id,solutions,hints_used")) {
                     filter { eq("player1_id", uid); eq("seed", seed) }
                     order("created_at", Order.DESCENDING)
                     limit(1)

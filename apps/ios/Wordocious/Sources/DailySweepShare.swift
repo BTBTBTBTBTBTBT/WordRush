@@ -49,7 +49,7 @@ enum DailySweepCatalog {
             return DailySweepRow(
                 dbKey: m.dbKey, modeLabel: m.label, accent: m.accent, glyph: m.glyph,
                 won: c.completed, guesses: c.guessCount,
-                timeSeconds: Int(c.timeSeconds.rounded()), score: Int(c.score.rounded()))
+                timeSeconds: Int(c.timeSeconds.rounded()), score: Int(c.score))
         }
     }
 }

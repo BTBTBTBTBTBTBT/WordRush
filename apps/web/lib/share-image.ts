@@ -1465,7 +1465,7 @@ function drawDailySweepRows(ctx: CanvasRenderingContext2D, input: ShareDailySwee
       ctx.font = `800 ${Math.min(24, Math.round(rowH * 0.24))}px ${SHARE_FONT_STACK}`;
       ctx.fillStyle = TEXT_MUTED;
       const guessDisp = g.won ? `${g.guesses}g` : 'X';
-      ctx.fillText(`${guessDisp} · ${formatTime(g.timeSeconds)} · ${g.score.toLocaleString('en-US')} pts`, textX, rowY + rowH / 2 + rowH * 0.2);
+      ctx.fillText(`${guessDisp} · ${formatTime(g.timeSeconds)} · ${Math.trunc(g.score).toLocaleString('en-US')} pts`, textX, rowY + rowH / 2 + rowH * 0.2);
     }
 
     const mark = Math.min(rowH - 26, 56);

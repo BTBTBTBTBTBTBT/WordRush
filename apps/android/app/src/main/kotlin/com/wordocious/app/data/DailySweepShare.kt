@@ -46,7 +46,7 @@ object DailySweepShare {
         (if (more) MORE_MODES else MODES).mapNotNull { (meta, glyph) ->
             val (dbKey, label, accent) = meta
             byMode[dbKey]?.let { c ->
-                Row(dbKey, label, accent, glyph, c.completed, c.guessCount, c.timeSeconds, Math.round(c.score).toInt())
+                Row(dbKey, label, accent, glyph, c.completed, c.guessCount, c.timeSeconds, c.score.toInt())
             }
         }
 

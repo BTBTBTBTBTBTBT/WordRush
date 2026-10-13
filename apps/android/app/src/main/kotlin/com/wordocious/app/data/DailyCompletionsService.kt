@@ -75,12 +75,12 @@ object DailyCompletionsService {
     fun totals(byMode: Map<String, Completion>): Totals {
         var won = 0; var guesses = 0; var time = 0; var score = 0.0
         // Web parity (daily-service.ts fetchTodayDailyCompletions): each mode's
-        // score is rounded BEFORE summing — sum-of-rounds, not round-of-sum,
-        // or the platforms' sweep totals drift by ±1.
+        // score is cut to its whole number BEFORE summing (the same number its card and
+        // the leaderboard show — truncated, founder 10-13), or the totals drift by ±1.
         val sweep = sweepOnly(byMode)
         for (c in sweep.values) {
             if (c.completed) won++
-            guesses += c.guessCount; time += c.timeSeconds; score += Math.round(c.score).toDouble()
+            guesses += c.guessCount; time += c.timeSeconds; score += kotlin.math.truncate(c.score)
         }
         return Totals(sweep.size, won, TOTAL_DAILY_MODES, guesses, time, score.toInt())
     }

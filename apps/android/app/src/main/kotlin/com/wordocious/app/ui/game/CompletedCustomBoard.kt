@@ -117,6 +117,19 @@ internal fun finishedBoard(mode: GameMode, seed: String, row: GameResultsService
     }
 }.getOrNull()
 
+/**
+ * Founder 10-13 (points must match the leaderboard): the boards each multi-board game records with its
+ * daily (HubScreen / KindredScreen / MuddleScreen / SpyglassScreen record calls), rebuilt from the finished
+ * board, so a reopened LOSS gets the same partial credit the leaderboard gave it. null = the single-board 1/0 of 1.
+ */
+internal fun FinishedBoard.recordedBoards(): Pair<Int, Int>? = when (this) {
+    is FinishedBoard.Hub -> hubBoardsSolved(r.points, r.max) to HUB_TOTAL_BOARDS
+    is FinishedBoard.Groups -> solved.size to GROUPS_TOTAL_BOARDS
+    is FinishedBoard.Muddle -> scrambleBoardsSolved(s) to SCRAMBLE_TOTAL_BOARDS
+    is FinishedBoard.Spyglass -> s.found.size to s.words.size
+    else -> null
+}
+
 /** The board itself, centered and card-width, never interactive (every tap handler is a no-op). */
 @Composable
 internal fun FinishedBoardView(b: FinishedBoard) {

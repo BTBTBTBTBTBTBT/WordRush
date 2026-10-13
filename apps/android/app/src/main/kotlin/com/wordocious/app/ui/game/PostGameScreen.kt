@@ -129,8 +129,8 @@ fun PostGameScreen(
     val stagesCompleted = gauntletProgress?.stageResults?.count { it.status == GameStatus.WON }
     val bestCorrectLetters = if (mode != GameMode.GAUNTLET && totalBoards == 1) {
         val b0 = state.boards[0]
-        b0.guesses.fold(0) { best, gw ->
-            if (b0.hintEvaluations?.containsKey(gw) == true) best
+        b0.guesses.foldIndexed(0) { i, best, gw ->
+            if (b0.hintEvaluations?.containsKey(i.toString()) == true) best  // keyed by ROW index (Reducer), like computeRunScore
             else maxOf(best, com.wordocious.core.evaluateGuess(b0.solution, gw).tiles.count { it.state == com.wordocious.core.TileState.CORRECT })
         }
     } else null

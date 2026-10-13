@@ -154,6 +154,7 @@ fun CompletedDailyBoard(modeId: String) {
     // ProperNoundle: the generic engine replay can't rebuild a multi-word proper-
     // noun board, so capture the raw recorded guesses and render a dedicated card
     // (tiles re-derived against today's answer, laid out in word groups).
+    var pnHints by remember(modeId, tick) { mutableStateOf(cachedRow?.hintsUsed ?: 0) }
     var pnGuesses by remember(modeId, tick) { mutableStateOf(cachedRow?.player1Guesses?.takeIf { mode == GameMode.PROPERNOUNDLE && it.isNotEmpty() }) }
     LaunchedEffect(modeId, tick) {
         if (mode == GameMode.PROPERNOUNDLE) {
@@ -161,6 +162,7 @@ fun CompletedDailyBoard(modeId: String) {
             val row = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed)
             if (row != null && row.player1Guesses.isNotEmpty()) {
                 pnGuesses = row.player1Guesses
+                pnHints = row.hintsUsed ?: 0
                 serverTime = row.player1Time
             }
             return@LaunchedEffect
@@ -204,7 +206,7 @@ fun CompletedDailyBoard(modeId: String) {
         // No disk-cached row yet: the header at its final height until the fetch lands (founder, 2026-09-29).
         val pg = pnGuesses?.takeIf { it.isNotEmpty() } ?: run { CompletedHeaderFallback(modeId, tick); return }
         val pnPuzzle = com.wordocious.core.ProperNoundle.dailyPuzzle(com.wordocious.app.todayLocalDate()) ?: return
-        ProperNoundleCompletedDailyCard(guesses = pg, puzzle = pnPuzzle, timeSeconds = serverTime)
+        ProperNoundleCompletedDailyCard(guesses = pg, puzzle = pnPuzzle, timeSeconds = serverTime, hintsUsed = pnHints)
         return
     }
 
@@ -264,8 +266,8 @@ fun CompletedDailyBoard(modeId: String) {
             Spacer(Modifier.height(12.dp))
             // Single-board near-miss credit from the reconstructed board (best
             // green count, hint rows excluded). nil for multi-board (ignored).
-            val bestCorrect = if (totalBoards == 1) boards[0].guesses.fold(0) { best, gw ->
-                if (boards[0].hintEvaluations?.containsKey(gw) == true) best
+            val bestCorrect = if (totalBoards == 1) boards[0].guesses.foldIndexed(0) { i, best, gw ->
+                if (boards[0].hintEvaluations?.containsKey(i.toString()) == true) best  // keyed by ROW index (Reducer), like computeRunScore
                 else maxOf(best, com.wordocious.core.evaluateGuess(boards[0].solution, gw).tiles.count { it.state == com.wordocious.core.TileState.CORRECT })
             } else null
             ScoreBreakdownCard(
@@ -518,7 +520,7 @@ private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int)
             GauntletStageBreakdown(g = g, totalMs = totalMs)
             // Score breakdown (cumulative run values — same as post-game).
             ScoreBreakdownCard(
-                mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses, elapsedSeconds = totalSecs,
+                mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses, elapsedSeconds = elapsedSeconds.takeIf { it > 0 } ?: totalSecs,  // the recorded run clock (10-13)
                 boardsSolved = cumBoards, totalBoards = cumTotal, hintsUsed = 0,
                 stagesCompleted = cleared,
                 day = com.wordocious.app.todayLocalDate(),
@@ -622,6 +624,7 @@ private fun ProperNoundleCompletedDailyCard(
     guesses: List<String>,
     puzzle: com.wordocious.core.NPuzzle,
     timeSeconds: Int,
+    hintsUsed: Int = 0,
 ) {
     val lastTiles = guesses.lastOrNull()
         ?.let { com.wordocious.core.ProperNoundle.evaluate(it, puzzle.answer) } ?: emptyList()
@@ -643,7 +646,7 @@ private fun ProperNoundleCompletedDailyCard(
             Spacer(Modifier.height(12.dp))
             ScoreBreakdownCard(
                 mode = GameMode.PROPERNOUNDLE, won = won, guessCount = guessCount, elapsedSeconds = timeSeconds,
-                boardsSolved = if (won) 1 else 0, totalBoards = 1, hintsUsed = 0,
+                boardsSolved = if (won) 1 else 0, totalBoards = 1, hintsUsed = hintsUsed,
                 bestCorrectLetters = guesses.fold(0) { best, gw ->
                     maxOf(best, com.wordocious.core.ProperNoundle.evaluate(gw, puzzle.answer).count { it == com.wordocious.core.TileState.CORRECT })
                 },

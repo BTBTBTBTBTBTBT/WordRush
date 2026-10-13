@@ -12,7 +12,7 @@ import java.util.Locale
  *   (played = a result is recorded today, win or loss), over both rows' sizes.
  * - Points = the snapshot's Wordocious sweep total plus its Puzzles total. Both are
  *   written by WidgetBridge from the app's own helpers (DailyCompletionsService.totals
- *   and moreTotals: each mode's composite score rounded, then summed), so the widget
+ *   and moreTotals: each mode's composite score truncated like its own card, then summed), so the widget
  *   number is the one the app shows for today. iOS writes the same combined sum.
  * - A snapshot from another day reads as 0/total and 0 points (new puzzles dropped at
  *   local midnight), never yesterday's numbers.
@@ -48,7 +48,7 @@ object WidgetStats {
     }
 
     /** Sum-of-rounds, the app's per-mode rounding rule (web/iOS parity: never round-of-sum). */
-    fun pointsSum(scores: Iterable<Double>): Int = scores.sumOf { Math.round(it) }.toInt()
+    fun pointsSum(scores: Iterable<Double>): Int = scores.sumOf { it.toLong() }.toInt()
 
     // ── Labels ──────────────────────────────────────────────────────────────
 

@@ -106,7 +106,7 @@ data class MoreTotals(val completed: Int, val won: Int, val total: Int, val tota
 fun moreTotals(byMode: Map<String, DailyCompletionsService.Completion>, modes: List<ModeCard> = MORE_CARDS): MoreTotals {
     val daily = moreDailyModes(modes)
     var completed = 0; var won = 0; var time = 0; var score = 0.0
-    for (m in daily) { val c = byMode[m.dbKey!!] ?: continue; completed++; if (c.completed) won++; time += c.timeSeconds; score += Math.round(c.score).toDouble() }
+    for (m in daily) { val c = byMode[m.dbKey!!] ?: continue; completed++; if (c.completed) won++; time += c.timeSeconds; score += kotlin.math.truncate(c.score) }
     return MoreTotals(completed, won, daily.size, time, score.toInt())
 }
 

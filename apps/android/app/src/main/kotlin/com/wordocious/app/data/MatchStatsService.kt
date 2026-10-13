@@ -752,7 +752,7 @@ object MatchStatsService {
         val perDay = HashMap<String, Day>()
         rows.forEach { r ->
             val d = perDay.getOrPut(r.day) { Day() }
-            val pts = r.compositeScore.roundToInt()
+            val pts = r.compositeScore.toInt()  // truncated like every per-game display (10-13)
             if (r.gameMode in puzzleSet) {
                 d.puzzle += pts
                 d.played.add(r.gameMode)

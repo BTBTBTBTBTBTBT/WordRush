@@ -487,7 +487,7 @@ object LeaderboardShare {
                 }
             }
             RowInput(rank = dayNumber, name = formatBoardDate(d),
-                     scoreDisplay = st?.let { String.format(java.util.Locale.US, "%,d pts", Math.round(it.points)) }
+                     scoreDisplay = st?.let { String.format(java.util.Locale.US, "%,d pts", it.points.toLong()) }
                          ?: com.wordocious.app.ModeGen.requiredSweepCount(d).let { n -> "$n/$n won" },
                      subline = subline, isYou = i == shown - 1, dots = st?.dots)
         }

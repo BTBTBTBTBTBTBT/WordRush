@@ -446,14 +446,17 @@ struct GameScreen: View {
 
     /// The run's composite score — the same inputs the breakdown card uses (the
     /// victory card and the share image's gold POINTS window both show it).
+    /// Founder 10-13: the RECORD's own inputs (GameResultsService.computeRunScore), so the popup, the result
+    /// strip and the share image always equal the leaderboard. Gauntlet used the final stage's guesses and boards
+    /// here — a run's share card could show a guess bonus of ~2,000 the leaderboard never gave.
     private var scorePoints: Int {
-        Int(DailyScoring.breakdown(gameMode: mode.rawValue, completed: vm.status == .won,
-                                   guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
-                                   boardsSolved: vm.boards.filter { $0.status == .won }.count,
-                                   totalBoards: vm.boardCount, hintsUsed: vm.hintsUsed,
-                                   stagesCompleted: vm.stagesCompletedForScore,
-                                   bestCorrectLetters: vm.bestCorrectLettersForScore,
-                                   dateKey: vm.isDaily ? getDailySeedDate(vm.state.seed) : nil).total)
+        let rs = GameResultsService.computeRunScore(vm.state, mode: mode)
+        return Int(DailyScoring.breakdown(gameMode: mode.rawValue, completed: rs.won,
+                                          guessCount: rs.guessCount, timeSeconds: vm.elapsedSeconds,
+                                          boardsSolved: rs.boardsSolved, totalBoards: rs.totalBoards,
+                                          hintsUsed: vm.hintsUsed, stagesCompleted: rs.stagesCompleted,
+                                          bestCorrectLetters: rs.bestCorrectLetters,
+                                          dateKey: vm.isDaily ? getDailySeedDate(vm.state.seed) : nil).total)
     }
 
     /// FINISH_SPEC §R2 / §R3: the finished screen's dock. A daily: the 3D share icon

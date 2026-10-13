@@ -1308,7 +1308,7 @@ export async function fetchTodayDailyCompletions(
       won: !!row.completed,
       guesses: row.guess_count ?? 0,
       timeSeconds: row.time_seconds ?? 0,
-      score: Math.round(row.composite_score ?? 0),
+      score: Math.trunc(row.composite_score ?? 0),  // the leaderboard's whole number (formatScore truncates; founder 10-13)
     });
   }
   return out;

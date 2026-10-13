@@ -9,7 +9,6 @@ import {
   type CrosswordState, type ScrambleState, type WordsearchState,
 } from '@wordle-duel/core';
 import { MODES, MODE_BY_DBKEY } from '@/lib/modes.generated';
-import { MODE_SCORE_CONFIG } from '@/lib/composite-scoring';
 import { formatGuessStat } from '@/lib/format';
 import { HOLIDAY_TABLE } from '@/lib/holidays';
 import { loadBankPuzzle } from '@/lib/bank-loader';
@@ -295,8 +294,8 @@ export function CompletedMoreBoard({ dbKey }: { dbKey: string }) {
   const meta = MODE_BY_DBKEY[dbKey];
   const won = recorded.won;
   const stat = formatGuessStat(meta?.guessSemantics ?? 'guesses', meta?.guessBase ?? 1, recorded.guesses);
-  const total = current?.progress?.totalBoards ?? MODE_SCORE_CONFIG[dbKey]?.totalBoards ?? 1;
-  const solved = current?.progress?.boardsSolved ?? (won ? total : 0);
+  const total = current?.progress?.totalBoards ?? 1;
+  const solved = current?.progress?.boardsSolved ?? 0;
 
   return (
     <CollapsibleCompletedCard won={won} summaryLabel={`${stat} · ${formatTime(recorded.timeSeconds)}`}>
@@ -318,8 +317,10 @@ export function CompletedMoreBoard({ dbKey }: { dbKey: string }) {
         </div>
       </div>
 
-      {/* Held while the row loads so a loss's partial credit doesn't jump. */}
-      {!pending && (
+      {/* Held while the row loads so a loss's partial credit doesn't jump. Without the rebuilt progress
+          (signed out, timed out, no board) the card settles on the summary alone: a guessed breakdown
+          dropped hints and a loss's partial credit and disagreed with the leaderboard (founder 10-13). */}
+      {!pending && current?.progress && (
         <ScoreBreakdownCard
           gameMode={dbKey}
           completed={won}
@@ -327,7 +328,7 @@ export function CompletedMoreBoard({ dbKey }: { dbKey: string }) {
           timeSeconds={recorded.timeSeconds}
           boardsSolved={solved}
           totalBoards={total}
-          hintsUsed={current?.progress?.hintsUsed ?? 0}
+          hintsUsed={current.progress.hintsUsed ?? 0}
           day={day}
         />
       )}
