@@ -136,6 +136,9 @@ async function fetchAppleSubscriptions(): Promise<
   try {
     // Daily reports appear with ~1 day lag; walk back a few days to the most
     // recent one that exists (404 = not published yet / no activity).
+    // Apple retires report versions (1_2 went away); when it rejects ours, its 400 names the current one
+    // ("…The latest version for this report is 1_X") — adopt it and keep going (founder 10-13: HTTP 400).
+    let version = '1_3';
     for (let daysAgo = 1; daysAgo <= 4; daysAgo++) {
       const d = new Date(Date.now() - daysAgo * 86400000);
       const reportDate = d.toISOString().slice(0, 10);
@@ -145,13 +148,18 @@ async function fetchAppleSubscriptions(): Promise<
         'filter[reportSubType]': 'SUMMARY',
         'filter[reportType]': 'SUBSCRIPTION',
         'filter[vendorNumber]': vendor,
-        'filter[version]': '1_3',
+        'filter[version]': version,
       });
       const r = await fetch(`https://api.appstoreconnect.apple.com/v1/salesReports?${qs}`, {
         headers: { Authorization: `Bearer ${jwt}`, Accept: 'application/a-gzip' },
       });
       if (r.status === 404) continue;
-      if (!r.ok) return { connected: true as const, error: `Apple salesReports: HTTP ${r.status}` };
+      if (!r.ok) {
+        const detail = await appleErrorDetail(r);
+        const latest = detail.match(/latest version for this report is (\d+_\d+)/i)?.[1];
+        if (r.status === 400 && latest && latest !== version) { version = latest; daysAgo--; continue; }
+        return { connected: true as const, error: `Apple salesReports: HTTP ${r.status}${detail ? ` — ${detail}` : ''}` };
+      }
       const tsv = gunzipSync(Buffer.from(await r.arrayBuffer())).toString('utf8');
       return { connected: true as const, reportDate, ...parseAppleSubscriptionReport(tsv) };
     }
@@ -410,4 +418,16 @@ export async function GET(request: NextRequest) {
     levelPlay,
     adFlags,
   });
+}
+
+/** Apple's error body is JSON ({ errors: [{ title, detail }] }) even when the request asked for gzip. */
+async function appleErrorDetail(r: Response): Promise<string> {
+  try {
+    const text = await r.text();
+    const j = JSON.parse(text) as { errors?: Array<{ title?: string; detail?: string }> };
+    const e = j.errors?.[0];
+    return (e?.detail || e?.title || '').slice(0, 300);
+  } catch {
+    return '';
+  }
 }
