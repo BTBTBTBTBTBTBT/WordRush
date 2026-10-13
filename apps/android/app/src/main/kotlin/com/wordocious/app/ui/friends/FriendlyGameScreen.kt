@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.times
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -124,7 +125,6 @@ import com.wordocious.core.RpsState
 import com.wordocious.core.Side
 import com.wordocious.core.TileState
 import com.wordocious.core.TttState
-import com.wordocious.core.WORD_MAX
 import com.wordocious.core.WORD_MIN
 import com.wordocious.core.applyFriendlyMove
 import com.wordocious.core.friendlyHeadline
@@ -732,6 +732,30 @@ private fun rpsPiece(pick: RpsPick): Int = when (pick) {
     RpsPick.HIDDEN -> R.drawable.art_pocket_rps_hidden
 }
 
+/** The outlined hands for the ring (art_pocket_rps_*_ring): the same pose with a baked plum outline + shadow. */
+private fun rpsRingPiece(pick: RpsPick): Int = when (pick) {
+    RpsPick.ROCK -> R.drawable.art_pocket_rps_rock_ring
+    RpsPick.PAPER -> R.drawable.art_pocket_rps_paper_ring
+    RpsPick.SCISSORS -> R.drawable.art_pocket_rps_scissors_ring
+    RpsPick.HIDDEN -> R.drawable.art_pocket_rps_hidden_ring
+}
+
+/**
+ * The ring art's size so the visible hand matches the plain art shown at 56 dp (long side): each ring file is the plain
+ * hand plus outline/padding, so it scales by the same dp-per-pixel as its plain twin (plain px -> ring px below).
+ */
+private fun rpsRingSize(pick: RpsPick): Pair<Dp, Dp> {
+    // (plain w, plain h, ring w, ring h) in pixels
+    val d = when (pick) {
+        RpsPick.ROCK -> floatArrayOf(230f, 206f, 262f, 238f)
+        RpsPick.PAPER -> floatArrayOf(247f, 278f, 287f, 318f)
+        RpsPick.SCISSORS -> floatArrayOf(215f, 284f, 247f, 316f)
+        RpsPick.HIDDEN -> floatArrayOf(222f, 281f, 254f, 313f)
+    }
+    val f = 56f / maxOf(d[0], d[1])
+    return Pair((d[2] * f).dp, (d[3] * f).dp)
+}
+
 /** The words of the suspense beat (index 3 = SHOOT!). */
 private val RPS_WORDS = listOf("ROCK...", "PAPER...", "SCISSORS...", "SHOOT!")
 
@@ -770,45 +794,57 @@ private fun RpsRevealCard(round: Int, mine: RpsPick, theirs: RpsPick, winner: Si
             if (winner == me) { delay(200); com.wordocious.app.data.Haptics.success() }
         }
     }
-    Column(
-        Modifier.fillMaxWidth().friendsCard().padding(10.dp).graphicsLayer { scaleX = pop.value; scaleY = pop.value },
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
+    // Founder 10-13: the card is the arena. The audience/spotlight backdrop (art_pocket_rps_backdrop, 1200 x 475) fills it
+    // (crop, rounded corners); the ring spans the full card width, bottom-aligned, with no side padding; ROUND N sits on top.
+    Box(
+        Modifier.fillMaxWidth().graphicsLayer { scaleX = pop.value; scaleY = pop.value }.clip(RoundedCornerShape(16.dp)),
     ) {
-        FriendsLabel("ROUND $round")
-        // Founder 10-12: the hands square off inside a wrestling ring (was the purple arena plate; iOS parity): its canvas
-        // under the hands, the back and side ropes rising behind them, there for the whole countdown.
-        Box(contentAlignment = Alignment.BottomCenter) {
-            Image(
-                painterResource(R.drawable.art_pocket_ring), null, contentScale = ContentScale.Fit,
-                modifier = Modifier.size(width = 330.dp, height = 111.dp).clearAndSetSemantics { },
+        Image(
+            painterResource(R.drawable.art_pocket_rps_backdrop), null, contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize().clearAndSetSemantics { },
+        )
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                "ROUND $round", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = Color.White,
+                style = TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color(0xCC1E0A3C), Offset(0f, 2f), 6f)),
+                modifier = Modifier.padding(top = 10.dp, bottom = 6.dp),
             )
-            // The ring art is open at the front (cut just past the star): ropes behind, the hands standing on the canvas.
-            Row(Modifier.padding(top = 18.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                RevealArt("YOU", mine, glow = flipped && winner == me, angle = turn.value, bob = if (flipped) 0f else bob.value, revealed = flipped)
-                // The middle slot: the countdown words, then (9d) the clash burst between the two hands once they turn over.
-                Box(Modifier.width(64.dp).height(40.dp), contentAlignment = Alignment.Center) {
-                    Image(
-                        painterResource(R.drawable.art_pocket_clash_burst), null, contentScale = ContentScale.Fit,
-                        modifier = Modifier.size(40.dp).alpha(if (flipped) 1f else 0f).clearAndSetSemantics { },
-                    )
-                    if (!flipped && beat >= 0) {
-                        androidx.compose.animation.AnimatedContent(
-                            targetState = beat,
-                            transitionSpec = {
-                                (androidx.compose.animation.scaleIn(androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 500f), initialScale = 0.5f) +
-                                    androidx.compose.animation.fadeIn(tween(90))) togetherWith androidx.compose.animation.fadeOut(tween(70))
-                            },
-                            label = "rpsWord",
-                        ) { b ->
-                            com.wordocious.app.ui.BubbleOneLine(
-                                RPS_WORDS[b.coerceIn(0, 3)],
-                                if (b == 3) com.wordocious.app.ui.HeadlinePalette.LEADERBOARD else com.wordocious.app.ui.HeadlinePalette.FRIENDS,
-                                if (b == 3) 17f else 13f, minScale = 0.5f,
-                            )
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
+                Image(
+                    painterResource(R.drawable.art_pocket_ring), null, contentScale = ContentScale.FillWidth,
+                    modifier = Modifier.fillMaxWidth().clearAndSetSemantics { },
+                )
+                // The ring art is open at the front: ropes behind, the outlined hands standing on the mat.
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 26.dp).padding(bottom = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    RevealArt("YOU", mine, glow = flipped && winner == me, angle = turn.value, bob = if (flipped) 0f else bob.value, revealed = flipped)
+                    // The middle slot: the countdown words, then (9d) the clash burst between the two hands once they turn over.
+                    Box(Modifier.width(64.dp).height(40.dp), contentAlignment = Alignment.Center) {
+                        Image(
+                            painterResource(R.drawable.art_pocket_clash_burst), null, contentScale = ContentScale.Fit,
+                            modifier = Modifier.size(40.dp).alpha(if (flipped) 1f else 0f).clearAndSetSemantics { },
+                        )
+                        if (!flipped && beat >= 0) {
+                            androidx.compose.animation.AnimatedContent(
+                                targetState = beat,
+                                transitionSpec = {
+                                    (androidx.compose.animation.scaleIn(androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 500f), initialScale = 0.5f) +
+                                        androidx.compose.animation.fadeIn(tween(90))) togetherWith androidx.compose.animation.fadeOut(tween(70))
+                                },
+                                label = "rpsWord",
+                            ) { b ->
+                                com.wordocious.app.ui.BubbleOneLine(
+                                    RPS_WORDS[b.coerceIn(0, 3)],
+                                    if (b == 3) com.wordocious.app.ui.HeadlinePalette.LEADERBOARD else com.wordocious.app.ui.HeadlinePalette.FRIENDS,
+                                    if (b == 3) 17f else 13f, minScale = 0.5f,
+                                )
+                            }
                         }
                     }
+                    RevealArt(them.uppercase(), theirs, glow = flipped && winner == me.other, angle = turn.value, bob = if (flipped) 0f else bob.value, revealed = flipped)
                 }
-                RevealArt(them.uppercase(), theirs, glow = flipped && winner == me.other, angle = turn.value, bob = if (flipped) 0f else bob.value, revealed = flipped)
             }
         }
     }
@@ -822,7 +858,10 @@ private fun RevealArt(label: String, pick: RpsPick, glow: Boolean, angle: Float 
     val c = kotlin.math.cos(Math.toRadians(angle.toDouble())).toFloat()
     val shown = if (c >= 0f) pick else RpsPick.ROCK
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        // In the ring the hands stand on the canvas bare (no box); the winner glows behind its hand.
+        // In the ring the hands stand on the canvas bare (no box); the winner glows behind its hand. The outlined ring art
+        // (deep-plum outline + drop shadow baked in, ~8% clear padding) is scaled so the visible hand stays 56 dp, and a static
+        // soft ellipse under it grounds it on the mat.
+        val ring = rpsRingSize(shown)
         Box(
             Modifier.size(72.dp)
                 .then(
@@ -831,9 +870,16 @@ private fun RevealArt(label: String, pick: RpsPick, glow: Boolean, angle: Float 
                 ),
             Alignment.Center,
         ) {
+            Box(
+                Modifier.align(Alignment.BottomCenter).padding(bottom = 3.dp).size(58.dp, 13.dp)
+                    .background(
+                        androidx.compose.ui.graphics.Brush.radialGradient(listOf(Color(0x6628084F), Color(0x0028084F))),
+                        androidx.compose.foundation.shape.CircleShape,
+                    ).clearAndSetSemantics { },
+            )
             Image(
-                painterResource(rpsPiece(shown)), if (revealed) pick.raw else "Hidden pick", contentScale = ContentScale.Fit,
-                modifier = Modifier.size(56.dp).graphicsLayer {
+                painterResource(rpsRingPiece(shown)), if (revealed) pick.raw else "Hidden pick", contentScale = ContentScale.Fit,
+                modifier = Modifier.requiredSize(ring.first, ring.second).graphicsLayer {
                     scaleX = maxOf(0.06f, kotlin.math.abs(c))
                     translationY = bob * density
                 },
@@ -844,6 +890,16 @@ private fun RevealArt(label: String, pick: RpsPick, glow: Boolean, angle: Float 
 }
 
 // ── Tic-Tac-Tile ────────────────────────────────────────────────────────────
+
+/**
+ * The shipped # board (art_pocket_ttt_grid, 780 x 776): a lilac slab with purple bars. Founder 10-13: the pieces go to the
+ * cell edges. The cells are the lilac areas between the bars, measured in the art's own pixels (cols 45-256 / 296-479 /
+ * 519-735, rows 45-259 / 281-474 / 498-731), so the layout scales with the board width and taps hit those rects.
+ */
+private const val TTT_W = 780f
+private const val TTT_H = 776f
+private val TTT_COLS = floatArrayOf(45f, 256f, 296f, 479f, 519f, 735f)
+private val TTT_ROWS = floatArrayOf(45f, 259f, 281f, 474f, 498f, 731f)
 
 @Composable
 private fun TttBoard(s: TttState, me: Side, them: String, myTurn: Boolean, onCell: (Int) -> Unit) {
@@ -856,28 +912,31 @@ private fun TttBoard(s: TttState, me: Side, them: String, myTurn: Boolean, onCel
     val won = remember(s.board) { tttLine(s.board)?.cells?.toSet() ?: emptySet() }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
         BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            // L: no grid lines — the cells sit apart on the tray.
-            val tile: Dp = min(98.dp, (maxWidth - 20.dp) / 3)
+            val boardW: Dp = min(maxWidth, 340.dp)
+            val k = boardW / TTT_W
+            val boardH = TTT_H * k
             val winLine = remember(s.board) { tttLine(s.board)?.cells }
-            Box {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                (0 until 3).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        (0 until 3).forEach { col ->
-                            val i = row * 3 + col
-                            TttTile(
-                                s.board[i], me, tile, hint = i in winning, win = i in won,
-                                label = "Row ${row + 1}, column ${col + 1}, " + when (s.board[i]) {
-                                    null -> "empty"; me -> "your X"; else -> "${them}'s O"
-                                },
-                                enabled = myTurn && s.board[i] == null,
-                            ) { onCell(i) }
-                        }
-                    }
+            Box(Modifier.size(boardW, boardH)) {
+                Image(
+                    painterResource(R.drawable.art_pocket_ttt_grid), null, contentScale = ContentScale.FillBounds,
+                    modifier = Modifier.matchParentSize().clearAndSetSemantics { },
+                )
+                (0 until 9).forEach { i ->
+                    val row = i / 3
+                    val col = i % 3
+                    val x0 = TTT_COLS[col * 2]; val x1 = TTT_COLS[col * 2 + 1]
+                    val y0 = TTT_ROWS[row * 2]; val y1 = TTT_ROWS[row * 2 + 1]
+                    TttTile(
+                        s.board[i], me, Modifier.offset(x = x0 * k, y = y0 * k).size((x1 - x0) * k, (y1 - y0) * k),
+                        hint = i in winning, win = i in won,
+                        label = "Row ${row + 1}, column ${col + 1}, " + when (s.board[i]) {
+                            null -> "empty"; me -> "your X"; else -> "${them}'s O"
+                        },
+                        enabled = myTurn && s.board[i] == null,
+                    ) { onCell(i) }
                 }
-            }
-            // 9d: the won line gets the shipped strike (a soft fade-in; static under Reduce Motion).
-            winLine?.let { TttStrike(it, tile) }
+                // 9d: the won line gets the shipped strike (a soft fade-in; static under Reduce Motion).
+                winLine?.let { TttStrike(it, k) }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -888,21 +947,14 @@ private fun TttBoard(s: TttState, me: Side, them: String, myTurn: Boolean, onCel
 }
 
 /**
- * A Tic-Tac-Tile cell (J2): an empty cell is frosted glass on the tray; a placed piece
- * is the glossy art (`art_piece_ttt_x` purple for you, `art_piece_ttt_o` pink for them)
- * dropping in with the type pop (swell 1.07 over [TileMotion.TYPE_MS]); the winning
- * three glow. Reduce Motion: no pop. TalkBack reads [label].
+ * A Tic-Tac-Tile cell: bare on the board (the art is the cell); a placed piece (art_pocket_ttt_x / _o) fills the cell to
+ * its edges (4% inset) dropping in with the type pop (swell 1.07 over [TileMotion.TYPE_MS]); the winning three get a soft
+ * wash, the winning-move hint a dashed outline. Static draws only, no shadows. Reduce Motion: no pop. TalkBack reads [label].
  */
 @Composable
-private fun TttTile(mark: Side?, me: Side, size: Dp, hint: Boolean, win: Boolean, label: String, enabled: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(16.dp)
-    val tone = when (mark) { null -> FriendsTiles.purple; me -> FriendsTiles.purple; else -> TTT_PINK }
-    val glow = when {
-        win -> tone.copy(alpha = 0.9f)
-        mark != null -> tone.copy(alpha = 0.35f)
-        hint -> FriendsTiles.purple.copy(alpha = 0.55f)
-        else -> Color(0x184C1D95)
-    }
+private fun TttTile(mark: Side?, me: Side, modifier: Modifier, hint: Boolean, win: Boolean, label: String, enabled: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(10.dp)
+    val tone = if (mark == null || mark == me) FriendsTiles.purple else TTT_PINK
     // The type pop when a piece lands (not on first show of an already-placed piece).
     val pop = remember { Animatable(1f) }
     var seen by remember { mutableStateOf(mark) }
@@ -915,31 +967,18 @@ private fun TttTile(mark: Side?, me: Side, size: Dp, hint: Boolean, win: Boolean
         seen = mark
     }
     Box(
-        Modifier.size(size)
+        modifier
             .then(if (enabled) Modifier.squishClickable(label = label, onClick = onClick) else Modifier.semantics { contentDescription = label })
-            .shadow(if (win || hint) 12.dp else 4.dp, shape, ambientColor = glow, spotColor = glow)
             .clip(shape)
-            .background(
-                when {
-                    win -> friendsWash(tone, 0.3f)
-                    mark != null -> friendsWash(tone, 0.14f)
-                    else -> PocketNight.cellEmpty()
-                },
-            )
-            .then(
-                when {
-                    hint -> Modifier.dashedBorder(2.dp, FriendsTiles.purple, 16.dp)
-                    win -> Modifier.border(2.5.dp, tone, shape)
-                    else -> Modifier.border(1.5.dp, friendsLine(if (mark == null) FriendsTiles.purple else tone, 0.3f), shape)
-                },
-            ),
+            .then(if (win) Modifier.background(tone.copy(alpha = 0.22f)) else Modifier)
+            .then(if (hint) Modifier.dashedBorder(2.dp, Color(0xFFF59E0B), 10.dp) else Modifier),
         Alignment.Center,
     ) {
         if (mark != null) {
             Image(
                 painterResource(if (mark == me) R.drawable.art_pocket_ttt_x else R.drawable.art_pocket_ttt_o),
                 contentDescription = null, contentScale = ContentScale.Fit,
-                modifier = Modifier.size(size * 0.88f).graphicsLayer { scaleX = pop.value; scaleY = pop.value }.clearAndSetSemantics { },
+                modifier = Modifier.fillMaxSize(0.96f).graphicsLayer { scaleX = pop.value; scaleY = pop.value }.clearAndSetSemantics { },
             )
         }
     }
@@ -947,22 +986,22 @@ private fun TttTile(mark: Side?, me: Side, size: Dp, hint: Boolean, win: Boolean
 
 /**
  * The strike across the winning three (art_pocket_ttt_strike, a gold bar with sparkles, ~1.46 : 1): centered on the
- * line's midpoint, long enough to cover the three cells, rotated to the line's angle (rows 0, columns 90, diagonals
- * +-45). A transform-only fade-in over 320 ms.
+ * line's midpoint (in the grid art's pixels, scaled by [k] dp per pixel), long enough to cover the three cells, rotated
+ * to the line's angle (rows 0, columns 90, diagonals +-45). A transform-only fade-in over 320 ms.
  */
 @Composable
-private fun TttStrike(cells: List<Int>, tile: Dp) {
-    val step = tile + 10.dp
-    fun cx(i: Int) = step * (i % 3) + tile / 2
-    fun cy(i: Int) = step * (i / 3) + tile / 2
+private fun TttStrike(cells: List<Int>, k: Dp) {
+    fun cx(i: Int) = (TTT_COLS[(i % 3) * 2] + TTT_COLS[(i % 3) * 2 + 1]) / 2f
+    fun cy(i: Int) = (TTT_ROWS[(i / 3) * 2] + TTT_ROWS[(i / 3) * 2 + 1]) / 2f
     val first = cells.first()
     val last = cells.last()
-    val dx = (cx(last) - cx(first)).value
-    val dy = (cy(last) - cy(first)).value
-    val len = (hypot(dx, dy) + tile.value * 0.9f).dp
+    val dx = cx(last) - cx(first)
+    val dy = cy(last) - cy(first)
+    val cell = 200f
+    val len = (hypot(dx, dy) + cell * 0.9f) * k
     val h = len * (244f / 356f)
-    val mx = (cx(first) + cx(last)) / 2
-    val my = (cy(first) + cy(last)) / 2
+    val mx = (cx(first) + cx(last)) / 2f * k
+    val my = (cy(first) + cy(last)) / 2f * k
     val angle = Math.toDegrees(atan2(dy, dx).toDouble()).toFloat()
     val fade = remember(cells) { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
     LaunchedEffect(cells) { if (!WTheme.reducedMotion) fade.animateTo(1f, tween(320, easing = FastOutSlowInEasing)) }
@@ -1060,56 +1099,80 @@ private fun CoinBoard(gameId: String, s: CoinState, me: Side, them: String, myTu
     val other = if (landedFace == CoinFace.HEADS) CoinFace.TAILS else CoinFace.HEADS
     val frame = coinArt2(if (c >= 0f) landedFace else other)
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-        Box(Modifier.size(width = 170.dp, height = 170.dp), contentAlignment = Alignment.Center) {
-            // the reveal glow, warm gold behind the coin
-            Box(
-                Modifier.size(220.dp).graphicsLayer { alpha = glow.value; val k = 0.6f + 0.4f * glow.value; scaleX = k; scaleY = k }
-                    .drawBehind {
-                        drawCircle(
-                            androidx.compose.ui.graphics.Brush.radialGradient(
-                                listOf(Color(0xB3FDE68A), Color(0x00FDE68A)), center = center, radius = size.minDimension / 2f,
-                            ),
+        // Founder 10-13: Call It plays on a theater stage. The backdrop (art_pocket_coin_backdrop, 1200 x 592) fills the card
+        // aspect-fill with rounded corners; the velvet stage (art_pocket_coin_stage, 1100 x 472) sits 90% wide at the bottom;
+        // the coin floats over the stage's top surface (its centre is ~32% down the stage art) and is never clipped: only the
+        // backdrop image clips to the card radius, the coin and its glow draw unclipped above it.
+        BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+            val cardW: Dp = min(maxWidth, 360.dp)
+            val cardH = cardW * 0.66f
+            val stageW = cardW * 0.9f
+            val stageH = stageW * (472f / 1100f)
+            val coin = cardW * 0.34f
+            val feetPad = 4.dp + stageH * 0.68f
+            val hopK = coin.value / 140f
+            Box(Modifier.size(cardW, cardH), contentAlignment = Alignment.BottomCenter) {
+                Image(
+                    painterResource(R.drawable.art_pocket_coin_backdrop), null, contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize().clip(RoundedCornerShape(16.dp)).clearAndSetSemantics { },
+                )
+                Image(
+                    painterResource(R.drawable.art_pocket_coin_stage), null, contentScale = ContentScale.Fit,
+                    modifier = Modifier.padding(bottom = 4.dp).size(stageW, stageH).clearAndSetSemantics { },
+                )
+                // the contact shadow shrinks and fades as the coin rises
+                Image(
+                    painterResource(R.drawable.art_pocket_coin_shadow), null, contentScale = ContentScale.Fit,
+                    modifier = Modifier.padding(bottom = feetPad - coin * 0.12f).size(coin * 0.9f, coin * 0.28f)
+                        .graphicsLayer { val up = (-hop.value / 110f).coerceIn(0f, 1f); val k = 1f - 0.3f * up; scaleX = k; scaleY = k; alpha = 0.9f - 0.45f * up }
+                        .clearAndSetSemantics { },
+                )
+                // the coin's own frame: its feet on the stage surface
+                Box(Modifier.padding(bottom = feetPad).size(coin), contentAlignment = Alignment.BottomCenter) {
+                    // the reveal glow, warm gold behind the coin
+                    Box(
+                        Modifier.align(Alignment.Center).requiredSize(coin * 1.6f).graphicsLayer { alpha = glow.value; val k = 0.6f + 0.4f * glow.value; scaleX = k; scaleY = k }
+                            .drawBehind {
+                                drawCircle(
+                                    androidx.compose.ui.graphics.Brush.radialGradient(
+                                        listOf(Color(0xB3FDE68A), Color(0x00FDE68A)), center = center, radius = size.minDimension / 2f,
+                                    ),
+                                )
+                            }.clearAndSetSemantics { },
+                    )
+                    // 9d: a won call wears the shipped sparkle ring once the coin has landed (a fade, no spin; static under Reduce Motion).
+                    val ringAlpha by androidx.compose.animation.core.animateFloatAsState(
+                        if (last?.winner == me && settled) 1f else 0f, tween(if (still) 0 else 320), label = "coinRing",
+                    )
+                    if (ringAlpha > 0f) {
+                        Image(
+                            painterResource(R.drawable.art_pocket_coin_sparkle_ring), null, contentScale = ContentScale.Fit,
+                            modifier = Modifier.align(Alignment.Center).requiredSize(coin * 1.25f).alpha(ringAlpha).clearAndSetSemantics { },
                         )
-                    }.clearAndSetSemantics { },
-            )
-            // 9d: a won call wears the shipped sparkle ring once the coin has landed (a fade, no spin; static under Reduce Motion).
-            val ringAlpha by androidx.compose.animation.core.animateFloatAsState(
-                if (last?.winner == me && settled) 1f else 0f, tween(if (still) 0 else 320), label = "coinRing",
-            )
-            if (ringAlpha > 0f) {
-                Image(
-                    painterResource(R.drawable.art_pocket_coin_sparkle_ring), null, contentScale = ContentScale.Fit,
-                    modifier = Modifier.size(170.dp).alpha(ringAlpha).clearAndSetSemantics { },
-                )
-            }
-            // the contact shadow shrinks and fades as the coin rises
-            Image(
-                painterResource(R.drawable.art_pocket_coin_shadow), null, contentScale = ContentScale.Fit,
-                modifier = Modifier.align(Alignment.BottomCenter).size(130.dp, 40.dp)
-                    .graphicsLayer { val up = (-hop.value / 110f).coerceIn(0f, 1f); val k = 1f - 0.3f * up; scaleX = k; scaleY = k; alpha = 0.9f - 0.45f * up }
-                    .clearAndSetSemantics { },
-            )
-            // squash / teeter / hop about the feet (outer), the end-over-end turn about the middle (inner)
-            Box(
-                Modifier.size(140.dp)
-                    .graphicsLayer {
-                        transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
-                        scaleX = 2f - squashA.value
-                        scaleY = squashA.value
-                        rotationZ = teeter.value
-                        translationY = hop.value * density
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                val edge = 1f - kotlin.math.abs(c)
-                Image(
-                    painterResource(frame), if (settled) landedFace.raw else "Coin flipping", contentScale = ContentScale.Fit,
-                    // it darkens a touch on the far side of the turn
-                    colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(
-                        androidx.compose.ui.graphics.ColorMatrix().apply { setToScale(1f - 0.18f * edge, 1f - 0.18f * edge, 1f - 0.18f * edge, 1f) },
-                    ),
-                    modifier = Modifier.fillMaxSize().graphicsLayer { scaleY = maxOf(0.07f, kotlin.math.abs(c)) },
-                )
+                    }
+                    // squash / teeter / hop about the feet (outer), the end-over-end turn about the middle (inner)
+                    Box(
+                        Modifier.fillMaxSize()
+                            .graphicsLayer {
+                                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
+                                scaleX = 2f - squashA.value
+                                scaleY = squashA.value
+                                rotationZ = teeter.value
+                                translationY = hop.value * hopK * density
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        val edge = 1f - kotlin.math.abs(c)
+                        Image(
+                            painterResource(frame), if (settled) landedFace.raw else "Coin flipping", contentScale = ContentScale.Fit,
+                            // it darkens a touch on the far side of the turn
+                            colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(
+                                androidx.compose.ui.graphics.ColorMatrix().apply { setToScale(1f - 0.18f * edge, 1f - 0.18f * edge, 1f - 0.18f * edge, 1f) },
+                            ),
+                            modifier = Modifier.fillMaxSize().graphicsLayer { scaleY = maxOf(0.07f, kotlin.math.abs(c)) },
+                        )
+                    }
+                }
             }
         }
         last?.let { r ->
@@ -1171,46 +1234,67 @@ private fun PassBoard(
         else -> FriendsTiles.slate
     }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-        (0 until PASS_MAX_GUESSES).forEach { row ->
-            val g = s.guesses.getOrNull(row)
-            val typingRow = g == null && row == s.guesses.size && myTurn
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                Box(Modifier.size(26.dp), Alignment.Center) {
-                    when {
-                        g != null && g.by == me -> FriendFace(profile?.username ?: "You", profile?.avatarUrl, profile?.avatarEmoji, 24.dp, online = false, accentHex = profile?.accentColor)
-                        g != null -> FriendFace(opp.username, opp.avatarUrl, opp.avatarEmoji, 24.dp, online = false)
-                    }
-                }
-                (0 until 5).forEach { i ->
-                    val shape = RoundedCornerShape(8.dp)
-                    if (g != null) {
-                        val t = g.tiles.getOrNull(i) ?: TileState.ABSENT
-                        // 9d: the shipped tiles (purple = right spot, gold = wrong spot, white = not in the word).
-                        Box(Modifier.size(44.dp), Alignment.Center) {
-                            Image(
-                                painterResource(when (t) {
-                                    TileState.CORRECT -> R.drawable.art_pocket_tile_purple
-                                    TileState.PRESENT -> R.drawable.art_pocket_tile_gold
-                                    else -> R.drawable.art_pocket_tile_white
-                                }),
-                                null, contentScale = ContentScale.FillBounds, modifier = Modifier.matchParentSize().clearAndSetSemantics { },
-                            )
-                            Text(
-                                g.word.getOrNull(i)?.toString() ?: "", fontSize = 20.sp, fontWeight = FontWeight.Black,
-                                color = when (t) { TileState.CORRECT -> Color(0xFF3B0764); TileState.PRESENT -> Color(0xFF5B3A00); else -> TILE_INK },
-                            )
+        // Founder 10-13: the guesses live on the puzzle-piece tray (art_pocket_pass_tray, 770 x 914: knobs top + right, notch left +
+        // bottom). Its body is x 62-620, y 176-829; the six rows (a small marker + five tiles) sit centered as ONE group in that
+        // body, the marker close to the tiles (gap ~12% of a tile). Tile size comes from the body width (marker 0.6 + gap 0.12 +
+        // 5 tiles + 4 gaps of 0.1) and the body height (6 tiles + 5 gaps), whichever binds.
+        BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+            val trayW: Dp = min(maxWidth, 340.dp)
+            val k = trayW / 770f
+            val trayH = 914f * k
+            val bodyW = (620f - 62f) * k
+            val bodyH = (829f - 176f) * k
+            val t: Dp = min(bodyW / 6.2f, bodyH / 6.5f) * 0.97f
+            val gap = t * 0.1f
+            val marker = t * 0.6f
+            val groupW = marker + t * 0.12f + t * 5 + gap * 4
+            val groupH = t * 6 + gap * 5
+            // the group's top-left inside the tray: centered on the body rect
+            val gx = 62f * k + (bodyW - groupW) / 2
+            val gy = 176f * k + (bodyH - groupH) / 2
+            Box(Modifier.size(trayW, trayH)) {
+                Image(
+                    painterResource(R.drawable.art_pocket_pass_tray), null, contentScale = ContentScale.FillBounds,
+                    modifier = Modifier.matchParentSize().clearAndSetSemantics { },
+                )
+                Column(Modifier.offset(x = gx, y = gy), verticalArrangement = Arrangement.spacedBy(gap)) {
+                    (0 until PASS_MAX_GUESSES).forEach { row ->
+                        val g = s.guesses.getOrNull(row)
+                        val typingRow = g == null && row == s.guesses.size && myTurn
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // the marker: a gold ring, holding the guesser's face once the row is played
+                            Box(Modifier.size(marker), Alignment.Center) {
+                                when {
+                                    g != null && g.by == me -> FriendFace(profile?.username ?: "You", profile?.avatarUrl, profile?.avatarEmoji, marker, online = false, accentHex = profile?.accentColor)
+                                    g != null -> FriendFace(opp.username, opp.avatarUrl, opp.avatarEmoji, marker, online = false)
+                                    else -> Box(Modifier.size(marker * 0.8f).border(1.5.dp, Color(0xFFFBBF24), androidx.compose.foundation.shape.CircleShape).clearAndSetSemantics { })
+                                }
+                            }
+                            Spacer(Modifier.width(t * 0.12f))
+                            Row(horizontalArrangement = Arrangement.spacedBy(gap)) { (0 until 5).forEach { i ->
+                                val t5 = if (g != null) (g.tiles.getOrNull(i) ?: TileState.ABSENT) else null
+                                val ch = if (g != null) g.word.getOrNull(i) else if (typingRow) typed.getOrNull(i) else null
+                                // 9d: the shipped tiles (purple = right spot, gold = wrong spot, white = not in the word / still empty).
+                                Box(Modifier.size(t), Alignment.Center) {
+                                    Image(
+                                        painterResource(when (t5) {
+                                            TileState.CORRECT -> R.drawable.art_pocket_tile_purple
+                                            TileState.PRESENT -> R.drawable.art_pocket_tile_gold
+                                            else -> R.drawable.art_pocket_tile_white
+                                        }),
+                                        null, contentScale = ContentScale.FillBounds, modifier = Modifier.matchParentSize().clearAndSetSemantics { },
+                                    )
+                                    if (ch != null) {
+                                        Text(
+                                            ch.toString(), fontSize = (t.value * 0.46f).sp, fontWeight = FontWeight.Black,
+                                            color = when (t5) { TileState.CORRECT -> Color(0xFF3B0764); TileState.PRESENT -> Color(0xFF5B3A00); else -> TILE_INK },
+                                        )
+                                    }
+                                }
+                            } }
                         }
-                    } else {
-                        val ch = if (typingRow) typed.getOrNull(i) else null
-                        // B1: an empty tile is frosted glass (not solid white) with a faint lilac line.
-                        Box(
-                            Modifier.size(44.dp).clip(shape).background(if (typingRow && ch != null) PocketNight.cell() else PocketNight.cellEmpty())
-                                .border(if (typingRow) 2.dp else 1.5.dp, if (typingRow && ch != null) PocketNight.purpleInk() else PocketNight.cellLine(), shape),
-                            Alignment.Center,
-                        ) { Text(ch?.toString() ?: "", fontSize = 20.sp, fontWeight = FontWeight.Black, color = DEEP) }
                     }
                 }
-                Spacer(Modifier.width(26.dp))
             }
         }
         if (answer != null) {
@@ -1303,24 +1387,41 @@ private fun GhostBoard(s: GhostState, me: Side, them: String, myTurn: Boolean, b
     // A tap only fills the dashed tile; ADD <L> plays it, so a mis-tap can't lose a round.
     var picked by remember(s.fragment, s.rounds.size) { mutableStateOf<Char?>(null) }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-        // The fragment as big tiles, each colored by who played it; an empty dashed tile at the end on your turn.
+        // Founder 10-13: the fragment sits on the ghost tray (art_pocket_ghost_tray, 1200 x 307, the face on the left). Its plum panel
+        // is x 256-1078, y 101-226; the letter tiles are centered in it. Every letter is purple, the newest gold; on your turn a
+        // dashed gold outline marks the next slot (it shows the picked letter).
         val count = s.fragment.length + if (myTurn) 1 else 0
-        BoxWithConstraints(Modifier.fillMaxWidth().padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
-            val gap = 6.dp
-            val tile: Dp = if (count == 0) 52.dp else min(52.dp, (maxWidth - gap * (count - 1)) / count)
-            if (count == 0) {
-                Box(Modifier.height(tile), Alignment.Center) {
-                    FriendsLabel(if (whoseTurn(s) != null) "${them.uppercase()} STARTS THE WORD" else "THE ROUNDS ARE IN")
-                }
-            } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(gap), verticalAlignment = Alignment.CenterVertically) {
-                    s.fragment.forEachIndexed { i, ch -> PlayerTile(ch, s.letters.getOrNull(i) == me, tile, 10.dp) }
-                    if (myTurn) {
-                        Box(
-                            Modifier.size(tile).clip(RoundedCornerShape(10.dp)).background(if (picked != null) YOU_TINT else PocketNight.cellEmpty())
-                                .dashedBorder(2.dp, PocketNight.purpleInk(), 10.dp),
-                            Alignment.Center,
-                        ) { Text(picked?.toString() ?: "", fontSize = (tile.value * 0.46f).sp, fontWeight = FontWeight.Black, color = PocketNight.purpleInk()) }
+        BoxWithConstraints(Modifier.fillMaxWidth().padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
+            val trayW: Dp = maxWidth
+            val k = trayW / 1200f
+            val trayH = 307f * k
+            val panelW = (1078f - 256f) * k
+            val panelH = (226f - 101f) * k
+            // tiles: up to the panel's height (less a little air), shrinking so `count` tiles + 12% gaps fit its width
+            val tile: Dp = if (count == 0) panelH * 0.9f else min(panelH * 0.9f, panelW * 0.94f / (count + 0.12f * (count - 1)))
+            val gap = tile * 0.12f
+            Box(Modifier.size(trayW, trayH)) {
+                Image(
+                    painterResource(R.drawable.art_pocket_ghost_tray), null, contentScale = ContentScale.FillBounds,
+                    modifier = Modifier.matchParentSize().clearAndSetSemantics { },
+                )
+                Box(Modifier.offset(x = 256f * k, y = 101f * k).size(panelW, panelH), Alignment.Center) {
+                    if (count == 0) {
+                        Text(
+                            if (whoseTurn(s) != null) "${them.uppercase()} STARTS THE WORD" else "THE ROUNDS ARE IN",
+                            fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color.White.copy(alpha = 0.9f), maxLines = 1,
+                        )
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(gap), verticalAlignment = Alignment.CenterVertically) {
+                            s.fragment.forEachIndexed { i, ch -> PlayerTile(ch, mine = i != s.fragment.lastIndex, tile, tile * 0.2f) }
+                            if (myTurn) {
+                                Box(
+                                    Modifier.size(tile).clip(RoundedCornerShape(tile * 0.2f)).then(if (picked != null) Modifier.background(Color(0x33FBBF24)) else Modifier)
+                                        .dashedBorder(2.dp, Color(0xFFFBBF24), tile * 0.2f),
+                                    Alignment.Center,
+                                ) { Text(picked?.toString() ?: "", fontSize = (tile.value * 0.46f).sp, fontWeight = FontWeight.Black, color = Color(0xFFFDE68A)) }
+                            }
+                        }
                     }
                 }
             }
@@ -1389,29 +1490,8 @@ private fun ChainBoard(
     var typed by remember(gameId, s.words.size) { mutableStateOf(needed?.toString() ?: "") }
     val locked = if (needed != null) 1 else 0
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        if (s.words.isEmpty()) {
-            Text(
-                if (myTurn) "Any $WORD_MIN- to $CHAIN_WORD_MAX-letter word opens the chain." else "${them.replaceFirstChar { it.uppercaseChar() }} opens the chain.",
-                fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        // The chain: one pill per word (tiles by player), points chip at the right; the newest word's last letter glows.
-        s.words.forEachIndexed { wi, w ->
-            if (wi > 0) Image(painterResource(R.drawable.art_pocket_chain_links), null, contentScale = ContentScale.Fit, modifier = Modifier.size(18.dp).clearAndSetSemantics { })
-            val mine = w.by == me
-            val newest = wi == s.words.lastIndex
-            Row(
-                Modifier.fillMaxWidth().friendsCard().padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                w.word.forEachIndexed { i, ch -> PlayerTile(ch, mine, 30.dp, 7.dp, glow = newest && i == w.word.lastIndex && whoseTurn(s) != null) }
-                Spacer(Modifier.weight(1f))
-                Text(
-                    "+${w.points}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (mine) PocketNight.purpleInk() else PocketNight.amberInk(),
-                    modifier = Modifier.clip(RoundedCornerShape(50)).background(if (mine) YOU_TINT else THEM_TINT).padding(horizontal = 8.dp, vertical = 3.dp),
-                )
-            }
-        }
+        // Founder 10-13: the chain hangs on the gold chain board (art_pocket_chain_board, 1100 x 581; interior x 110-985, y 206-462).
+        ChainStairs(s, me)
         if (whoseTurn(s) != null && !myTurn) {
             FriendsLabel(
                 if (needed != null) "${them.uppercase()} NEEDS A WORD WITH $needed" else "${them.uppercase()} IS THINKING",
@@ -1419,21 +1499,29 @@ private fun ChainBoard(
             )
         }
         if (myTurn) {
-            // Your word: 7 tiles, the locked first letter in a soft purple tile, tiles 6–7 dashed (optional).
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.padding(top = 6.dp)) {
-                (0 until WORD_MAX).forEach { i ->
-                    val ch = typed.getOrNull(i)
-                    val shape = RoundedCornerShape(8.dp)
-                    val isLocked = i < locked
-                    val optional = i >= WORD_MIN && ch == null
-                    Box(
-                        Modifier.size(40.dp).clip(shape).background(if (isLocked) YOU_TINT else if (ch != null) PocketNight.cell() else PocketNight.cellEmpty())
-                            .then(
-                                if (optional) Modifier.dashedBorder(2.dp, PocketNight.cellLine(), 8.dp)
-                                else Modifier.border(2.dp, if (ch != null) PocketNight.purpleInk() else PocketNight.cellLine(), shape),
-                            ),
-                        Alignment.Center,
-                    ) { Text(ch?.toString() ?: "", fontSize = 18.sp, fontWeight = FontWeight.Black, color = if (isLocked) PocketNight.purpleInk() else DEEP) }
+            // Your word (5-15 letters): the typed letters plus ONE empty next slot (dashed once the word is long enough to send); the
+            // locked first letter stays in its soft purple tile; the tiles shrink smoothly as the word grows so it always fits one row.
+            BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 6.dp), contentAlignment = Alignment.Center) {
+                val slots = typed.length + if (typed.length < CHAIN_WORD_MAX) 1 else 0
+                val fit = maxWidth / (slots + 0.12f * (slots - 1))
+                val target = min(40.dp, fit)
+                val tile by androidx.compose.animation.core.animateDpAsState(target, tween(if (WTheme.reducedMotion) 0 else 120), label = "chainEntry")
+                val gap = tile * 0.12f
+                val shape = RoundedCornerShape(tile * 0.2f)
+                Row(horizontalArrangement = Arrangement.spacedBy(gap), verticalAlignment = Alignment.CenterVertically) {
+                    (0 until slots).forEach { i ->
+                        val ch = typed.getOrNull(i)
+                        val isLocked = i < locked
+                        val optional = ch == null && i >= WORD_MIN
+                        Box(
+                            Modifier.size(tile).clip(shape).background(if (isLocked) YOU_TINT else if (ch != null) PocketNight.cell() else PocketNight.cellEmpty())
+                                .then(
+                                    if (optional) Modifier.dashedBorder(2.dp, PocketNight.cellLine(), tile * 0.2f)
+                                    else Modifier.border(2.dp, if (ch != null) PocketNight.purpleInk() else PocketNight.cellLine(), shape),
+                                ),
+                            Alignment.Center,
+                        ) { Text(ch?.toString() ?: "", fontSize = (tile.value * 0.45f).sp, fontWeight = FontWeight.Black, color = if (isLocked) PocketNight.purpleInk() else DEEP, maxLines = 1) }
+                    }
                 }
             }
             Spacer(Modifier.height(2.dp))
@@ -1449,7 +1537,7 @@ private fun ChainBoard(
                         }
                     }
                     keys.forEach { k ->
-                        KeyCap(k.toString(), Modifier.weight(1f), bg = KEY_FACE, ink = DEEP, enabled = !busy) { if (typed.length < WORD_MAX) typed += k }
+                        KeyCap(k.toString(), Modifier.weight(1f), bg = KEY_FACE, ink = DEEP, enabled = !busy) { if (typed.length < CHAIN_WORD_MAX) typed += k }
                     }
                     if (r == 2) {
                         DeleteKey(Modifier.weight(1.6f)) { if (typed.length > locked) typed = typed.dropLast(1) }
@@ -1462,5 +1550,104 @@ private fun ChainBoard(
             fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         )
+    }
+}
+
+/**
+ * The staircase on the chain board: the previous word on top, the newest below, starting under the previous word's last
+ * letter and joined to it by the gold link (art_pocket_chain_link, 213 x 458: the same letter ends one word and opens the
+ * next). Shows the last two words (three when they fit at a readable size). Tiles are as large as the interior allows
+ * (max 36 dp, min 13 dp) with 16% gaps; if the staircase would run past the interior's right edge the new word shifts left
+ * as far as needed (to the edge at most) and the link follows the slant from the previous last letter to the new first one.
+ * Players keep their colors (purple = you, gold = them). All laid out once, static images.
+ */
+@Composable
+private fun ChainStairs(s: ChainState, me: Side) {
+    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        val boardW: Dp = min(maxWidth, 400.dp)
+        val k = boardW.value / 1100f
+        val boardH = 581f * k
+        val iw = (985f - 110f) * k
+        val ih = (462f - 206f) * k
+        val live = whoseTurn(s) != null
+        // how many words, and how big the tiles are
+        val g = 0.16f
+        fun tNatural(n: Int): Float {
+            val ws = s.words.takeLast(n)
+            val steps = ws.sumOf { it.word.length - 1 }
+            return minOf(iw / (steps * (1f + g) + 1f), ih / (1f + 1.4f * (n - 1)), 36f)
+        }
+        val n: Int
+        val t: Float
+        if (s.words.size >= 3 && tNatural(3) >= 18f) { n = 3; t = tNatural(3) }
+        else if (s.words.size >= 2) {
+            n = 2
+            val nat = tNatural(2)
+            val longest = s.words.takeLast(2).maxOf { it.word.length }
+            t = if (nat >= 18f) nat else maxOf(13f, minOf(ih / 2.4f, iw / ((longest - 1) * (1f + g) + 1f), 36f))
+        } else {
+            n = s.words.size
+            t = if (n == 0) 30f else maxOf(13f, tNatural(1))
+        }
+        val shown = s.words.takeLast(n)
+        val step = t * (1f + g)
+        // each word's left edge: the staircase, centered as a group, then pulled back inside the interior
+        val natural = FloatArray(n)
+        for (i in 1 until n) natural[i] = natural[i - 1] + (shown[i - 1].word.length - 1) * step
+        val groupW = if (n == 0) 0f else natural[n - 1] + (shown[n - 1].word.length - 1) * step + t
+        val offset = maxOf(0f, (iw - groupW) / 2f)
+        val xs = FloatArray(n) { i -> (offset + natural[i]).coerceIn(0f, maxOf(0f, iw - ((shown[i].word.length - 1) * step + t))) }
+        val pitch = t * 1.4f
+        val totalH = if (n == 0) 0f else t + pitch * (n - 1) / 1f
+        val y0 = (ih - totalH) / 2f
+        Box(Modifier.size(boardW, boardH.dp)) {
+            Image(
+                painterResource(R.drawable.art_pocket_chain_board), null, contentScale = ContentScale.FillBounds,
+                modifier = Modifier.matchParentSize().clearAndSetSemantics { },
+            )
+            Box(Modifier.offset(x = (110f * k).dp, y = (206f * k).dp).size(iw.dp, ih.dp)) {
+                if (n == 0) {
+                    Text(
+                        "Any $WORD_MIN- to $CHAIN_WORD_MAX-letter word opens the chain.",
+                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.9f), textAlign = TextAlign.Center,
+                        modifier = Modifier.align(Alignment.Center).padding(horizontal = 12.dp),
+                    )
+                }
+                shown.forEachIndexed { wi, w ->
+                    val mine = w.by == me
+                    val newest = w === s.words.last()
+                    Row(
+                        Modifier.offset(x = xs[wi].dp, y = (y0 + pitch * wi).dp),
+                        horizontalArrangement = Arrangement.spacedBy((t * g).dp),
+                    ) {
+                        w.word.forEachIndexed { i, ch -> PlayerTile(ch, mine, t.dp, (t * 0.22f).dp, glow = newest && i == w.word.lastIndex && live) }
+                    }
+                }
+                // the links, over the tile edges: one upright link when the word starts under the last letter, else a slanted run
+                for (wi in 1 until n) {
+                    val ax = xs[wi - 1] + (shown[wi - 1].word.length - 1) * step + t / 2f
+                    val ay = y0 + pitch * (wi - 1) + t
+                    val bx = xs[wi] + t / 2f
+                    val by = y0 + pitch * wi
+                    val dx = bx - ax
+                    val dy = by - ay
+                    val lh = t * 0.8f
+                    val lw = lh * (213f / 458f)
+                    val dist = hypot(dx, dy)
+                    val count = if (kotlin.math.abs(dx) < 1f) 1 else minOf(24, kotlin.math.ceil(dist / (lh * 0.7f)).toInt())
+                    val angle = Math.toDegrees(atan2(-dx, dy).toDouble()).toFloat()
+                    for (j in 0 until count) {
+                        val f = (j + 0.5f) / count
+                        val cx = ax + dx * f
+                        val cy = ay + dy * f
+                        Image(
+                            painterResource(R.drawable.art_pocket_chain_link), null, contentScale = ContentScale.Fit,
+                            modifier = Modifier.offset(x = (cx - lw / 2f).dp, y = (cy - lh / 2f).dp).size(lw.dp, lh.dp)
+                                .graphicsLayer { rotationZ = if (count == 1) 0f else angle }.clearAndSetSemantics { },
+                        )
+                    }
+                }
+            }
+        }
     }
 }
