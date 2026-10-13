@@ -1,0 +1,11576 @@
+{
+ "ABID": {
+  "from": "ABIDED",
+  "puzzles": [
+   "hb0139"
+  ],
+  "zipf": 2.23
+ },
+ "ABUTTED": {
+  "from": "ABUT",
+  "puzzles": [
+   "hb0417"
+  ],
+  "zipf": 1.69
+ },
+ "ACCOR": {
+  "from": "ACCORD",
+  "puzzles": [
+   "hb0245",
+   "hb0361"
+  ],
+  "zipf": 2.16
+ },
+ "ACHER": {
+  "from": "ACHE",
+  "puzzles": [
+   "hb0110",
+   "hb0198",
+   "hb0247",
+   "hb0285",
+   "hb0379",
+   "hb0492"
+  ],
+  "zipf": 1.62
+ },
+ "ACTE": {
+  "from": "ACTED",
+  "puzzles": [
+   "hb0074",
+   "hb0188",
+   "hb0378",
+   "hb0389",
+   "hb0400",
+   "hb0417",
+   "hb0506",
+   "hb0567"
+  ],
+  "zipf": 1.99
+ },
+ "ACTO": {
+  "from": "ACTOR",
+  "puzzles": [
+   "hb0382"
+  ],
+  "zipf": 2.03
+ },
+ "ADDE": {
+  "from": "ADDED",
+  "puzzles": [
+   "hb0035",
+   "hb0151",
+   "hb0188",
+   "hb0231",
+   "hb0269",
+   "hb0334",
+   "hb0378",
+   "hb0389",
+   "hb0400",
+   "hb0404",
+   "hb0417",
+   "hb0475",
+   "hb0515",
+   "hb0529",
+   "hb0551",
+   "hb0584",
+   "hb0597"
+  ],
+  "zipf": 1.7
+ },
+ "ADDL": {
+  "from": "ADDLED",
+  "puzzles": [
+   "hb0065",
+   "hb0151",
+   "hb0188",
+   "hb0236",
+   "hb0269",
+   "hb0298",
+   "hb0314",
+   "hb0346",
+   "hb0389",
+   "hb0459",
+   "hb0475",
+   "hb0527",
+   "hb0529",
+   "hb0597"
+  ],
+  "zipf": 1.62
+ },
+ "ADDLE": {
+  "from": "ADDLED",
+  "puzzles": [
+   "hb0065",
+   "hb0151",
+   "hb0188",
+   "hb0236",
+   "hb0269",
+   "hb0298",
+   "hb0314",
+   "hb0346",
+   "hb0389",
+   "hb0459",
+   "hb0475",
+   "hb0527",
+   "hb0529",
+   "hb0551",
+   "hb0597"
+  ],
+  "zipf": 1.69
+ },
+ "ADDUCE": {
+  "from": "ADDUCED",
+  "puzzles": [
+   "hb0334",
+   "hb0389",
+   "hb0417",
+   "hb0506",
+   "hb0515",
+   "hb0567"
+  ],
+  "zipf": 1.68
+ },
+ "ADMIR": {
+  "from": "ADMIRED",
+  "puzzles": [
+   "hb0161"
+  ],
+  "zipf": 1.64
+ },
+ "ADOR": {
+  "from": "ADORED",
+  "puzzles": [
+   "hb0035",
+   "hb0423",
+   "hb0438",
+   "hb0447"
+  ],
+  "zipf": 1.62
+ },
+ "AERATE": {
+  "from": "AERATED",
+  "puzzles": [
+   "hb0134",
+   "hb0264"
+  ],
+  "zipf": 1.9
+ },
+ "AFTE": {
+  "from": "AFTER",
+  "puzzles": [
+   "hb0021",
+   "hb0079",
+   "hb0116",
+   "hb0145",
+   "hb0381",
+   "hb0458",
+   "hb0552",
+   "hb0586"
+  ],
+  "zipf": 1.9
+ },
+ "AGITATO": {
+  "from": "AGITATOR",
+  "puzzles": [
+   "hb0403"
+  ],
+  "zipf": 1.53
+ },
+ "AGRE": {
+  "from": "AGREED",
+  "puzzles": [
+   "hb0530"
+  ],
+  "zipf": 1.75
+ },
+ "AIDER": {
+  "from": "AIDE",
+  "puzzles": [
+   "hb0093",
+   "hb0139",
+   "hb0161"
+  ],
+  "zipf": 1.94
+ },
+ "AIME": {
+  "from": "AIMER",
+  "puzzles": [
+   "hb0053",
+   "hb0161",
+   "hb0276",
+   "hb0337",
+   "hb0363",
+   "hb0491",
+   "hb0551"
+  ],
+  "zipf": 2.82
+ },
+ "AIRILY": {
+  "from": "AIRY",
+  "puzzles": [
+   "hb0038",
+   "hb0509",
+   "hb0596"
+  ],
+  "zipf": 1.78
+ },
+ "ALDE": {
+  "from": "ALDER",
+  "puzzles": [
+   "hb0269",
+   "hb0314"
+  ],
+  "zipf": 1.98
+ },
+ "ALLE": {
+  "from": "ALLER",
+  "puzzles": [
+   "hb0079",
+   "hb0085",
+   "hb0102",
+   "hb0110",
+   "hb0114",
+   "hb0197",
+   "hb0203",
+   "hb0214",
+   "hb0217",
+   "hb0226",
+   "hb0232",
+   "hb0253",
+   "hb0257",
+   "hb0269",
+   "hb0277",
+   "hb0283",
+   "hb0293",
+   "hb0314",
+   "hb0350",
+   "hb0580"
+  ],
+  "zipf": 2.81
+ },
+ "ALLI": {
+  "from": "ALLIED",
+  "puzzles": [
+   "hb0475",
+   "hb0527"
+  ],
+  "zipf": 2.83
+ },
+ "ALLIE": {
+  "from": "ALLIED",
+  "puzzles": [
+   "hb0475",
+   "hb0527",
+   "hb0551"
+  ],
+  "zipf": 3.14
+ },
+ "ALLOTED": {
+  "from": "ALLOT",
+  "puzzles": [
+   "hb0529"
+  ],
+  "zipf": 1.81
+ },
+ "ALLOTT": {
+  "from": "ALLOTTED",
+  "puzzles": [
+   "hb0529"
+  ],
+  "zipf": 1.8
+ },
+ "ALLURED": {
+  "from": "ALLURE",
+  "puzzles": [
+   "hb0050"
+  ],
+  "zipf": 1.54
+ },
+ "ALMON": {
+  "from": "ALMOND",
+  "puzzles": [
+   "hb0559"
+  ],
+  "zipf": 1.81
+ },
+ "ALOU": {
+  "from": "ALOUD",
+  "puzzles": [
+   "hb0298"
+  ],
+  "zipf": 1.84
+ },
+ "ALTA": {
+  "from": "ALTAR",
+  "puzzles": [
+   "hb0040",
+   "hb0058",
+   "hb0079",
+   "hb0114",
+   "hb0156",
+   "hb0167",
+   "hb0196",
+   "hb0203",
+   "hb0207",
+   "hb0267",
+   "hb0283",
+   "hb0297",
+   "hb0300",
+   "hb0350",
+   "hb0403",
+   "hb0460"
+  ],
+  "zipf": 3.12
+ },
+ "ALTE": {
+  "from": "ALTER",
+  "puzzles": [
+   "hb0058",
+   "hb0079",
+   "hb0114",
+   "hb0203",
+   "hb0283",
+   "hb0350"
+  ],
+  "zipf": 2.21
+ },
+ "ALVA": {
+  "from": "ALVAR",
+  "puzzles": [
+   "hb0102",
+   "hb0253",
+   "hb0269",
+   "hb0415"
+  ],
+  "zipf": 2.73
+ },
+ "AMBLER": {
+  "from": "AMBLE",
+  "puzzles": [
+   "hb0085",
+   "hb0232",
+   "hb0257",
+   "hb0338"
+  ],
+  "zipf": 2.36
+ },
+ "ANCHO": {
+  "from": "ANCHOR",
+  "puzzles": [
+   "hb0446"
+  ],
+  "zipf": 1.81
+ },
+ "ANGE": {
+  "from": "ANGER",
+  "puzzles": [
+   "hb0526"
+  ],
+  "zipf": 2.97
+ },
+ "ANGERER": {
+  "from": "ANGER",
+  "puzzles": [
+   "hb0526"
+  ],
+  "zipf": 1.83
+ },
+ "ANNEAL": {
+  "from": "ANNEALED",
+  "puzzles": [
+   "hb0065",
+   "hb0137",
+   "hb0151",
+   "hb0269"
+  ],
+  "zipf": 1.7
+ },
+ "ANNEXE": {
+  "from": "ANNEXING",
+  "puzzles": [
+   "hb0222"
+  ],
+  "zipf": 2.51
+ },
+ "ANTED": {
+  "from": "ANTE",
+  "puzzles": [
+   "hb0113",
+   "hb0127",
+   "hb0151",
+   "hb0287",
+   "hb0400"
+  ],
+  "zipf": 1.53
+ },
+ "ANTH": {
+  "from": "ANTHER",
+  "puzzles": [
+   "hb0520"
+  ],
+  "zipf": 1.88
+ },
+ "ANTING": {
+  "from": "ANTE",
+  "puzzles": [
+   "hb0323"
+  ],
+  "zipf": 1.55
+ },
+ "APPAL": {
+  "from": "APPALLED",
+  "puzzles": [
+   "hb0065",
+   "hb0298",
+   "hb0459"
+  ],
+  "zipf": 1.63
+ },
+ "APPALL": {
+  "from": "APPALLED",
+  "puzzles": [
+   "hb0065",
+   "hb0298",
+   "hb0459"
+  ],
+  "zipf": 1.51
+ },
+ "APPEA": {
+  "from": "APPEAR",
+  "puzzles": [
+   "hb0086",
+   "hb0095",
+   "hb0268",
+   "hb0333",
+   "hb0343",
+   "hb0491",
+   "hb0539",
+   "hb0572"
+  ],
+  "zipf": 1.66
+ },
+ "APPEN": {
+  "from": "APPEND",
+  "puzzles": [
+   "hb0333",
+   "hb0525",
+   "hb0572"
+  ],
+  "zipf": 1.78
+ },
+ "APPROVER": {
+  "from": "APPROVE",
+  "puzzles": [
+   "hb0308",
+   "hb0415"
+  ],
+  "zipf": 1.67
+ },
+ "ARCADED": {
+  "from": "ARCADE",
+  "puzzles": [
+   "hb0515"
+  ],
+  "zipf": 1.68
+ },
+ "ARCHE": {
+  "from": "ARCHER",
+  "puzzles": [
+   "hb0247"
+  ],
+  "zipf": 2.02
+ },
+ "ARDO": {
+  "from": "ARDOR",
+  "puzzles": [
+   "hb0035",
+   "hb0080",
+   "hb0112",
+   "hb0130",
+   "hb0195",
+   "hb0245",
+   "hb0361",
+   "hb0423",
+   "hb0438",
+   "hb0447",
+   "hb0448"
+  ],
+  "zipf": 1.62
+ },
+ "ARME": {
+  "from": "ARMED",
+  "puzzles": [
+   "hb0150"
+  ],
+  "zipf": 1.91
+ },
+ "ARMORING": {
+  "from": "ARMOR",
+  "puzzles": [
+   "hb0504"
+  ],
+  "zipf": 1.74
+ },
+ "ARROWED": {
+  "from": "ARROW",
+  "puzzles": [
+   "hb0062"
+  ],
+  "zipf": 1.69
+ },
+ "ATON": {
+  "from": "ATONING",
+  "puzzles": [
+   "hb0323",
+   "hb0542",
+   "hb0557"
+  ],
+  "zipf": 1.92
+ },
+ "ATTEN": {
+  "from": "ATTEND",
+  "puzzles": [
+   "hb0113",
+   "hb0127",
+   "hb0151",
+   "hb0287",
+   "hb0400"
+  ],
+  "zipf": 2.25
+ },
+ "AUBER": {
+  "from": "AUBE",
+  "puzzles": [
+   "hb0217",
+   "hb0232",
+   "hb0494"
+  ],
+  "zipf": 1.66
+ },
+ "AUGE": {
+  "from": "AUGER",
+  "puzzles": [
+   "hb0028",
+   "hb0394"
+  ],
+  "zipf": 1.8
+ },
+ "AVERRED": {
+  "from": "AVER",
+  "puzzles": [
+   "hb0269",
+   "hb0584"
+  ],
+  "zipf": 1.84
+ },
+ "AWAR": {
+  "from": "AWARD",
+  "puzzles": [
+   "hb0042",
+   "hb0062",
+   "hb0206",
+   "hb0299"
+  ],
+  "zipf": 1.7
+ },
+ "BABBLER": {
+  "from": "BABBLE",
+  "puzzles": [
+   "hb0085",
+   "hb0102",
+   "hb0217",
+   "hb0219",
+   "hb0232",
+   "hb0257",
+   "hb0314"
+  ],
+  "zipf": 1.73
+ },
+ "BABER": {
+  "from": "BABE",
+  "puzzles": [
+   "hb0035",
+   "hb0085",
+   "hb0102",
+   "hb0186",
+   "hb0217",
+   "hb0219",
+   "hb0231",
+   "hb0232",
+   "hb0356",
+   "hb0435",
+   "hb0471",
+   "hb0494",
+   "hb0531"
+  ],
+  "zipf": 2.19
+ },
+ "BABI": {
+  "from": "BABIED",
+  "puzzles": [
+   "hb0139"
+  ],
+  "zipf": 2.47
+ },
+ "BACHER": {
+  "from": "BACH",
+  "puzzles": [
+   "hb0379"
+  ],
+  "zipf": 1.8
+ },
+ "BACKE": {
+  "from": "BACKER",
+  "puzzles": [
+   "hb0250",
+   "hb0540"
+  ],
+  "zipf": 1.7
+ },
+ "BAHA": {
+  "from": "BAHAR",
+  "puzzles": [
+   "hb0379",
+   "hb0451"
+  ],
+  "zipf": 2.42
+ },
+ "BAILER": {
+  "from": "BAIL",
+  "puzzles": [
+   "hb0213",
+   "hb0514"
+  ],
+  "zipf": 1.57
+ },
+ "BAITER": {
+  "from": "BAIT",
+  "puzzles": [
+   "hb0494"
+  ],
+  "zipf": 1.92
+ },
+ "BALDE": {
+  "from": "BALDER",
+  "puzzles": [
+   "hb0314"
+  ],
+  "zipf": 1.63
+ },
+ "BALED": {
+  "from": "BALE",
+  "puzzles": [
+   "hb0144",
+   "hb0188",
+   "hb0314",
+   "hb0429",
+   "hb0529"
+  ],
+  "zipf": 1.79
+ },
+ "BALLA": {
+  "from": "BALLAD",
+  "puzzles": [
+   "hb0144",
+   "hb0188",
+   "hb0314",
+   "hb0370",
+   "hb0429",
+   "hb0529"
+  ],
+  "zipf": 2.19
+ },
+ "BALLE": {
+  "from": "BALLER",
+  "puzzles": [
+   "hb0085",
+   "hb0102",
+   "hb0144",
+   "hb0188",
+   "hb0217",
+   "hb0219",
+   "hb0232",
+   "hb0257",
+   "hb0314",
+   "hb0429",
+   "hb0529"
+  ],
+  "zipf": 2.01
+ },
+ "BALLOTED": {
+  "from": "BALLOT",
+  "puzzles": [
+   "hb0529"
+  ],
+  "zipf": 1.8
+ },
+ "BALMER": {
+  "from": "BALM",
+  "puzzles": [
+   "hb0257",
+   "hb0338"
+  ],
+  "zipf": 2.38
+ },
+ "BANN": {
+  "from": "BANNER",
+  "puzzles": [
+   "hb0102",
+   "hb0144",
+   "hb0182",
+   "hb0217",
+   "hb0429",
+   "hb0471"
+  ],
+  "zipf": 2.11
+ },
+ "BARBE": {
+  "from": "BARBER",
+  "puzzles": [
+   "hb0186",
+   "hb0471"
+  ],
+  "zipf": 2.09
+ },
+ "BARER": {
+  "from": "BARE",
+  "puzzles": [
+   "hb0035",
+   "hb0084",
+   "hb0085",
+   "hb0102",
+   "hb0186",
+   "hb0217",
+   "hb0219",
+   "hb0231",
+   "hb0232",
+   "hb0284",
+   "hb0356",
+   "hb0383",
+   "hb0435",
+   "hb0471",
+   "hb0494",
+   "hb0507",
+   "hb0531"
+  ],
+  "zipf": 1.63
+ },
+ "BARG": {
+  "from": "BARGER",
+  "puzzles": [
+   "hb0084"
+  ],
+  "zipf": 1.58
+ },
+ "BARNER": {
+  "from": "BARN",
+  "puzzles": [
+   "hb0102",
+   "hb0217",
+   "hb0284",
+   "hb0471"
+  ],
+  "zipf": 1.88
+ },
+ "BARR": {
+  "from": "BARRED",
+  "puzzles": [
+   "hb0035",
+   "hb0231"
+  ],
+  "zipf": 3.46
+ },
+ "BARRE": {
+  "from": "BARRED",
+  "puzzles": [
+   "hb0035",
+   "hb0231"
+  ],
+  "zipf": 3.08
+ },
+ "BARRELLED": {
+  "from": "BARREL",
+  "puzzles": [
+   "hb0314"
+  ],
+  "zipf": 2.31
+ },
+ "BARRI": {
+  "from": "BARRIER",
+  "puzzles": [
+   "hb0139",
+   "hb0213",
+   "hb0383",
+   "hb0471",
+   "hb0494",
+   "hb0514"
+  ],
+  "zipf": 1.91
+ },
+ "BARRIE": {
+  "from": "BARRIER",
+  "puzzles": [
+   "hb0139",
+   "hb0213",
+   "hb0383",
+   "hb0471",
+   "hb0494",
+   "hb0514"
+  ],
+  "zipf": 3.12
+ },
+ "BART": {
+  "from": "BARTER",
+  "puzzles": [
+   "hb0219",
+   "hb0383",
+   "hb0494"
+  ],
+  "zipf": 3.67
+ },
+ "BATTE": {
+  "from": "BATTED",
+  "puzzles": [
+   "hb0188",
+   "hb0219",
+   "hb0417",
+   "hb0494",
+   "hb0529"
+  ],
+  "zipf": 1.6
+ },
+ "BATTERER": {
+  "from": "BATTER",
+  "puzzles": [
+   "hb0219",
+   "hb0383",
+   "hb0494"
+  ],
+  "zipf": 1.54
+ },
+ "BAYAR": {
+  "from": "BAYARD",
+  "puzzles": [
+   "hb0231"
+  ],
+  "zipf": 1.93
+ },
+ "BEAME": {
+  "from": "BEAMER",
+  "puzzles": [
+   "hb0085",
+   "hb0232",
+   "hb0276",
+   "hb0338",
+   "hb0404"
+  ],
+  "zipf": 1.64
+ },
+ "BEANED": {
+  "from": "BEAN",
+  "puzzles": [
+   "hb0144",
+   "hb0182",
+   "hb0404",
+   "hb0429"
+  ],
+  "zipf": 1.61
+ },
+ "BEANER": {
+  "from": "BEAN",
+  "puzzles": [
+   "hb0102",
+   "hb0217",
+   "hb0435",
+   "hb0471"
+  ],
+  "zipf": 1.89
+ },
+ "BEARE": {
+  "from": "BEARER",
+  "puzzles": [
+   "hb0035",
+   "hb0084",
+   "hb0085",
+   "hb0102",
+   "hb0186",
+   "hb0217",
+   "hb0219",
+   "hb0231",
+   "hb0232",
+   "hb0284",
+   "hb0356",
+   "hb0383",
+   "hb0435",
+   "hb0471",
+   "hb0494",
+   "hb0507",
+   "hb0531"
+  ],
+  "zipf": 1.93
+ },
+ "BEATE": {
+  "from": "BEATER",
+  "puzzles": [
+   "hb0219",
+   "hb0494"
+  ],
+  "zipf": 2.1
+ },
+ "BEATED": {
+  "from": "BEAT",
+  "puzzles": [
+   "hb0188",
+   "hb0417",
+   "hb0529"
+  ],
+  "zipf": 1.62
+ },
+ "BEAV": {
+  "from": "BEAVER",
+  "puzzles": [
+   "hb0102"
+  ],
+  "zipf": 1.9
+ },
+ "BECH": {
+  "from": "BECHER",
+  "puzzles": [
+   "hb0379"
+  ],
+  "zipf": 1.9
+ },
+ "BECHE": {
+  "from": "BECHER",
+  "puzzles": [
+   "hb0379"
+  ],
+  "zipf": 1.61
+ },
+ "BEDD": {
+  "from": "BEDDED",
+  "puzzles": [
+   "hb0126",
+   "hb0144",
+   "hb0404",
+   "hb0429",
+   "hb0482",
+   "hb0499"
+  ],
+  "zipf": 1.55
+ },
+ "BEECHER": {
+  "from": "BEECH",
+  "puzzles": [
+   "hb0379"
+  ],
+  "zipf": 2.87
+ },
+ "BEEP": {
+  "from": "BEEPER",
+  "puzzles": [
+   "hb0268",
+   "hb0472"
+  ],
+  "zipf": 3.45
+ },
+ "BEGG": {
+  "from": "BEGGING",
+  "puzzles": [
+   "hb0256",
+   "hb0303",
+   "hb0432"
+  ],
+  "zipf": 2.4
+ },
+ "BEGINN": {
+  "from": "BEGINNING",
+  "puzzles": [
+   "hb0256",
+   "hb0303"
+  ],
+  "zipf": 1.59
+ },
+ "BELI": {
+  "from": "BELIED",
+  "puzzles": [
+   "hb0499"
+  ],
+  "zipf": 2.23
+ },
+ "BELIEV": {
+  "from": "BELIEVING",
+  "puzzles": [
+   "hb0524"
+  ],
+  "zipf": 1.53
+ },
+ "BELLER": {
+  "from": "BELL",
+  "puzzles": [
+   "hb0085",
+   "hb0169",
+   "hb0219",
+   "hb0232",
+   "hb0257",
+   "hb0314",
+   "hb0532",
+   "hb0593",
+   "hb0599"
+  ],
+  "zipf": 2.04
+ },
+ "BELLI": {
+  "from": "BELLIED",
+  "puzzles": [
+   "hb0499"
+  ],
+  "zipf": 2.53
+ },
+ "BENING": {
+  "from": "BENE",
+  "puzzles": [
+   "hb0256",
+   "hb0303"
+  ],
+  "zipf": 2.0
+ },
+ "BENNER": {
+  "from": "BENN",
+  "puzzles": [
+   "hb0148",
+   "hb0303",
+   "hb0435",
+   "hb0599"
+  ],
+  "zipf": 2.14
+ },
+ "BENNING": {
+  "from": "BENN",
+  "puzzles": [
+   "hb0256",
+   "hb0303"
+  ],
+  "zipf": 2.74
+ },
+ "BERGE": {
+  "from": "BERGER",
+  "puzzles": [
+   "hb0084",
+   "hb0100",
+   "hb0303"
+  ],
+  "zipf": 2.16
+ },
+ "BERING": {
+  "from": "BERE",
+  "puzzles": [
+   "hb0303"
+  ],
+  "zipf": 2.89
+ },
+ "BERNER": {
+  "from": "BERNE",
+  "puzzles": [
+   "hb0148",
+   "hb0284",
+   "hb0303",
+   "hb0435",
+   "hb0599"
+  ],
+  "zipf": 2.28
+ },
+ "BERNING": {
+  "from": "BERNE",
+  "puzzles": [
+   "hb0303"
+  ],
+  "zipf": 1.5
+ },
+ "BERRIED": {
+  "from": "BERRI",
+  "puzzles": [
+   "hb0139"
+  ],
+  "zipf": 1.68
+ },
+ "BERTHE": {
+  "from": "BERTHED",
+  "puzzles": [
+   "hb0126"
+  ],
+  "zipf": 2.06
+ },
+ "BETROTH": {
+  "from": "BETROTHED",
+  "puzzles": [
+   "hb0126"
+  ],
+  "zipf": 1.53
+ },
+ "BETT": {
+  "from": "BETTER",
+  "puzzles": [
+   "hb0126",
+   "hb0219",
+   "hb0599"
+  ],
+  "zipf": 2.34
+ },
+ "BETTE": {
+  "from": "BETTER",
+  "puzzles": [
+   "hb0126",
+   "hb0219",
+   "hb0599"
+  ],
+  "zipf": 3.15
+ },
+ "BEVELING": {
+  "from": "BEVEL",
+  "puzzles": [
+   "hb0524"
+  ],
+  "zipf": 1.6
+ },
+ "BIDED": {
+  "from": "BIDE",
+  "puzzles": [
+   "hb0139",
+   "hb0292",
+   "hb0499"
+  ],
+  "zipf": 1.78
+ },
+ "BIGGE": {
+  "from": "BIGGER",
+  "puzzles": [
+   "hb0303"
+  ],
+  "zipf": 2.07
+ },
+ "BILKED": {
+  "from": "BILK",
+  "puzzles": [
+   "hb0499"
+  ],
+  "zipf": 1.74
+ },
+ "BILLE": {
+  "from": "BILLER",
+  "puzzles": [
+   "hb0169",
+   "hb0213",
+   "hb0499",
+   "hb0514"
+  ],
+  "zipf": 1.75
+ },
+ "BILLER": {
+  "from": "BILL",
+  "puzzles": [
+   "hb0117"
+  ],
+  "zipf": 2.1
+ },
+ "BINGER": {
+  "from": "BINGE",
+  "puzzles": [
+   "hb0303"
+  ],
+  "zipf": 1.79
+ },
+ "BIRDER": {
+  "from": "BIRD",
+  "puzzles": [
+   "hb0139"
+  ],
+  "zipf": 1.8
+ },
+ "BIRTHER": {
+  "from": "BIRTH",
+  "puzzles": [
+   "hb0100"
+  ],
+  "zipf": 2.34
+ },
+ "BITT": {
+  "from": "BITTER",
+  "puzzles": [
+   "hb0117"
+  ],
+  "zipf": 1.63
+ },
+ "BITTE": {
+  "from": "BITTER",
+  "puzzles": [
+   "hb0117"
+  ],
+  "zipf": 2.05
+ },
+ "BLABBED": {
+  "from": "BLAB",
+  "puzzles": [
+   "hb0144",
+   "hb0188",
+   "hb0314",
+   "hb0429",
+   "hb0529"
+  ],
+  "zipf": 1.74
+ },
+ "BLACKBALL": {
+  "from": "BLACKBALLED",
+  "puzzles": [
+   "hb0540"
+  ],
+  "zipf": 1.89
+ },
+ "BLAD": {
+  "from": "BLADED",
+  "puzzles": [
+   "hb0144",
+   "hb0188",
+   "hb0314",
+   "hb0429",
+   "hb0529"
+  ],
+  "zipf": 1.75
+ },
+ "BLAKER": {
+  "from": "BLAKE",
+  "puzzles": [
+   "hb0085"
+  ],
+  "zipf": 1.59
+ },
+ "BLAN": {
+  "from": "BLAND",
+  "puzzles": [
+   "hb0144",
+   "hb0429"
+  ],
+  "zipf": 1.53
+ },
+ "BLAT": {
+  "from": "BLATTER",
+  "puzzles": [
+   "hb0219"
+  ],
+  "zipf": 1.94
+ },
+ "BLATT": {
+  "from": "BLATTER",
+  "puzzles": [
+   "hb0219"
+  ],
+  "zipf": 2.61
+ },
+ "BLEATED": {
+  "from": "BLEAT",
+  "puzzles": [
+   "hb0188",
+   "hb0529"
+  ],
+  "zipf": 1.52
+ },
+ "BLEE": {
+  "from": "BLEED",
+  "puzzles": [
+   "hb0144",
+   "hb0314",
+   "hb0429",
+   "hb0482",
+   "hb0499"
+  ],
+  "zipf": 1.69
+ },
+ "BLIN": {
+  "from": "BLIND",
+  "puzzles": [
+   "hb0499"
+  ],
+  "zipf": 1.87
+ },
+ "BLOGG": {
+  "from": "BLOGGED",
+  "puzzles": [
+   "hb0432"
+  ],
+  "zipf": 1.62
+ },
+ "BLOO": {
+  "from": "BLOOD",
+  "puzzles": [
+   "hb0130",
+   "hb0314",
+   "hb0370"
+  ],
+  "zipf": 1.89
+ },
+ "BLUNTER": {
+  "from": "BLUNT",
+  "puzzles": [
+   "hb0599"
+  ],
+  "zipf": 1.66
+ },
+ "BOATED": {
+  "from": "BOAT",
+  "puzzles": [
+   "hb0529"
+  ],
+  "zipf": 1.58
+ },
+ "BOATER": {
+  "from": "BOAT",
+  "puzzles": [
+   "hb0281"
+  ],
+  "zipf": 2.09
+ },
+ "BOBB": {
+  "from": "BOBBED",
+  "puzzles": [
+   "hb0377",
+   "hb0438"
+  ],
+  "zipf": 1.88
+ },
+ "BOBBLED": {
+  "from": "BOBBLE",
+  "puzzles": [
+   "hb0314"
+  ],
+  "zipf": 1.83
+ },
+ "BODED": {
+  "from": "BODE",
+  "puzzles": [
+   "hb0126",
+   "hb0377",
+   "hb0404",
+   "hb0438"
+  ],
+  "zipf": 1.58
+ },
+ "BOKER": {
+  "from": "BOKE",
+  "puzzles": [
+   "hb0532"
+  ],
+  "zipf": 1.86
+ },
+ "BOLLER": {
+  "from": "BOLL",
+  "puzzles": [
+   "hb0314",
+   "hb0532"
+  ],
+  "zipf": 1.71
+ },
+ "BOMBE": {
+  "from": "BOMBER",
+  "puzzles": [
+   "hb0338",
+   "hb0404"
+  ],
+  "zipf": 1.93
+ },
+ "BONDE": {
+  "from": "BONDED",
+  "puzzles": [
+   "hb0377",
+   "hb0404"
+  ],
+  "zipf": 1.83
+ },
+ "BONER": {
+  "from": "BONE",
+  "puzzles": [
+   "hb0148"
+  ],
+  "zipf": 3.21
+ },
+ "BOOKE": {
+  "from": "BOOKER",
+  "puzzles": [
+   "hb0532"
+  ],
+  "zipf": 2.04
+ },
+ "BORDE": {
+  "from": "BORDER",
+  "puzzles": [
+   "hb0126",
+   "hb0438"
+  ],
+  "zipf": 1.96
+ },
+ "BORGER": {
+  "from": "BORG",
+  "puzzles": [
+   "hb0084"
+  ],
+  "zipf": 2.22
+ },
+ "BOTHE": {
+  "from": "BOTHER",
+  "puzzles": [
+   "hb0126"
+  ],
+  "zipf": 1.88
+ },
+ "BOUN": {
+  "from": "BOUND",
+  "puzzles": [
+   "hb0377",
+   "hb0493"
+  ],
+  "zipf": 1.64
+ },
+ "BOUNDER": {
+  "from": "BOUND",
+  "puzzles": [
+   "hb0493"
+  ],
+  "zipf": 1.72
+ },
+ "BOWE": {
+  "from": "BOWER",
+  "puzzles": [
+   "hb0148"
+  ],
+  "zipf": 2.68
+ },
+ "BRACER": {
+  "from": "BRACE",
+  "puzzles": [
+   "hb0186",
+   "hb0284",
+   "hb0307",
+   "hb0435"
+  ],
+  "zipf": 1.62
+ },
+ "BRACHER": {
+  "from": "BRACH",
+  "puzzles": [
+   "hb0379"
+  ],
+  "zipf": 1.54
+ },
+ "BRAINE": {
+  "from": "BRAINER",
+  "puzzles": [
+   "hb0213"
+  ],
+  "zipf": 1.89
+ },
+ "BRAINER": {
+  "from": "BRAIN",
+  "puzzles": [
+   "hb0471"
+  ],
+  "zipf": 3.19
+ },
+ "BRAK": {
+  "from": "BRAKED",
+  "puzzles": [
+   "hb0231"
+  ],
+  "zipf": 2.0
+ },
+ "BREA": {
+  "from": "BREAD",
+  "puzzles": [
+   "hb0035",
+   "hb0231"
+  ],
+  "zipf": 2.77
+ },
+ "BREACHER": {
+  "from": "BREACH",
+  "puzzles": [
+   "hb0379"
+  ],
+  "zipf": 1.59
+ },
+ "BRECKER": {
+  "from": "BRECK",
+  "puzzles": [
+   "hb0250",
+   "hb0532"
+  ],
+  "zipf": 1.69
+ },
+ "BRIA": {
+  "from": "BRIAR",
+  "puzzles": [
+   "hb0112",
+   "hb0139",
+   "hb0213",
+   "hb0297",
+   "hb0383",
+   "hb0471",
+   "hb0494",
+   "hb0514"
+  ],
+  "zipf": 2.21
+ },
+ "BRIE": {
+  "from": "BRIER",
+  "puzzles": [
+   "hb0100",
+   "hb0117",
+   "hb0139",
+   "hb0148",
+   "hb0205",
+   "hb0213",
+   "hb0303",
+   "hb0357",
+   "hb0383",
+   "hb0471",
+   "hb0514",
+   "hb0566"
+  ],
+  "zipf": 3.08
+ },
+ "BRIEFE": {
+  "from": "BRIEFER",
+  "puzzles": [
+   "hb0165",
+   "hb0303"
+  ],
+  "zipf": 1.97
+ },
+ "BRODER": {
+  "from": "BROD",
+  "puzzles": [
+   "hb0438"
+  ],
+  "zipf": 2.1
+ },
+ "BROK": {
+  "from": "BROKER",
+  "puzzles": [
+   "hb0084",
+   "hb0532"
+  ],
+  "zipf": 2.05
+ },
+ "BROO": {
+  "from": "BROOD",
+  "puzzles": [
+   "hb0112",
+   "hb0130",
+   "hb0438"
+  ],
+  "zipf": 1.65
+ },
+ "BROODER": {
+  "from": "BROOD",
+  "puzzles": [
+   "hb0438"
+  ],
+  "zipf": 1.77
+ },
+ "BROOKER": {
+  "from": "BROOK",
+  "puzzles": [
+   "hb0084",
+   "hb0532"
+  ],
+  "zipf": 2.48
+ },
+ "BROWER": {
+  "from": "BROW",
+  "puzzles": [
+   "hb0148"
+  ],
+  "zipf": 2.47
+ },
+ "BROWNE": {
+  "from": "BROWNER",
+  "puzzles": [
+   "hb0148"
+  ],
+  "zipf": 3.42
+ },
+ "BULLE": {
+  "from": "BULLER",
+  "puzzles": [
+   "hb0232",
+   "hb0593",
+   "hb0599"
+  ],
+  "zipf": 2.04
+ },
+ "BUMBLED": {
+  "from": "BUMBLE",
+  "puzzles": [
+   "hb0482"
+  ],
+  "zipf": 1.57
+ },
+ "BUNDER": {
+  "from": "BUND",
+  "puzzles": [
+   "hb0493"
+  ],
+  "zipf": 1.67
+ },
+ "BUNTE": {
+  "from": "BUNTER",
+  "puzzles": [
+   "hb0599"
+  ],
+  "zipf": 1.53
+ },
+ "BURNE": {
+  "from": "BURNED",
+  "puzzles": [
+   "hb0493",
+   "hb0599"
+  ],
+  "zipf": 2.27
+ },
+ "BUTCH": {
+  "from": "BUTCHER",
+  "puzzles": [
+   "hb0386"
+  ],
+  "zipf": 3.37
+ },
+ "CADDIED": {
+  "from": "CADDIE",
+  "puzzles": [
+   "hb0054",
+   "hb0093",
+   "hb0139"
+  ],
+  "zipf": 1.7
+ },
+ "CAGER": {
+  "from": "CAGE",
+  "puzzles": [
+   "hb0043",
+   "hb0104",
+   "hb0285",
+   "hb0324",
+   "hb0526"
+  ],
+  "zipf": 1.54
+ },
+ "CAIR": {
+  "from": "CAIRD",
+  "puzzles": [
+   "hb0093",
+   "hb0139",
+   "hb0245",
+   "hb0361"
+  ],
+  "zipf": 2.59
+ },
+ "CALLE": {
+  "from": "CALLER",
+  "puzzles": [
+   "hb0110",
+   "hb0188",
+   "hb0226",
+   "hb0236",
+   "hb0253",
+   "hb0277",
+   "hb0301",
+   "hb0307",
+   "hb0389",
+   "hb0527",
+   "hb0540",
+   "hb0580"
+  ],
+  "zipf": 2.91
+ },
+ "CALME": {
+  "from": "CALMER",
+  "puzzles": [
+   "hb0277"
+  ],
+  "zipf": 1.63
+ },
+ "CALVER": {
+  "from": "CALVE",
+  "puzzles": [
+   "hb0253"
+  ],
+  "zipf": 1.73
+ },
+ "CANC": {
+  "from": "CANCER",
+  "puzzles": [
+   "hb0043",
+   "hb0183",
+   "hb0253",
+   "hb0285",
+   "hb0439",
+   "hb0515",
+   "hb0526"
+  ],
+  "zipf": 1.65
+ },
+ "CANCE": {
+  "from": "CANCER",
+  "puzzles": [
+   "hb0043",
+   "hb0183",
+   "hb0253",
+   "hb0285",
+   "hb0388",
+   "hb0435",
+   "hb0439",
+   "hb0515",
+   "hb0526"
+  ],
+  "zipf": 1.79
+ },
+ "CANCELLING": {
+  "from": "CANCEL",
+  "puzzles": [
+   "hb0301"
+  ],
+  "zipf": 3.31
+ },
+ "CANDI": {
+  "from": "CANDID",
+  "puzzles": [
+   "hb0054",
+   "hb0157"
+  ],
+  "zipf": 2.37
+ },
+ "CANDIE": {
+  "from": "CANDIED",
+  "puzzles": [
+   "hb0054",
+   "hb0157"
+  ],
+  "zipf": 1.84
+ },
+ "CANER": {
+  "from": "CANE",
+  "puzzles": [
+   "hb0043",
+   "hb0183",
+   "hb0253",
+   "hb0285",
+   "hb0388",
+   "hb0435",
+   "hb0439",
+   "hb0515",
+   "hb0526"
+  ],
+  "zipf": 1.8
+ },
+ "CANN": {
+  "from": "CANNER",
+  "puzzles": [
+   "hb0043",
+   "hb0157",
+   "hb0182",
+   "hb0183",
+   "hb0253",
+   "hb0261",
+   "hb0272",
+   "hb0285",
+   "hb0301",
+   "hb0392",
+   "hb0400",
+   "hb0439",
+   "hb0506",
+   "hb0510",
+   "hb0515",
+   "hb0526"
+  ],
+  "zipf": 2.47
+ },
+ "CANNE": {
+  "from": "CANNER",
+  "puzzles": [
+   "hb0043",
+   "hb0157",
+   "hb0182",
+   "hb0183",
+   "hb0253",
+   "hb0261",
+   "hb0285",
+   "hb0301",
+   "hb0334",
+   "hb0388",
+   "hb0400",
+   "hb0435",
+   "hb0439",
+   "hb0506",
+   "hb0515",
+   "hb0526"
+  ],
+  "zipf": 1.59
+ },
+ "CANTE": {
+  "from": "CANTED",
+  "puzzles": [
+   "hb0400",
+   "hb0506"
+  ],
+  "zipf": 1.53
+ },
+ "CANTING": {
+  "from": "CANT",
+  "puzzles": [
+   "hb0330",
+   "hb0392"
+  ],
+  "zipf": 1.91
+ },
+ "CAPP": {
+  "from": "CAPPED",
+  "puzzles": [
+   "hb0229",
+   "hb0539"
+  ],
+  "zipf": 2.32
+ },
+ "CARDED": {
+  "from": "CARD",
+  "puzzles": [
+   "hb0515"
+  ],
+  "zipf": 2.75
+ },
+ "CAREEN": {
+  "from": "CAREENED",
+  "puzzles": [
+   "hb0515"
+  ],
+  "zipf": 1.91
+ },
+ "CAREERED": {
+  "from": "CAREER",
+  "puzzles": [
+   "hb0515"
+  ],
+  "zipf": 1.54
+ },
+ "CARLIER": {
+  "from": "CARLIE",
+  "puzzles": [
+   "hb0226",
+   "hb0348",
+   "hb0374",
+   "hb0514",
+   "hb0580"
+  ],
+  "zipf": 1.52
+ },
+ "CARPE": {
+  "from": "CARPER",
+  "puzzles": [
+   "hb0539"
+  ],
+  "zipf": 2.64
+ },
+ "CARRER": {
+  "from": "CARR",
+  "puzzles": [
+   "hb0025",
+   "hb0043",
+   "hb0104",
+   "hb0110",
+   "hb0183",
+   "hb0198",
+   "hb0226",
+   "hb0253",
+   "hb0284",
+   "hb0285",
+   "hb0307",
+   "hb0374",
+   "hb0409",
+   "hb0515",
+   "hb0526"
+  ],
+  "zipf": 1.97
+ },
+ "CARRI": {
+  "from": "CARRIED",
+  "puzzles": [
+   "hb0093",
+   "hb0139",
+   "hb0226",
+   "hb0306",
+   "hb0324",
+   "hb0348",
+   "hb0374",
+   "hb0409",
+   "hb0514"
+  ],
+  "zipf": 1.82
+ },
+ "CARRIE": {
+  "from": "CARRIED",
+  "puzzles": [
+   "hb0093",
+   "hb0139",
+   "hb0226",
+   "hb0306",
+   "hb0324",
+   "hb0348",
+   "hb0374",
+   "hb0409",
+   "hb0514"
+  ],
+  "zipf": 3.77
+ },
+ "CARRING": {
+  "from": "CARR",
+  "puzzles": [
+   "hb0272",
+   "hb0510"
+  ],
+  "zipf": 1.54
+ },
+ "CAVER": {
+  "from": "CAVE",
+  "puzzles": [
+   "hb0104",
+   "hb0253",
+   "hb0324"
+  ],
+  "zipf": 1.77
+ },
+ "CEDA": {
+  "from": "CEDAR",
+  "puzzles": [
+   "hb0515"
+  ],
+  "zipf": 1.82
+ },
+ "CEIL": {
+  "from": "CEILING",
+  "puzzles": [
+   "hb0301"
+  ],
+  "zipf": 1.86
+ },
+ "CELLE": {
+  "from": "CELLED",
+  "puzzles": [
+   "hb0236",
+   "hb0402",
+   "hb0527",
+   "hb0540"
+  ],
+  "zipf": 2.09
+ },
+ "CELLED": {
+  "from": "CELL",
+  "puzzles": [
+   "hb0533"
+  ],
+  "zipf": 2.58
+ },
+ "CELLER": {
+  "from": "CELL",
+  "puzzles": [
+   "hb0026",
+   "hb0059",
+   "hb0277",
+   "hb0307",
+   "hb0354",
+   "hb0580"
+  ],
+  "zipf": 1.95
+ },
+ "CENTE": {
+  "from": "CENTER",
+  "puzzles": [
+   "hb0059",
+   "hb0172",
+   "hb0179",
+   "hb0244"
+  ],
+  "zipf": 1.62
+ },
+ "CERNER": {
+  "from": "CERN",
+  "puzzles": [
+   "hb0025",
+   "hb0043",
+   "hb0049",
+   "hb0059",
+   "hb0103",
+   "hb0121",
+   "hb0138",
+   "hb0172",
+   "hb0179",
+   "hb0244",
+   "hb0284",
+   "hb0285",
+   "hb0388",
+   "hb0409",
+   "hb0435",
+   "hb0436",
+   "hb0439",
+   "hb0546"
+  ],
+  "zipf": 1.88
+ },
+ "CHAFER": {
+  "from": "CHAFE",
+  "puzzles": [
+   "hb0198"
+  ],
+  "zipf": 1.61
+ },
+ "CHAI": {
+  "from": "CHAIR",
+  "puzzles": [
+   "hb0247"
+  ],
+  "zipf": 3.29
+ },
+ "CHAINE": {
+  "from": "CHAINED",
+  "puzzles": [
+   "hb0590"
+  ],
+  "zipf": 1.6
+ },
+ "CHANC": {
+  "from": "CHANCED",
+  "puzzles": [
+   "hb0492",
+   "hb0590"
+  ],
+  "zipf": 1.66
+ },
+ "CHANCER": {
+  "from": "CHANCE",
+  "puzzles": [
+   "hb0285",
+   "hb0492"
+  ],
+  "zipf": 1.8
+ },
+ "CHARG": {
+  "from": "CHARGER",
+  "puzzles": [
+   "hb0285"
+  ],
+  "zipf": 1.54
+ },
+ "CHARR": {
+  "from": "CHARRED",
+  "puzzles": [
+   "hb0379",
+   "hb0492"
+  ],
+  "zipf": 1.91
+ },
+ "CHATT": {
+  "from": "CHATTED",
+  "puzzles": [
+   "hb0251"
+  ],
+  "zipf": 1.61
+ },
+ "CHATTE": {
+  "from": "CHATTED",
+  "puzzles": [
+   "hb0251"
+  ],
+  "zipf": 1.51
+ },
+ "CHEE": {
+  "from": "CHEER",
+  "puzzles": [
+   "hb0247"
+  ],
+  "zipf": 2.81
+ },
+ "CHEERIER": {
+  "from": "CHEERY",
+  "puzzles": [
+   "hb0247"
+  ],
+  "zipf": 1.76
+ },
+ "CHID": {
+  "from": "CHIDED",
+  "puzzles": [
+   "hb0093",
+   "hb0590"
+  ],
+  "zipf": 1.63
+ },
+ "CHINNED": {
+  "from": "CHIN",
+  "puzzles": [
+   "hb0590"
+  ],
+  "zipf": 1.82
+ },
+ "CHIPP": {
+  "from": "CHIPPER",
+  "puzzles": [
+   "hb0029",
+   "hb0326"
+  ],
+  "zipf": 1.65
+ },
+ "CHURCHER": {
+  "from": "CHURCH",
+  "puzzles": [
+   "hb0386"
+  ],
+  "zipf": 1.57
+ },
+ "CIDE": {
+  "from": "CIDER",
+  "puzzles": [
+   "hb0093",
+   "hb0139",
+   "hb0153"
+  ],
+  "zipf": 1.95
+ },
+ "CLAPP": {
+  "from": "CLAPPER",
+  "puzzles": [
+   "hb0539"
+  ],
+  "zipf": 2.44
+ },
+ "CLAT": {
+  "from": "CLATTER",
+  "puzzles": [
+   "hb0307"
+  ],
+  "zipf": 1.65
+ },
+ "CLAVER": {
+  "from": "CLAVE",
+  "puzzles": [
+   "hb0253"
+  ],
+  "zipf": 1.69
+ },
+ "CLEA": {
+  "from": "CLEAR",
+  "puzzles": [
+   "hb0110",
+   "hb0226",
+   "hb0253",
+   "hb0277",
+   "hb0307",
+   "hb0580"
+  ],
+  "zipf": 2.37
+ },
+ "CLEATED": {
+  "from": "CLEAT",
+  "puzzles": [
+   "hb0188",
+   "hb0236",
+   "hb0389"
+  ],
+  "zipf": 1.55
+ },
+ "COATE": {
+  "from": "COATED",
+  "puzzles": [
+   "hb0074",
+   "hb0378"
+  ],
+  "zipf": 1.69
+ },
+ "COCOONING": {
+  "from": "COCOON",
+  "puzzles": [
+   "hb0392",
+   "hb0430",
+   "hb0588"
+  ],
+  "zipf": 1.64
+ },
+ "COINER": {
+  "from": "COIN",
+  "puzzles": [
+   "hb0138"
+  ],
+  "zipf": 1.61
+ },
+ "COLER": {
+  "from": "COLE",
+  "puzzles": [
+   "hb0026",
+   "hb0059"
+  ],
+  "zipf": 1.59
+ },
+ "COLLA": {
+  "from": "COLLAR",
+  "puzzles": [
+   "hb0110",
+   "hb0226",
+   "hb0245",
+   "hb0382"
+  ],
+  "zipf": 1.99
+ },
+ "COLLER": {
+  "from": "COLL",
+  "puzzles": [
+   "hb0026",
+   "hb0059"
+  ],
+  "zipf": 1.7
+ },
+ "COLO": {
+  "from": "COLOR",
+  "puzzles": [
+   "hb0026",
+   "hb0059",
+   "hb0382"
+  ],
+  "zipf": 3.28
+ },
+ "COMED": {
+  "from": "COME",
+  "puzzles": [
+   "hb0154",
+   "hb0246",
+   "hb0261",
+   "hb0425"
+  ],
+  "zipf": 1.92
+ },
+ "COMMEN": {
+  "from": "COMMEND",
+  "puzzles": [
+   "hb0261"
+  ],
+  "zipf": 1.7
+ },
+ "CONDER": {
+  "from": "COND",
+  "puzzles": [
+   "hb0436"
+  ],
+  "zipf": 1.84
+ },
+ "CONDON": {
+  "from": "CONDONED",
+  "puzzles": [
+   "hb0261",
+   "hb0377",
+   "hb0436"
+  ],
+  "zipf": 2.79
+ },
+ "CONED": {
+  "from": "CONE",
+  "puzzles": [
+   "hb0261",
+   "hb0334",
+   "hb0377",
+   "hb0402",
+   "hb0436"
+  ],
+  "zipf": 1.79
+ },
+ "CONG": {
+  "from": "CONGER",
+  "puzzles": [
+   "hb0043"
+  ],
+  "zipf": 3.24
+ },
+ "CONK": {
+  "from": "CONKER",
+  "puzzles": [
+   "hb0436"
+  ],
+  "zipf": 1.89
+ },
+ "CONNE": {
+  "from": "CONNER",
+  "puzzles": [
+   "hb0043",
+   "hb0059",
+   "hb0121",
+   "hb0138",
+   "hb0261",
+   "hb0334",
+   "hb0340",
+   "hb0377",
+   "hb0388",
+   "hb0402",
+   "hb0436"
+  ],
+  "zipf": 1.67
+ },
+ "CONTINU": {
+  "from": "CONTINUING",
+  "puzzles": [
+   "hb0588"
+  ],
+  "zipf": 1.86
+ },
+ "CONTROLL": {
+  "from": "CONTROLLER",
+  "puzzles": [
+   "hb0059"
+  ],
+  "zipf": 1.83
+ },
+ "COOLE": {
+  "from": "COOLER",
+  "puzzles": [
+   "hb0026",
+   "hb0059",
+   "hb0402"
+  ],
+  "zipf": 1.75
+ },
+ "COOPE": {
+  "from": "COOPED",
+  "puzzles": [
+   "hb0159",
+   "hb0227"
+  ],
+  "zipf": 1.54
+ },
+ "COOTE": {
+  "from": "COOTER",
+  "puzzles": [
+   "hb0059",
+   "hb0173"
+  ],
+  "zipf": 2.47
+ },
+ "COPI": {
+  "from": "COPIED",
+  "puzzles": [
+   "hb0227"
+  ],
+  "zipf": 1.56
+ },
+ "COPIE": {
+  "from": "COPIED",
+  "puzzles": [
+   "hb0227"
+  ],
+  "zipf": 1.52
+ },
+ "COPP": {
+  "from": "COPPED",
+  "puzzles": [
+   "hb0159",
+   "hb0227"
+  ],
+  "zipf": 2.09
+ },
+ "CORDE": {
+  "from": "CORDED",
+  "puzzles": [
+   "hb0425"
+  ],
+  "zipf": 1.75
+ },
+ "CORER": {
+  "from": "CORE",
+  "puzzles": [
+   "hb0043",
+   "hb0059",
+   "hb0104",
+   "hb0173",
+   "hb0340",
+   "hb0388",
+   "hb0425"
+  ],
+  "zipf": 1.58
+ },
+ "CORNE": {
+  "from": "CORNER",
+  "puzzles": [
+   "hb0043",
+   "hb0059",
+   "hb0121",
+   "hb0138",
+   "hb0340",
+   "hb0388",
+   "hb0436"
+  ],
+  "zipf": 2.24
+ },
+ "CORON": {
+  "from": "CORONER",
+  "puzzles": [
+   "hb0043",
+   "hb0059",
+   "hb0121",
+   "hb0138",
+   "hb0340",
+   "hb0436"
+  ],
+  "zipf": 1.81
+ },
+ "CORRIDO": {
+  "from": "CORRIDOR",
+  "puzzles": [
+   "hb0153",
+   "hb0361",
+   "hb0425"
+  ],
+  "zipf": 1.55
+ },
+ "COTT": {
+  "from": "COTTER",
+  "puzzles": [
+   "hb0059"
+  ],
+  "zipf": 2.21
+ },
+ "COTTE": {
+  "from": "COTTER",
+  "puzzles": [
+   "hb0059",
+   "hb0173"
+  ],
+  "zipf": 1.55
+ },
+ "COUPED": {
+  "from": "COUP",
+  "puzzles": [
+   "hb0159"
+  ],
+  "zipf": 1.55
+ },
+ "COVED": {
+  "from": "COVE",
+  "puzzles": [
+   "hb0074",
+   "hb0228"
+  ],
+  "zipf": 1.69
+ },
+ "CRAMER": {
+  "from": "CRAM",
+  "puzzles": [
+   "hb0284",
+   "hb0374"
+  ],
+  "zipf": 2.93
+ },
+ "CRAPPIER": {
+  "from": "CRAPPIE",
+  "puzzles": [
+   "hb0539"
+  ],
+  "zipf": 1.61
+ },
+ "CRAVER": {
+  "from": "CRAVE",
+  "puzzles": [
+   "hb0104",
+   "hb0253",
+   "hb0324"
+  ],
+  "zipf": 1.75
+ },
+ "CREDITO": {
+  "from": "CREDITOR",
+  "puzzles": [
+   "hb0153"
+  ],
+  "zipf": 1.76
+ },
+ "CREER": {
+  "from": "CREE",
+  "puzzles": [
+   "hb0025",
+   "hb0043",
+   "hb0059",
+   "hb0103",
+   "hb0104",
+   "hb0149",
+   "hb0172",
+   "hb0173",
+   "hb0179",
+   "hb0186",
+   "hb0191",
+   "hb0205",
+   "hb0244",
+   "hb0271",
+   "hb0277",
+   "hb0284",
+   "hb0285",
+   "hb0307",
+   "hb0324",
+   "hb0354",
+   "hb0367",
+   "hb0374",
+   "hb0388",
+   "hb0409",
+   "hb0435",
+   "hb0546",
+   "hb0574"
+  ],
+  "zipf": 1.7
+ },
+ "CREWE": {
+  "from": "CREWED",
+  "puzzles": [
+   "hb0574"
+  ],
+  "zipf": 2.96
+ },
+ "CRIBBED": {
+  "from": "CRIB",
+  "puzzles": [
+   "hb0139"
+  ],
+  "zipf": 1.88
+ },
+ "CRIE": {
+  "from": "CRIED",
+  "puzzles": [
+   "hb0093",
+   "hb0094",
+   "hb0103",
+   "hb0139",
+   "hb0149",
+   "hb0153",
+   "hb0173",
+   "hb0179",
+   "hb0191",
+   "hb0205",
+   "hb0244",
+   "hb0271",
+   "hb0306",
+   "hb0324",
+   "hb0348",
+   "hb0354",
+   "hb0374",
+   "hb0409",
+   "hb0514",
+   "hb0546"
+  ],
+  "zipf": 1.53
+ },
+ "CROPP": {
+  "from": "CROPPED",
+  "puzzles": [
+   "hb0227"
+  ],
+  "zipf": 1.55
+ },
+ "CRUELER": {
+  "from": "CRUEL",
+  "puzzles": [
+   "hb0205",
+   "hb0367"
+  ],
+  "zipf": 1.84
+ },
+ "CUPP": {
+  "from": "CUPPED",
+  "puzzles": [
+   "hb0159",
+   "hb0234"
+  ],
+  "zipf": 2.01
+ },
+ "CURLE": {
+  "from": "CURLER",
+  "puzzles": [
+   "hb0205",
+   "hb0367"
+  ],
+  "zipf": 1.87
+ },
+ "CURRIE": {
+  "from": "CURRIER",
+  "puzzles": [
+   "hb0094",
+   "hb0205",
+   "hb0271",
+   "hb0546"
+  ],
+  "zipf": 3.08
+ },
+ "CUTT": {
+  "from": "CUTTER",
+  "puzzles": [
+   "hb0386"
+  ],
+  "zipf": 1.96
+ },
+ "CYCLER": {
+  "from": "CYCLE",
+  "puzzles": [
+   "hb0354"
+  ],
+  "zipf": 1.76
+ },
+ "DABBLER": {
+  "from": "DABBLE",
+  "puzzles": [
+   "hb0314"
+  ],
+  "zipf": 1.7
+ },
+ "DAGG": {
+  "from": "DAGGER",
+  "puzzles": [
+   "hb0530"
+  ],
+  "zipf": 1.82
+ },
+ "DALER": {
+  "from": "DALE",
+  "puzzles": [
+   "hb0269",
+   "hb0314"
+  ],
+  "zipf": 1.54
+ },
+ "DALLIED": {
+  "from": "DALLY",
+  "puzzles": [
+   "hb0527"
+  ],
+  "zipf": 1.71
+ },
+ "DAMER": {
+  "from": "DAME",
+  "puzzles": [
+   "hb0150"
+  ],
+  "zipf": 1.73
+ },
+ "DAMM": {
+  "from": "DAMMED",
+  "puzzles": [
+   "hb0150",
+   "hb0378"
+  ],
+  "zipf": 2.64
+ },
+ "DAMN": {
+  "from": "DAMNED",
+  "puzzles": [
+   "hb0395"
+  ],
+  "zipf": 5.09
+ },
+ "DAND": {
+  "from": "DANDER",
+  "puzzles": [
+   "hb0061",
+   "hb0269",
+   "hb0395",
+   "hb0515"
+  ],
+  "zipf": 1.63
+ },
+ "DANDE": {
+  "from": "DANDER",
+  "puzzles": [
+   "hb0061",
+   "hb0269",
+   "hb0395",
+   "hb0515"
+  ],
+  "zipf": 1.51
+ },
+ "DANGED": {
+  "from": "DANG",
+  "puzzles": [
+   "hb0113"
+  ],
+  "zipf": 1.7
+ },
+ "DANN": {
+  "from": "DANNER",
+  "puzzles": [
+   "hb0061",
+   "hb0269",
+   "hb0395",
+   "hb0515"
+  ],
+  "zipf": 2.52
+ },
+ "DAPP": {
+  "from": "DAPPER",
+  "puzzles": [
+   "hb0333",
+   "hb0343",
+   "hb0572"
+  ],
+  "zipf": 1.91
+ },
+ "DAPPLE": {
+  "from": "DAPPLED",
+  "puzzles": [
+   "hb0065",
+   "hb0298",
+   "hb0459"
+  ],
+  "zipf": 1.87
+ },
+ "DARKE": {
+  "from": "DARKER",
+  "puzzles": [
+   "hb0231"
+  ],
+  "zipf": 2.24
+ },
+ "DAUBE": {
+  "from": "DAUBED",
+  "puzzles": [
+   "hb0417"
+  ],
+  "zipf": 1.58
+ },
+ "DAUNTE": {
+  "from": "DAUNTED",
+  "puzzles": [
+   "hb0287",
+   "hb0328"
+  ],
+  "zipf": 1.6
+ },
+ "DEAFEN": {
+  "from": "DEAFENED",
+  "puzzles": [
+   "hb0151"
+  ],
+  "zipf": 1.78
+ },
+ "DEANER": {
+  "from": "DEAN",
+  "puzzles": [
+   "hb0061",
+   "hb0269",
+   "hb0395",
+   "hb0515"
+  ],
+  "zipf": 1.57
+ },
+ "DEARE": {
+  "from": "DEARER",
+  "puzzles": [
+   "hb0035",
+   "hb0042",
+   "hb0050",
+   "hb0231",
+   "hb0269",
+   "hb0515",
+   "hb0584"
+  ],
+  "zipf": 1.61
+ },
+ "DEBA": {
+  "from": "DEBAR",
+  "puzzles": [
+   "hb0035",
+   "hb0231"
+  ],
+  "zipf": 1.84
+ },
+ "DEBARRED": {
+  "from": "DEBAR",
+  "puzzles": [
+   "hb0035",
+   "hb0231"
+  ],
+  "zipf": 1.83
+ },
+ "DEBAT": {
+  "from": "DEBATED",
+  "puzzles": [
+   "hb0188",
+   "hb0417",
+   "hb0529"
+  ],
+  "zipf": 1.53
+ },
+ "DECO": {
+  "from": "DECOR",
+  "puzzles": [
+   "hb0425"
+  ],
+  "zipf": 3.41
+ },
+ "DEEDED": {
+  "from": "DEED",
+  "puzzles": [
+   "hb0533"
+  ],
+  "zipf": 2.35
+ },
+ "DEEMER": {
+  "from": "DEEM",
+  "puzzles": [
+   "hb0150",
+   "hb0170",
+   "hb0553"
+  ],
+  "zipf": 1.62
+ },
+ "DEEPE": {
+  "from": "DEEPER",
+  "puzzles": [
+   "hb0089",
+   "hb0227",
+   "hb0234",
+   "hb0279",
+   "hb0309",
+   "hb0333",
+   "hb0343",
+   "hb0466",
+   "hb0503",
+   "hb0508",
+   "hb0516",
+   "hb0572"
+  ],
+  "zipf": 1.55
+ },
+ "DEFEATER": {
+  "from": "DEFEAT",
+  "puzzles": [
+   "hb0021",
+   "hb0381",
+   "hb0586"
+  ],
+  "zipf": 1.57
+ },
+ "DEFECATED": {
+  "from": "DEFECATE",
+  "puzzles": [
+   "hb0021"
+  ],
+  "zipf": 1.94
+ },
+ "DEFEN": {
+  "from": "DEFEND",
+  "puzzles": [
+   "hb0158",
+   "hb0536"
+  ],
+  "zipf": 1.77
+ },
+ "DEFI": {
+  "from": "DEFIED",
+  "puzzles": [
+   "hb0054",
+   "hb0161",
+   "hb0466"
+  ],
+  "zipf": 2.06
+ },
+ "DEGREED": {
+  "from": "DEGREE",
+  "puzzles": [
+   "hb0089",
+   "hb0194",
+   "hb0315",
+   "hb0530"
+  ],
+  "zipf": 1.68
+ },
+ "DELET": {
+  "from": "DELETED",
+  "puzzles": [
+   "hb0147",
+   "hb0184",
+   "hb0211",
+   "hb0236",
+   "hb0260",
+   "hb0412",
+   "hb0523",
+   "hb0533"
+  ],
+  "zipf": 1.71
+ },
+ "DELLER": {
+  "from": "DELL",
+  "puzzles": [
+   "hb0314",
+   "hb0516"
+  ],
+  "zipf": 1.88
+ },
+ "DEMAN": {
+  "from": "DEMAND",
+  "puzzles": [
+   "hb0395",
+   "hb0404"
+  ],
+  "zipf": 1.95
+ },
+ "DEMANDE": {
+  "from": "DEMANDED",
+  "puzzles": [
+   "hb0395",
+   "hb0404"
+  ],
+  "zipf": 1.59
+ },
+ "DENATURE": {
+  "from": "DENATURED",
+  "puzzles": [
+   "hb0328"
+  ],
+  "zipf": 1.79
+ },
+ "DENI": {
+  "from": "DENIED",
+  "puzzles": [
+   "hb0054",
+   "hb0157",
+   "hb0292",
+   "hb0375",
+   "hb0536",
+   "hb0573",
+   "hb0595"
+  ],
+  "zipf": 2.18
+ },
+ "DENTE": {
+  "from": "DENTED",
+  "puzzles": [
+   "hb0113",
+   "hb0127",
+   "hb0287",
+   "hb0321",
+   "hb0461",
+   "hb0478",
+   "hb0533"
+  ],
+  "zipf": 2.3
+ },
+ "DEPORTE": {
+  "from": "DEPORTED",
+  "puzzles": [
+   "hb0503"
+  ],
+  "zipf": 1.5
+ },
+ "DERMER": {
+  "from": "DERM",
+  "puzzles": [
+   "hb0052",
+   "hb0150",
+   "hb0170",
+   "hb0462",
+   "hb0553"
+  ],
+  "zipf": 1.64
+ },
+ "DETE": {
+  "from": "DETER",
+  "puzzles": [
+   "hb0126",
+   "hb0134",
+   "hb0147",
+   "hb0211",
+   "hb0264",
+   "hb0467",
+   "hb0487"
+  ],
+  "zipf": 1.88
+ },
+ "DEVILLED": {
+  "from": "DEVIL",
+  "puzzles": [
+   "hb0551",
+   "hb0576"
+  ],
+  "zipf": 1.54
+ },
+ "DEVOLVER": {
+  "from": "DEVOLVE",
+  "puzzles": [
+   "hb0109",
+   "hb0376"
+  ],
+  "zipf": 1.61
+ },
+ "DICER": {
+  "from": "DICE",
+  "puzzles": [
+   "hb0093",
+   "hb0139",
+   "hb0153"
+  ],
+  "zipf": 1.8
+ },
+ "DIDDLED": {
+  "from": "DIDDLE",
+  "puzzles": [
+   "hb0184",
+   "hb0412",
+   "hb0527",
+   "hb0551",
+   "hb0576"
+  ],
+  "zipf": 1.65
+ },
+ "DIEMER": {
+  "from": "DIEM",
+  "puzzles": [
+   "hb0161"
+  ],
+  "zipf": 1.52
+ },
+ "DIENER": {
+  "from": "DIENE",
+  "puzzles": [
+   "hb0375",
+   "hb0573"
+  ],
+  "zipf": 2.02
+ },
+ "DIETED": {
+  "from": "DIET",
+  "puzzles": [
+   "hb0033",
+   "hb0066",
+   "hb0147",
+   "hb0153",
+   "hb0211",
+   "hb0260",
+   "hb0292",
+   "hb0321",
+   "hb0399",
+   "hb0461",
+   "hb0467",
+   "hb0478",
+   "hb0487",
+   "hb0571",
+   "hb0595"
+  ],
+  "zipf": 1.79
+ },
+ "DIFF": {
+  "from": "DIFFER",
+  "puzzles": [
+   "hb0161"
+  ],
+  "zipf": 3.2
+ },
+ "DIFFE": {
+  "from": "DIFFER",
+  "puzzles": [
+   "hb0161",
+   "hb0466"
+  ],
+  "zipf": 1.57
+ },
+ "DIGG": {
+  "from": "DIGGER",
+  "puzzles": [
+   "hb0089",
+   "hb0194"
+  ],
+  "zipf": 2.87
+ },
+ "DIMED": {
+  "from": "DIME",
+  "puzzles": [
+   "hb0154",
+   "hb0161",
+   "hb0551",
+   "hb0595"
+  ],
+  "zipf": 1.7
+ },
+ "DIMM": {
+  "from": "DIMMED",
+  "puzzles": [
+   "hb0154",
+   "hb0161",
+   "hb0595"
+  ],
+  "zipf": 2.04
+ },
+ "DINN": {
+  "from": "DINNER",
+  "puzzles": [
+   "hb0375",
+   "hb0573"
+  ],
+  "zipf": 1.68
+ },
+ "DIPP": {
+  "from": "DIPPED",
+  "puzzles": [
+   "hb0089",
+   "hb0227",
+   "hb0278",
+   "hb0309",
+   "hb0573"
+  ],
+  "zipf": 1.51
+ },
+ "DIRECTO": {
+  "from": "DIRECTOR",
+  "puzzles": [
+   "hb0153"
+  ],
+  "zipf": 1.88
+ },
+ "DITHERED": {
+  "from": "DITHER",
+  "puzzles": [
+   "hb0147",
+   "hb0487"
+  ],
+  "zipf": 1.78
+ },
+ "DIVERTER": {
+  "from": "DIVERT",
+  "puzzles": [
+   "hb0487"
+  ],
+  "zipf": 1.81
+ },
+ "DIVINED": {
+  "from": "DIVINE",
+  "puzzles": [
+   "hb0228"
+  ],
+  "zipf": 1.81
+ },
+ "DODDER": {
+  "from": "DODD",
+  "puzzles": [
+   "hb0089",
+   "hb0109",
+   "hb0142",
+   "hb0376",
+   "hb0423",
+   "hb0425",
+   "hb0438",
+   "hb0447",
+   "hb0516",
+   "hb0518"
+  ],
+  "zipf": 1.68
+ },
+ "DOERING": {
+  "from": "DOER",
+  "puzzles": [
+   "hb0142"
+  ],
+  "zipf": 1.74
+ },
+ "DOGG": {
+  "from": "DOGGED",
+  "puzzles": [
+   "hb0089",
+   "hb0142",
+   "hb0355",
+   "hb0432"
+  ],
+  "zipf": 3.15
+ },
+ "DOLLA": {
+  "from": "DOLLAR",
+  "puzzles": [
+   "hb0130",
+   "hb0245",
+   "hb0314",
+   "hb0447"
+  ],
+  "zipf": 2.47
+ },
+ "DOLO": {
+  "from": "DOLOR",
+  "puzzles": [
+   "hb0109",
+   "hb0130",
+   "hb0314",
+   "hb0376",
+   "hb0447",
+   "hb0516"
+  ],
+  "zipf": 1.99
+ },
+ "DONAT": {
+  "from": "DONATING",
+  "puzzles": [
+   "hb0557"
+  ],
+  "zipf": 2.13
+ },
+ "DONO": {
+  "from": "DONOR",
+  "puzzles": [
+   "hb0061",
+   "hb0142",
+   "hb0158",
+   "hb0195",
+   "hb0406",
+   "hb0423",
+   "hb0436",
+   "hb0463"
+  ],
+  "zipf": 2.45
+ },
+ "DOORED": {
+  "from": "DOOR",
+  "puzzles": [
+   "hb0089",
+   "hb0109",
+   "hb0142",
+   "hb0315",
+   "hb0376",
+   "hb0423",
+   "hb0425",
+   "hb0431",
+   "hb0438",
+   "hb0447",
+   "hb0516",
+   "hb0518"
+  ],
+  "zipf": 1.67
+ },
+ "DOPER": {
+  "from": "DOPE",
+  "puzzles": [
+   "hb0089",
+   "hb0227",
+   "hb0309",
+   "hb0333",
+   "hb0447",
+   "hb0503",
+   "hb0508",
+   "hb0516"
+  ],
+  "zipf": 1.85
+ },
+ "DORNER": {
+  "from": "DORN",
+  "puzzles": [
+   "hb0061",
+   "hb0142",
+   "hb0158",
+   "hb0315",
+   "hb0423",
+   "hb0431",
+   "hb0436"
+  ],
+  "zipf": 2.13
+ },
+ "DOTT": {
+  "from": "DOTTED",
+  "puzzles": [
+   "hb0223",
+   "hb0264",
+   "hb0518"
+  ],
+  "zipf": 2.02
+ },
+ "DOWDING": {
+  "from": "DOWD",
+  "puzzles": [
+   "hb0406"
+  ],
+  "zipf": 1.84
+ },
+ "DOWE": {
+  "from": "DOWER",
+  "puzzles": [
+   "hb0062",
+   "hb0398"
+  ],
+  "zipf": 1.67
+ },
+ "DOWNING": {
+  "from": "DOWN",
+  "puzzles": [
+   "hb0406"
+  ],
+  "zipf": 3.44
+ },
+ "DRAGGER": {
+  "from": "DRAG",
+  "puzzles": [
+   "hb0530"
+  ],
+  "zipf": 1.7
+ },
+ "DRAWED": {
+  "from": "DRAW",
+  "puzzles": [
+   "hb0042",
+   "hb0062"
+  ],
+  "zipf": 1.7
+ },
+ "DREA": {
+  "from": "DREAD",
+  "puzzles": [
+   "hb0035",
+   "hb0042",
+   "hb0050",
+   "hb0231",
+   "hb0269",
+   "hb0515",
+   "hb0584"
+  ],
+  "zipf": 2.11
+ },
+ "DRIE": {
+  "from": "DRIED",
+  "puzzles": [
+   "hb0089",
+   "hb0093",
+   "hb0103",
+   "hb0139",
+   "hb0153",
+   "hb0161",
+   "hb0278",
+   "hb0313",
+   "hb0431",
+   "hb0462",
+   "hb0466",
+   "hb0502",
+   "hb0573"
+  ],
+  "zipf": 1.74
+ },
+ "DRIL": {
+  "from": "DRILLED",
+  "puzzles": [
+   "hb0313",
+   "hb0502"
+  ],
+  "zipf": 1.72
+ },
+ "DRILLER": {
+  "from": "DRILL",
+  "puzzles": [
+   "hb0502"
+  ],
+  "zipf": 2.35
+ },
+ "DRIPPER": {
+  "from": "DRIP",
+  "puzzles": [
+   "hb0089",
+   "hb0227",
+   "hb0278",
+   "hb0309",
+   "hb0462",
+   "hb0573"
+  ],
+  "zipf": 1.59
+ },
+ "DRIV": {
+  "from": "DRIVER",
+  "puzzles": [
+   "hb0278",
+   "hb0502"
+  ],
+  "zipf": 1.72
+ },
+ "DRON": {
+  "from": "DRONED",
+  "puzzles": [
+   "hb0061",
+   "hb0142",
+   "hb0158",
+   "hb0315",
+   "hb0406",
+   "hb0423",
+   "hb0431",
+   "hb0436"
+  ],
+  "zipf": 1.64
+ },
+ "DROPED": {
+  "from": "DROP",
+  "puzzles": [
+   "hb0089",
+   "hb0227",
+   "hb0309",
+   "hb0333",
+   "hb0447",
+   "hb0503",
+   "hb0508",
+   "hb0516"
+  ],
+  "zipf": 1.73
+ },
+ "DUBB": {
+  "from": "DUBBED",
+  "puzzles": [
+   "hb0482",
+   "hb0493"
+  ],
+  "zipf": 1.57
+ },
+ "DUDER": {
+  "from": "DUDE",
+  "puzzles": [
+   "hb0166",
+   "hb0185",
+   "hb0328",
+   "hb0362",
+   "hb0466",
+   "hb0493"
+  ],
+  "zipf": 1.65
+ },
+ "DUELE": {
+  "from": "DUELING",
+  "puzzles": [
+   "hb0034",
+   "hb0065",
+   "hb0146",
+   "hb0184",
+   "hb0298",
+   "hb0346",
+   "hb0402",
+   "hb0459",
+   "hb0576",
+   "hb0597"
+  ],
+  "zipf": 1.55
+ },
+ "DUELED": {
+  "from": "DUEL",
+  "puzzles": [
+   "hb0034"
+  ],
+  "zipf": 1.94
+ },
+ "DUNNER": {
+  "from": "DUNNE",
+  "puzzles": [
+   "hb0158",
+   "hb0328",
+   "hb0362",
+   "hb0375",
+   "hb0395",
+   "hb0444",
+   "hb0493"
+  ],
+  "zipf": 1.5
+ },
+ "EAGLED": {
+  "from": "EAGLE",
+  "puzzles": [
+   "hb0346",
+   "hb0459"
+  ],
+  "zipf": 1.77
+ },
+ "EARTHER": {
+  "from": "EARTH",
+  "puzzles": [
+   "hb0480"
+  ],
+  "zipf": 1.86
+ },
+ "EBBE": {
+  "from": "EBBED",
+  "puzzles": [
+   "hb0126",
+   "hb0144",
+   "hb0256",
+   "hb0303",
+   "hb0404",
+   "hb0429",
+   "hb0482",
+   "hb0499"
+  ],
+  "zipf": 1.68
+ },
+ "EDGER": {
+  "from": "EDGE",
+  "puzzles": [
+   "hb0089",
+   "hb0194",
+   "hb0530"
+  ],
+  "zipf": 1.91
+ },
+ "EDUCAT": {
+  "from": "EDUCATED",
+  "puzzles": [
+   "hb0389",
+   "hb0417",
+   "hb0506",
+   "hb0567"
+  ],
+  "zipf": 1.62
+ },
+ "EERY": {
+  "from": "EERILY",
+  "puzzles": [
+   "hb0038",
+   "hb0420",
+   "hb0502",
+   "hb0566"
+  ],
+  "zipf": 1.84
+ },
+ "EFFACE": {
+  "from": "EFFACED",
+  "puzzles": [
+   "hb0021"
+  ],
+  "zipf": 1.55
+ },
+ "EIDE": {
+  "from": "EIDER",
+  "puzzles": [
+   "hb0089",
+   "hb0093",
+   "hb0139",
+   "hb0153",
+   "hb0161",
+   "hb0278",
+   "hb0466",
+   "hb0573"
+  ],
+  "zipf": 1.94
+ },
+ "EITH": {
+  "from": "EITHER",
+  "puzzles": [
+   "hb0147",
+   "hb0149",
+   "hb0173",
+   "hb0291",
+   "hb0487"
+  ],
+  "zipf": 1.9
+ },
+ "ELAN": {
+  "from": "ELAND",
+  "puzzles": [
+   "hb0065",
+   "hb0151",
+   "hb0269"
+  ],
+  "zipf": 2.77
+ },
+ "ELLER": {
+  "from": "ELLE",
+  "puzzles": [
+   "hb0026",
+   "hb0068",
+   "hb0085",
+   "hb0114",
+   "hb0169",
+   "hb0197",
+   "hb0203",
+   "hb0214",
+   "hb0232",
+   "hb0255",
+   "hb0257",
+   "hb0277",
+   "hb0283",
+   "hb0314",
+   "hb0397",
+   "hb0420",
+   "hb0580"
+  ],
+  "zipf": 2.59
+ },
+ "ELLING": {
+  "from": "ELLE",
+  "puzzles": [
+   "hb0137",
+   "hb0256",
+   "hb0259",
+   "hb0344",
+   "hb0434",
+   "hb0541"
+  ],
+  "zipf": 1.89
+ },
+ "ELOP": {
+  "from": "ELOPED",
+  "puzzles": [
+   "hb0159",
+   "hb0298",
+   "hb0447"
+  ],
+  "zipf": 1.73
+ },
+ "ELUDING": {
+  "from": "ELUDE",
+  "puzzles": [
+   "hb0034"
+  ],
+  "zipf": 2.4
+ },
+ "EMCEED": {
+  "from": "EMCEE",
+  "puzzles": [
+   "hb0154",
+   "hb0261"
+  ],
+  "zipf": 1.65
+ },
+ "EMME": {
+  "from": "EMMER",
+  "puzzles": [
+   "hb0085",
+   "hb0150",
+   "hb0170",
+   "hb0192",
+   "hb0232",
+   "hb0239",
+   "hb0240",
+   "hb0277",
+   "hb0337",
+   "hb0338",
+   "hb0363",
+   "hb0388",
+   "hb0397",
+   "hb0512",
+   "hb0553",
+   "hb0575"
+  ],
+  "zipf": 2.1
+ },
+ "EMPLOYE": {
+  "from": "EMPLOYER",
+  "puzzles": [
+   "hb0090"
+  ],
+  "zipf": 1.79
+ },
+ "EMPTED": {
+  "from": "EMPT",
+  "puzzles": [
+   "hb0478",
+   "hb0503"
+  ],
+  "zipf": 2.24
+ },
+ "ENDE": {
+  "from": "ENDED",
+  "puzzles": [
+   "hb0061",
+   "hb0113",
+   "hb0157",
+   "hb0158",
+   "hb0182",
+   "hb0287",
+   "hb0334",
+   "hb0375",
+   "hb0395",
+   "hb0402",
+   "hb0404",
+   "hb0436",
+   "hb0444",
+   "hb0533",
+   "hb0536",
+   "hb0597"
+  ],
+  "zipf": 2.37
+ },
+ "ENLIVENING": {
+  "from": "ENLIVEN",
+  "puzzles": [
+   "hb0131",
+   "hb0259",
+   "hb0524"
+  ],
+  "zipf": 1.92
+ },
+ "ENTE": {
+  "from": "ENTER",
+  "puzzles": [
+   "hb0045",
+   "hb0171",
+   "hb0172",
+   "hb0212",
+   "hb0331",
+   "hb0341",
+   "hb0413",
+   "hb0420",
+   "hb0440",
+   "hb0520",
+   "hb0537",
+   "hb0544"
+  ],
+  "zipf": 2.18
+ },
+ "ENVI": {
+  "from": "ENVIED",
+  "puzzles": [
+   "hb0228"
+  ],
+  "zipf": 1.87
+ },
+ "ENVIE": {
+  "from": "ENVIED",
+  "puzzles": [
+   "hb0228"
+  ],
+  "zipf": 1.67
+ },
+ "ERRE": {
+  "from": "ERRED",
+  "puzzles": [
+   "hb0042",
+   "hb0050",
+   "hb0052",
+   "hb0103",
+   "hb0111",
+   "hb0126",
+   "hb0143",
+   "hb0303",
+   "hb0313",
+   "hb0315",
+   "hb0410",
+   "hb0424",
+   "hb0431",
+   "hb0462",
+   "hb0466",
+   "hb0502",
+   "hb0546",
+   "hb0574",
+   "hb0584"
+  ],
+  "zipf": 1.65
+ },
+ "ERRO": {
+  "from": "ERROR",
+  "puzzles": [
+   "hb0032",
+   "hb0063",
+   "hb0084",
+   "hb0090",
+   "hb0101",
+   "hb0109",
+   "hb0111",
+   "hb0126",
+   "hb0142",
+   "hb0173",
+   "hb0174",
+   "hb0178",
+   "hb0181",
+   "hb0204",
+   "hb0235",
+   "hb0242",
+   "hb0255",
+   "hb0263",
+   "hb0274",
+   "hb0281",
+   "hb0305",
+   "hb0308",
+   "hb0315",
+   "hb0320",
+   "hb0340",
+   "hb0357",
+   "hb0376",
+   "hb0388",
+   "hb0397",
+   "hb0423",
+   "hb0425",
+   "hb0431",
+   "hb0438",
+   "hb0447",
+   "hb0470",
+   "hb0518",
+   "hb0544",
+   "hb0550",
+   "hb0562",
+   "hb0584"
+  ],
+  "zipf": 1.59
+ },
+ "ETCHER": {
+  "from": "ETCH",
+  "puzzles": [
+   "hb0149",
+   "hb0173"
+  ],
+  "zipf": 1.88
+ },
+ "EVADER": {
+  "from": "EVADE",
+  "puzzles": [
+   "hb0269",
+   "hb0584"
+  ],
+  "zipf": 1.79
+ },
+ "EVENTER": {
+  "from": "EVENT",
+  "puzzles": [
+   "hb0037",
+   "hb0171",
+   "hb0511"
+  ],
+  "zipf": 1.63
+ },
+ "EVOLV": {
+  "from": "EVOLVED",
+  "puzzles": [
+   "hb0109",
+   "hb0376"
+  ],
+  "zipf": 1.71
+ },
+ "EXPLODER": {
+  "from": "EXPLODE",
+  "puzzles": [
+   "hb0516"
+  ],
+  "zipf": 1.87
+ },
+ "EYELINE": {
+  "from": "EYELINER",
+  "puzzles": [
+   "hb0420"
+  ],
+  "zipf": 1.69
+ },
+ "FACER": {
+  "from": "FACE",
+  "puzzles": [
+   "hb0021",
+   "hb0198",
+   "hb0317",
+   "hb0458",
+   "hb0526",
+   "hb0552"
+  ],
+  "zipf": 1.66
+ },
+ "FAFFING": {
+  "from": "FAFF",
+  "puzzles": [
+   "hb0335"
+  ],
+  "zipf": 1.87
+ },
+ "FAIRE": {
+  "from": "FAIRED",
+  "puzzles": [
+   "hb0161",
+   "hb0335",
+   "hb0347",
+   "hb0372",
+   "hb0409",
+   "hb0449",
+   "hb0458"
+  ],
+  "zipf": 3.14
+ },
+ "FALLE": {
+  "from": "FALLER",
+  "puzzles": [
+   "hb0079",
+   "hb0317",
+   "hb0372",
+   "hb0381",
+   "hb0449"
+  ],
+  "zipf": 1.56
+ },
+ "FANN": {
+  "from": "FANNING",
+  "puzzles": [
+   "hb0335"
+  ],
+  "zipf": 1.7
+ },
+ "FAREED": {
+  "from": "FARE",
+  "puzzles": [
+   "hb0021",
+   "hb0035",
+   "hb0050",
+   "hb0365",
+   "hb0381",
+   "hb0586"
+  ],
+  "zipf": 2.31
+ },
+ "FATH": {
+  "from": "FATHER",
+  "puzzles": [
+   "hb0586"
+  ],
+  "zipf": 2.23
+ },
+ "FATT": {
+  "from": "FATTER",
+  "puzzles": [
+   "hb0021",
+   "hb0079",
+   "hb0116",
+   "hb0145",
+   "hb0381",
+   "hb0458",
+   "hb0552",
+   "hb0586"
+  ],
+  "zipf": 2.1
+ },
+ "FEDERATE": {
+  "from": "FEDERATED",
+  "puzzles": [
+   "hb0021",
+   "hb0381",
+   "hb0586"
+  ],
+  "zipf": 1.78
+ },
+ "FEINTED": {
+  "from": "FEINT",
+  "puzzles": [
+   "hb0321"
+  ],
+  "zipf": 1.54
+ },
+ "FERMENTER": {
+  "from": "FERMENT",
+  "puzzles": [
+   "hb0052",
+   "hb0512"
+  ],
+  "zipf": 1.85
+ },
+ "FERRETED": {
+  "from": "FERRET",
+  "puzzles": [
+   "hb0021",
+   "hb0052",
+   "hb0211",
+   "hb0381",
+   "hb0586"
+  ],
+  "zipf": 1.53
+ },
+ "FERRIE": {
+  "from": "FERRIER",
+  "puzzles": [
+   "hb0046",
+   "hb0143",
+   "hb0161",
+   "hb0165",
+   "hb0220",
+   "hb0274",
+   "hb0303",
+   "hb0312",
+   "hb0313",
+   "hb0335",
+   "hb0347",
+   "hb0372",
+   "hb0409",
+   "hb0449",
+   "hb0458",
+   "hb0466",
+   "hb0488"
+  ],
+  "zipf": 2.02
+ },
+ "FERRIER": {
+  "from": "FERRY",
+  "puzzles": [
+   "hb0358"
+  ],
+  "zipf": 2.42
+ },
+ "FETE": {
+  "from": "FETED",
+  "puzzles": [
+   "hb0021",
+   "hb0211",
+   "hb0241",
+   "hb0321",
+   "hb0381",
+   "hb0586"
+  ],
+  "zipf": 2.68
+ },
+ "FETT": {
+  "from": "FETTER",
+  "puzzles": [
+   "hb0021",
+   "hb0046",
+   "hb0116",
+   "hb0211",
+   "hb0216",
+   "hb0312",
+   "hb0381",
+   "hb0458",
+   "hb0552",
+   "hb0586"
+  ],
+  "zipf": 2.62
+ },
+ "FIEN": {
+  "from": "FIEND",
+  "puzzles": [
+   "hb0054",
+   "hb0536"
+  ],
+  "zipf": 1.63
+ },
+ "FIFER": {
+  "from": "FIFE",
+  "puzzles": [
+   "hb0358"
+  ],
+  "zipf": 1.99
+ },
+ "FIGUR": {
+  "from": "FIGURED",
+  "puzzles": [
+   "hb0194"
+  ],
+  "zipf": 1.6
+ },
+ "FILLE": {
+  "from": "FILLER",
+  "puzzles": [
+   "hb0169",
+   "hb0312",
+   "hb0347",
+   "hb0358",
+   "hb0372",
+   "hb0449",
+   "hb0488"
+  ],
+  "zipf": 2.37
+ },
+ "FINANC": {
+  "from": "FINANCED",
+  "puzzles": [
+   "hb0054"
+  ],
+  "zipf": 1.6
+ },
+ "FING": {
+  "from": "FINGER",
+  "puzzles": [
+   "hb0335"
+  ],
+  "zipf": 2.17
+ },
+ "FINN": {
+  "from": "FINNED",
+  "puzzles": [
+   "hb0054",
+   "hb0536"
+  ],
+  "zipf": 3.78
+ },
+ "FIRER": {
+  "from": "FIRE",
+  "puzzles": [
+   "hb0046",
+   "hb0143",
+   "hb0161",
+   "hb0165",
+   "hb0220",
+   "hb0274",
+   "hb0303",
+   "hb0312",
+   "hb0313",
+   "hb0335",
+   "hb0347",
+   "hb0358",
+   "hb0372",
+   "hb0409",
+   "hb0449",
+   "hb0458",
+   "hb0466",
+   "hb0488"
+  ],
+  "zipf": 1.56
+ },
+ "FIRME": {
+  "from": "FIRMED",
+  "puzzles": [
+   "hb0161",
+   "hb0512"
+  ],
+  "zipf": 1.77
+ },
+ "FITT": {
+  "from": "FITTER",
+  "puzzles": [
+   "hb0046",
+   "hb0116",
+   "hb0211",
+   "hb0216",
+   "hb0312",
+   "hb0321",
+   "hb0458"
+  ],
+  "zipf": 1.91
+ },
+ "FLATT": {
+  "from": "FLATTER",
+  "puzzles": [
+   "hb0079",
+   "hb0381"
+  ],
+  "zipf": 2.1
+ },
+ "FLATTED": {
+  "from": "FLAT",
+  "puzzles": [
+   "hb0151",
+   "hb0241",
+   "hb0381"
+  ],
+  "zipf": 1.55
+ },
+ "FLATTERER": {
+  "from": "FLATTER",
+  "puzzles": [
+   "hb0079",
+   "hb0381"
+  ],
+  "zipf": 1.85
+ },
+ "FLEER": {
+  "from": "FLEE",
+  "puzzles": [
+   "hb0026",
+   "hb0169",
+   "hb0312",
+   "hb0317",
+   "hb0353",
+   "hb0358",
+   "hb0372",
+   "hb0381",
+   "hb0449",
+   "hb0488"
+  ],
+  "zipf": 1.9
+ },
+ "FLITTER": {
+  "from": "FLIT",
+  "puzzles": [
+   "hb0211",
+   "hb0312"
+  ],
+  "zipf": 1.77
+ },
+ "FLOO": {
+  "from": "FLOOR",
+  "puzzles": [
+   "hb0026",
+   "hb0057",
+   "hb0101",
+   "hb0353",
+   "hb0443"
+  ],
+  "zipf": 1.83
+ },
+ "FLUFFER": {
+  "from": "FLUFF",
+  "puzzles": [
+   "hb0317"
+  ],
+  "zipf": 1.84
+ },
+ "FOOTE": {
+  "from": "FOOTER",
+  "puzzles": [
+   "hb0216",
+   "hb0518"
+  ],
+  "zipf": 2.85
+ },
+ "FORDED": {
+  "from": "FORD",
+  "puzzles": [
+   "hb0365",
+   "hb0518"
+  ],
+  "zipf": 1.72
+ },
+ "FORG": {
+  "from": "FORGING",
+  "puzzles": [
+   "hb0224",
+   "hb0430"
+  ],
+  "zipf": 1.59
+ },
+ "FORME": {
+  "from": "FORMED",
+  "puzzles": [
+   "hb0170",
+   "hb0353"
+  ],
+  "zipf": 2.44
+ },
+ "FORTUNER": {
+  "from": "FORTUNE",
+  "puzzles": [
+   "hb0163"
+  ],
+  "zipf": 1.58
+ },
+ "FOUN": {
+  "from": "FOUND",
+  "puzzles": [
+   "hb0158"
+  ],
+  "zipf": 1.93
+ },
+ "FOWLE": {
+  "from": "FOWLER",
+  "puzzles": [
+   "hb0101"
+  ],
+  "zipf": 2.14
+ },
+ "FOYE": {
+  "from": "FOYER",
+  "puzzles": [
+   "hb0353"
+  ],
+  "zipf": 1.89
+ },
+ "FRAU": {
+  "from": "FRAUD",
+  "puzzles": [
+   "hb0050"
+  ],
+  "zipf": 3.07
+ },
+ "FREEE": {
+  "from": "FREEING",
+  "puzzles": [
+   "hb0143",
+   "hb0303",
+   "hb0335"
+  ],
+  "zipf": 1.51
+ },
+ "FREEZ": {
+  "from": "FREEZER",
+  "puzzles": [
+   "hb0143"
+  ],
+  "zipf": 1.52
+ },
+ "FRIA": {
+  "from": "FRIAR",
+  "puzzles": [
+   "hb0161",
+   "hb0335",
+   "hb0347",
+   "hb0372",
+   "hb0409",
+   "hb0449",
+   "hb0458",
+   "hb0509",
+   "hb0592"
+  ],
+  "zipf": 1.78
+ },
+ "FRIE": {
+  "from": "FRIED",
+  "puzzles": [
+   "hb0161",
+   "hb0313",
+   "hb0466"
+  ],
+  "zipf": 1.89
+ },
+ "FRIEDER": {
+  "from": "FRIED",
+  "puzzles": [
+   "hb0161",
+   "hb0313",
+   "hb0466"
+  ],
+  "zipf": 1.5
+ },
+ "FRIGGING": {
+  "from": "FRIG",
+  "puzzles": [
+   "hb0143",
+   "hb0335"
+  ],
+  "zipf": 2.56
+ },
+ "FRING": {
+  "from": "FRINGING",
+  "puzzles": [
+   "hb0143",
+   "hb0335"
+  ],
+  "zipf": 2.03
+ },
+ "FROGGING": {
+  "from": "FROG",
+  "puzzles": [
+   "hb0224",
+   "hb0430"
+  ],
+  "zipf": 1.72
+ },
+ "FROMMER": {
+  "from": "FROM",
+  "puzzles": [
+   "hb0170",
+   "hb0353"
+  ],
+  "zipf": 2.02
+ },
+ "FRON": {
+  "from": "FROND",
+  "puzzles": [
+   "hb0158"
+  ],
+  "zipf": 2.43
+ },
+ "FRYE": {
+  "from": "FRYER",
+  "puzzles": [
+   "hb0312",
+   "hb0353",
+   "hb0358"
+  ],
+  "zipf": 2.95
+ },
+ "FULLED": {
+  "from": "FULL",
+  "puzzles": [
+   "hb0241"
+  ],
+  "zipf": 1.51
+ },
+ "FURR": {
+  "from": "FURRED",
+  "puzzles": [
+   "hb0050"
+  ],
+  "zipf": 2.0
+ },
+ "GABLER": {
+  "from": "GABLE",
+  "puzzles": [
+   "hb0257"
+  ],
+  "zipf": 2.21
+ },
+ "GAGING": {
+  "from": "GAGE",
+  "puzzles": [
+   "hb0323"
+  ],
+  "zipf": 1.67
+ },
+ "GAINE": {
+  "from": "GAINING",
+  "puzzles": [
+   "hb0323"
+  ],
+  "zipf": 1.55
+ },
+ "GAITER": {
+  "from": "GAIT",
+  "puzzles": [
+   "hb0116",
+   "hb0218",
+   "hb0473"
+  ],
+  "zipf": 1.65
+ },
+ "GALLED": {
+  "from": "GALL",
+  "puzzles": [
+   "hb0346",
+   "hb0459"
+  ],
+  "zipf": 1.55
+ },
+ "GALLER": {
+  "from": "GALL",
+  "puzzles": [
+   "hb0028",
+   "hb0257"
+  ],
+  "zipf": 1.69
+ },
+ "GANGE": {
+  "from": "GANGED",
+  "puzzles": [
+   "hb0113",
+   "hb0323"
+  ],
+  "zipf": 1.7
+ },
+ "GANGER": {
+  "from": "GANG",
+  "puzzles": [
+   "hb0526"
+  ],
+  "zipf": 1.85
+ },
+ "GARAGED": {
+  "from": "GARAGE",
+  "puzzles": [
+   "hb0530"
+  ],
+  "zipf": 1.57
+ },
+ "GARBER": {
+  "from": "GARB",
+  "puzzles": [
+   "hb0084"
+  ],
+  "zipf": 2.73
+ },
+ "GART": {
+  "from": "GARTER",
+  "puzzles": [
+   "hb0058",
+   "hb0116",
+   "hb0218",
+   "hb0394",
+   "hb0437",
+   "hb0473"
+  ],
+  "zipf": 1.53
+ },
+ "GATH": {
+  "from": "GATHER",
+  "puzzles": [
+   "hb0473"
+  ],
+  "zipf": 2.12
+ },
+ "GATO": {
+  "from": "GATOR",
+  "puzzles": [
+   "hb0394",
+   "hb0403",
+   "hb0437"
+  ],
+  "zipf": 2.48
+ },
+ "GELDED": {
+  "from": "GELD",
+  "puzzles": [
+   "hb0346",
+   "hb0355",
+   "hb0412",
+   "hb0432",
+   "hb0459",
+   "hb0533"
+  ],
+  "zipf": 1.87
+ },
+ "GELL": {
+  "from": "GELLED",
+  "puzzles": [
+   "hb0533"
+  ],
+  "zipf": 2.19
+ },
+ "GELLER": {
+  "from": "GELL",
+  "puzzles": [
+   "hb0028",
+   "hb0255",
+   "hb0257"
+  ],
+  "zipf": 2.93
+ },
+ "GENER": {
+  "from": "GENE",
+  "puzzles": [
+   "hb0049",
+   "hb0111",
+   "hb0174",
+   "hb0303",
+   "hb0410"
+  ],
+  "zipf": 2.1
+ },
+ "GENTING": {
+  "from": "GENT",
+  "puzzles": [
+   "hb0123",
+   "hb0294",
+   "hb0359",
+   "hb0582"
+  ],
+  "zipf": 2.27
+ },
+ "GETT": {
+  "from": "GETTER",
+  "puzzles": [
+   "hb0058",
+   "hb0116",
+   "hb0218",
+   "hb0291",
+   "hb0294",
+   "hb0359",
+   "hb0394",
+   "hb0470",
+   "hb0473",
+   "hb0562",
+   "hb0582"
+  ],
+  "zipf": 2.01
+ },
+ "GIBBER": {
+  "from": "GIBBERING",
+  "puzzles": [
+   "hb0303"
+  ],
+  "zipf": 1.75
+ },
+ "GIDDILY": {
+  "from": "GIDDY",
+  "puzzles": [
+   "hb0355"
+  ],
+  "zipf": 1.74
+ },
+ "GILLING": {
+  "from": "GILL",
+  "puzzles": [
+   "hb0259",
+   "hb0541"
+  ],
+  "zipf": 1.65
+ },
+ "GINGE": {
+  "from": "GINGER",
+  "puzzles": [
+   "hb0049",
+   "hb0111",
+   "hb0303",
+   "hb0410"
+  ],
+  "zipf": 1.75
+ },
+ "GLUEING": {
+  "from": "GLUE",
+  "puzzles": [
+   "hb0034",
+   "hb0259"
+  ],
+  "zipf": 1.72
+ },
+ "GLUING": {
+  "from": "GLUE",
+  "puzzles": [
+   "hb0034"
+  ],
+  "zipf": 2.58
+ },
+ "GOERING": {
+  "from": "GOER",
+  "puzzles": [
+   "hb0111",
+   "hb0142",
+   "hb0178",
+   "hb0550"
+  ],
+  "zipf": 2.42
+ },
+ "GOGGLED": {
+  "from": "GOGGLE",
+  "puzzles": [
+   "hb0355",
+   "hb0432"
+  ],
+  "zipf": 1.59
+ },
+ "GOODE": {
+  "from": "GOODER",
+  "puzzles": [
+   "hb0089",
+   "hb0142"
+  ],
+  "zipf": 2.97
+ },
+ "GOONER": {
+  "from": "GOON",
+  "puzzles": [
+   "hb0142",
+   "hb0178",
+   "hb0550"
+  ],
+  "zipf": 1.72
+ },
+ "GORG": {
+  "from": "GORGED",
+  "puzzles": [
+   "hb0142",
+   "hb0177",
+   "hb0178",
+   "hb0224",
+   "hb0302",
+   "hb0315",
+   "hb0406",
+   "hb0430",
+   "hb0550"
+  ],
+  "zipf": 2.02
+ },
+ "GOUGER": {
+  "from": "GOUGE",
+  "puzzles": [
+   "hb0185",
+   "hb0255",
+   "hb0362",
+   "hb0394",
+   "hb0470"
+  ],
+  "zipf": 1.61
+ },
+ "GOUR": {
+  "from": "GOURD",
+  "puzzles": [
+   "hb0185",
+   "hb0362",
+   "hb0401"
+  ],
+  "zipf": 1.73
+ },
+ "GOVER": {
+  "from": "GOVE",
+  "puzzles": [
+   "hb0238",
+   "hb0550",
+   "hb0562"
+  ],
+  "zipf": 2.13
+ },
+ "GOVERNER": {
+  "from": "GOVERN",
+  "puzzles": [
+   "hb0238",
+   "hb0315",
+   "hb0550"
+  ],
+  "zipf": 1.71
+ },
+ "GOVERNO": {
+  "from": "GOVERNOR",
+  "puzzles": [
+   "hb0238",
+   "hb0315",
+   "hb0550"
+  ],
+  "zipf": 1.73
+ },
+ "GRABBE": {
+  "from": "GRABBER",
+  "puzzles": [
+   "hb0084"
+  ],
+  "zipf": 1.55
+ },
+ "GRABER": {
+  "from": "GRAB",
+  "puzzles": [
+   "hb0084"
+  ],
+  "zipf": 2.12
+ },
+ "GRAFTER": {
+  "from": "GRAFT",
+  "puzzles": [
+   "hb0116"
+  ],
+  "zipf": 1.74
+ },
+ "GRAINING": {
+  "from": "GRAIN",
+  "puzzles": [
+   "hb0055",
+   "hb0071",
+   "hb0272",
+   "hb0504",
+   "hb0510"
+  ],
+  "zipf": 1.66
+ },
+ "GRAMMA": {
+  "from": "GRAMMAR",
+  "puzzles": [
+   "hb0218",
+   "hb0239",
+   "hb0366",
+   "hb0368",
+   "hb0437",
+   "hb0504"
+  ],
+  "zipf": 2.34
+ },
+ "GRAMMER": {
+  "from": "GRAM",
+  "puzzles": [
+   "hb0218",
+   "hb0239",
+   "hb0366",
+   "hb0437"
+  ],
+  "zipf": 2.67
+ },
+ "GRAV": {
+  "from": "GRAVER",
+  "puzzles": [
+   "hb0530"
+  ],
+  "zipf": 2.32
+ },
+ "GREATE": {
+  "from": "GREATER",
+  "puzzles": [
+   "hb0058",
+   "hb0116",
+   "hb0218",
+   "hb0394",
+   "hb0437",
+   "hb0473"
+  ],
+  "zipf": 1.92
+ },
+ "GREENE": {
+  "from": "GREENER",
+  "puzzles": [
+   "hb0049",
+   "hb0111",
+   "hb0143",
+   "hb0174",
+   "hb0303",
+   "hb0315",
+   "hb0410",
+   "hb0546"
+  ],
+  "zipf": 3.76
+ },
+ "GREENED": {
+  "from": "GREEN",
+  "puzzles": [
+   "hb0315"
+  ],
+  "zipf": 1.56
+ },
+ "GREER": {
+  "from": "GREE",
+  "puzzles": [
+   "hb0028",
+   "hb0084",
+   "hb0100",
+   "hb0111",
+   "hb0143",
+   "hb0174",
+   "hb0194",
+   "hb0218",
+   "hb0255",
+   "hb0303",
+   "hb0315",
+   "hb0366",
+   "hb0394",
+   "hb0410",
+   "hb0470",
+   "hb0473",
+   "hb0517",
+   "hb0530",
+   "hb0546",
+   "hb0562"
+  ],
+  "zipf": 3.24
+ },
+ "GREYED": {
+  "from": "GREY",
+  "puzzles": [
+   "hb0530"
+  ],
+  "zipf": 1.97
+ },
+ "GREYER": {
+  "from": "GREY",
+  "puzzles": [
+   "hb0028",
+   "hb0174",
+   "hb0366",
+   "hb0530"
+  ],
+  "zipf": 1.91
+ },
+ "GRIDER": {
+  "from": "GRID",
+  "puzzles": [
+   "hb0089",
+   "hb0194"
+  ],
+  "zipf": 1.69
+ },
+ "GRIEFING": {
+  "from": "GRIEF",
+  "puzzles": [
+   "hb0143",
+   "hb0303",
+   "hb0335"
+  ],
+  "zipf": 1.56
+ },
+ "GRILLER": {
+  "from": "GRILL",
+  "puzzles": [
+   "hb0517"
+  ],
+  "zipf": 1.61
+ },
+ "GRIMER": {
+  "from": "GRIM",
+  "puzzles": [
+   "hb0218",
+   "hb0366"
+  ],
+  "zipf": 1.65
+ },
+ "GRIMM": {
+  "from": "GRIMMER",
+  "puzzles": [
+   "hb0218",
+   "hb0366"
+  ],
+  "zipf": 3.35
+ },
+ "GRINER": {
+  "from": "GRIN",
+  "puzzles": [
+   "hb0049",
+   "hb0143",
+   "hb0546"
+  ],
+  "zipf": 2.11
+ },
+ "GROCE": {
+  "from": "GROCER",
+  "puzzles": [
+   "hb0043",
+   "hb0104"
+  ],
+  "zipf": 2.04
+ },
+ "GROOME": {
+  "from": "GROOMER",
+  "puzzles": [
+   "hb0239"
+  ],
+  "zipf": 1.72
+ },
+ "GROOVER": {
+  "from": "GROOVE",
+  "puzzles": [
+   "hb0238",
+   "hb0315",
+   "hb0550",
+   "hb0562"
+  ],
+  "zipf": 1.67
+ },
+ "GROPER": {
+  "from": "GROPE",
+  "puzzles": [
+   "hb0111",
+   "hb0174",
+   "hb0255"
+  ],
+  "zipf": 1.88
+ },
+ "GROUN": {
+  "from": "GROUND",
+  "puzzles": [
+   "hb0362"
+  ],
+  "zipf": 1.5
+ },
+ "GROUPE": {
+  "from": "GROUPED",
+  "puzzles": [
+   "hb0185",
+   "hb0255"
+  ],
+  "zipf": 2.47
+ },
+ "GROVER": {
+  "from": "GROVE",
+  "puzzles": [
+   "hb0238",
+   "hb0315",
+   "hb0550",
+   "hb0562"
+  ],
+  "zipf": 3.22
+ },
+ "GUID": {
+  "from": "GUIDED",
+  "puzzles": [
+   "hb0034",
+   "hb0194"
+  ],
+  "zipf": 2.26
+ },
+ "GUIDER": {
+  "from": "GUIDE",
+  "puzzles": [
+   "hb0194"
+  ],
+  "zipf": 1.78
+ },
+ "GUIL": {
+  "from": "GUILD",
+  "puzzles": [
+   "hb0034"
+  ],
+  "zipf": 1.54
+ },
+ "GULLED": {
+  "from": "GULL",
+  "puzzles": [
+   "hb0034",
+   "hb0346",
+   "hb0459"
+  ],
+  "zipf": 1.5
+ },
+ "GUNN": {
+  "from": "GUNNED",
+  "puzzles": [
+   "hb0034",
+   "hb0362",
+   "hb0578"
+  ],
+  "zipf": 3.26
+ },
+ "GUNT": {
+  "from": "GUNTER",
+  "puzzles": [
+   "hb0578"
+  ],
+  "zipf": 1.52
+ },
+ "GUTT": {
+  "from": "GUTTER",
+  "puzzles": [
+   "hb0394",
+   "hb0578"
+  ],
+  "zipf": 1.73
+ },
+ "HADER": {
+  "from": "HADE",
+  "puzzles": [
+   "hb0379",
+   "hb0492",
+   "hb0584"
+  ],
+  "zipf": 2.41
+ },
+ "HAGGLED": {
+  "from": "HAGGLE",
+  "puzzles": [
+   "hb0346"
+  ],
+  "zipf": 1.83
+ },
+ "HAILER": {
+  "from": "HAIL",
+  "puzzles": [
+   "hb0580"
+  ],
+  "zipf": 1.62
+ },
+ "HAIRIER": {
+  "from": "HAIRY",
+  "puzzles": [
+   "hb0247"
+  ],
+  "zipf": 1.83
+ },
+ "HALLER": {
+  "from": "HALL",
+  "puzzles": [
+   "hb0110",
+   "hb0203",
+   "hb0283",
+   "hb0580"
+  ],
+  "zipf": 2.61
+ },
+ "HAMEED": {
+  "from": "HAME",
+  "puzzles": [
+   "hb0150"
+  ],
+  "zipf": 2.25
+ },
+ "HAMER": {
+  "from": "HAME",
+  "puzzles": [
+   "hb0150",
+   "hb0239"
+  ],
+  "zipf": 2.6
+ },
+ "HAMM": {
+  "from": "HAMMER",
+  "puzzles": [
+   "hb0150",
+   "hb0239"
+  ],
+  "zipf": 2.9
+ },
+ "HAMP": {
+  "from": "HAMPER",
+  "puzzles": [
+   "hb0150"
+  ],
+  "zipf": 2.23
+ },
+ "HANDE": {
+  "from": "HANDED",
+  "puzzles": [
+   "hb0287",
+   "hb0492",
+   "hb0590"
+  ],
+  "zipf": 2.01
+ },
+ "HAPPI": {
+  "from": "HAPPIER",
+  "puzzles": [
+   "hb0095"
+  ],
+  "zipf": 1.69
+ },
+ "HARDE": {
+  "from": "HARDER",
+  "puzzles": [
+   "hb0379",
+   "hb0492",
+   "hb0584"
+  ],
+  "zipf": 1.61
+ },
+ "HARDENER": {
+  "from": "HARDEN",
+  "puzzles": [
+   "hb0492"
+  ],
+  "zipf": 1.77
+ },
+ "HARPE": {
+  "from": "HARPER",
+  "puzzles": [
+   "hb0095"
+  ],
+  "zipf": 1.86
+ },
+ "HARRER": {
+  "from": "HARR",
+  "puzzles": [
+   "hb0110",
+   "hb0198",
+   "hb0379",
+   "hb0480",
+   "hb0492"
+  ],
+  "zipf": 1.87
+ },
+ "HARRI": {
+  "from": "HARRIED",
+  "puzzles": [
+   "hb0093",
+   "hb0247",
+   "hb0306"
+  ],
+  "zipf": 2.02
+ },
+ "HARRIE": {
+  "from": "HARRIED",
+  "puzzles": [
+   "hb0093",
+   "hb0214",
+   "hb0247",
+   "hb0306"
+  ],
+  "zipf": 1.74
+ },
+ "HARTER": {
+  "from": "HART",
+  "puzzles": [
+   "hb0480"
+  ],
+  "zipf": 2.03
+ },
+ "HATTE": {
+  "from": "HATTED",
+  "puzzles": [
+   "hb0033",
+   "hb0127",
+   "hb0251",
+   "hb0480"
+  ],
+  "zipf": 1.6
+ },
+ "HEAV": {
+  "from": "HEAVED",
+  "puzzles": [
+   "hb0584"
+  ],
+  "zipf": 1.64
+ },
+ "HEAVER": {
+  "from": "HEAVE",
+  "puzzles": [
+   "hb0480",
+   "hb0584"
+  ],
+  "zipf": 1.58
+ },
+ "HECKER": {
+  "from": "HECK",
+  "puzzles": [
+   "hb0149"
+  ],
+  "zipf": 2.15
+ },
+ "HEELING": {
+  "from": "HEEL",
+  "puzzles": [
+   "hb0541"
+  ],
+  "zipf": 1.89
+ },
+ "HEFTED": {
+  "from": "HEFT",
+  "puzzles": [
+   "hb0586"
+  ],
+  "zipf": 1.54
+ },
+ "HELLER": {
+  "from": "HELL",
+  "puzzles": [
+   "hb0203",
+   "hb0214",
+   "hb0283",
+   "hb0580"
+  ],
+  "zipf": 3.27
+ },
+ "HELLYER": {
+  "from": "HELLY",
+  "puzzles": [
+   "hb0283"
+  ],
+  "zipf": 1.87
+ },
+ "HELMER": {
+  "from": "HELM",
+  "puzzles": [
+   "hb0203"
+  ],
+  "zipf": 2.5
+ },
+ "HELPE": {
+  "from": "HELPER",
+  "puzzles": [
+   "hb0095"
+  ],
+  "zipf": 1.6
+ },
+ "HERBED": {
+  "from": "HERB",
+  "puzzles": [
+   "hb0126",
+   "hb0379"
+  ],
+  "zipf": 1.81
+ },
+ "HERBER": {
+  "from": "HERB",
+  "puzzles": [
+   "hb0100",
+   "hb0126",
+   "hb0357",
+   "hb0379"
+  ],
+  "zipf": 1.55
+ },
+ "HERNING": {
+  "from": "HERN",
+  "puzzles": [
+   "hb0049"
+  ],
+  "zipf": 1.56
+ },
+ "HILLE": {
+  "from": "HILLER",
+  "puzzles": [
+   "hb0214",
+   "hb0580"
+  ],
+  "zipf": 1.89
+ },
+ "HILLING": {
+  "from": "HILL",
+  "puzzles": [
+   "hb0541"
+  ],
+  "zipf": 1.6
+ },
+ "HILTER": {
+  "from": "HILT",
+  "puzzles": [
+   "hb0147",
+   "hb0291"
+  ],
+  "zipf": 1.56
+ },
+ "HIRER": {
+  "from": "HIRE",
+  "puzzles": [
+   "hb0093",
+   "hb0100",
+   "hb0103",
+   "hb0149",
+   "hb0173",
+   "hb0214",
+   "hb0247",
+   "hb0306",
+   "hb0357"
+  ],
+  "zipf": 1.9
+ },
+ "HITT": {
+  "from": "HITTING",
+  "puzzles": [
+   "hb0099",
+   "hb0147",
+   "hb0291",
+   "hb0326",
+   "hb0487"
+  ],
+  "zipf": 2.16
+ },
+ "HIVER": {
+  "from": "HIVE",
+  "puzzles": [
+   "hb0306"
+  ],
+  "zipf": 1.93
+ },
+ "HONO": {
+  "from": "HONOR",
+  "puzzles": [
+   "hb0082",
+   "hb0340"
+  ],
+  "zipf": 1.61
+ },
+ "HOOFER": {
+  "from": "HOOF",
+  "puzzles": [
+   "hb0365"
+  ],
+  "zipf": 1.54
+ },
+ "HOOTED": {
+  "from": "HOOT",
+  "puzzles": [
+   "hb0223",
+   "hb0251"
+  ],
+  "zipf": 1.82
+ },
+ "HOOVERED": {
+  "from": "HOOVER",
+  "puzzles": [
+   "hb0584"
+  ],
+  "zipf": 1.92
+ },
+ "HOPP": {
+  "from": "HOPPED",
+  "puzzles": [
+   "hb0525"
+  ],
+  "zipf": 1.91
+ },
+ "HOPPE": {
+  "from": "HOPPED",
+  "puzzles": [
+   "hb0525"
+  ],
+  "zipf": 2.3
+ },
+ "HORDER": {
+  "from": "HORDE",
+  "puzzles": [
+   "hb0126",
+   "hb0584"
+  ],
+  "zipf": 1.84
+ },
+ "HORNE": {
+  "from": "HORNER",
+  "puzzles": [
+   "hb0340"
+  ],
+  "zipf": 3.17
+ },
+ "HUGER": {
+  "from": "HUGE",
+  "puzzles": [
+   "hb0470"
+  ],
+  "zipf": 1.99
+ },
+ "HULLE": {
+  "from": "HULLED",
+  "puzzles": [
+   "hb0346"
+  ],
+  "zipf": 1.5
+ },
+ "HUNTE": {
+  "from": "HUNTED",
+  "puzzles": [
+   "hb0287"
+  ],
+  "zipf": 1.75
+ },
+ "IMAG": {
+  "from": "IMAGING",
+  "puzzles": [
+   "hb0152",
+   "hb0218",
+   "hb0276",
+   "hb0366",
+   "hb0504"
+  ],
+  "zipf": 1.83
+ },
+ "IMAGIN": {
+  "from": "IMAGINING",
+  "puzzles": [
+   "hb0152",
+   "hb0276",
+   "hb0504"
+  ],
+  "zipf": 1.84
+ },
+ "INCHER": {
+  "from": "INCH",
+  "puzzles": [
+   "hb0049"
+  ],
+  "zipf": 1.74
+ },
+ "INDE": {
+  "from": "INDEED",
+  "puzzles": [
+   "hb0536"
+  ],
+  "zipf": 2.23
+ },
+ "INDER": {
+  "from": "INDE",
+  "puzzles": [
+   "hb0375",
+   "hb0573"
+  ],
+  "zipf": 2.21
+ },
+ "INNE": {
+  "from": "INNER",
+  "puzzles": [
+   "hb0049",
+   "hb0053",
+   "hb0068",
+   "hb0096",
+   "hb0111",
+   "hb0123",
+   "hb0138",
+   "hb0212",
+   "hb0213",
+   "hb0214",
+   "hb0303",
+   "hb0341",
+   "hb0375",
+   "hb0410",
+   "hb0411",
+   "hb0413",
+   "hb0414",
+   "hb0420",
+   "hb0544",
+   "hb0573"
+  ],
+  "zipf": 1.62
+ },
+ "INTE": {
+  "from": "INTER",
+  "puzzles": [
+   "hb0212",
+   "hb0341",
+   "hb0413",
+   "hb0414",
+   "hb0420",
+   "hb0544"
+  ],
+  "zipf": 2.46
+ },
+ "INTEN": {
+  "from": "INTEND",
+  "puzzles": [
+   "hb0292",
+   "hb0321",
+   "hb0461",
+   "hb0478",
+   "hb0595"
+  ],
+  "zipf": 1.87
+ },
+ "INTONE": {
+  "from": "INTONED",
+  "puzzles": [
+   "hb0595"
+  ],
+  "zipf": 1.67
+ },
+ "INTUITED": {
+  "from": "INTUIT",
+  "puzzles": [
+   "hb0146"
+  ],
+  "zipf": 1.75
+ },
+ "INURE": {
+  "from": "INURED",
+  "puzzles": [
+   "hb0375"
+  ],
+  "zipf": 1.9
+ },
+ "JETT": {
+  "from": "JETTED",
+  "puzzles": [
+   "hb0461"
+  ],
+  "zipf": 2.79
+ },
+ "JETTE": {
+  "from": "JETTED",
+  "puzzles": [
+   "hb0461"
+  ],
+  "zipf": 1.9
+ },
+ "KALER": {
+  "from": "KALE",
+  "puzzles": [
+   "hb0085",
+   "hb0122",
+   "hb0277"
+  ],
+  "zipf": 1.7
+ },
+ "KAMER": {
+  "from": "KAME",
+  "puzzles": [
+   "hb0085",
+   "hb0122",
+   "hb0277"
+  ],
+  "zipf": 1.75
+ },
+ "KAYAKED": {
+  "from": "KAYAK",
+  "puzzles": [
+   "hb0231"
+  ],
+  "zipf": 1.6
+ },
+ "KEELE": {
+  "from": "KEELER",
+  "puzzles": [
+   "hb0068",
+   "hb0085",
+   "hb0122",
+   "hb0233",
+   "hb0236",
+   "hb0277"
+  ],
+  "zipf": 2.3
+ },
+ "KEENE": {
+  "from": "KEENER",
+  "puzzles": [
+   "hb0068",
+   "hb0123",
+   "hb0212",
+   "hb0436"
+  ],
+  "zipf": 2.96
+ },
+ "KELLER": {
+  "from": "KELL",
+  "puzzles": [
+   "hb0068",
+   "hb0085",
+   "hb0122",
+   "hb0233",
+   "hb0277"
+  ],
+  "zipf": 3.58
+ },
+ "KENN": {
+  "from": "KENNER",
+  "puzzles": [
+   "hb0068",
+   "hb0212",
+   "hb0436"
+  ],
+  "zipf": 2.17
+ },
+ "KENNE": {
+  "from": "KENNER",
+  "puzzles": [
+   "hb0068",
+   "hb0212",
+   "hb0436"
+  ],
+  "zipf": 1.61
+ },
+ "KETTLER": {
+  "from": "KETTLE",
+  "puzzles": [
+   "hb0233"
+  ],
+  "zipf": 1.76
+ },
+ "KILLE": {
+  "from": "KILLER",
+  "puzzles": [
+   "hb0068",
+   "hb0233"
+  ],
+  "zipf": 1.6
+ },
+ "KILT": {
+  "from": "KILTER",
+  "puzzles": [
+   "hb0233"
+  ],
+  "zipf": 2.88
+ },
+ "KINKING": {
+  "from": "KINK",
+  "puzzles": [
+   "hb0123"
+  ],
+  "zipf": 1.51
+ },
+ "KIRKER": {
+  "from": "KIRK",
+  "puzzles": [
+   "hb0233"
+  ],
+  "zipf": 1.52
+ },
+ "KNEEING": {
+  "from": "KNEE",
+  "puzzles": [
+   "hb0123"
+  ],
+  "zipf": 1.81
+ },
+ "KNELLER": {
+  "from": "KNELL",
+  "puzzles": [
+   "hb0068"
+  ],
+  "zipf": 1.96
+ },
+ "KOLL": {
+  "from": "KOLLER",
+  "puzzles": [
+   "hb0376"
+  ],
+  "zipf": 1.7
+ },
+ "KRON": {
+  "from": "KRONER",
+  "puzzles": [
+   "hb0305",
+   "hb0436"
+  ],
+  "zipf": 2.32
+ },
+ "LABELLED": {
+  "from": "LABEL",
+  "puzzles": [
+   "hb0144",
+   "hb0188",
+   "hb0314",
+   "hb0429",
+   "hb0529"
+  ],
+  "zipf": 3.62
+ },
+ "LABO": {
+  "from": "LABOR",
+  "puzzles": [
+   "hb0130",
+   "hb0237",
+   "hb0273",
+   "hb0314",
+   "hb0382"
+  ],
+  "zipf": 2.28
+ },
+ "LADD": {
+  "from": "LADDER",
+  "puzzles": [
+   "hb0269",
+   "hb0314"
+  ],
+  "zipf": 2.78
+ },
+ "LADER": {
+  "from": "LADE",
+  "puzzles": [
+   "hb0269",
+   "hb0314"
+  ],
+  "zipf": 1.54
+ },
+ "LADLED": {
+  "from": "LADLE",
+  "puzzles": [
+   "hb0065",
+   "hb0151",
+   "hb0188",
+   "hb0236",
+   "hb0269",
+   "hb0298",
+   "hb0314",
+   "hb0346",
+   "hb0389",
+   "hb0459",
+   "hb0475",
+   "hb0527",
+   "hb0529",
+   "hb0551",
+   "hb0597"
+  ],
+  "zipf": 1.59
+ },
+ "LAGE": {
+  "from": "LAGER",
+  "puzzles": [
+   "hb0028",
+   "hb0257"
+  ],
+  "zipf": 2.32
+ },
+ "LAGG": {
+  "from": "LAGGING",
+  "puzzles": [
+   "hb0071",
+   "hb0346",
+   "hb0459"
+  ],
+  "zipf": 1.59
+ },
+ "LAMED": {
+  "from": "LAME",
+  "puzzles": [
+   "hb0551"
+  ],
+  "zipf": 1.7
+ },
+ "LAMELLA": {
+  "from": "LAMELLAR",
+  "puzzles": [
+   "hb0085",
+   "hb0203",
+   "hb0232",
+   "hb0257",
+   "hb0277",
+   "hb0338",
+   "hb0575"
+  ],
+  "zipf": 1.77
+ },
+ "LANC": {
+  "from": "LANCER",
+  "puzzles": [
+   "hb0253",
+   "hb0301",
+   "hb0439"
+  ],
+  "zipf": 1.74
+ },
+ "LANDE": {
+  "from": "LANDED",
+  "puzzles": [
+   "hb0065",
+   "hb0151",
+   "hb0269",
+   "hb0597"
+  ],
+  "zipf": 2.16
+ },
+ "LANED": {
+  "from": "LANE",
+  "puzzles": [
+   "hb0065",
+   "hb0151",
+   "hb0269"
+  ],
+  "zipf": 1.52
+ },
+ "LANER": {
+  "from": "LANE",
+  "puzzles": [
+   "hb0102",
+   "hb0114",
+   "hb0197",
+   "hb0214",
+   "hb0217",
+   "hb0253",
+   "hb0269",
+   "hb0293",
+   "hb0331",
+   "hb0350",
+   "hb0439"
+  ],
+  "zipf": 1.88
+ },
+ "LAPP": {
+  "from": "LAPPED",
+  "puzzles": [
+   "hb0065",
+   "hb0298",
+   "hb0459"
+  ],
+  "zipf": 2.11
+ },
+ "LAPPE": {
+  "from": "LAPPED",
+  "puzzles": [
+   "hb0065",
+   "hb0298",
+   "hb0459"
+  ],
+  "zipf": 1.58
+ },
+ "LARCHER": {
+  "from": "LARCH",
+  "puzzles": [
+   "hb0110",
+   "hb0580"
+  ],
+  "zipf": 1.66
+ },
+ "LARDED": {
+  "from": "LARD",
+  "puzzles": [
+   "hb0050",
+   "hb0269",
+   "hb0314"
+  ],
+  "zipf": 1.56
+ },
+ "LARG": {
+  "from": "LARGER",
+  "puzzles": [
+   "hb0028",
+   "hb0257",
+   "hb0517"
+  ],
+  "zipf": 1.96
+ },
+ "LATED": {
+  "from": "LATE",
+  "puzzles": [
+   "hb0151",
+   "hb0188",
+   "hb0236",
+   "hb0389",
+   "hb0475",
+   "hb0523",
+   "hb0529"
+  ],
+  "zipf": 1.62
+ },
+ "LATT": {
+  "from": "LATTER",
+  "puzzles": [
+   "hb0058",
+   "hb0079",
+   "hb0114",
+   "hb0203",
+   "hb0283",
+   "hb0350"
+  ],
+  "zipf": 1.72
+ },
+ "LAUDE": {
+  "from": "LAUDED",
+  "puzzles": [
+   "hb0065",
+   "hb0298",
+   "hb0346",
+   "hb0389",
+   "hb0459",
+   "hb0475",
+   "hb0597"
+  ],
+  "zipf": 2.99
+ },
+ "LAYE": {
+  "from": "LAYER",
+  "puzzles": [
+   "hb0038",
+   "hb0197",
+   "hb0283",
+   "hb0505"
+  ],
+  "zipf": 2.0
+ },
+ "LAZER": {
+  "from": "LAZE",
+  "puzzles": [
+   "hb0197"
+  ],
+  "zipf": 2.7
+ },
+ "LEAKE": {
+  "from": "LEAKER",
+  "puzzles": [
+   "hb0085",
+   "hb0122",
+   "hb0236",
+   "hb0277"
+  ],
+  "zipf": 2.45
+ },
+ "LEANE": {
+  "from": "LEANED",
+  "puzzles": [
+   "hb0065",
+   "hb0102",
+   "hb0114",
+   "hb0137",
+   "hb0151",
+   "hb0197",
+   "hb0214",
+   "hb0217",
+   "hb0253",
+   "hb0269",
+   "hb0293",
+   "hb0331",
+   "hb0350",
+   "hb0439"
+  ],
+  "zipf": 1.59
+ },
+ "LEAPER": {
+  "from": "LEAP",
+  "puzzles": [
+   "hb0095",
+   "hb0268",
+   "hb0539"
+  ],
+  "zipf": 1.78
+ },
+ "LEATH": {
+  "from": "LEATHER",
+  "puzzles": [
+   "hb0203",
+   "hb0283"
+  ],
+  "zipf": 1.76
+ },
+ "LEAV": {
+  "from": "LEAVER",
+  "puzzles": [
+   "hb0102",
+   "hb0253",
+   "hb0269",
+   "hb0415",
+   "hb0551"
+  ],
+  "zipf": 1.94
+ },
+ "LECHER": {
+  "from": "LECH",
+  "puzzles": [
+   "hb0580"
+  ],
+  "zipf": 1.73
+ },
+ "LEDER": {
+  "from": "LEDE",
+  "puzzles": [
+   "hb0314",
+   "hb0516"
+  ],
+  "zipf": 1.89
+ },
+ "LEEDER": {
+  "from": "LEED",
+  "puzzles": [
+   "hb0314",
+   "hb0516"
+  ],
+  "zipf": 1.64
+ },
+ "LEERED": {
+  "from": "LEER",
+  "puzzles": [
+   "hb0050",
+   "hb0313",
+   "hb0314",
+   "hb0502"
+  ],
+  "zipf": 1.67
+ },
+ "LEGE": {
+  "from": "LEGER",
+  "puzzles": [
+   "hb0028",
+   "hb0255",
+   "hb0257"
+  ],
+  "zipf": 2.04
+ },
+ "LEGEN": {
+  "from": "LEGEND",
+  "puzzles": [
+   "hb0533"
+  ],
+  "zipf": 1.67
+ },
+ "LEGG": {
+  "from": "LEGGING",
+  "puzzles": [
+   "hb0137",
+   "hb0256",
+   "hb0259",
+   "hb0344",
+   "hb0346",
+   "hb0355",
+   "hb0412",
+   "hb0432",
+   "hb0434",
+   "hb0459",
+   "hb0533",
+   "hb0541"
+  ],
+  "zipf": 2.45
+ },
+ "LEGGE": {
+  "from": "LEGGING",
+  "puzzles": [
+   "hb0137",
+   "hb0256",
+   "hb0259",
+   "hb0344",
+   "hb0346",
+   "hb0355",
+   "hb0412",
+   "hb0432",
+   "hb0434",
+   "hb0459",
+   "hb0533",
+   "hb0541"
+  ],
+  "zipf": 2.37
+ },
+ "LEHRER": {
+  "from": "LEHR",
+  "puzzles": [
+   "hb0203",
+   "hb0214",
+   "hb0283",
+   "hb0357",
+   "hb0580"
+  ],
+  "zipf": 2.36
+ },
+ "LEMME": {
+  "from": "LEMMING",
+  "puzzles": [
+   "hb0445"
+  ],
+  "zipf": 3.19
+ },
+ "LETT": {
+  "from": "LETTER",
+  "puzzles": [
+   "hb0026",
+   "hb0058",
+   "hb0114",
+   "hb0147",
+   "hb0203",
+   "hb0211",
+   "hb0283",
+   "hb0291",
+   "hb0397",
+   "hb0420",
+   "hb0541"
+  ],
+  "zipf": 2.44
+ },
+ "LETTE": {
+  "from": "LETTER",
+  "puzzles": [
+   "hb0026",
+   "hb0058",
+   "hb0114",
+   "hb0147",
+   "hb0203",
+   "hb0211",
+   "hb0283",
+   "hb0291",
+   "hb0397",
+   "hb0420",
+   "hb0541"
+  ],
+  "zipf": 2.0
+ },
+ "LETTERE": {
+  "from": "LETTERED",
+  "puzzles": [
+   "hb0147",
+   "hb0211"
+  ],
+  "zipf": 1.75
+ },
+ "LEVE": {
+  "from": "LEVER",
+  "puzzles": [
+   "hb0131",
+   "hb0415"
+  ],
+  "zipf": 2.26
+ },
+ "LEVELER": {
+  "from": "LEVEL",
+  "puzzles": [
+   "hb0131",
+   "hb0415"
+  ],
+  "zipf": 1.9
+ },
+ "LEVELLED": {
+  "from": "LEVEL",
+  "puzzles": [
+   "hb0551",
+   "hb0576"
+  ],
+  "zipf": 3.04
+ },
+ "LEVELLER": {
+  "from": "LEVEL",
+  "puzzles": [
+   "hb0131",
+   "hb0415"
+  ],
+  "zipf": 2.09
+ },
+ "LEVELLING": {
+  "from": "LEVEL",
+  "puzzles": [
+   "hb0131",
+   "hb0259",
+   "hb0524"
+  ],
+  "zipf": 2.92
+ },
+ "LEVERED": {
+  "from": "LEVER",
+  "puzzles": [
+   "hb0502"
+  ],
+  "zipf": 1.99
+ },
+ "LEVI": {
+  "from": "LEVIED",
+  "puzzles": [
+   "hb0551",
+   "hb0576"
+  ],
+  "zipf": 3.54
+ },
+ "LEVIE": {
+  "from": "LEVIED",
+  "puzzles": [
+   "hb0551",
+   "hb0576"
+  ],
+  "zipf": 1.67
+ },
+ "LIBE": {
+  "from": "LIBER",
+  "puzzles": [
+   "hb0169",
+   "hb0213",
+   "hb0514"
+  ],
+  "zipf": 1.57
+ },
+ "LIBELED": {
+  "from": "LIBEL",
+  "puzzles": [
+   "hb0499"
+  ],
+  "zipf": 1.72
+ },
+ "LIBELLED": {
+  "from": "LIBEL",
+  "puzzles": [
+   "hb0499"
+  ],
+  "zipf": 1.51
+ },
+ "LIKER": {
+  "from": "LIKE",
+  "puzzles": [
+   "hb0068",
+   "hb0233"
+  ],
+  "zipf": 1.77
+ },
+ "LIMITE": {
+  "from": "LIMITED",
+  "puzzles": [
+   "hb0184",
+   "hb0445"
+  ],
+  "zipf": 1.8
+ },
+ "LINKE": {
+  "from": "LINKER",
+  "puzzles": [
+   "hb0068"
+  ],
+  "zipf": 2.28
+ },
+ "LIPP": {
+  "from": "LIPPER",
+  "puzzles": [
+   "hb0095",
+   "hb0286",
+   "hb0539"
+  ],
+  "zipf": 1.92
+ },
+ "LIPPE": {
+  "from": "LIPPER",
+  "puzzles": [
+   "hb0095",
+   "hb0286",
+   "hb0539"
+  ],
+  "zipf": 2.1
+ },
+ "LITER": {
+  "from": "LITE",
+  "puzzles": [
+   "hb0117"
+  ],
+  "zipf": 3.46
+ },
+ "LITT": {
+  "from": "LITTER",
+  "puzzles": [
+   "hb0117",
+   "hb0147",
+   "hb0211",
+   "hb0291"
+  ],
+  "zipf": 2.69
+ },
+ "LITTE": {
+  "from": "LITTER",
+  "puzzles": [
+   "hb0117",
+   "hb0147",
+   "hb0211",
+   "hb0291",
+   "hb0420"
+  ],
+  "zipf": 2.05
+ },
+ "LITTL": {
+  "from": "LITTLER",
+  "puzzles": [
+   "hb0117",
+   "hb0147",
+   "hb0211",
+   "hb0291"
+  ],
+  "zipf": 1.55
+ },
+ "LIVENED": {
+  "from": "LIVEN",
+  "puzzles": [
+   "hb0576"
+  ],
+  "zipf": 1.8
+ },
+ "LIVENING": {
+  "from": "LIVEN",
+  "puzzles": [
+   "hb0131",
+   "hb0259",
+   "hb0524"
+  ],
+  "zipf": 1.57
+ },
+ "LIVERED": {
+  "from": "LIVER",
+  "puzzles": [
+   "hb0502"
+  ],
+  "zipf": 1.91
+ },
+ "LIVERIED": {
+  "from": "LIVERY",
+  "puzzles": [
+   "hb0502"
+  ],
+  "zipf": 1.84
+ },
+ "LIVI": {
+  "from": "LIVID",
+  "puzzles": [
+   "hb0576"
+  ],
+  "zipf": 2.05
+ },
+ "LODER": {
+  "from": "LODE",
+  "puzzles": [
+   "hb0109",
+   "hb0314",
+   "hb0376",
+   "hb0447",
+   "hb0516"
+  ],
+  "zipf": 2.07
+ },
+ "LOGG": {
+  "from": "LOGGER",
+  "puzzles": [
+   "hb0178",
+   "hb0302",
+   "hb0355",
+   "hb0432",
+   "hb0465"
+  ],
+  "zipf": 1.53
+ },
+ "LOKER": {
+  "from": "LOKE",
+  "puzzles": [
+   "hb0376"
+  ],
+  "zipf": 1.9
+ },
+ "LOLLED": {
+  "from": "LOLL",
+  "puzzles": [
+   "hb0076",
+   "hb0109",
+   "hb0298",
+   "hb0314",
+   "hb0376",
+   "hb0447",
+   "hb0559"
+  ],
+  "zipf": 1.74
+ },
+ "LOOKE": {
+  "from": "LOOKED",
+  "puzzles": [
+   "hb0376"
+  ],
+  "zipf": 1.72
+ },
+ "LOOMER": {
+  "from": "LOOM",
+  "puzzles": [
+   "hb0090",
+   "hb0338"
+  ],
+  "zipf": 1.7
+ },
+ "LOPER": {
+  "from": "LOPE",
+  "puzzles": [
+   "hb0090",
+   "hb0255",
+   "hb0447",
+   "hb0472"
+  ],
+  "zipf": 1.79
+ },
+ "LORDED": {
+  "from": "LORD",
+  "puzzles": [
+   "hb0109",
+   "hb0314",
+   "hb0376",
+   "hb0447",
+   "hb0516"
+  ],
+  "zipf": 1.77
+ },
+ "LORING": {
+  "from": "LORE",
+  "puzzles": [
+   "hb0178"
+  ],
+  "zipf": 2.56
+ },
+ "LOWE": {
+  "from": "LOWER",
+  "puzzles": [
+   "hb0101"
+  ],
+  "zipf": 3.56
+ },
+ "LUBE": {
+  "from": "LUBED",
+  "puzzles": [
+   "hb0482"
+  ],
+  "zipf": 3.13
+ },
+ "LUMB": {
+  "from": "LUMBER",
+  "puzzles": [
+   "hb0593"
+  ],
+  "zipf": 2.02
+ },
+ "LUPER": {
+  "from": "LUPE",
+  "puzzles": [
+   "hb0255"
+  ],
+  "zipf": 1.6
+ },
+ "MACED": {
+  "from": "MACE",
+  "puzzles": [
+   "hb0261",
+   "hb0378"
+  ],
+  "zipf": 1.86
+ },
+ "MACER": {
+  "from": "MACE",
+  "puzzles": [
+   "hb0277",
+   "hb0388"
+  ],
+  "zipf": 1.8
+ },
+ "MACHA": {
+  "from": "MACHAR",
+  "puzzles": [
+   "hb0446"
+  ],
+  "zipf": 2.19
+ },
+ "MADD": {
+  "from": "MADDER",
+  "puzzles": [
+   "hb0150"
+  ],
+  "zipf": 2.28
+ },
+ "MADDENED": {
+  "from": "MADDEN",
+  "puzzles": [
+   "hb0395",
+   "hb0404"
+  ],
+  "zipf": 1.89
+ },
+ "MAGER": {
+  "from": "MAGE",
+  "puzzles": [
+   "hb0218",
+   "hb0239",
+   "hb0366",
+   "hb0437"
+  ],
+  "zipf": 1.86
+ },
+ "MAGING": {
+  "from": "MAGE",
+  "puzzles": [
+   "hb0276"
+  ],
+  "zipf": 1.58
+ },
+ "MAILE": {
+  "from": "MAILER",
+  "puzzles": [
+   "hb0053",
+   "hb0551"
+  ],
+  "zipf": 1.91
+ },
+ "MAINER": {
+  "from": "MAIN",
+  "puzzles": [
+   "hb0053",
+   "hb0096",
+   "hb0363"
+  ],
+  "zipf": 1.51
+ },
+ "MAINING": {
+  "from": "MAIN",
+  "puzzles": [
+   "hb0152",
+   "hb0276",
+   "hb0504"
+  ],
+  "zipf": 1.61
+ },
+ "MANAG": {
+  "from": "MANAGING",
+  "puzzles": [
+   "hb0152",
+   "hb0276",
+   "hb0504"
+  ],
+  "zipf": 1.94
+ },
+ "MANDER": {
+  "from": "MAND",
+  "puzzles": [
+   "hb0395"
+  ],
+  "zipf": 2.23
+ },
+ "MANED": {
+  "from": "MANE",
+  "puzzles": [
+   "hb0395",
+   "hb0404"
+  ],
+  "zipf": 1.94
+ },
+ "MANER": {
+  "from": "MANE",
+  "puzzles": [
+   "hb0096",
+   "hb0363",
+   "hb0388",
+   "hb0395",
+   "hb0537",
+   "hb0575"
+  ],
+  "zipf": 1.65
+ },
+ "MANIER": {
+  "from": "MANI",
+  "puzzles": [
+   "hb0053",
+   "hb0096",
+   "hb0363"
+  ],
+  "zipf": 1.51
+ },
+ "MANN": {
+  "from": "MANNER",
+  "puzzles": [
+   "hb0096",
+   "hb0152",
+   "hb0276",
+   "hb0363",
+   "hb0395",
+   "hb0504",
+   "hb0537",
+   "hb0575"
+  ],
+  "zipf": 3.73
+ },
+ "MANNE": {
+  "from": "MANNER",
+  "puzzles": [
+   "hb0096",
+   "hb0276",
+   "hb0363",
+   "hb0388",
+   "hb0395",
+   "hb0404",
+   "hb0537",
+   "hb0575"
+  ],
+  "zipf": 2.2
+ },
+ "MAPP": {
+  "from": "MAPPED",
+  "puzzles": [
+   "hb0150",
+   "hb0491"
+  ],
+  "zipf": 2.38
+ },
+ "MARIN": {
+  "from": "MARINER",
+  "puzzles": [
+   "hb0053",
+   "hb0096",
+   "hb0363"
+  ],
+  "zipf": 3.29
+ },
+ "MARKE": {
+  "from": "MARKER",
+  "puzzles": [
+   "hb0085",
+   "hb0122",
+   "hb0277"
+  ],
+  "zipf": 2.3
+ },
+ "MARLE": {
+  "from": "MARLER",
+  "puzzles": [
+   "hb0085",
+   "hb0203",
+   "hb0232",
+   "hb0257",
+   "hb0277",
+   "hb0338",
+   "hb0374",
+   "hb0575"
+  ],
+  "zipf": 1.68
+ },
+ "MARR": {
+  "from": "MARRED",
+  "puzzles": [
+   "hb0150"
+  ],
+  "zipf": 3.11
+ },
+ "MARRE": {
+  "from": "MARRED",
+  "puzzles": [
+   "hb0150"
+  ],
+  "zipf": 1.56
+ },
+ "MARRI": {
+  "from": "MARRIED",
+  "puzzles": [
+   "hb0161"
+  ],
+  "zipf": 2.08
+ },
+ "MARTY": {
+  "from": "MARTYR",
+  "puzzles": [
+   "hb0384"
+  ],
+  "zipf": 3.64
+ },
+ "MATT": {
+  "from": "MATTER",
+  "puzzles": [
+   "hb0058",
+   "hb0134",
+   "hb0152",
+   "hb0336",
+   "hb0337",
+   "hb0378",
+   "hb0437",
+   "hb0575"
+  ],
+  "zipf": 4.55
+ },
+ "MAUND": {
+  "from": "MAUNDER",
+  "puzzles": [
+   "hb0395"
+  ],
+  "zipf": 1.64
+ },
+ "MAYO": {
+  "from": "MAYOR",
+  "puzzles": [
+   "hb0115",
+   "hb0443"
+  ],
+  "zipf": 3.72
+ },
+ "MEADER": {
+  "from": "MEAD",
+  "puzzles": [
+   "hb0150"
+  ],
+  "zipf": 1.63
+ },
+ "MEDALED": {
+  "from": "MEDAL",
+  "puzzles": [
+   "hb0551"
+  ],
+  "zipf": 1.69
+ },
+ "MEEKE": {
+  "from": "MEEKER",
+  "puzzles": [
+   "hb0085",
+   "hb0122",
+   "hb0277"
+  ],
+  "zipf": 1.6
+ },
+ "MEINER": {
+  "from": "MEIN",
+  "puzzles": [
+   "hb0053",
+   "hb0096",
+   "hb0341",
+   "hb0363",
+   "hb0375",
+   "hb0512"
+  ],
+  "zipf": 1.72
+ },
+ "MELLE": {
+  "from": "MELLER",
+  "puzzles": [
+   "hb0085",
+   "hb0203",
+   "hb0232",
+   "hb0257",
+   "hb0277",
+   "hb0338",
+   "hb0397",
+   "hb0575"
+  ],
+  "zipf": 1.83
+ },
+ "MELLING": {
+  "from": "MELL",
+  "puzzles": [
+   "hb0445"
+  ],
+  "zipf": 2.0
+ },
+ "MELTER": {
+  "from": "MELT",
+  "puzzles": [
+   "hb0058",
+   "hb0203",
+   "hb0397",
+   "hb0575"
+  ],
+  "zipf": 1.94
+ },
+ "MEMB": {
+  "from": "MEMBER",
+  "puzzles": [
+   "hb0085",
+   "hb0232",
+   "hb0338",
+   "hb0593"
+  ],
+  "zipf": 1.89
+ },
+ "MEMED": {
+  "from": "MEME",
+  "puzzles": [
+   "hb0150",
+   "hb0154",
+   "hb0170",
+   "hb0404",
+   "hb0551",
+   "hb0553"
+  ],
+  "zipf": 1.81
+ },
+ "MEMER": {
+  "from": "MEME",
+  "puzzles": [
+   "hb0085",
+   "hb0150",
+   "hb0170",
+   "hb0192",
+   "hb0232",
+   "hb0239",
+   "hb0240",
+   "hb0277",
+   "hb0337",
+   "hb0338",
+   "hb0363",
+   "hb0388",
+   "hb0397",
+   "hb0512",
+   "hb0553",
+   "hb0575"
+  ],
+  "zipf": 1.58
+ },
+ "MENDE": {
+  "from": "MENDED",
+  "puzzles": [
+   "hb0375",
+   "hb0395",
+   "hb0404",
+   "hb0553"
+  ],
+  "zipf": 2.28
+ },
+ "MENDER": {
+  "from": "MEND",
+  "puzzles": [
+   "hb0375",
+   "hb0395",
+   "hb0553"
+  ],
+  "zipf": 1.78
+ },
+ "MENTO": {
+  "from": "MENTOR",
+  "puzzles": [
+   "hb0045",
+   "hb0553"
+  ],
+  "zipf": 1.82
+ },
+ "MERC": {
+  "from": "MERCER",
+  "puzzles": [
+   "hb0277",
+   "hb0284",
+   "hb0367",
+   "hb0374",
+   "hb0388"
+  ],
+  "zipf": 2.81
+ },
+ "MERCE": {
+  "from": "MERCER",
+  "puzzles": [
+   "hb0277",
+   "hb0284",
+   "hb0367",
+   "hb0374",
+   "hb0388"
+  ],
+  "zipf": 2.14
+ },
+ "MERRIER": {
+  "from": "MERRY",
+  "puzzles": [
+   "hb0192"
+  ],
+  "zipf": 2.64
+ },
+ "METEO": {
+  "from": "METEOR",
+  "puzzles": [
+   "hb0240",
+   "hb0397",
+   "hb0553"
+  ],
+  "zipf": 1.73
+ },
+ "METTLER": {
+  "from": "METTLE",
+  "puzzles": [
+   "hb0058",
+   "hb0203",
+   "hb0397",
+   "hb0575"
+  ],
+  "zipf": 2.0
+ },
+ "MIFF": {
+  "from": "MIFFED",
+  "puzzles": [
+   "hb0161"
+  ],
+  "zipf": 1.9
+ },
+ "MILLIN": {
+  "from": "MILLINER",
+  "puzzles": [
+   "hb0053"
+  ],
+  "zipf": 1.71
+ },
+ "MILNE": {
+  "from": "MILNER",
+  "puzzles": [
+   "hb0053"
+  ],
+  "zipf": 3.2
+ },
+ "MINDE": {
+  "from": "MINDED",
+  "puzzles": [
+   "hb0375",
+   "hb0595"
+  ],
+  "zipf": 1.67
+ },
+ "MINGING": {
+  "from": "MING",
+  "puzzles": [
+   "hb0152",
+   "hb0265",
+   "hb0276",
+   "hb0445"
+  ],
+  "zipf": 1.62
+ },
+ "MITERED": {
+  "from": "MITER",
+  "puzzles": [
+   "hb0462"
+  ],
+  "zipf": 1.5
+ },
+ "MITRED": {
+  "from": "MITRE",
+  "puzzles": [
+   "hb0462"
+  ],
+  "zipf": 1.54
+ },
+ "MITTER": {
+  "from": "MITT",
+  "puzzles": [
+   "hb0175",
+   "hb0240",
+   "hb0337",
+   "hb0512"
+  ],
+  "zipf": 1.76
+ },
+ "MITTING": {
+  "from": "MITT",
+  "puzzles": [
+   "hb0152",
+   "hb0336",
+   "hb0445"
+  ],
+  "zipf": 1.51
+ },
+ "MIXE": {
+  "from": "MIXER",
+  "puzzles": [
+   "hb0175",
+   "hb0192",
+   "hb0363"
+  ],
+  "zipf": 1.62
+ },
+ "MOATED": {
+  "from": "MOAT",
+  "puzzles": [
+   "hb0378"
+  ],
+  "zipf": 1.8
+ },
+ "MODED": {
+  "from": "MODE",
+  "puzzles": [
+   "hb0154",
+   "hb0170",
+   "hb0246",
+   "hb0404",
+   "hb0425",
+   "hb0553",
+   "hb0559"
+  ],
+  "zipf": 1.61
+ },
+ "MODELE": {
+  "from": "MODELED",
+  "puzzles": [
+   "hb0154",
+   "hb0559"
+  ],
+  "zipf": 1.51
+ },
+ "MODELLED": {
+  "from": "MODEL",
+  "puzzles": [
+   "hb0154",
+   "hb0559"
+  ],
+  "zipf": 3.25
+ },
+ "MODER": {
+  "from": "MODE",
+  "puzzles": [
+   "hb0170",
+   "hb0425",
+   "hb0553"
+  ],
+  "zipf": 1.93
+ },
+ "MOLDE": {
+  "from": "MOLDED",
+  "puzzles": [
+   "hb0154",
+   "hb0559"
+  ],
+  "zipf": 2.19
+ },
+ "MOLLER": {
+  "from": "MOLL",
+  "puzzles": [
+   "hb0090",
+   "hb0338",
+   "hb0397"
+  ],
+  "zipf": 2.5
+ },
+ "MONER": {
+  "from": "MONE",
+  "puzzles": [
+   "hb0045",
+   "hb0121",
+   "hb0305",
+   "hb0340",
+   "hb0388",
+   "hb0553"
+  ],
+  "zipf": 1.57
+ },
+ "MONITO": {
+  "from": "MONITOR",
+  "puzzles": [
+   "hb0060",
+   "hb0136"
+  ],
+  "zipf": 1.55
+ },
+ "MOOCHER": {
+  "from": "MOOCH",
+  "puzzles": [
+   "hb0340"
+  ],
+  "zipf": 1.85
+ },
+ "MOONED": {
+  "from": "MOON",
+  "puzzles": [
+   "hb0553",
+   "hb0559"
+  ],
+  "zipf": 1.8
+ },
+ "MOORE": {
+  "from": "MOORED",
+  "puzzles": [
+   "hb0170",
+   "hb0425",
+   "hb0553"
+  ],
+  "zipf": 4.28
+ },
+ "MOORER": {
+  "from": "MOOR",
+  "puzzles": [
+   "hb0090",
+   "hb0170",
+   "hb0239",
+   "hb0240",
+   "hb0305",
+   "hb0338",
+   "hb0340",
+   "hb0425",
+   "hb0553"
+  ],
+  "zipf": 1.82
+ },
+ "MOOTING": {
+  "from": "MOOT",
+  "puzzles": [
+   "hb0152"
+  ],
+  "zipf": 1.57
+ },
+ "MORTA": {
+  "from": "MORTAR",
+  "puzzles": [
+   "hb0196",
+   "hb0243",
+   "hb0369",
+   "hb0384",
+   "hb0437",
+   "hb0451"
+  ],
+  "zipf": 1.76
+ },
+ "MORTER": {
+  "from": "MORT",
+  "puzzles": [
+   "hb0240",
+   "hb0553"
+  ],
+  "zipf": 1.5
+ },
+ "MOTO": {
+  "from": "MOTOR",
+  "puzzles": [
+   "hb0060",
+   "hb0240",
+   "hb0243",
+   "hb0369",
+   "hb0553"
+  ],
+  "zipf": 3.42
+ },
+ "MOTTER": {
+  "from": "MOTT",
+  "puzzles": [
+   "hb0240",
+   "hb0397",
+   "hb0553"
+  ],
+  "zipf": 1.65
+ },
+ "MOUN": {
+  "from": "MOUND",
+  "puzzles": [
+   "hb0360"
+  ],
+  "zipf": 1.84
+ },
+ "NACER": {
+  "from": "NACE",
+  "puzzles": [
+   "hb0043",
+   "hb0183",
+   "hb0253",
+   "hb0285",
+   "hb0388",
+   "hb0435",
+   "hb0439",
+   "hb0515",
+   "hb0526"
+  ],
+  "zipf": 1.85
+ },
+ "NAILER": {
+  "from": "NAIL",
+  "puzzles": [
+   "hb0053",
+   "hb0213",
+   "hb0293"
+  ],
+  "zipf": 1.76
+ },
+ "NAMER": {
+  "from": "NAME",
+  "puzzles": [
+   "hb0096",
+   "hb0363",
+   "hb0388",
+   "hb0395",
+   "hb0537",
+   "hb0575"
+  ],
+  "zipf": 1.68
+ },
+ "NANNYING": {
+  "from": "NANNY",
+  "puzzles": [
+   "hb0055",
+   "hb0272"
+  ],
+  "zipf": 1.8
+ },
+ "NAPP": {
+  "from": "NAPPED",
+  "puzzles": [
+   "hb0333",
+   "hb0520",
+   "hb0525",
+   "hb0537",
+   "hb0572"
+  ],
+  "zipf": 1.57
+ },
+ "NAPPE": {
+  "from": "NAPPED",
+  "puzzles": [
+   "hb0333",
+   "hb0520",
+   "hb0525",
+   "hb0537",
+   "hb0572"
+  ],
+  "zipf": 1.56
+ },
+ "NATT": {
+  "from": "NATTER",
+  "puzzles": [
+   "hb0331",
+   "hb0350",
+   "hb0440",
+   "hb0520",
+   "hb0537"
+  ],
+  "zipf": 1.69
+ },
+ "NATUR": {
+  "from": "NATURED",
+  "puzzles": [
+   "hb0328"
+  ],
+  "zipf": 2.39
+ },
+ "NAVED": {
+  "from": "NAVE",
+  "puzzles": [
+   "hb0061",
+   "hb0113",
+   "hb0269"
+  ],
+  "zipf": 1.51
+ },
+ "NAVEED": {
+  "from": "NAVE",
+  "puzzles": [
+   "hb0061",
+   "hb0113",
+   "hb0269"
+  ],
+  "zipf": 2.1
+ },
+ "NAVER": {
+  "from": "NAVE",
+  "puzzles": [
+   "hb0037",
+   "hb0061",
+   "hb0102",
+   "hb0253",
+   "hb0269"
+  ],
+  "zipf": 2.47
+ },
+ "NEATE": {
+  "from": "NEATER",
+  "puzzles": [
+   "hb0331",
+   "hb0350",
+   "hb0440",
+   "hb0520",
+   "hb0537"
+  ],
+  "zipf": 1.75
+ },
+ "NEEDE": {
+  "from": "NEEDED",
+  "puzzles": [
+   "hb0061",
+   "hb0113",
+   "hb0157",
+   "hb0158",
+   "hb0182",
+   "hb0287",
+   "hb0334",
+   "hb0375",
+   "hb0395",
+   "hb0402",
+   "hb0404",
+   "hb0436",
+   "hb0444",
+   "hb0533",
+   "hb0536",
+   "hb0597"
+  ],
+  "zipf": 1.66
+ },
+ "NEEDLED": {
+  "from": "NEEDLE",
+  "puzzles": [
+   "hb0065",
+   "hb0402",
+   "hb0444",
+   "hb0533",
+   "hb0576",
+   "hb0597"
+  ],
+  "zipf": 1.82
+ },
+ "NEITH": {
+  "from": "NEITHER",
+  "puzzles": [
+   "hb0212"
+  ],
+  "zipf": 1.91
+ },
+ "NERVED": {
+  "from": "NERVE",
+  "puzzles": [
+   "hb0061",
+   "hb0315",
+   "hb0424"
+  ],
+  "zipf": 1.55
+ },
+ "NETH": {
+  "from": "NETHER",
+  "puzzles": [
+   "hb0212",
+   "hb0520"
+  ],
+  "zipf": 1.72
+ },
+ "NETT": {
+  "from": "NETTER",
+  "puzzles": [
+   "hb0045",
+   "hb0113",
+   "hb0123",
+   "hb0127",
+   "hb0171",
+   "hb0172",
+   "hb0212",
+   "hb0287",
+   "hb0294",
+   "hb0321",
+   "hb0331",
+   "hb0341",
+   "hb0359",
+   "hb0413",
+   "hb0420",
+   "hb0440",
+   "hb0461",
+   "hb0478",
+   "hb0520",
+   "hb0533",
+   "hb0537",
+   "hb0544",
+   "hb0582"
+  ],
+  "zipf": 2.41
+ },
+ "NETTE": {
+  "from": "NETTER",
+  "puzzles": [
+   "hb0045",
+   "hb0113",
+   "hb0123",
+   "hb0127",
+   "hb0171",
+   "hb0172",
+   "hb0212",
+   "hb0287",
+   "hb0294",
+   "hb0321",
+   "hb0331",
+   "hb0341",
+   "hb0359",
+   "hb0413",
+   "hb0420",
+   "hb0440",
+   "hb0461",
+   "hb0478",
+   "hb0520",
+   "hb0533",
+   "hb0537",
+   "hb0544",
+   "hb0582"
+  ],
+  "zipf": 1.75
+ },
+ "NEUT": {
+  "from": "NEUTER",
+  "puzzles": [
+   "hb0163",
+   "hb0166",
+   "hb0171",
+   "hb0172",
+   "hb0328",
+   "hb0578"
+  ],
+  "zipf": 1.7
+ },
+ "NEWCOME": {
+  "from": "NEWCOMER",
+  "puzzles": [
+   "hb0121"
+  ],
+  "zipf": 1.56
+ },
+ "NEWE": {
+  "from": "NEWER",
+  "puzzles": [
+   "hb0068",
+   "hb0121",
+   "hb0513"
+  ],
+  "zipf": 1.62
+ },
+ "NIBBLER": {
+  "from": "NIBBLE",
+  "puzzles": [
+   "hb0213"
+  ],
+  "zipf": 1.77
+ },
+ "NOONER": {
+  "from": "NOON",
+  "puzzles": [
+   "hb0045",
+   "hb0061",
+   "hb0121",
+   "hb0138",
+   "hb0142",
+   "hb0158",
+   "hb0178",
+   "hb0305",
+   "hb0340",
+   "hb0413",
+   "hb0423",
+   "hb0436",
+   "hb0440",
+   "hb0550"
+  ],
+  "zipf": 1.56
+ },
+ "NUDGING": {
+  "from": "NUDGE",
+  "puzzles": [
+   "hb0034"
+  ],
+  "zipf": 2.59
+ },
+ "NULLED": {
+  "from": "NULL",
+  "puzzles": [
+   "hb0034",
+   "hb0065",
+   "hb0146",
+   "hb0444",
+   "hb0576"
+  ],
+  "zipf": 1.73
+ },
+ "NURTURER": {
+  "from": "NURTURE",
+  "puzzles": [
+   "hb0163",
+   "hb0166",
+   "hb0171",
+   "hb0172",
+   "hb0328",
+   "hb0578"
+  ],
+  "zipf": 1.74
+ },
+ "NUTT": {
+  "from": "NUTTED",
+  "puzzles": [
+   "hb0146",
+   "hb0163",
+   "hb0166",
+   "hb0171",
+   "hb0287",
+   "hb0294",
+   "hb0328",
+   "hb0578"
+  ],
+  "zipf": 2.63
+ },
+ "OCCLUDE": {
+  "from": "OCCLUDED",
+  "puzzles": [
+   "hb0402"
+  ],
+  "zipf": 1.8
+ },
+ "OFFE": {
+  "from": "OFFER",
+  "puzzles": [
+   "hb0101",
+   "hb0165",
+   "hb0274",
+   "hb0353",
+   "hb0365",
+   "hb0518"
+  ],
+  "zipf": 1.76
+ },
+ "OFFEN": {
+  "from": "OFFEND",
+  "puzzles": [
+   "hb0158"
+  ],
+  "zipf": 1.88
+ },
+ "OFTENER": {
+  "from": "OFTEN",
+  "puzzles": [
+   "hb0440"
+  ],
+  "zipf": 1.61
+ },
+ "OGLED": {
+  "from": "OGLE",
+  "puzzles": [
+   "hb0355",
+   "hb0432"
+  ],
+  "zipf": 1.88
+ },
+ "OLDE": {
+  "from": "OLDER",
+  "puzzles": [
+   "hb0109",
+   "hb0314",
+   "hb0376",
+   "hb0447",
+   "hb0516"
+  ],
+  "zipf": 2.8
+ },
+ "OPIN": {
+  "from": "OPINING",
+  "puzzles": [
+   "hb0177",
+   "hb0465",
+   "hb0573"
+  ],
+  "zipf": 1.75
+ },
+ "ORDE": {
+  "from": "ORDER",
+  "puzzles": [
+   "hb0089",
+   "hb0109",
+   "hb0126",
+   "hb0142",
+   "hb0315",
+   "hb0376",
+   "hb0423",
+   "hb0425",
+   "hb0431",
+   "hb0438",
+   "hb0447",
+   "hb0516",
+   "hb0518",
+   "hb0584"
+  ],
+  "zipf": 2.3
+ },
+ "OTHE": {
+  "from": "OTHER",
+  "puzzles": [
+   "hb0126",
+   "hb0173",
+   "hb0470"
+  ],
+  "zipf": 2.3
+ },
+ "OTTE": {
+  "from": "OTTER",
+  "puzzles": [
+   "hb0126",
+   "hb0171",
+   "hb0173",
+   "hb0216",
+   "hb0235",
+   "hb0242",
+   "hb0263",
+   "hb0264",
+   "hb0281",
+   "hb0308",
+   "hb0397",
+   "hb0470",
+   "hb0518",
+   "hb0544",
+   "hb0562"
+  ],
+  "zipf": 1.92
+ },
+ "OWNE": {
+  "from": "OWNER",
+  "puzzles": [
+   "hb0121"
+  ],
+  "zipf": 1.72
+ },
+ "PADD": {
+  "from": "PADDED",
+  "puzzles": [
+   "hb0229",
+   "hb0333",
+   "hb0343",
+   "hb0525",
+   "hb0572"
+  ],
+  "zipf": 1.58
+ },
+ "PALLI": {
+  "from": "PALLID",
+  "puzzles": [
+   "hb0391",
+   "hb0548"
+  ],
+  "zipf": 1.56
+ },
+ "PAMP": {
+  "from": "PAMPER",
+  "puzzles": [
+   "hb0150",
+   "hb0491"
+  ],
+  "zipf": 1.75
+ },
+ "PANDE": {
+  "from": "PANDER",
+  "puzzles": [
+   "hb0333",
+   "hb0572"
+  ],
+  "zipf": 2.02
+ },
+ "PANELLED": {
+  "from": "PANEL",
+  "puzzles": [
+   "hb0065"
+  ],
+  "zipf": 2.6
+ },
+ "PANN": {
+  "from": "PANNED",
+  "puzzles": [
+   "hb0333",
+   "hb0525",
+   "hb0572"
+  ],
+  "zipf": 1.66
+ },
+ "PANNE": {
+  "from": "PANNED",
+  "puzzles": [
+   "hb0333",
+   "hb0525",
+   "hb0572"
+  ],
+  "zipf": 1.73
+ },
+ "PANTH": {
+  "from": "PANTHER",
+  "puzzles": [
+   "hb0520"
+  ],
+  "zipf": 1.92
+ },
+ "PARATROOP": {
+  "from": "PARATROOPER",
+  "puzzles": [
+   "hb0242",
+   "hb0281",
+   "hb0308"
+  ],
+  "zipf": 1.76
+ },
+ "PARER": {
+  "from": "PARE",
+  "puzzles": [
+   "hb0086",
+   "hb0095",
+   "hb0268",
+   "hb0333",
+   "hb0343",
+   "hb0491",
+   "hb0507",
+   "hb0539",
+   "hb0572"
+  ],
+  "zipf": 1.55
+ },
+ "PARKE": {
+  "from": "PARKER",
+  "puzzles": [
+   "hb0507"
+  ],
+  "zipf": 2.76
+ },
+ "PARLER": {
+  "from": "PARLE",
+  "puzzles": [
+   "hb0095",
+   "hb0268",
+   "hb0539"
+  ],
+  "zipf": 2.05
+ },
+ "PAROL": {
+  "from": "PAROLED",
+  "puzzles": [
+   "hb0447"
+  ],
+  "zipf": 1.79
+ },
+ "PARRED": {
+  "from": "PARR",
+  "puzzles": [
+   "hb0333",
+   "hb0343",
+   "hb0572"
+  ],
+  "zipf": 1.5
+ },
+ "PARTE": {
+  "from": "PARTER",
+  "puzzles": [
+   "hb0086"
+  ],
+  "zipf": 2.77
+ },
+ "PATT": {
+  "from": "PATTED",
+  "puzzles": [
+   "hb0066",
+   "hb0086",
+   "hb0229",
+   "hb0571"
+  ],
+  "zipf": 2.09
+ },
+ "PATTE": {
+  "from": "PATTED",
+  "puzzles": [
+   "hb0066",
+   "hb0086",
+   "hb0229",
+   "hb0571"
+  ],
+  "zipf": 1.51
+ },
+ "PAVER": {
+  "from": "PAVE",
+  "puzzles": [
+   "hb0415",
+   "hb0491"
+  ],
+  "zipf": 2.06
+ },
+ "PAYE": {
+  "from": "PAYER",
+  "puzzles": [
+   "hb0086",
+   "hb0288"
+  ],
+  "zipf": 2.37
+ },
+ "PEALED": {
+  "from": "PEAL",
+  "puzzles": [
+   "hb0065",
+   "hb0298",
+   "hb0459"
+  ],
+  "zipf": 1.79
+ },
+ "PEALING": {
+  "from": "PEAL",
+  "puzzles": [
+   "hb0137"
+  ],
+  "zipf": 1.89
+ },
+ "PEATED": {
+  "from": "PEAT",
+  "puzzles": [
+   "hb0066",
+   "hb0229",
+   "hb0571"
+  ],
+  "zipf": 1.79
+ },
+ "PEDALLED": {
+  "from": "PEDAL",
+  "puzzles": [
+   "hb0065",
+   "hb0298",
+   "hb0459"
+  ],
+  "zipf": 1.65
+ },
+ "PEDIGREED": {
+  "from": "PEDIGREE",
+  "puzzles": [
+   "hb0089"
+  ],
+  "zipf": 1.85
+ },
+ "PEELE": {
+  "from": "PEELED",
+  "puzzles": [
+   "hb0234"
+  ],
+  "zipf": 2.63
+ },
+ "PEENING": {
+  "from": "PEEN",
+  "puzzles": [
+   "hb0111",
+   "hb0137",
+   "hb0410"
+  ],
+  "zipf": 1.68
+ },
+ "PEEPER": {
+  "from": "PEEP",
+  "puzzles": [
+   "hb0029",
+   "hb0048",
+   "hb0095",
+   "hb0111",
+   "hb0174",
+   "hb0191",
+   "hb0227",
+   "hb0234",
+   "hb0255",
+   "hb0268",
+   "hb0274",
+   "hb0279",
+   "hb0286",
+   "hb0309",
+   "hb0333",
+   "hb0343",
+   "hb0410",
+   "hb0411",
+   "hb0466",
+   "hb0472",
+   "hb0503",
+   "hb0508",
+   "hb0539",
+   "hb0572"
+  ],
+  "zipf": 1.88
+ },
+ "PEGG": {
+  "from": "PEGGING",
+  "puzzles": [
+   "hb0111",
+   "hb0137",
+   "hb0343",
+   "hb0410"
+  ],
+  "zipf": 2.54
+ },
+ "PELLER": {
+  "from": "PELL",
+  "puzzles": [
+   "hb0095",
+   "hb0255",
+   "hb0268",
+   "hb0286",
+   "hb0472",
+   "hb0539"
+  ],
+  "zipf": 1.7
+ },
+ "PELLING": {
+  "from": "PELL",
+  "puzzles": [
+   "hb0137"
+  ],
+  "zipf": 1.85
+ },
+ "PENDER": {
+  "from": "PEND",
+  "puzzles": [
+   "hb0279",
+   "hb0333",
+   "hb0444",
+   "hb0572"
+  ],
+  "zipf": 2.48
+ },
+ "PENN": {
+  "from": "PENNER",
+  "puzzles": [
+   "hb0111",
+   "hb0137",
+   "hb0174",
+   "hb0279",
+   "hb0286",
+   "hb0333",
+   "hb0341",
+   "hb0410",
+   "hb0411",
+   "hb0444",
+   "hb0520",
+   "hb0525",
+   "hb0537",
+   "hb0572"
+  ],
+  "zipf": 3.9
+ },
+ "PEOPL": {
+  "from": "PEOPLED",
+  "puzzles": [
+   "hb0159",
+   "hb0298",
+   "hb0447"
+  ],
+  "zipf": 1.83
+ },
+ "PEPP": {
+  "from": "PEPPER",
+  "puzzles": [
+   "hb0029",
+   "hb0048",
+   "hb0095",
+   "hb0111",
+   "hb0174",
+   "hb0191",
+   "hb0227",
+   "hb0234",
+   "hb0255",
+   "hb0268",
+   "hb0274",
+   "hb0279",
+   "hb0286",
+   "hb0309",
+   "hb0333",
+   "hb0343",
+   "hb0410",
+   "hb0411",
+   "hb0466",
+   "hb0472",
+   "hb0503",
+   "hb0508",
+   "hb0539",
+   "hb0572"
+  ],
+  "zipf": 1.54
+ },
+ "PEPPE": {
+  "from": "PEPPER",
+  "puzzles": [
+   "hb0029",
+   "hb0048",
+   "hb0095",
+   "hb0111",
+   "hb0174",
+   "hb0191",
+   "hb0227",
+   "hb0234",
+   "hb0255",
+   "hb0268",
+   "hb0274",
+   "hb0279",
+   "hb0286",
+   "hb0309",
+   "hb0333",
+   "hb0343",
+   "hb0410",
+   "hb0411",
+   "hb0466",
+   "hb0472",
+   "hb0503",
+   "hb0508",
+   "hb0539",
+   "hb0572"
+  ],
+  "zipf": 1.7
+ },
+ "PERCEIVER": {
+  "from": "PERCEIVE",
+  "puzzles": [
+   "hb0191"
+  ],
+  "zipf": 1.74
+ },
+ "PERCENTER": {
+  "from": "PERCENT",
+  "puzzles": [
+   "hb0179",
+   "hb0279"
+  ],
+  "zipf": 1.93
+ },
+ "PERIO": {
+  "from": "PERIOD",
+  "puzzles": [
+   "hb0227",
+   "hb0278",
+   "hb0309",
+   "hb0573"
+  ],
+  "zipf": 1.73
+ },
+ "PERMED": {
+  "from": "PERM",
+  "puzzles": [
+   "hb0150",
+   "hb0170",
+   "hb0462",
+   "hb0503",
+   "hb0508"
+  ],
+  "zipf": 1.88
+ },
+ "PERRI": {
+  "from": "PERRIER",
+  "puzzles": [
+   "hb0029",
+   "hb0048",
+   "hb0094",
+   "hb0095",
+   "hb0111",
+   "hb0191",
+   "hb0227",
+   "hb0274",
+   "hb0278",
+   "hb0286",
+   "hb0309",
+   "hb0329",
+   "hb0410",
+   "hb0411",
+   "hb0462",
+   "hb0466",
+   "hb0539",
+   "hb0573"
+  ],
+  "zipf": 2.39
+ },
+ "PERRIE": {
+  "from": "PERRIER",
+  "puzzles": [
+   "hb0029",
+   "hb0048",
+   "hb0094",
+   "hb0095",
+   "hb0111",
+   "hb0191",
+   "hb0227",
+   "hb0274",
+   "hb0278",
+   "hb0286",
+   "hb0309",
+   "hb0329",
+   "hb0410",
+   "hb0411",
+   "hb0462",
+   "hb0466",
+   "hb0539",
+   "hb0573"
+  ],
+  "zipf": 2.07
+ },
+ "PETT": {
+  "from": "PETTER",
+  "puzzles": [
+   "hb0029",
+   "hb0048",
+   "hb0066",
+   "hb0191",
+   "hb0229",
+   "hb0279",
+   "hb0478",
+   "hb0503",
+   "hb0571"
+  ],
+  "zipf": 1.84
+ },
+ "PIERCER": {
+  "from": "PIERCE",
+  "puzzles": [
+   "hb0029",
+   "hb0094",
+   "hb0179",
+   "hb0191",
+   "hb0227",
+   "hb0286",
+   "hb0539"
+  ],
+  "zipf": 1.9
+ },
+ "PIETER": {
+  "from": "PIET",
+  "puzzles": [
+   "hb0029",
+   "hb0048",
+   "hb0094",
+   "hb0191"
+  ],
+  "zipf": 2.75
+ },
+ "PILA": {
+  "from": "PILAR",
+  "puzzles": [
+   "hb0087",
+   "hb0095",
+   "hb0332",
+   "hb0539"
+  ],
+  "zipf": 2.05
+ },
+ "PILLA": {
+  "from": "PILLAR",
+  "puzzles": [
+   "hb0087",
+   "hb0095",
+   "hb0332",
+   "hb0539"
+  ],
+  "zipf": 1.75
+ },
+ "PILLER": {
+  "from": "PILL",
+  "puzzles": [
+   "hb0095",
+   "hb0286",
+   "hb0539"
+  ],
+  "zipf": 2.13
+ },
+ "PINCE": {
+  "from": "PINCER",
+  "puzzles": [
+   "hb0179",
+   "hb0286"
+  ],
+  "zipf": 1.87
+ },
+ "PIND": {
+  "from": "PINDER",
+  "puzzles": [
+   "hb0573"
+  ],
+  "zipf": 1.52
+ },
+ "PINN": {
+  "from": "PINNER",
+  "puzzles": [
+   "hb0286",
+   "hb0341",
+   "hb0573"
+  ],
+  "zipf": 1.73
+ },
+ "PINTER": {
+  "from": "PINT",
+  "puzzles": [
+   "hb0341"
+  ],
+  "zipf": 2.63
+ },
+ "PIPELINING": {
+  "from": "PIPELINE",
+  "puzzles": [
+   "hb0137"
+  ],
+  "zipf": 1.81
+ },
+ "PIPP": {
+  "from": "PIPPED",
+  "puzzles": [
+   "hb0227",
+   "hb0278",
+   "hb0309",
+   "hb0573"
+  ],
+  "zipf": 1.5
+ },
+ "PITI": {
+  "from": "PITIED",
+  "puzzles": [
+   "hb0066",
+   "hb0478",
+   "hb0571"
+  ],
+  "zipf": 2.05
+ },
+ "PITT": {
+  "from": "PITTER",
+  "puzzles": [
+   "hb0029",
+   "hb0048",
+   "hb0066",
+   "hb0094",
+   "hb0478",
+   "hb0571"
+  ],
+  "zipf": 3.78
+ },
+ "PLAC": {
+  "from": "PLACER",
+  "puzzles": [
+   "hb0539"
+  ],
+  "zipf": 2.04
+ },
+ "PLAI": {
+  "from": "PLAID",
+  "puzzles": [
+   "hb0391",
+   "hb0548"
+  ],
+  "zipf": 1.5
+ },
+ "PLANN": {
+  "from": "PLANNED",
+  "puzzles": [
+   "hb0065"
+  ],
+  "zipf": 1.51
+ },
+ "PLODDED": {
+  "from": "PLOD",
+  "puzzles": [
+   "hb0159",
+   "hb0298",
+   "hb0447",
+   "hb0516"
+  ],
+  "zipf": 1.88
+ },
+ "PLODDER": {
+  "from": "PLOD",
+  "puzzles": [
+   "hb0447",
+   "hb0516"
+  ],
+  "zipf": 1.52
+ },
+ "PLOTT": {
+  "from": "PLOTTING",
+  "puzzles": [
+   "hb0465"
+  ],
+  "zipf": 1.76
+ },
+ "PLUNDERER": {
+  "from": "PLUNDER",
+  "puzzles": [
+   "hb0444"
+  ],
+  "zipf": 1.64
+ },
+ "POLA": {
+  "from": "POLAR",
+  "puzzles": [
+   "hb0237",
+   "hb0280",
+   "hb0296",
+   "hb0447"
+  ],
+  "zipf": 2.24
+ },
+ "POLED": {
+  "from": "POLE",
+  "puzzles": [
+   "hb0159",
+   "hb0298",
+   "hb0447"
+  ],
+  "zipf": 1.62
+ },
+ "PONTING": {
+  "from": "PONT",
+  "puzzles": [
+   "hb0465"
+  ],
+  "zipf": 2.48
+ },
+ "POOHED": {
+  "from": "POOH",
+  "puzzles": [
+   "hb0525"
+  ],
+  "zipf": 1.63
+ },
+ "POOLE": {
+  "from": "POOLED",
+  "puzzles": [
+   "hb0159",
+   "hb0298",
+   "hb0447"
+  ],
+  "zipf": 3.34
+ },
+ "POOLER": {
+  "from": "POOL",
+  "puzzles": [
+   "hb0090",
+   "hb0447",
+   "hb0472"
+  ],
+  "zipf": 1.86
+ },
+ "POOPER": {
+  "from": "POOP",
+  "puzzles": [
+   "hb0090",
+   "hb0227",
+   "hb0242",
+   "hb0281",
+   "hb0308",
+   "hb0309",
+   "hb0333",
+   "hb0447",
+   "hb0472",
+   "hb0503",
+   "hb0508"
+  ],
+  "zipf": 2.56
+ },
+ "POOPING": {
+  "from": "POOP",
+  "puzzles": [
+   "hb0177",
+   "hb0465"
+  ],
+  "zipf": 3.01
+ },
+ "POORE": {
+  "from": "POORER",
+  "puzzles": [
+   "hb0063",
+   "hb0090",
+   "hb0111",
+   "hb0174",
+   "hb0227",
+   "hb0242",
+   "hb0255",
+   "hb0274",
+   "hb0281",
+   "hb0308",
+   "hb0309",
+   "hb0333",
+   "hb0447",
+   "hb0472",
+   "hb0503",
+   "hb0508"
+  ],
+  "zipf": 2.1
+ },
+ "POPP": {
+  "from": "POPPER",
+  "puzzles": [
+   "hb0090",
+   "hb0159",
+   "hb0177",
+   "hb0227",
+   "hb0242",
+   "hb0281",
+   "hb0308",
+   "hb0309",
+   "hb0333",
+   "hb0447",
+   "hb0465",
+   "hb0472",
+   "hb0503",
+   "hb0508",
+   "hb0525"
+  ],
+  "zipf": 2.1
+ },
+ "POPPE": {
+  "from": "POPPER",
+  "puzzles": [
+   "hb0090",
+   "hb0111",
+   "hb0159",
+   "hb0174",
+   "hb0227",
+   "hb0242",
+   "hb0255",
+   "hb0274",
+   "hb0281",
+   "hb0308",
+   "hb0309",
+   "hb0333",
+   "hb0447",
+   "hb0472",
+   "hb0503",
+   "hb0508",
+   "hb0525"
+  ],
+  "zipf": 2.36
+ },
+ "POPULA": {
+  "from": "POPULAR",
+  "puzzles": [
+   "hb0280"
+  ],
+  "zipf": 1.68
+ },
+ "PORTE": {
+  "from": "PORTER",
+  "puzzles": [
+   "hb0063",
+   "hb0242",
+   "hb0281",
+   "hb0308",
+   "hb0503"
+  ],
+  "zipf": 3.13
+ },
+ "POURER": {
+  "from": "POUR",
+  "puzzles": [
+   "hb0185",
+   "hb0583"
+  ],
+  "zipf": 1.56
+ },
+ "POWE": {
+  "from": "POWER",
+  "puzzles": [
+   "hb0274",
+   "hb0508"
+  ],
+  "zipf": 2.02
+ },
+ "PRATE": {
+  "from": "PRATER",
+  "puzzles": [
+   "hb0086"
+  ],
+  "zipf": 1.52
+ },
+ "PREENED": {
+  "from": "PREEN",
+  "puzzles": [
+   "hb0279",
+   "hb0333",
+   "hb0424",
+   "hb0444",
+   "hb0572"
+  ],
+  "zipf": 1.6
+ },
+ "PREF": {
+  "from": "PREFER",
+  "puzzles": [
+   "hb0268",
+   "hb0274",
+   "hb0466"
+  ],
+  "zipf": 2.37
+ },
+ "PREMI": {
+  "from": "PREMIER",
+  "puzzles": [
+   "hb0048",
+   "hb0240",
+   "hb0462"
+  ],
+  "zipf": 1.86
+ },
+ "PREMIE": {
+  "from": "PREMIER",
+  "puzzles": [
+   "hb0048",
+   "hb0240",
+   "hb0462"
+  ],
+  "zipf": 1.51
+ },
+ "PREORDERED": {
+  "from": "PREORDER",
+  "puzzles": [
+   "hb0089",
+   "hb0227",
+   "hb0309",
+   "hb0333",
+   "hb0447",
+   "hb0503",
+   "hb0508",
+   "hb0516"
+  ],
+  "zipf": 2.56
+ },
+ "PREPPED": {
+  "from": "PREP",
+  "puzzles": [
+   "hb0234"
+  ],
+  "zipf": 2.91
+ },
+ "PREPPER": {
+  "from": "PREP",
+  "puzzles": [
+   "hb0234"
+  ],
+  "zipf": 2.3
+ },
+ "PRETTIER": {
+  "from": "PRETTY",
+  "puzzles": [
+   "hb0329"
+  ],
+  "zipf": 3.32
+ },
+ "PRIC": {
+  "from": "PRICED",
+  "puzzles": [
+   "hb0227"
+  ],
+  "zipf": 1.67
+ },
+ "PRIE": {
+  "from": "PRIED",
+  "puzzles": [
+   "hb0227",
+   "hb0278",
+   "hb0309",
+   "hb0462",
+   "hb0466",
+   "hb0573"
+  ],
+  "zipf": 1.76
+ },
+ "PRIO": {
+  "from": "PRIOR",
+  "puzzles": [
+   "hb0176",
+   "hb0177",
+   "hb0227",
+   "hb0270",
+   "hb0278",
+   "hb0309",
+   "hb0448",
+   "hb0496",
+   "hb0573"
+  ],
+  "zipf": 2.03
+ },
+ "PROCE": {
+  "from": "PROCEED",
+  "puzzles": [
+   "hb0227"
+  ],
+  "zipf": 1.85
+ },
+ "PROCURER": {
+  "from": "PROCURE",
+  "puzzles": [
+   "hb0583"
+  ],
+  "zipf": 1.81
+ },
+ "PROPE": {
+  "from": "PROPER",
+  "puzzles": [
+   "hb0063",
+   "hb0090",
+   "hb0111",
+   "hb0174",
+   "hb0227",
+   "hb0242",
+   "hb0255",
+   "hb0274",
+   "hb0281",
+   "hb0308",
+   "hb0309",
+   "hb0333",
+   "hb0447",
+   "hb0472",
+   "hb0503",
+   "hb0508"
+  ],
+  "zipf": 1.91
+ },
+ "PROPP": {
+  "from": "PROPPING",
+  "puzzles": [
+   "hb0177",
+   "hb0227",
+   "hb0309",
+   "hb0333",
+   "hb0447",
+   "hb0503",
+   "hb0508"
+  ],
+  "zipf": 1.55
+ },
+ "PROPPER": {
+  "from": "PROP",
+  "puzzles": [
+   "hb0063",
+   "hb0090",
+   "hb0227",
+   "hb0242",
+   "hb0281",
+   "hb0308",
+   "hb0309",
+   "hb0333",
+   "hb0447",
+   "hb0472",
+   "hb0503",
+   "hb0508"
+  ],
+  "zipf": 1.8
+ },
+ "PROVER": {
+  "from": "PROVE",
+  "puzzles": [
+   "hb0063",
+   "hb0308",
+   "hb0415"
+  ],
+  "zipf": 1.8
+ },
+ "PROVID": {
+  "from": "PROVIDED",
+  "puzzles": [
+   "hb0278"
+  ],
+  "zipf": 1.9
+ },
+ "PRUNER": {
+  "from": "PRUNE",
+  "puzzles": [
+   "hb0411",
+   "hb0444",
+   "hb0572",
+   "hb0583"
+  ],
+  "zipf": 1.61
+ },
+ "PUDDLED": {
+  "from": "PUDDLE",
+  "puzzles": [
+   "hb0065",
+   "hb0159",
+   "hb0234",
+   "hb0298",
+   "hb0459"
+  ],
+  "zipf": 1.52
+ },
+ "PULPED": {
+  "from": "PULP",
+  "puzzles": [
+   "hb0234"
+  ],
+  "zipf": 1.9
+ },
+ "PUTTE": {
+  "from": "PUTTED",
+  "puzzles": [
+   "hb0066",
+   "hb0202"
+  ],
+  "zipf": 1.77
+ },
+ "RABI": {
+  "from": "RABID",
+  "puzzles": [
+   "hb0112",
+   "hb0139"
+  ],
+  "zipf": 2.45
+ },
+ "RAFFLED": {
+  "from": "RAFFLE",
+  "puzzles": [
+   "hb0050",
+   "hb0381"
+  ],
+  "zipf": 1.77
+ },
+ "RAINE": {
+  "from": "RAINER",
+  "puzzles": [
+   "hb0053",
+   "hb0096",
+   "hb0213",
+   "hb0214",
+   "hb0293",
+   "hb0409"
+  ],
+  "zipf": 2.68
+ },
+ "RAKER": {
+  "from": "RAKE",
+  "puzzles": [
+   "hb0084",
+   "hb0085",
+   "hb0122",
+   "hb0231",
+   "hb0250",
+   "hb0277",
+   "hb0507",
+   "hb0531"
+  ],
+  "zipf": 1.88
+ },
+ "RAMER": {
+  "from": "RAME",
+  "puzzles": [
+   "hb0085",
+   "hb0150",
+   "hb0232",
+   "hb0239",
+   "hb0277",
+   "hb0284",
+   "hb0337",
+   "hb0338",
+   "hb0363",
+   "hb0374",
+   "hb0388",
+   "hb0437",
+   "hb0491",
+   "hb0575"
+  ],
+  "zipf": 1.6
+ },
+ "RAMM": {
+  "from": "RAMMED",
+  "puzzles": [
+   "hb0150",
+   "hb0239",
+   "hb0284",
+   "hb0337",
+   "hb0338",
+   "hb0363",
+   "hb0374",
+   "hb0437",
+   "hb0491",
+   "hb0575"
+  ],
+  "zipf": 1.79
+ },
+ "RANIER": {
+  "from": "RANI",
+  "puzzles": [
+   "hb0053",
+   "hb0096",
+   "hb0213",
+   "hb0293",
+   "hb0409"
+  ],
+  "zipf": 1.78
+ },
+ "RANTER": {
+  "from": "RANT",
+  "puzzles": [
+   "hb0181",
+   "hb0331",
+   "hb0350",
+   "hb0440",
+   "hb0520",
+   "hb0537"
+  ],
+  "zipf": 1.61
+ },
+ "RAPE": {
+  "from": "RAPER",
+  "puzzles": [
+   "hb0086",
+   "hb0095",
+   "hb0268",
+   "hb0333",
+   "hb0343",
+   "hb0491",
+   "hb0507",
+   "hb0539",
+   "hb0572"
+  ],
+  "zipf": 4.48
+ },
+ "RAPP": {
+  "from": "RAPPER",
+  "puzzles": [
+   "hb0086",
+   "hb0095",
+   "hb0268",
+   "hb0333",
+   "hb0343",
+   "hb0491",
+   "hb0507",
+   "hb0539",
+   "hb0572"
+  ],
+  "zipf": 2.61
+ },
+ "RATHE": {
+  "from": "RATHER",
+  "puzzles": [
+   "hb0480"
+  ],
+  "zipf": 1.76
+ },
+ "RAVAGER": {
+  "from": "RAVAGE",
+  "puzzles": [
+   "hb0530"
+  ],
+  "zipf": 1.89
+ },
+ "RAYE": {
+  "from": "RAYED",
+  "puzzles": [
+   "hb0231",
+   "hb0316"
+  ],
+  "zipf": 2.36
+ },
+ "REACHER": {
+  "from": "REACH",
+  "puzzles": [
+   "hb0247"
+  ],
+  "zipf": 2.54
+ },
+ "READE": {
+  "from": "READER",
+  "puzzles": [
+   "hb0035",
+   "hb0042",
+   "hb0050",
+   "hb0231",
+   "hb0269",
+   "hb0515",
+   "hb0584"
+  ],
+  "zipf": 2.73
+ },
+ "REALER": {
+  "from": "REAL",
+  "puzzles": [
+   "hb0050",
+   "hb0079",
+   "hb0085",
+   "hb0102",
+   "hb0110",
+   "hb0114",
+   "hb0197",
+   "hb0203",
+   "hb0214",
+   "hb0217",
+   "hb0226",
+   "hb0232",
+   "hb0253",
+   "hb0257",
+   "hb0269",
+   "hb0277",
+   "hb0283",
+   "hb0293",
+   "hb0314",
+   "hb0350",
+   "hb0374",
+   "hb0517",
+   "hb0580"
+  ],
+  "zipf": 1.77
+ },
+ "REAMER": {
+  "from": "REAM",
+  "puzzles": [
+   "hb0085",
+   "hb0150",
+   "hb0232",
+   "hb0239",
+   "hb0277",
+   "hb0284",
+   "hb0337",
+   "hb0338",
+   "hb0363",
+   "hb0374",
+   "hb0388",
+   "hb0437",
+   "hb0491",
+   "hb0575"
+  ],
+  "zipf": 1.91
+ },
+ "REARMED": {
+  "from": "REARM",
+  "puzzles": [
+   "hb0150"
+  ],
+  "zipf": 1.75
+ },
+ "REBA": {
+  "from": "REBAR",
+  "puzzles": [
+   "hb0035",
+   "hb0084",
+   "hb0085",
+   "hb0102",
+   "hb0186",
+   "hb0217",
+   "hb0219",
+   "hb0231",
+   "hb0232",
+   "hb0284",
+   "hb0356",
+   "hb0383",
+   "hb0435",
+   "hb0471",
+   "hb0494",
+   "hb0507",
+   "hb0531"
+  ],
+  "zipf": 2.75
+ },
+ "REBELL": {
+  "from": "REBELLED",
+  "puzzles": [
+   "hb0314"
+  ],
+  "zipf": 1.51
+ },
+ "REBELLE": {
+  "from": "REBELLED",
+  "puzzles": [
+   "hb0314"
+  ],
+  "zipf": 1.57
+ },
+ "RECEIV": {
+  "from": "RECEIVER",
+  "puzzles": [
+   "hb0191",
+   "hb0306",
+   "hb0324",
+   "hb0348",
+   "hb0418"
+  ],
+  "zipf": 1.69
+ },
+ "RECHARGER": {
+  "from": "RECHARGE",
+  "puzzles": [
+   "hb0285"
+  ],
+  "zipf": 1.52
+ },
+ "RECITER": {
+  "from": "RECITE",
+  "puzzles": [
+   "hb0094",
+   "hb0149",
+   "hb0153",
+   "hb0173",
+   "hb0179",
+   "hb0191",
+   "hb0244",
+   "hb0271",
+   "hb0354",
+   "hb0467"
+  ],
+  "zipf": 1.73
+ },
+ "RECKER": {
+  "from": "RECK",
+  "puzzles": [
+   "hb0149",
+   "hb0233",
+   "hb0250",
+   "hb0277"
+  ],
+  "zipf": 1.67
+ },
+ "RECKONER": {
+  "from": "RECKON",
+  "puzzles": [
+   "hb0436"
+  ],
+  "zipf": 1.8
+ },
+ "RECLAIMER": {
+  "from": "RECLAIM",
+  "puzzles": [
+   "hb0374"
+  ],
+  "zipf": 1.63
+ },
+ "RECODED": {
+  "from": "RECODE",
+  "puzzles": [
+   "hb0425"
+  ],
+  "zipf": 1.89
+ },
+ "RECOR": {
+  "from": "RECORD",
+  "puzzles": [
+   "hb0425"
+  ],
+  "zipf": 1.7
+ },
+ "REDD": {
+  "from": "REDDER",
+  "puzzles": [
+   "hb0502"
+  ],
+  "zipf": 2.74
+ },
+ "REDI": {
+  "from": "REDID",
+  "puzzles": [
+   "hb0089",
+   "hb0093",
+   "hb0103",
+   "hb0139",
+   "hb0153",
+   "hb0161",
+   "hb0278",
+   "hb0313",
+   "hb0431",
+   "hb0462",
+   "hb0466",
+   "hb0502",
+   "hb0573"
+  ],
+  "zipf": 2.0
+ },
+ "REEDE": {
+  "from": "REEDER",
+  "puzzles": [
+   "hb0042",
+   "hb0050",
+   "hb0052",
+   "hb0089",
+   "hb0103",
+   "hb0126",
+   "hb0313",
+   "hb0315",
+   "hb0424",
+   "hb0431",
+   "hb0462",
+   "hb0466",
+   "hb0516",
+   "hb0574",
+   "hb0584"
+  ],
+  "zipf": 1.54
+ },
+ "REEDED": {
+  "from": "REED",
+  "puzzles": [
+   "hb0042",
+   "hb0050",
+   "hb0052",
+   "hb0089",
+   "hb0103",
+   "hb0126",
+   "hb0313",
+   "hb0315",
+   "hb0424",
+   "hb0431",
+   "hb0462",
+   "hb0466",
+   "hb0502",
+   "hb0516",
+   "hb0574",
+   "hb0584"
+  ],
+  "zipf": 1.54
+ },
+ "REEDER": {
+  "from": "REED",
+  "puzzles": [
+   "hb0502"
+  ],
+  "zipf": 2.4
+ },
+ "REEFED": {
+  "from": "REEF",
+  "puzzles": [
+   "hb0021",
+   "hb0050",
+   "hb0052",
+   "hb0313",
+   "hb0365",
+   "hb0381",
+   "hb0466",
+   "hb0586"
+  ],
+  "zipf": 1.54
+ },
+ "REEFING": {
+  "from": "REEF",
+  "puzzles": [
+   "hb0143",
+   "hb0303",
+   "hb0335"
+  ],
+  "zipf": 1.74
+ },
+ "REFERRER": {
+  "from": "REFER",
+  "puzzles": [
+   "hb0021",
+   "hb0025",
+   "hb0046",
+   "hb0050",
+   "hb0052",
+   "hb0143",
+   "hb0165",
+   "hb0220",
+   "hb0274",
+   "hb0303",
+   "hb0312",
+   "hb0313",
+   "hb0317",
+   "hb0335",
+   "hb0353",
+   "hb0358",
+   "hb0365",
+   "hb0372",
+   "hb0381",
+   "hb0409",
+   "hb0449",
+   "hb0458",
+   "hb0466",
+   "hb0488",
+   "hb0552",
+   "hb0586"
+  ],
+  "zipf": 1.79
+ },
+ "REGAR": {
+  "from": "REGARD",
+  "puzzles": [
+   "hb0530"
+  ],
+  "zipf": 1.59
+ },
+ "REGARDE": {
+  "from": "REGARDED",
+  "puzzles": [
+   "hb0530"
+  ],
+  "zipf": 1.81
+ },
+ "REHABBED": {
+  "from": "REHAB",
+  "puzzles": [
+   "hb0379"
+  ],
+  "zipf": 1.86
+ },
+ "REINE": {
+  "from": "REINING",
+  "puzzles": [
+   "hb0049",
+   "hb0103",
+   "hb0111",
+   "hb0143",
+   "hb0303",
+   "hb0375",
+   "hb0410",
+   "hb0431",
+   "hb0546",
+   "hb0573"
+  ],
+  "zipf": 2.38
+ },
+ "REINER": {
+  "from": "REIN",
+  "puzzles": [
+   "hb0049",
+   "hb0053",
+   "hb0068",
+   "hb0096",
+   "hb0103",
+   "hb0111",
+   "hb0138",
+   "hb0143",
+   "hb0212",
+   "hb0213",
+   "hb0214",
+   "hb0303",
+   "hb0341",
+   "hb0375",
+   "hb0409",
+   "hb0410",
+   "hb0411",
+   "hb0413",
+   "hb0414",
+   "hb0420",
+   "hb0431",
+   "hb0544",
+   "hb0546",
+   "hb0573"
+  ],
+  "zipf": 2.88
+ },
+ "REITER": {
+  "from": "REIT",
+  "puzzles": [
+   "hb0117"
+  ],
+  "zipf": 2.49
+ },
+ "RELEARNED": {
+  "from": "RELEARN",
+  "puzzles": [
+   "hb0269"
+  ],
+  "zipf": 1.59
+ },
+ "RELI": {
+  "from": "RELIED",
+  "puzzles": [
+   "hb0313",
+   "hb0502"
+  ],
+  "zipf": 1.98
+ },
+ "REMAINER": {
+  "from": "REMAIN",
+  "puzzles": [
+   "hb0053",
+   "hb0096",
+   "hb0363"
+  ],
+  "zipf": 1.79
+ },
+ "REMEMBRANCER": {
+  "from": "REMEMBRANCE",
+  "puzzles": [
+   "hb0284"
+  ],
+  "zipf": 1.72
+ },
+ "REMIXER": {
+  "from": "REMIX",
+  "puzzles": [
+   "hb0175",
+   "hb0192",
+   "hb0363"
+  ],
+  "zipf": 1.71
+ },
+ "REMOTER": {
+  "from": "REMOTE",
+  "puzzles": [
+   "hb0240",
+   "hb0397",
+   "hb0553"
+  ],
+  "zipf": 1.73
+ },
+ "REPELLED": {
+  "from": "REPEL",
+  "puzzles": [
+   "hb0234"
+  ],
+  "zipf": 2.98
+ },
+ "REPELLER": {
+  "from": "REPEL",
+  "puzzles": [
+   "hb0095",
+   "hb0234",
+   "hb0255",
+   "hb0268",
+   "hb0286",
+   "hb0472",
+   "hb0539"
+  ],
+  "zipf": 1.7
+ },
+ "REPLACER": {
+  "from": "REPLACE",
+  "puzzles": [
+   "hb0539"
+  ],
+  "zipf": 1.83
+ },
+ "REPORTE": {
+  "from": "REPORTER",
+  "puzzles": [
+   "hb0063",
+   "hb0242",
+   "hb0281",
+   "hb0308",
+   "hb0503"
+  ],
+  "zipf": 1.58
+ },
+ "REPP": {
+  "from": "REPPED",
+  "puzzles": [
+   "hb0227",
+   "hb0279",
+   "hb0309",
+   "hb0333",
+   "hb0343",
+   "hb0424",
+   "hb0462",
+   "hb0466",
+   "hb0503",
+   "hb0508",
+   "hb0572"
+  ],
+  "zipf": 1.61
+ },
+ "RERUNNING": {
+  "from": "RERUN",
+  "puzzles": [
+   "hb0546",
+   "hb0578"
+  ],
+  "zipf": 1.58
+ },
+ "RETCHED": {
+  "from": "RETCH",
+  "puzzles": [
+   "hb0574"
+  ],
+  "zipf": 1.68
+ },
+ "RETURNER": {
+  "from": "RETURN",
+  "puzzles": [
+   "hb0166"
+  ],
+  "zipf": 2.5
+ },
+ "REVEALER": {
+  "from": "REVEAL",
+  "puzzles": [
+   "hb0102",
+   "hb0253",
+   "hb0269",
+   "hb0415"
+  ],
+  "zipf": 1.66
+ },
+ "REVELLED": {
+  "from": "REVEL",
+  "puzzles": [
+   "hb0502"
+  ],
+  "zipf": 2.1
+ },
+ "REVELLING": {
+  "from": "REVEL",
+  "puzzles": [
+   "hb0131"
+  ],
+  "zipf": 2.1
+ },
+ "REVENGER": {
+  "from": "REVENGE",
+  "puzzles": [
+   "hb0131",
+   "hb0238",
+   "hb0315"
+  ],
+  "zipf": 1.71
+ },
+ "REVENGING": {
+  "from": "REVENGE",
+  "puzzles": [
+   "hb0131"
+  ],
+  "zipf": 1.51
+ },
+ "REVER": {
+  "from": "REVE",
+  "puzzles": [
+   "hb0032",
+   "hb0037",
+   "hb0063",
+   "hb0106",
+   "hb0131",
+   "hb0191",
+   "hb0238",
+   "hb0315",
+   "hb0320",
+   "hb0383",
+   "hb0415",
+   "hb0418",
+   "hb0424",
+   "hb0502",
+   "hb0511",
+   "hb0562",
+   "hb0584"
+  ],
+  "zipf": 1.68
+ },
+ "REVERING": {
+  "from": "REVERE",
+  "puzzles": [
+   "hb0131"
+  ],
+  "zipf": 1.72
+ },
+ "REVILE": {
+  "from": "REVILED",
+  "puzzles": [
+   "hb0502"
+  ],
+  "zipf": 1.98
+ },
+ "REVILING": {
+  "from": "REVILE",
+  "puzzles": [
+   "hb0131"
+  ],
+  "zipf": 1.5
+ },
+ "REVIVER": {
+  "from": "REVIVE",
+  "puzzles": [
+   "hb0037",
+   "hb0131",
+   "hb0191",
+   "hb0278",
+   "hb0306",
+   "hb0319",
+   "hb0348",
+   "hb0349",
+   "hb0383",
+   "hb0414",
+   "hb0418",
+   "hb0502",
+   "hb0562"
+  ],
+  "zipf": 1.85
+ },
+ "RICER": {
+  "from": "RICE",
+  "puzzles": [
+   "hb0093",
+   "hb0094",
+   "hb0103",
+   "hb0139",
+   "hb0149",
+   "hb0153",
+   "hb0173",
+   "hb0179",
+   "hb0191",
+   "hb0205",
+   "hb0244",
+   "hb0271",
+   "hb0306",
+   "hb0324",
+   "hb0348",
+   "hb0354",
+   "hb0374",
+   "hb0409",
+   "hb0514",
+   "hb0546"
+  ],
+  "zipf": 1.8
+ },
+ "RICHE": {
+  "from": "RICHER",
+  "puzzles": [
+   "hb0093",
+   "hb0103",
+   "hb0149",
+   "hb0173",
+   "hb0247",
+   "hb0306"
+  ],
+  "zipf": 2.48
+ },
+ "RIDDLER": {
+  "from": "RIDDLE",
+  "puzzles": [
+   "hb0502"
+  ],
+  "zipf": 2.66
+ },
+ "RIFFED": {
+  "from": "RIFF",
+  "puzzles": [
+   "hb0161",
+   "hb0313"
+  ],
+  "zipf": 1.64
+ },
+ "RIFTED": {
+  "from": "RIFT",
+  "puzzles": [
+   "hb0211"
+  ],
+  "zipf": 1.53
+ },
+ "RIGG": {
+  "from": "RIGGER",
+  "puzzles": [
+   "hb0100",
+   "hb0143",
+   "hb0194",
+   "hb0218",
+   "hb0366",
+   "hb0473",
+   "hb0517",
+   "hb0546"
+  ],
+  "zipf": 2.49
+ },
+ "RIGI": {
+  "from": "RIGID",
+  "puzzles": [
+   "hb0194"
+  ],
+  "zipf": 1.71
+ },
+ "RIGO": {
+  "from": "RIGOR",
+  "puzzles": [
+   "hb0142",
+   "hb0177",
+   "hb0178",
+   "hb0224",
+   "hb0302",
+   "hb0406",
+   "hb0430",
+   "hb0550"
+  ],
+  "zipf": 2.09
+ },
+ "RIMER": {
+  "from": "RIME",
+  "puzzles": [
+   "hb0053",
+   "hb0161",
+   "hb0175",
+   "hb0192",
+   "hb0240",
+   "hb0337",
+   "hb0363",
+   "hb0374",
+   "hb0462",
+   "hb0512"
+  ],
+  "zipf": 1.72
+ },
+ "RIMM": {
+  "from": "RIMMER",
+  "puzzles": [
+   "hb0053",
+   "hb0161",
+   "hb0175",
+   "hb0240",
+   "hb0337",
+   "hb0363",
+   "hb0374",
+   "hb0462",
+   "hb0512"
+  ],
+  "zipf": 1.62
+ },
+ "RINDER": {
+  "from": "RIND",
+  "puzzles": [
+   "hb0103",
+   "hb0375",
+   "hb0431",
+   "hb0573"
+  ],
+  "zipf": 1.73
+ },
+ "RINGE": {
+  "from": "RINGER",
+  "puzzles": [
+   "hb0049",
+   "hb0111",
+   "hb0143",
+   "hb0303",
+   "hb0410",
+   "hb0546"
+  ],
+  "zipf": 1.58
+ },
+ "RINKER": {
+  "from": "RINK",
+  "puzzles": [
+   "hb0212"
+  ],
+  "zipf": 1.83
+ },
+ "RIPP": {
+  "from": "RIPPER",
+  "puzzles": [
+   "hb0029",
+   "hb0048",
+   "hb0094",
+   "hb0095",
+   "hb0227",
+   "hb0278",
+   "hb0286",
+   "hb0309",
+   "hb0329",
+   "hb0462",
+   "hb0539",
+   "hb0573"
+  ],
+  "zipf": 2.0
+ },
+ "ROADER": {
+  "from": "ROAD",
+  "puzzles": [
+   "hb0035",
+   "hb0423",
+   "hb0438",
+   "hb0447"
+  ],
+  "zipf": 1.85
+ },
+ "ROAMER": {
+  "from": "ROAM",
+  "puzzles": [
+   "hb0239",
+   "hb0338",
+   "hb0437"
+  ],
+  "zipf": 1.78
+ },
+ "ROBB": {
+  "from": "ROBBER",
+  "puzzles": [
+   "hb0084",
+   "hb0148",
+   "hb0204",
+   "hb0281",
+   "hb0357",
+   "hb0438",
+   "hb0532"
+  ],
+  "zipf": 3.28
+ },
+ "ROBBE": {
+  "from": "ROBBER",
+  "puzzles": [
+   "hb0084",
+   "hb0126",
+   "hb0148",
+   "hb0204",
+   "hb0281",
+   "hb0357",
+   "hb0438",
+   "hb0532"
+  ],
+  "zipf": 1.77
+ },
+ "ROBER": {
+  "from": "ROBE",
+  "puzzles": [
+   "hb0084",
+   "hb0126",
+   "hb0148",
+   "hb0204",
+   "hb0281",
+   "hb0357",
+   "hb0438",
+   "hb0532"
+  ],
+  "zipf": 1.88
+ },
+ "ROCH": {
+  "from": "ROCHER",
+  "puzzles": [
+   "hb0340"
+  ],
+  "zipf": 2.32
+ },
+ "ROCHE": {
+  "from": "ROCHER",
+  "puzzles": [
+   "hb0173",
+   "hb0340"
+  ],
+  "zipf": 3.32
+ },
+ "RODDING": {
+  "from": "RODD",
+  "puzzles": [
+   "hb0142",
+   "hb0406"
+  ],
+  "zipf": 1.65
+ },
+ "RODER": {
+  "from": "RODE",
+  "puzzles": [
+   "hb0089",
+   "hb0109",
+   "hb0126",
+   "hb0142",
+   "hb0315",
+   "hb0376",
+   "hb0423",
+   "hb0425",
+   "hb0431",
+   "hb0438",
+   "hb0447",
+   "hb0516",
+   "hb0518",
+   "hb0584"
+  ],
+  "zipf": 1.53
+ },
+ "ROIL": {
+  "from": "ROILING",
+  "puzzles": [
+   "hb0178",
+   "hb0302"
+  ],
+  "zipf": 1.83
+ },
+ "ROKE": {
+  "from": "ROKER",
+  "puzzles": [
+   "hb0084",
+   "hb0305",
+   "hb0376"
+  ],
+  "zipf": 1.65
+ },
+ "ROLLE": {
+  "from": "ROLLER",
+  "puzzles": [
+   "hb0026",
+   "hb0032",
+   "hb0090",
+   "hb0101",
+   "hb0109",
+   "hb0178",
+   "hb0204",
+   "hb0235",
+   "hb0255",
+   "hb0314",
+   "hb0357",
+   "hb0376",
+   "hb0397",
+   "hb0447"
+  ],
+  "zipf": 2.36
+ },
+ "ROOKE": {
+  "from": "ROOKER",
+  "puzzles": [
+   "hb0084",
+   "hb0305",
+   "hb0376"
+  ],
+  "zipf": 2.21
+ },
+ "ROTH": {
+  "from": "ROTHER",
+  "puzzles": [
+   "hb0320"
+  ],
+  "zipf": 3.59
+ },
+ "ROTHE": {
+  "from": "ROTHER",
+  "puzzles": [
+   "hb0126",
+   "hb0173",
+   "hb0320",
+   "hb0470"
+  ],
+  "zipf": 1.84
+ },
+ "ROTT": {
+  "from": "ROTTER",
+  "puzzles": [
+   "hb0032",
+   "hb0063",
+   "hb0171",
+   "hb0181",
+   "hb0204",
+   "hb0216",
+   "hb0224",
+   "hb0235",
+   "hb0242",
+   "hb0264",
+   "hb0281",
+   "hb0302",
+   "hb0308",
+   "hb0320",
+   "hb0518"
+  ],
+  "zipf": 1.91
+ },
+ "ROUN": {
+  "from": "ROUND",
+  "puzzles": [
+   "hb0158",
+   "hb0362",
+   "hb0457",
+   "hb0493"
+  ],
+  "zipf": 1.73
+ },
+ "ROVED": {
+  "from": "ROVE",
+  "puzzles": [
+   "hb0109",
+   "hb0315",
+   "hb0376",
+   "hb0438",
+   "hb0584"
+  ],
+  "zipf": 1.59
+ },
+ "ROWE": {
+  "from": "ROWED",
+  "puzzles": [
+   "hb0062",
+   "hb0101",
+   "hb0274",
+   "hb0320",
+   "hb0398"
+  ],
+  "zipf": 3.35
+ },
+ "RUGG": {
+  "from": "RUGGED",
+  "puzzles": [
+   "hb0185",
+   "hb0194",
+   "hb0362"
+  ],
+  "zipf": 1.89
+ },
+ "RUINE": {
+  "from": "RUINED",
+  "puzzles": [
+   "hb0375",
+   "hb0411",
+   "hb0546",
+   "hb0578"
+  ],
+  "zipf": 1.67
+ },
+ "RUNING": {
+  "from": "RUNE",
+  "puzzles": [
+   "hb0546",
+   "hb0578"
+  ],
+  "zipf": 1.96
+ },
+ "RUTHER": {
+  "from": "RUTH",
+  "puzzles": [
+   "hb0386"
+  ],
+  "zipf": 1.5
+ },
+ "RUTT": {
+  "from": "RUTTER",
+  "puzzles": [
+   "hb0134",
+   "hb0163",
+   "hb0171",
+   "hb0202",
+   "hb0204",
+   "hb0216",
+   "hb0220",
+   "hb0328",
+   "hb0386",
+   "hb0578"
+  ],
+  "zipf": 1.65
+ },
+ "RUTTE": {
+  "from": "RUTTER",
+  "puzzles": [
+   "hb0134",
+   "hb0163",
+   "hb0171",
+   "hb0172",
+   "hb0202",
+   "hb0204",
+   "hb0216",
+   "hb0220",
+   "hb0263",
+   "hb0271",
+   "hb0328",
+   "hb0386",
+   "hb0470",
+   "hb0578"
+  ],
+  "zipf": 2.0
+ },
+ "RYDE": {
+  "from": "RYDER",
+  "puzzles": [
+   "hb0316"
+  ],
+  "zipf": 2.58
+ },
+ "TABL": {
+  "from": "TABLED",
+  "puzzles": [
+   "hb0188",
+   "hb0529"
+  ],
+  "zipf": 1.71
+ },
+ "TABLER": {
+  "from": "TABLE",
+  "puzzles": [
+   "hb0219"
+  ],
+  "zipf": 1.59
+ },
+ "TABO": {
+  "from": "TABOR",
+  "puzzles": [
+   "hb0281",
+   "hb0382",
+   "hb0451"
+  ],
+  "zipf": 1.64
+ },
+ "TACKER": {
+  "from": "TACK",
+  "puzzles": [
+   "hb0250"
+  ],
+  "zipf": 1.53
+ },
+ "TAGG": {
+  "from": "TAGGER",
+  "puzzles": [
+   "hb0058",
+   "hb0116",
+   "hb0160",
+   "hb0218",
+   "hb0323",
+   "hb0330",
+   "hb0336",
+   "hb0394",
+   "hb0437",
+   "hb0473",
+   "hb0557"
+  ],
+  "zipf": 2.02
+ },
+ "TALER": {
+  "from": "TALE",
+  "puzzles": [
+   "hb0058",
+   "hb0079",
+   "hb0114",
+   "hb0203",
+   "hb0283",
+   "hb0350"
+  ],
+  "zipf": 1.51
+ },
+ "TALKE": {
+  "from": "TALKED",
+  "puzzles": [
+   "hb0236"
+  ],
+  "zipf": 1.7
+ },
+ "TALLI": {
+  "from": "TALLIED",
+  "puzzles": [
+   "hb0475"
+  ],
+  "zipf": 1.57
+ },
+ "TANER": {
+  "from": "TANE",
+  "puzzles": [
+   "hb0331",
+   "hb0350",
+   "hb0440",
+   "hb0520",
+   "hb0537"
+  ],
+  "zipf": 1.89
+ },
+ "TANN": {
+  "from": "TANNED",
+  "puzzles": [
+   "hb0113",
+   "hb0127",
+   "hb0151",
+   "hb0160",
+   "hb0287",
+   "hb0323",
+   "hb0330",
+   "hb0331",
+   "hb0336",
+   "hb0350",
+   "hb0400",
+   "hb0440",
+   "hb0520",
+   "hb0537",
+   "hb0557"
+  ],
+  "zipf": 1.94
+ },
+ "TAPI": {
+  "from": "TAPIR",
+  "puzzles": [
+   "hb0267",
+   "hb0332",
+   "hb0455"
+  ],
+  "zipf": 2.14
+ },
+ "TAPP": {
+  "from": "TAPPED",
+  "puzzles": [
+   "hb0066",
+   "hb0086",
+   "hb0229",
+   "hb0571"
+  ],
+  "zipf": 2.29
+ },
+ "TARTED": {
+  "from": "TART",
+  "puzzles": [
+   "hb0134",
+   "hb0264"
+  ],
+  "zipf": 1.69
+ },
+ "TARTER": {
+  "from": "TART",
+  "puzzles": [
+   "hb0058",
+   "hb0079",
+   "hb0086",
+   "hb0116",
+   "hb0134",
+   "hb0145",
+   "hb0181",
+   "hb0264",
+   "hb0350",
+   "hb0383",
+   "hb0437",
+   "hb0494"
+  ],
+  "zipf": 1.89
+ },
+ "TATTLER": {
+  "from": "TATTLE",
+  "puzzles": [
+   "hb0058",
+   "hb0079",
+   "hb0114",
+   "hb0203",
+   "hb0283",
+   "hb0350"
+  ],
+  "zipf": 1.81
+ },
+ "TAVERNER": {
+  "from": "TAVERN",
+  "puzzles": [
+   "hb0037"
+  ],
+  "zipf": 1.89
+ },
+ "TEACHED": {
+  "from": "TEACH",
+  "puzzles": [
+   "hb0251"
+  ],
+  "zipf": 1.81
+ },
+ "TEAMER": {
+  "from": "TEAM",
+  "puzzles": [
+   "hb0058",
+   "hb0134",
+   "hb0337",
+   "hb0437",
+   "hb0575"
+  ],
+  "zipf": 1.86
+ },
+ "TEARE": {
+  "from": "TEARED",
+  "puzzles": [
+   "hb0134",
+   "hb0264"
+  ],
+  "zipf": 1.66
+ },
+ "TEATER": {
+  "from": "TEAT",
+  "puzzles": [
+   "hb0058",
+   "hb0079",
+   "hb0086",
+   "hb0116",
+   "hb0134",
+   "hb0145",
+   "hb0263",
+   "hb0264",
+   "hb0350",
+   "hb0437",
+   "hb0494"
+  ],
+  "zipf": 1.55
+ },
+ "TECHED": {
+  "from": "TECH",
+  "puzzles": [
+   "hb0251"
+  ],
+  "zipf": 1.71
+ },
+ "TEDD": {
+  "from": "TEDDER",
+  "puzzles": [
+   "hb0126",
+   "hb0134",
+   "hb0147",
+   "hb0211",
+   "hb0264",
+   "hb0467",
+   "hb0487"
+  ],
+  "zipf": 1.9
+ },
+ "TEEMED": {
+  "from": "TEEM",
+  "puzzles": [
+   "hb0134",
+   "hb0223",
+   "hb0478",
+   "hb0553"
+  ],
+  "zipf": 1.71
+ },
+ "TEET": {
+  "from": "TEETER",
+  "puzzles": [
+   "hb0058",
+   "hb0116",
+   "hb0126",
+   "hb0134",
+   "hb0147",
+   "hb0149",
+   "hb0171",
+   "hb0172",
+   "hb0173",
+   "hb0191",
+   "hb0192",
+   "hb0211",
+   "hb0216",
+   "hb0263",
+   "hb0264",
+   "hb0271",
+   "hb0291",
+   "hb0397",
+   "hb0420",
+   "hb0467",
+   "hb0470",
+   "hb0487",
+   "hb0544",
+   "hb0562"
+  ],
+  "zipf": 1.86
+ },
+ "TEETHER": {
+  "from": "TEETH",
+  "puzzles": [
+   "hb0126",
+   "hb0147",
+   "hb0149",
+   "hb0173",
+   "hb0291",
+   "hb0470",
+   "hb0480",
+   "hb0487"
+  ],
+  "zipf": 1.55
+ },
+ "TELLE": {
+  "from": "TELLER",
+  "puzzles": [
+   "hb0026",
+   "hb0058",
+   "hb0114",
+   "hb0147",
+   "hb0203",
+   "hb0211",
+   "hb0283",
+   "hb0291",
+   "hb0397",
+   "hb0420",
+   "hb0541"
+  ],
+  "zipf": 1.66
+ },
+ "TELLIER": {
+  "from": "TELLY",
+  "puzzles": [
+   "hb0420"
+  ],
+  "zipf": 1.8
+ },
+ "TEMPE": {
+  "from": "TEMPER",
+  "puzzles": [
+   "hb0048",
+   "hb0240",
+   "hb0503"
+  ],
+  "zipf": 3.01
+ },
+ "TEMPTER": {
+  "from": "TEMPT",
+  "puzzles": [
+   "hb0048",
+   "hb0240",
+   "hb0503"
+  ],
+  "zipf": 1.86
+ },
+ "TENDERER": {
+  "from": "TENDER",
+  "puzzles": [
+   "hb0052",
+   "hb0424"
+  ],
+  "zipf": 1.67
+ },
+ "TENN": {
+  "from": "TENNER",
+  "puzzles": [
+   "hb0045",
+   "hb0171",
+   "hb0172",
+   "hb0212",
+   "hb0331",
+   "hb0341",
+   "hb0413",
+   "hb0420",
+   "hb0440",
+   "hb0520",
+   "hb0537",
+   "hb0544"
+  ],
+  "zipf": 3.19
+ },
+ "TENO": {
+  "from": "TENOR",
+  "puzzles": [
+   "hb0045",
+   "hb0171",
+   "hb0413",
+   "hb0440",
+   "hb0544"
+  ],
+  "zipf": 1.54
+ },
+ "TERME": {
+  "from": "TERMED",
+  "puzzles": [
+   "hb0052",
+   "hb0134",
+   "hb0462",
+   "hb0553"
+  ],
+  "zipf": 2.22
+ },
+ "TERRI": {
+  "from": "TERRIER",
+  "puzzles": [
+   "hb0094",
+   "hb0100",
+   "hb0116",
+   "hb0117",
+   "hb0147",
+   "hb0149",
+   "hb0153",
+   "hb0173",
+   "hb0175",
+   "hb0191",
+   "hb0192",
+   "hb0211",
+   "hb0216",
+   "hb0220",
+   "hb0271",
+   "hb0291",
+   "hb0319",
+   "hb0329",
+   "hb0383",
+   "hb0414",
+   "hb0420",
+   "hb0462",
+   "hb0467",
+   "hb0487",
+   "hb0544",
+   "hb0562",
+   "hb0566"
+  ],
+  "zipf": 3.22
+ },
+ "TERRIE": {
+  "from": "TERRIER",
+  "puzzles": [
+   "hb0094",
+   "hb0100",
+   "hb0116",
+   "hb0117",
+   "hb0147",
+   "hb0149",
+   "hb0153",
+   "hb0173",
+   "hb0175",
+   "hb0191",
+   "hb0192",
+   "hb0211",
+   "hb0216",
+   "hb0220",
+   "hb0271",
+   "hb0291",
+   "hb0319",
+   "hb0329",
+   "hb0383",
+   "hb0414",
+   "hb0420",
+   "hb0462",
+   "hb0467",
+   "hb0487",
+   "hb0544",
+   "hb0562",
+   "hb0566"
+  ],
+  "zipf": 1.97
+ },
+ "TETER": {
+  "from": "TETE",
+  "puzzles": [
+   "hb0058",
+   "hb0116",
+   "hb0126",
+   "hb0134",
+   "hb0147",
+   "hb0149",
+   "hb0171",
+   "hb0172",
+   "hb0173",
+   "hb0191",
+   "hb0192",
+   "hb0211",
+   "hb0216",
+   "hb0263",
+   "hb0264",
+   "hb0271",
+   "hb0291",
+   "hb0397",
+   "hb0420",
+   "hb0467",
+   "hb0470",
+   "hb0487",
+   "hb0544",
+   "hb0562"
+  ],
+  "zipf": 1.74
+ },
+ "TEXTE": {
+  "from": "TEXTER",
+  "puzzles": [
+   "hb0192",
+   "hb0359",
+   "hb0544"
+  ],
+  "zipf": 2.22
+ },
+ "THAL": {
+  "from": "THALER",
+  "puzzles": [
+   "hb0203",
+   "hb0283"
+  ],
+  "zipf": 2.08
+ },
+ "THATCH": {
+  "from": "THATCHED",
+  "puzzles": [
+   "hb0251"
+  ],
+  "zipf": 2.71
+ },
+ "THEAT": {
+  "from": "THEATER",
+  "puzzles": [
+   "hb0480"
+  ],
+  "zipf": 1.57
+ },
+ "THEI": {
+  "from": "THEIR",
+  "puzzles": [
+   "hb0147",
+   "hb0149",
+   "hb0173",
+   "hb0291",
+   "hb0487"
+  ],
+  "zipf": 2.41
+ },
+ "THICKE": {
+  "from": "THICKER",
+  "puzzles": [
+   "hb0149"
+  ],
+  "zipf": 2.78
+ },
+ "THIR": {
+  "from": "THIRD",
+  "puzzles": [
+   "hb0147",
+   "hb0487"
+  ],
+  "zipf": 1.91
+ },
+ "THITH": {
+  "from": "THITHER",
+  "puzzles": [
+   "hb0147",
+   "hb0291",
+   "hb0487"
+  ],
+  "zipf": 1.67
+ },
+ "THUDDED": {
+  "from": "THUD",
+  "puzzles": [
+   "hb0223"
+  ],
+  "zipf": 1.59
+ },
+ "TIERE": {
+  "from": "TIERED",
+  "puzzles": [
+   "hb0147",
+   "hb0153",
+   "hb0211",
+   "hb0462",
+   "hb0467",
+   "hb0487"
+  ],
+  "zipf": 1.51
+ },
+ "TIGE": {
+  "from": "TIGER",
+  "puzzles": [
+   "hb0116",
+   "hb0218",
+   "hb0291",
+   "hb0473",
+   "hb0562"
+  ],
+  "zipf": 1.59
+ },
+ "TILER": {
+  "from": "TILE",
+  "puzzles": [
+   "hb0117",
+   "hb0147",
+   "hb0211",
+   "hb0291",
+   "hb0420"
+  ],
+  "zipf": 1.91
+ },
+ "TILLE": {
+  "from": "TILLER",
+  "puzzles": [
+   "hb0117",
+   "hb0147",
+   "hb0184",
+   "hb0211",
+   "hb0260",
+   "hb0291",
+   "hb0412",
+   "hb0420",
+   "hb0541"
+  ],
+  "zipf": 1.51
+ },
+ "TIMI": {
+  "from": "TIMID",
+  "puzzles": [
+   "hb0452",
+   "hb0478",
+   "hb0481",
+   "hb0595"
+  ],
+  "zipf": 2.15
+ },
+ "TIMO": {
+  "from": "TIMOR",
+  "puzzles": [
+   "hb0060",
+   "hb0240",
+   "hb0243"
+  ],
+  "zipf": 2.65
+ },
+ "TINIER": {
+  "from": "TINY",
+  "puzzles": [
+   "hb0413"
+  ],
+  "zipf": 2.09
+ },
+ "TIPP": {
+  "from": "TIPPER",
+  "puzzles": [
+   "hb0029",
+   "hb0048",
+   "hb0066",
+   "hb0094",
+   "hb0478",
+   "hb0571"
+  ],
+  "zipf": 2.17
+ },
+ "TITE": {
+  "from": "TITER",
+  "puzzles": [
+   "hb0117"
+  ],
+  "zipf": 2.4
+ },
+ "TOBER": {
+  "from": "TOBE",
+  "puzzles": [
+   "hb0126",
+   "hb0281"
+  ],
+  "zipf": 1.78
+ },
+ "TOLER": {
+  "from": "TOLE",
+  "puzzles": [
+   "hb0026",
+   "hb0235",
+   "hb0397"
+  ],
+  "zipf": 2.12
+ },
+ "TOLLE": {
+  "from": "TOLLER",
+  "puzzles": [
+   "hb0026",
+   "hb0235",
+   "hb0397"
+  ],
+  "zipf": 2.17
+ },
+ "TOMER": {
+  "from": "TOME",
+  "puzzles": [
+   "hb0240",
+   "hb0397",
+   "hb0553"
+  ],
+  "zipf": 1.91
+ },
+ "TONNER": {
+  "from": "TONNE",
+  "puzzles": [
+   "hb0045",
+   "hb0171",
+   "hb0413",
+   "hb0440",
+   "hb0544"
+  ],
+  "zipf": 1.87
+ },
+ "TOOTED": {
+  "from": "TOOT",
+  "puzzles": [
+   "hb0223",
+   "hb0264",
+   "hb0518"
+  ],
+  "zipf": 1.67
+ },
+ "TOPP": {
+  "from": "TOPPER",
+  "puzzles": [
+   "hb0242",
+   "hb0281",
+   "hb0308",
+   "hb0465",
+   "hb0503"
+  ],
+  "zipf": 2.2
+ },
+ "TORRI": {
+  "from": "TORRID",
+  "puzzles": [
+   "hb0080",
+   "hb0153",
+   "hb0361",
+   "hb0518"
+  ],
+  "zipf": 1.71
+ },
+ "TOTALE": {
+  "from": "TOTALED",
+  "puzzles": [
+   "hb0529"
+  ],
+  "zipf": 1.5
+ },
+ "TOTALLED": {
+  "from": "TOTAL",
+  "puzzles": [
+   "hb0529"
+  ],
+  "zipf": 2.97
+ },
+ "TOTED": {
+  "from": "TOTE",
+  "puzzles": [
+   "hb0126",
+   "hb0223",
+   "hb0264",
+   "hb0518"
+  ],
+  "zipf": 1.75
+ },
+ "TOTT": {
+  "from": "TOTTER",
+  "puzzles": [
+   "hb0171",
+   "hb0216",
+   "hb0235",
+   "hb0242",
+   "hb0264",
+   "hb0281",
+   "hb0308",
+   "hb0518"
+  ],
+  "zipf": 1.55
+ },
+ "TOTTERED": {
+  "from": "TOTTER",
+  "puzzles": [
+   "hb0126",
+   "hb0264",
+   "hb0518"
+  ],
+  "zipf": 1.59
+ },
+ "TOURE": {
+  "from": "TOURER",
+  "puzzles": [
+   "hb0163",
+   "hb0171",
+   "hb0204",
+   "hb0216",
+   "hb0263",
+   "hb0470"
+  ],
+  "zipf": 2.83
+ },
+ "TOUTE": {
+  "from": "TOUTED",
+  "puzzles": [
+   "hb0223"
+  ],
+  "zipf": 2.07
+ },
+ "TOVA": {
+  "from": "TOVAR",
+  "puzzles": [
+   "hb0235",
+   "hb0264",
+   "hb0308"
+  ],
+  "zipf": 1.98
+ },
+ "TRAC": {
+  "from": "TRACER",
+  "puzzles": [
+   "hb0307"
+  ],
+  "zipf": 2.54
+ },
+ "TRAD": {
+  "from": "TRADED",
+  "puzzles": [
+   "hb0134",
+   "hb0264"
+  ],
+  "zipf": 2.9
+ },
+ "TRAPP": {
+  "from": "TRAPPER",
+  "puzzles": [
+   "hb0086"
+  ],
+  "zipf": 2.66
+ },
+ "TRAPPE": {
+  "from": "TRAPPER",
+  "puzzles": [
+   "hb0086"
+  ],
+  "zipf": 1.97
+ },
+ "TREA": {
+  "from": "TREAD",
+  "puzzles": [
+   "hb0134",
+   "hb0264"
+  ],
+  "zipf": 2.15
+ },
+ "TREADED": {
+  "from": "TREAD",
+  "puzzles": [
+   "hb0134",
+   "hb0264"
+  ],
+  "zipf": 1.72
+ },
+ "TREADER": {
+  "from": "TREAD",
+  "puzzles": [
+   "hb0134",
+   "hb0264"
+  ],
+  "zipf": 1.66
+ },
+ "TREATER": {
+  "from": "TREAT",
+  "puzzles": [
+   "hb0058",
+   "hb0079",
+   "hb0086",
+   "hb0116",
+   "hb0134",
+   "hb0145",
+   "hb0181",
+   "hb0263",
+   "hb0264",
+   "hb0350",
+   "hb0383",
+   "hb0437",
+   "hb0494"
+  ],
+  "zipf": 1.68
+ },
+ "TREED": {
+  "from": "TREE",
+  "puzzles": [
+   "hb0052",
+   "hb0126",
+   "hb0134",
+   "hb0147",
+   "hb0211",
+   "hb0264",
+   "hb0424",
+   "hb0462",
+   "hb0467",
+   "hb0487",
+   "hb0574"
+  ],
+  "zipf": 1.92
+ },
+ "TREN": {
+  "from": "TREND",
+  "puzzles": [
+   "hb0052",
+   "hb0424"
+  ],
+  "zipf": 2.43
+ },
+ "TRIA": {
+  "from": "TRIAD",
+  "puzzles": [
+   "hb0299",
+   "hb0361",
+   "hb0481"
+  ],
+  "zipf": 2.24
+ },
+ "TRICKER": {
+  "from": "TRICK",
+  "puzzles": [
+   "hb0233",
+   "hb0467"
+  ],
+  "zipf": 1.62
+ },
+ "TRIE": {
+  "from": "TRIER",
+  "puzzles": [
+   "hb0094",
+   "hb0100",
+   "hb0116",
+   "hb0117",
+   "hb0147",
+   "hb0149",
+   "hb0153",
+   "hb0173",
+   "hb0175",
+   "hb0191",
+   "hb0192",
+   "hb0211",
+   "hb0216",
+   "hb0220",
+   "hb0271",
+   "hb0291",
+   "hb0319",
+   "hb0329",
+   "hb0383",
+   "hb0414",
+   "hb0420",
+   "hb0462",
+   "hb0467",
+   "hb0487",
+   "hb0544",
+   "hb0562",
+   "hb0566"
+  ],
+  "zipf": 2.07
+ },
+ "TRIGG": {
+  "from": "TRIGGER",
+  "puzzles": [
+   "hb0100",
+   "hb0116",
+   "hb0218",
+   "hb0291",
+   "hb0473"
+  ],
+  "zipf": 2.37
+ },
+ "TRILLED": {
+  "from": "TRILL",
+  "puzzles": [
+   "hb0147",
+   "hb0211"
+  ],
+  "zipf": 1.78
+ },
+ "TRIMER": {
+  "from": "TRIM",
+  "puzzles": [
+   "hb0175",
+   "hb0240",
+   "hb0337",
+   "hb0462",
+   "hb0512"
+  ],
+  "zipf": 1.87
+ },
+ "TRIPP": {
+  "from": "TRIPPER",
+  "puzzles": [
+   "hb0029",
+   "hb0048",
+   "hb0094",
+   "hb0329",
+   "hb0462"
+  ],
+  "zipf": 2.88
+ },
+ "TRIPPE": {
+  "from": "TRIPPER",
+  "puzzles": [
+   "hb0029",
+   "hb0048",
+   "hb0094",
+   "hb0191",
+   "hb0329",
+   "hb0462"
+  ],
+  "zipf": 1.79
+ },
+ "TROL": {
+  "from": "TROLLING",
+  "puzzles": [
+   "hb0302"
+  ],
+  "zipf": 1.73
+ },
+ "TROLLER": {
+  "from": "TROLL",
+  "puzzles": [
+   "hb0026",
+   "hb0032",
+   "hb0204",
+   "hb0235"
+  ],
+  "zipf": 1.74
+ },
+ "TROTT": {
+  "from": "TROTTER",
+  "puzzles": [
+   "hb0032",
+   "hb0063",
+   "hb0171",
+   "hb0181",
+   "hb0204",
+   "hb0216",
+   "hb0224",
+   "hb0235",
+   "hb0242",
+   "hb0264",
+   "hb0281",
+   "hb0302",
+   "hb0308",
+   "hb0320",
+   "hb0518"
+  ],
+  "zipf": 2.77
+ },
+ "TROVER": {
+  "from": "TROVE",
+  "puzzles": [
+   "hb0032",
+   "hb0063",
+   "hb0171",
+   "hb0235",
+   "hb0264",
+   "hb0308",
+   "hb0320",
+   "hb0349",
+   "hb0418",
+   "hb0511",
+   "hb0562"
+  ],
+  "zipf": 1.5
+ },
+ "TROWER": {
+  "from": "TROW",
+  "puzzles": [
+   "hb0320"
+  ],
+  "zipf": 1.63
+ },
+ "TROYER": {
+  "from": "TROY",
+  "puzzles": [
+   "hb0032",
+   "hb0063",
+   "hb0181",
+   "hb0242"
+  ],
+  "zipf": 2.07
+ },
+ "TRUED": {
+  "from": "TRUE",
+  "puzzles": [
+   "hb0134",
+   "hb0166",
+   "hb0328"
+  ],
+  "zipf": 1.55
+ },
+ "TRUING": {
+  "from": "TRUE",
+  "puzzles": [
+   "hb0578"
+  ],
+  "zipf": 1.59
+ },
+ "TRUTHER": {
+  "from": "TRUTH",
+  "puzzles": [
+   "hb0386"
+  ],
+  "zipf": 2.05
+ },
+ "TUFTE": {
+  "from": "TUFTED",
+  "puzzles": [
+   "hb0241"
+  ],
+  "zipf": 1.71
+ },
+ "TULLER": {
+  "from": "TULLE",
+  "puzzles": [
+   "hb0114"
+  ],
+  "zipf": 1.53
+ },
+ "TUNNELLED": {
+  "from": "TUNNEL",
+  "puzzles": [
+   "hb0146"
+  ],
+  "zipf": 1.77
+ },
+ "TURNE": {
+  "from": "TURNER",
+  "puzzles": [
+   "hb0163",
+   "hb0166",
+   "hb0171",
+   "hb0172",
+   "hb0328",
+   "hb0578"
+  ],
+  "zipf": 1.85
+ },
+ "TURRETED": {
+  "from": "TURRET",
+  "puzzles": [
+   "hb0134",
+   "hb0166",
+   "hb0328"
+  ],
+  "zipf": 1.94
+ },
+ "TUTO": {
+  "from": "TUTOR",
+  "puzzles": [
+   "hb0080",
+   "hb0108",
+   "hb0163",
+   "hb0171",
+   "hb0208",
+   "hb0216",
+   "hb0352",
+   "hb0401",
+   "hb0464"
+  ],
+  "zipf": 1.63
+ },
+ "TWIGGED": {
+  "from": "TWIG",
+  "puzzles": [
+   "hb0399"
+  ],
+  "zipf": 1.78
+ },
+ "TWITTED": {
+  "from": "TWIT",
+  "puzzles": [
+   "hb0033",
+   "hb0399"
+  ],
+  "zipf": 1.56
+ },
+ "TWITTERER": {
+  "from": "TWITTER",
+  "puzzles": [
+   "hb0329"
+  ],
+  "zipf": 1.57
+ },
+ "TYPER": {
+  "from": "TYPE",
+  "puzzles": [
+   "hb0288"
+  ],
+  "zipf": 1.7
+ },
+ "TYRED": {
+  "from": "TYRE",
+  "puzzles": [
+   "hb0316"
+  ],
+  "zipf": 1.62
+ },
+ "TYRER": {
+  "from": "TYRE",
+  "puzzles": [
+   "hb0032",
+   "hb0063",
+   "hb0181",
+   "hb0192",
+   "hb0288",
+   "hb0316",
+   "hb0329",
+   "hb0397",
+   "hb0420",
+   "hb0566"
+  ],
+  "zipf": 1.51
+ },
+ "UNDE": {
+  "from": "UNDER",
+  "puzzles": [
+   "hb0166"
+  ],
+  "zipf": 2.34
+ },
+ "UNITER": {
+  "from": "UNIT",
+  "puzzles": [
+   "hb0578"
+  ],
+  "zipf": 1.86
+ },
+ "UNTI": {
+  "from": "UNTIED",
+  "puzzles": [
+   "hb0146"
+  ],
+  "zipf": 1.75
+ },
+ "UPGRADER": {
+  "from": "UPGRADE",
+  "puzzles": [
+   "hb0343"
+  ],
+  "zipf": 1.52
+ },
+ "VALO": {
+  "from": "VALOR",
+  "puzzles": [
+   "hb0235",
+   "hb0415"
+  ],
+  "zipf": 1.72
+ },
+ "VALVED": {
+  "from": "VALVE",
+  "puzzles": [
+   "hb0269",
+   "hb0551"
+  ],
+  "zipf": 1.82
+ },
+ "VEINING": {
+  "from": "VEIN",
+  "puzzles": [
+   "hb0131",
+   "hb0524"
+  ],
+  "zipf": 1.83
+ },
+ "VENDER": {
+  "from": "VEND",
+  "puzzles": [
+   "hb0061"
+  ],
+  "zipf": 1.86
+ },
+ "VENE": {
+  "from": "VENEER",
+  "puzzles": [
+   "hb0037",
+   "hb0061",
+   "hb0106",
+   "hb0131",
+   "hb0238",
+   "hb0511"
+  ],
+  "zipf": 1.53
+ },
+ "VENTE": {
+  "from": "VENTER",
+  "puzzles": [
+   "hb0037",
+   "hb0113",
+   "hb0171",
+   "hb0511"
+  ],
+  "zipf": 1.91
+ },
+ "VENTURER": {
+  "from": "VENTURE",
+  "puzzles": [
+   "hb0171"
+  ],
+  "zipf": 1.8
+ },
+ "VERGED": {
+  "from": "VERGE",
+  "puzzles": [
+   "hb0315",
+   "hb0530"
+  ],
+  "zipf": 1.77
+ },
+ "VERGEER": {
+  "from": "VERGE",
+  "puzzles": [
+   "hb0131",
+   "hb0238",
+   "hb0315",
+   "hb0530",
+   "hb0562"
+  ],
+  "zipf": 1.54
+ },
+ "VETTE": {
+  "from": "VETTED",
+  "puzzles": [
+   "hb0264",
+   "hb0487",
+   "hb0523",
+   "hb0571"
+  ],
+  "zipf": 2.24
+ },
+ "VIBING": {
+  "from": "VIBE",
+  "puzzles": [
+   "hb0524"
+  ],
+  "zipf": 2.11
+ },
+ "VICA": {
+  "from": "VICAR",
+  "puzzles": [
+   "hb0306",
+   "hb0348"
+  ],
+  "zipf": 1.67
+ },
+ "VIGO": {
+  "from": "VIGOR",
+  "puzzles": [
+   "hb0550"
+  ],
+  "zipf": 2.73
+ },
+ "VINING": {
+  "from": "VINE",
+  "puzzles": [
+   "hb0131",
+   "hb0524"
+  ],
+  "zipf": 2.13
+ },
+ "VINTER": {
+  "from": "VINT",
+  "puzzles": [
+   "hb0037",
+   "hb0414"
+  ],
+  "zipf": 1.79
+ },
+ "VIVI": {
+  "from": "VIVID",
+  "puzzles": [
+   "hb0228",
+   "hb0278"
+  ],
+  "zipf": 2.58
+ },
+ "WADER": {
+  "from": "WADE",
+  "puzzles": [
+   "hb0062"
+  ],
+  "zipf": 1.82
+ },
+ "WAILER": {
+  "from": "WAIL",
+  "puzzles": [
+   "hb0347"
+  ],
+  "zipf": 1.68
+ },
+ "WAINER": {
+  "from": "WAIN",
+  "puzzles": [
+   "hb0513"
+  ],
+  "zipf": 1.5
+ },
+ "WAITE": {
+  "from": "WAITED",
+  "puzzles": [
+   "hb0033"
+  ],
+  "zipf": 2.97
+ },
+ "WALKE": {
+  "from": "WALKER",
+  "puzzles": [
+   "hb0122"
+  ],
+  "zipf": 1.79
+ },
+ "WALLE": {
+  "from": "WALLER",
+  "puzzles": [
+   "hb0079"
+  ],
+  "zipf": 1.86
+ },
+ "WALLOWED": {
+  "from": "WALLOW",
+  "puzzles": [
+   "hb0076"
+  ],
+  "zipf": 1.84
+ },
+ "WANGER": {
+  "from": "WANG",
+  "puzzles": [
+   "hb0513"
+  ],
+  "zipf": 1.67
+ },
+ "WARDE": {
+  "from": "WARDED",
+  "puzzles": [
+   "hb0042",
+   "hb0062"
+  ],
+  "zipf": 2.12
+ },
+ "WAREING": {
+  "from": "WARE",
+  "puzzles": [
+   "hb0513"
+  ],
+  "zipf": 1.8
+ },
+ "WARING": {
+  "from": "WARE",
+  "puzzles": [
+   "hb0513"
+  ],
+  "zipf": 2.71
+ },
+ "WARNE": {
+  "from": "WARNED",
+  "puzzles": [
+   "hb0042",
+   "hb0477",
+   "hb0513"
+  ],
+  "zipf": 2.78
+ },
+ "WARR": {
+  "from": "WARRING",
+  "puzzles": [
+   "hb0513"
+  ],
+  "zipf": 2.39
+ },
+ "WARRE": {
+  "from": "WARRING",
+  "puzzles": [
+   "hb0513"
+  ],
+  "zipf": 1.79
+ },
+ "WATE": {
+  "from": "WATER",
+  "puzzles": [
+   "hb0079",
+   "hb0145"
+  ],
+  "zipf": 2.05
+ },
+ "WATERER": {
+  "from": "WATER",
+  "puzzles": [
+   "hb0079",
+   "hb0145"
+  ],
+  "zipf": 1.59
+ },
+ "WATTER": {
+  "from": "WATT",
+  "puzzles": [
+   "hb0079",
+   "hb0145"
+  ],
+  "zipf": 1.72
+ },
+ "WEARE": {
+  "from": "WEARER",
+  "puzzles": [
+   "hb0042",
+   "hb0062",
+   "hb0079",
+   "hb0145",
+   "hb0477",
+   "hb0513"
+  ],
+  "zipf": 2.32
+ },
+ "WEATH": {
+  "from": "WEATHER",
+  "puzzles": [
+   "hb0480"
+  ],
+  "zipf": 1.55
+ },
+ "WEBB": {
+  "from": "WEBBER",
+  "puzzles": [
+   "hb0148",
+   "hb0356"
+  ],
+  "zipf": 3.77
+ },
+ "WEBBE": {
+  "from": "WEBBER",
+  "puzzles": [
+   "hb0148",
+   "hb0356"
+  ],
+  "zipf": 1.96
+ },
+ "WEDD": {
+  "from": "WEDDED",
+  "puzzles": [
+   "hb0062",
+   "hb0398",
+   "hb0600"
+  ],
+  "zipf": 1.84
+ },
+ "WEEDER": {
+  "from": "WEED",
+  "puzzles": [
+   "hb0062",
+   "hb0398",
+   "hb0600"
+  ],
+  "zipf": 1.5
+ },
+ "WEENING": {
+  "from": "WEEN",
+  "puzzles": [
+   "hb0513"
+  ],
+  "zipf": 1.66
+ },
+ "WEEPER": {
+  "from": "WEEP",
+  "puzzles": [
+   "hb0274",
+   "hb0508"
+  ],
+  "zipf": 1.66
+ },
+ "WEIR": {
+  "from": "WEIRD",
+  "puzzles": [
+   "hb0600"
+  ],
+  "zipf": 3.52
+ },
+ "WEIRDED": {
+  "from": "WEIRD",
+  "puzzles": [
+   "hb0600"
+  ],
+  "zipf": 2.4
+ },
+ "WELKER": {
+  "from": "WELK",
+  "puzzles": [
+   "hb0068",
+   "hb0122"
+  ],
+  "zipf": 2.74
+ },
+ "WELLE": {
+  "from": "WELLER",
+  "puzzles": [
+   "hb0068",
+   "hb0600"
+  ],
+  "zipf": 2.36
+ },
+ "WHATEV": {
+  "from": "WHATEVER",
+  "puzzles": [
+   "hb0480"
+  ],
+  "zipf": 1.76
+ },
+ "WHEATER": {
+  "from": "WHEAT",
+  "puzzles": [
+   "hb0480"
+  ],
+  "zipf": 1.5
+ },
+ "WHITED": {
+  "from": "WHIT",
+  "puzzles": [
+   "hb0033",
+   "hb0399"
+  ],
+  "zipf": 1.83
+ },
+ "WIEL": {
+  "from": "WIELD",
+  "puzzles": [
+   "hb0600"
+  ],
+  "zipf": 1.82
+ },
+ "WIELDER": {
+  "from": "WIELD",
+  "puzzles": [
+   "hb0600"
+  ],
+  "zipf": 2.28
+ },
+ "WIEN": {
+  "from": "WIENER",
+  "puzzles": [
+   "hb0068",
+   "hb0513"
+  ],
+  "zipf": 2.78
+ },
+ "WILDE": {
+  "from": "WILDER",
+  "puzzles": [
+   "hb0600"
+  ],
+  "zipf": 3.43
+ },
+ "WILLE": {
+  "from": "WILLED",
+  "puzzles": [
+   "hb0600"
+  ],
+  "zipf": 2.12
+ },
+ "WILLER": {
+  "from": "WILL",
+  "puzzles": [
+   "hb0347",
+   "hb0600"
+  ],
+  "zipf": 1.71
+ },
+ "WINGE": {
+  "from": "WINGER",
+  "puzzles": [
+   "hb0513"
+  ],
+  "zipf": 1.58
+ },
+ "WINKLER": {
+  "from": "WINKLE",
+  "puzzles": [
+   "hb0068"
+  ],
+  "zipf": 2.84
+ },
+ "WINN": {
+  "from": "WINNER",
+  "puzzles": [
+   "hb0513"
+  ],
+  "zipf": 3.02
+ },
+ "WINNE": {
+  "from": "WINNER",
+  "puzzles": [
+   "hb0068",
+   "hb0513"
+  ],
+  "zipf": 1.88
+ },
+ "WINNOW": {
+  "from": "WINNOWING",
+  "puzzles": [
+   "hb0406"
+  ],
+  "zipf": 1.88
+ },
+ "WITT": {
+  "from": "WITTED",
+  "puzzles": [
+   "hb0033",
+   "hb0399"
+  ],
+  "zipf": 2.96
+ },
+ "WITTE": {
+  "from": "WITTED",
+  "puzzles": [
+   "hb0033",
+   "hb0399"
+  ],
+  "zipf": 2.45
+ },
+ "WOODING": {
+  "from": "WOOD",
+  "puzzles": [
+   "hb0406"
+  ],
+  "zipf": 1.77
+ },
+ "WOOLER": {
+  "from": "WOOL",
+  "puzzles": [
+   "hb0101"
+  ],
+  "zipf": 1.73
+ },
+ "WRONGING": {
+  "from": "WRONG",
+  "puzzles": [
+   "hb0406"
+  ],
+  "zipf": 1.56
+ },
+ "YARDE": {
+  "from": "YARDER",
+  "puzzles": [
+   "hb0231",
+   "hb0316"
+  ],
+  "zipf": 1.86
+ }
+}

@@ -23,4 +23,10 @@ describe('Hubbub accepts everyday words', () => {
     }
     expect(missing).toEqual([]);
   });
+
+  it('never accepts the crude words the founder struck (10-13)', () => {
+    const STRUCK = ['RAPER'];
+    const hits = live.flatMap((p) => STRUCK.filter((w) => [...p.words, ...p.bonus].includes(w)).map((w) => `${p.id} ${w}`));
+    expect(hits).toEqual([]);
+  });
 });
