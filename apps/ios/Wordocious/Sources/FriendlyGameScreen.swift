@@ -745,34 +745,78 @@ struct FriendlyGameScreen: View {
         let me = g.me
         let myMove = g.isActive && g.yourTurn
         // §J2: the winning three glow.
-        let line = Set(FriendlyGames.tttLine(t.board)?.cells ?? [])
+        let winCells = FriendlyGames.tttLine(t.board)?.cells ?? []
+        let line = Set(winCells)
         let accent = FriendsKit.tileAccent(.ttt)
         VStack(spacing: 12) {
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(92), spacing: 10), count: 3), spacing: 10) {
-                ForEach(0..<9, id: \.self) { i in
-                    let mark = t.board[i]
-                    let wins: Bool = {
-                        guard myMove, mark == nil else { return false }
-                        var b = t.board; b[i] = me
-                        return FriendlyGames.tttLine(b) != nil
-                    }()
-                    Button { send(.ttt(i)) } label: {
-                        tttCell(mark: mark, mine: mark == me, wins: wins, glow: line.contains(i))
+            if let grid = PocketArt.tttGrid {
+                // Founder 10-13: the classic # board art; the X / O tiles fill each cell to its edges (a 4% inset) and a tap
+                // anywhere in a cell plays it.
+                PocketBoardArt(art: grid, pixels: PocketBoard.tttPixels) { scale in
+                    ForEach(0..<9, id: \.self) { i in
+                        let mark = t.board[i]
+                        let wins: Bool = {
+                            guard myMove, mark == nil else { return false }
+                            var b = t.board; b[i] = me
+                            return FriendlyGames.tttLine(b) != nil
+                        }()
+                        let rect = PocketBoard.tttCell(i)
+                        Button { send(.ttt(i)) } label: {
+                            tttGridCell(mark: mark, mine: mark == me, wins: wins, glow: line.contains(i),
+                                        size: CGSize(width: rect.width * scale, height: rect.height * scale))
+                        }
+                        .buttonStyle(.squish)
+                        .disabled(!myMove || mark != nil || sending)
+                        .accessibilityLabel(mark == nil ? "Empty tile \(i + 1)" : mark == me ? "Your tile" : "\(themName)'s tile")
+                        .placed(rect, scale: scale)
                     }
-                    .buttonStyle(.squish)
-                    .disabled(!myMove || mark != nil || sending)
-                    .accessibilityLabel(mark == nil ? "Empty tile \(i + 1)" : mark == me ? "Your tile" : "\(themName)'s tile")
+                    // Wave 3: the strike draws through the winning three.
+                    if !winCells.isEmpty { TttStrikeView(cells: winCells, scale: scale) }
                 }
+            } else {
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(92), spacing: 10), count: 3), spacing: 10) {
+                    ForEach(0..<9, id: \.self) { i in
+                        let mark = t.board[i]
+                        let wins: Bool = {
+                            guard myMove, mark == nil else { return false }
+                            var b = t.board; b[i] = me
+                            return FriendlyGames.tttLine(b) != nil
+                        }()
+                        Button { send(.ttt(i)) } label: {
+                            tttCell(mark: mark, mine: mark == me, wins: wins, glow: line.contains(i))
+                        }
+                        .buttonStyle(.squish)
+                        .disabled(!myMove || mark != nil || sending)
+                        .accessibilityLabel(mark == nil ? "Empty tile \(i + 1)" : mark == me ? "Your tile" : "\(themName)'s tile")
+                    }
+                }
+                .gameTray(accent: accent, state: trayState(g))
             }
-            // Wave 3: the strike draws through the winning three.
-            .overlay { if !line.isEmpty { TttStrikeView(cells: FriendlyGames.tttLine(t.board)?.cells ?? [], cell: 92, gap: 10) } }
-            // §L: the board sits on the shared tray (no grid lines).
-            .gameTray(accent: accent, state: trayState(g))
             HStack(spacing: 16) {
                 pieceLegend("YOU · X", piece: PocketArt.ttt(mine: true) ?? "art-piece-ttt-x", fallback: FriendsKit.purple, ink: myColor)
                 pieceLegend("\(themName.uppercased()) · O", piece: PocketArt.ttt(mine: false) ?? "art-piece-ttt-o", fallback: FriendsInk.pink, ink: themColor)
             }
         }
+    }
+
+    /// One cell of the # board art: nothing drawn when empty (the lilac slab is the cell; a dashed gold outline marks the
+    /// move that would win), or the X / O tile art filling the cell, dropping in with the type pop; the winning three glow.
+    private func tttGridCell(mark: FriendlySide?, mine: Bool, wins: Bool, glow: Bool, size: CGSize) -> some View {
+        let tint = mine ? FriendsKit.purple : FriendsInk.pink
+        return ZStack {
+            if mark != nil {
+                tttPiece(mine: mine)
+                    .padding(min(size.width, size.height) * 0.04)
+                    .shadow(color: glow ? tint.opacity(0.75) : .clear, radius: glow ? 10 : 0)
+            } else if wins {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Color(hex: 0xF5B82E), style: StrokeStyle(lineWidth: 2.5, dash: [6, 4]))
+                    .padding(min(size.width, size.height) * 0.04)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .contentShape(Rectangle())
+        .modifier(TypePop(letter: mark == nil ? "" : "x", size: size))
     }
 
     /// One Tic-Tac-Tile cell: an empty frosted tile (dashed purple when it would
@@ -836,20 +880,27 @@ struct FriendlyGameScreen: View {
     @ViewBuilder private func coinBoard(_ g: FriendlyGameView, _ c: CoinState) -> some View {
         let myCall = g.isActive && g.yourTurn
         VStack(spacing: 14) {
-            // §L: the coin sits on the shared tray.
-            VStack(spacing: 8) {
-                let caption: AnyView? = c.rounds.last.map { last in
-                    let who = last.caller == g.me ? "You" : themName
-                    return AnyView(PocketBubble(text: "\(who) called \(last.call.rawValue) · it landed \(last.flip.rawValue)",
-                                                color: FriendsInk.muted, size: 13,
-                                                names: [who], nameColor: last.caller == g.me ? myColor : themColor, minScale: 0.4))
-                }
-                // The result line rides with the coin and appears only once it has landed (no spoiler mid-flip).
-                SpinningCoin(face: c.rounds.last?.flip ?? .heads, spinKey: c.rounds.count, caption: caption)
-                    .id(g.id)   // a rematch is a new coin (no leftover flip key spinning the new game's placeholder)
+            // §L: the coin sits on the shared tray; founder 10-13: on the velvet stage in front of the theater backdrop
+            // (the plain tray when that art is missing).
+            let caption: AnyView? = c.rounds.last.map { last in
+                let who = last.caller == g.me ? "You" : themName
+                return AnyView(PocketBubble(text: "\(who) called \(last.call.rawValue) · it landed \(last.flip.rawValue)",
+                                            color: FriendsInk.muted, size: 13,
+                                            names: [who], nameColor: last.caller == g.me ? myColor : themColor, minScale: 0.4))
             }
-            .frame(maxWidth: .infinity)
-            .gameTray(accent: FriendsKit.tileAccent(.coin), state: trayState(g))
+            // The result line rides with the coin and appears only once it has landed (no spoiler mid-flip).
+            if PocketArt.coinStage != nil && PocketArt.coinBackdrop != nil {
+                SpinningCoin(face: c.rounds.last?.flip ?? .heads, spinKey: c.rounds.count, caption: caption, staged: true)
+                    .id(g.id)
+                    .frame(maxWidth: .infinity)
+            } else {
+                VStack(spacing: 8) {
+                    SpinningCoin(face: c.rounds.last?.flip ?? .heads, spinKey: c.rounds.count, caption: caption)
+                        .id(g.id)   // a rematch is a new coin (no leftover flip key spinning the new game's placeholder)
+                }
+                .frame(maxWidth: .infinity)
+                .gameTray(accent: FriendsKit.tileAccent(.coin), state: trayState(g))
+            }
             if g.isActive {
                 if myCall {
                     heading("Your call")
@@ -891,33 +942,45 @@ struct FriendlyGameScreen: View {
     @ViewBuilder private func passBoard(_ g: FriendlyGameView, _ p: PassState) -> some View {
         let profile = AuthService.shared.profile
         let typing = g.isActive && g.yourTurn
-        VStack(spacing: 6) {
-            ForEach(0..<FriendlyGames.passMaxGuesses, id: \.self) { row in
-                HStack(spacing: 6) {
-                    Group {
-                        if row < p.guesses.count {
-                            let by = p.guesses[row].by
-                            if by == g.me {
-                                AvatarView(url: profile?.avatarUrl, username: profile?.username ?? "You", size: 26, emoji: profile?.avatarEmoji)
-                                    .overlay(AvatarOutline(tile: AvatarView.showsTile(profile?.avatarUrl)).stroke(FriendsKit.purple, lineWidth: 2))
-                            } else {
-                                AvatarView(url: g.opponent.avatarUrl, username: themName, size: 26, emoji: g.opponent.avatarEmoji)
-                                    .overlay(AvatarOutline(tile: AvatarView.showsTile(g.opponent.avatarUrl)).stroke(FriendsKit.amber, lineWidth: 2))
+        if let tray = PocketArt.passTray {
+            // Founder 10-13: the puzzle-piece tray. The six guess rows and their ring markers sit as one group, centered
+            // in the piece's body (rings close to the tiles, a gap of ~12% of a tile).
+            PocketBoardArt(art: tray, pixels: PocketBoard.passPixels) { scale in
+                let t: CGFloat = 76                       // tile, in art pixels
+                let gap = t * 0.16, ring = t * 0.62, ringGap = t * 0.12
+                let groupW = ring + ringGap + 5 * t + 4 * gap
+                let groupH = 6 * t + 5 * gap
+                let body = PocketBoard.passBody
+                VStack(spacing: gap * scale) {
+                    ForEach(0..<FriendlyGames.passMaxGuesses, id: \.self) { row in
+                        HStack(spacing: ringGap * scale) {
+                            passMarker(row: row, g: g, p: p, profile: profile, size: ring * scale)
+                                .frame(width: ring * scale, height: ring * scale)
+                            HStack(spacing: gap * scale) {
+                                ForEach(0..<5, id: \.self) { col in
+                                    passTile(row: row, col: col, p: p, typing: typing, width: t * scale)
+                                }
                             }
-                        } else {
-                            Circle().fill(FriendsKit.tileAccent(.pass).vsWash(0.14)).frame(width: 26, height: 26)
-                                .overlay(Circle().stroke(FriendsKit.tileAccent(.pass).vsWash(0.4), lineWidth: 1))
                         }
                     }
-                    .frame(width: 28)
-                    ForEach(0..<5, id: \.self) { col in
-                        passTile(row: row, col: col, p: p, typing: typing)
+                }
+                .placed(CGRect(x: body.midX - groupW / 2, y: body.midY - groupH / 2, width: groupW, height: groupH), scale: scale)
+            }
+        } else {
+            VStack(spacing: 6) {
+                ForEach(0..<FriendlyGames.passMaxGuesses, id: \.self) { row in
+                    HStack(spacing: 6) {
+                        passMarker(row: row, g: g, p: p, profile: profile, size: 26)
+                            .frame(width: 28)
+                        ForEach(0..<5, id: \.self) { col in
+                            passTile(row: row, col: col, p: p, typing: typing, width: 44)
+                        }
                     }
                 }
             }
+            // §L: the board sits on the shared tray.
+            .gameTray(accent: FriendsKit.tileAccent(.pass), state: trayState(g))
         }
-        // §L: the board sits on the shared tray.
-        .gameTray(accent: FriendsKit.tileAccent(.pass), state: trayState(g))
         if !g.isActive, let answer = g.answer {
             HStack(spacing: 7) {
                 PocketBubble(text: "The word was", color: gameAccent, size: 16)
@@ -936,7 +999,7 @@ struct FriendlyGameScreen: View {
 
     /// §B1: the Pass the Puzzle tiles are the game kit's glossy tiles (purple right
     /// spot, gold wrong spot, slate not in the word; frosted empty, typed white).
-    private func passTile(row: Int, col: Int, p: PassState, typing: Bool) -> some View {
+    private func passTile(row: Int, col: Int, p: PassState, typing: Bool, width: CGFloat) -> some View {
         var letter = ""
         var face: GlossyFace = .empty
         if row < p.guesses.count {
@@ -950,8 +1013,28 @@ struct FriendlyGameScreen: View {
             letter = col < chars.count ? String(chars[col]) : ""
             face = letter.isEmpty ? .empty : .typed
         }
-        return PocketTile(face: face, letter: letter, width: 44, pop: row < p.guesses.count)
-            .modifier(TypePop(letter: face == .typed ? letter : "", size: CGSize(width: 44, height: 44)))
+        return PocketTile(face: face, letter: letter, width: width, pop: row < p.guesses.count)
+            .modifier(TypePop(letter: face == .typed ? letter : "", size: CGSize(width: width, height: width)))
+    }
+
+    /// The marker left of a guess row: who played it (their avatar, outlined in their color), or the open ring (gold on the
+    /// tray art, the old tinted disc without it).
+    @ViewBuilder private func passMarker(row: Int, g: FriendlyGameView, p: PassState, profile: Profile?, size: CGFloat) -> some View {
+        if row < p.guesses.count {
+            let by = p.guesses[row].by
+            if by == g.me {
+                AvatarView(url: profile?.avatarUrl, username: profile?.username ?? "You", size: size, emoji: profile?.avatarEmoji)
+                    .overlay(AvatarOutline(tile: AvatarView.showsTile(profile?.avatarUrl)).stroke(FriendsKit.purple, lineWidth: 2))
+            } else {
+                AvatarView(url: g.opponent.avatarUrl, username: themName, size: size, emoji: g.opponent.avatarEmoji)
+                    .overlay(AvatarOutline(tile: AvatarView.showsTile(g.opponent.avatarUrl)).stroke(FriendsKit.amber, lineWidth: 2))
+            }
+        } else if PocketArt.passTray != nil {
+            Circle().strokeBorder(Color(hex: 0xF5B82E), lineWidth: max(1.5, size * 0.07)).frame(width: size, height: size)
+        } else {
+            Circle().fill(FriendsKit.tileAccent(.pass).vsWash(0.14)).frame(width: size, height: size)
+                .overlay(Circle().stroke(FriendsKit.tileAccent(.pass).vsWash(0.4), lineWidth: 1))
+        }
     }
 
     private func passKeyboard(_ g: FriendlyGameView, _ p: PassState) -> some View {
@@ -1011,22 +1094,50 @@ struct FriendlyGameScreen: View {
             if g.isActive {
                 heading(s.fragment.isEmpty ? (myLetter ? "Start the word" : "\(themName) starts") : "The letters so far",
                         names: [themName], nameColor: themColor)
-                HStack(spacing: 6) {
-                    ForEach(letters.indices, id: \.self) { i in
-                        let by = i < s.letters.count ? s.letters[i] : me.other
-                        ghostTile(letters[i], mine: by == me)
-                            .transition(.scale.combined(with: .opacity))
+                if let tray = PocketArt.ghostTray {
+                    // Founder 10-13: the ghost-shaped tray. The fragment's tiles sit centered in its plum panel, the newest
+                    // letter gold, a dashed outline marking the next slot. Tiles shrink only if a long fragment needs it.
+                    PocketBoardArt(art: tray, pixels: PocketBoard.ghostPixels, maxWidth: 560) { scale in
+                        let panel = PocketBoard.ghostPanel
+                        let slots = letters.count + ((myLetter || letters.isEmpty) ? 1 : 0)
+                        let pitch = min(100, (panel.width - 40) / CGFloat(max(slots, 1)))
+                        let t = pitch * 0.86
+                        HStack(spacing: (pitch - t) * scale) {
+                            ForEach(letters.indices, id: \.self) { i in
+                                PocketTile(face: i == letters.count - 1 ? .present : .correct, letter: letters[i],
+                                           width: t * scale, pop: true)
+                                    .modifier(TypePop(letter: "", size: CGSize(width: t * scale, height: t * scale)))
+                                    .accessibilityLabel(letters[i])
+                                    .transition(.scale.combined(with: .opacity))
+                            }
+                            if myLetter {
+                                ghostNextSlot(ghostPending ?? "", width: t * scale, dim: false)
+                            } else if letters.isEmpty {
+                                ghostNextSlot("", width: t * scale, dim: true)
+                            }
+                        }
+                        .frame(width: panel.width * scale, height: panel.height * scale)
+                        .position(x: panel.midX * scale, y: panel.midY * scale)
                     }
-                    if myLetter {
-                        ghostTile(ghostPending ?? "", mine: nil)
-                    } else if letters.isEmpty {
-                        ghostTile("", mine: nil).opacity(0.5)
+                    .animation(Theme.reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75), value: s.fragment)
+                } else {
+                    HStack(spacing: 6) {
+                        ForEach(letters.indices, id: \.self) { i in
+                            let by = i < s.letters.count ? s.letters[i] : me.other
+                            ghostTile(letters[i], mine: by == me)
+                                .transition(.scale.combined(with: .opacity))
+                        }
+                        if myLetter {
+                            ghostTile(ghostPending ?? "", mine: nil)
+                        } else if letters.isEmpty {
+                            ghostTile("", mine: nil).opacity(0.5)
+                        }
                     }
+                    .frame(maxWidth: .infinity)
+                    // §L: the fragment sits on the shared tray.
+                    .gameTray(accent: FriendsKit.tileAccent(.ghost))
+                    .animation(Theme.reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75), value: s.fragment)
                 }
-                .frame(maxWidth: .infinity)
-                // §L: the fragment sits on the shared tray.
-                .gameTray(accent: FriendsKit.tileAccent(.ghost))
-                .animation(Theme.reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75), value: s.fragment)
                 if !myLetter {
                     HStack(spacing: 6) {
                         PocketMarker(art: PocketArt.ghostMarker, size: 22)
@@ -1037,12 +1148,31 @@ struct FriendlyGameScreen: View {
                 Text("Spell a word and you lose the round. Leave a dead end and you lose it too.")
                     .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 16) {
-                    legend("YOU", TilePalette.correct.base, ink: myColor)
-                    legend(themName.uppercased(), TilePalette.present.base, ink: themColor)
+                if PocketArt.ghostTray == nil {
+                    HStack(spacing: 16) {
+                        legend("YOU", TilePalette.correct.base, ink: myColor)
+                        legend(themName.uppercased(), TilePalette.present.base, ink: themColor)
+                    }
                 }
             }
         }
+    }
+
+    /// The slot for the next letter on the ghost tray: a dashed gold outline while empty, the typed tile once a letter is picked.
+    @ViewBuilder private func ghostNextSlot(_ letter: String, width: CGFloat, dim: Bool) -> some View {
+        ZStack {
+            if letter.isEmpty {
+                RoundedRectangle(cornerRadius: width * 0.2, style: .continuous)
+                    .strokeBorder(Color(hex: 0xFDE68A), style: StrokeStyle(lineWidth: max(1.5, width * 0.06), dash: [width * 0.14, width * 0.1]))
+                    .frame(width: width, height: width)
+            } else {
+                PocketTile(face: .typed, letter: letter, width: width)
+                    .modifier(TypePop(letter: letter, size: CGSize(width: width, height: width)))
+            }
+        }
+        .frame(width: width, height: width)
+        .opacity(dim ? 0.5 : 1)
+        .accessibilityLabel(letter.isEmpty ? "Your next letter" : letter)
     }
 
     /// One fragment tile: a §B1 glossy tile — yours purple (right-spot face),
@@ -1129,27 +1259,50 @@ struct FriendlyGameScreen: View {
 
     @ViewBuilder private func chainBoard(_ g: FriendlyGameView, _ c: ChainState) -> some View {
         let me = g.me
-        VStack(spacing: 8) {
-            if c.words.isEmpty {
-                PocketBubble(text: g.isActive && g.yourTurn ? "Open the chain with any \(FriendlyGames.wordMin)- to \(FriendlyGames.chainWordMax)-letter word." : "\(themName) opens the chain.",
-                             color: FriendsInk.muted, size: 13, names: [themName], nameColor: themColor, minScale: 0.4)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-            }
-            ForEach(Array(c.words.enumerated()), id: \.offset) { i, w in
-                if i > 0, let links = PocketArt.chainLinks {
-                    // Wave 3 (9d): a small gold link joins each word to the one before it.
-                    Image(links).resizable().interpolation(.high).scaledToFit().frame(width: 18, height: 18)
-                        .padding(.vertical, -9).accessibilityHidden(true)
+        if let frame = PocketArt.chainBoard, let link = PocketArt.chainLink {
+            // Founder 10-13: the gold chain frame. The last two words (three if they fit) as a staircase: each new word
+            // starts directly under the previous word's last letter, joined by the gold link.
+            PocketBoardArt(art: frame, pixels: PocketBoard.chainPixels, maxWidth: 560) { scale in
+                let inner = PocketBoard.chainInterior
+                let w = inner.width * scale, h = inner.height * scale
+                ZStack {
+                    if c.words.isEmpty {
+                        PocketBubble(text: g.isActive && g.yourTurn ? "Open the chain with any \(FriendlyGames.wordMin)- to \(FriendlyGames.chainWordMax)-letter word." : "\(themName) opens the chain.",
+                                     color: Color(hex: 0xFDE68A), size: 13, names: [themName], nameColor: themColor, minScale: 0.4)
+                            .padding(.horizontal, 6)
+                    } else {
+                        ChainStairs(words: c.words, me: me, active: g.isActive, link: link, themName: themName,
+                                    green: FriendsKit.tileAccent(.chain), size: CGSize(width: w, height: h))
+                    }
                 }
-                chainRow(w, me: me, newest: i == c.words.count - 1 && g.isActive)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                .frame(width: w, height: h)
+                .position(x: inner.midX * scale, y: inner.midY * scale)
             }
+            .animation(Theme.reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: c.words.count)
             Color.clear.frame(height: 1).id("chain-end")
+        } else {
+            VStack(spacing: 8) {
+                if c.words.isEmpty {
+                    PocketBubble(text: g.isActive && g.yourTurn ? "Open the chain with any \(FriendlyGames.wordMin)- to \(FriendlyGames.chainWordMax)-letter word." : "\(themName) opens the chain.",
+                                 color: FriendsInk.muted, size: 13, names: [themName], nameColor: themColor, minScale: 0.4)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                }
+                ForEach(Array(c.words.suffix(3).enumerated()), id: \.offset) { i, w in
+                    if i > 0, let links = PocketArt.chainLinks {
+                        // Wave 3 (9d): a small gold link joins each word to the one before it.
+                        Image(links).resizable().interpolation(.high).scaledToFit().frame(width: 18, height: 18)
+                            .padding(.vertical, -9).accessibilityHidden(true)
+                    }
+                    chainRow(w, me: me, newest: i == min(c.words.count, 3) - 1 && g.isActive)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                Color.clear.frame(height: 1).id("chain-end")
+            }
+            // §L: the chain sits on the shared tray.
+            .gameTray(accent: FriendsKit.tileAccent(.chain), state: trayState(g))
+            .animation(Theme.reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: c.words.count)
         }
-        // §L: the chain sits on the shared tray.
-        .gameTray(accent: FriendsKit.tileAccent(.chain), state: trayState(g))
-        .animation(Theme.reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: c.words.count)
         HStack(spacing: 16) {
             legend("YOU", TilePalette.correct.base, ink: myColor)
             legend(themName.uppercased(), TilePalette.present.base, ink: themColor)
@@ -1185,21 +1338,31 @@ struct FriendlyGameScreen: View {
         .accessibilityLabel("\(w.by == me ? "You" : themName) played \(w.word), plus \(w.points)")
     }
 
-    /// Your word: 5–7 tiles with the needed first letter pre-filled and locked,
+    /// Your word: 5–15 tiles (typed letters + one open slot) with the needed first letter pre-filled and locked,
     /// the keyboard and ENTER. Errors show inline right above it.
     private func chainInputArea(_ g: FriendlyGameView, _ c: ChainState) -> some View {
         let mine = g.yourTurn && !sending
         let locked = c.nextLetter.map(String.init)
         let letters = (locked.map { [$0] } ?? []) + Array(chainTyped).map(String.init)
-        let wordMax = FriendlyGames.wordMax
+        // Word Chain takes 5 to 15 letters (founder 10-13): the row shows what is typed plus ONE empty next slot, and
+        // the tiles shrink smoothly as the word grows so it always fits one row.
+        let wordMax = FriendlyGames.chainWordMax
         return VStack(spacing: 8) {
             if g.yourTurn {
-                HStack(spacing: 5) {
-                    ForEach(0..<wordMax, id: \.self) { i in
-                        chainInputTile(i < letters.count ? letters[i] : "", locked: i == 0 && locked != nil,
-                                       optional: i >= FriendlyGames.wordMin)
+                let slots = min(letters.count + 1, wordMax)
+                GeometryReader { geo in
+                    let gap: CGFloat = slots > 9 ? 3 : 5
+                    let t = min(44, (geo.size.width - gap * CGFloat(slots - 1)) / CGFloat(slots))
+                    HStack(spacing: gap) {
+                        ForEach(0..<slots, id: \.self) { i in
+                            chainInputTile(i < letters.count ? letters[i] : "", locked: i == 0 && locked != nil,
+                                           optional: i >= FriendlyGames.wordMin, width: t)
+                        }
                     }
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .animation(Theme.reduceMotion ? nil : .easeOut(duration: 0.15), value: slots)
                 }
+                .frame(height: 44)
                 .padding(.horizontal, 16)
             } else {
                 PocketBubble(text: "\(themName)'s word - it lands in the chain here.", color: FriendsInk.muted, size: 13,
@@ -1236,36 +1399,30 @@ struct FriendlyGameScreen: View {
 
     /// Your word's tiles: the locked first letter a glossy green tile with a lock;
     /// the rest §B1 glossy tiles (frosted empty — dashed when optional — typed white).
-    private func chainInputTile(_ letter: String, locked: Bool, optional: Bool) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 9, style: .continuous)
+    private func chainInputTile(_ letter: String, locked: Bool, optional: Bool, width w: CGFloat) -> some View {
+        let shape = RoundedRectangle(cornerRadius: w * 0.2, style: .continuous)
         let green = FriendsKit.tileAccent(.chain)
-        return GeometryReader { geo in
-            let w = min(geo.size.width, geo.size.height)
-            ZStack {
-                if locked {
-                    ZStack(alignment: .top) {
-                        shape.fill(Color.black.mixed(over: green, 0.35))
-                        shape.fill(LinearGradient(colors: [green.mixed(over: .white, 0.7), green], startPoint: .top, endPoint: .bottom))
-                            .padding(.bottom, 3)
-                    }
-                    .shadow(color: green.opacity(0.45), radius: 6, y: 2)
-                    Text(letter).font(Brand.font(21, .black)).foregroundStyle(.white).padding(.bottom, 3)
-                    Image(systemName: "lock.fill").font(.system(size: 7, weight: .black)).foregroundStyle(.white.opacity(0.85))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(4)
-                } else {
-                    GlossyTile(face: letter.isEmpty ? .empty : .typed, letter: letter, width: w)
-                        .modifier(TypePop(letter: letter, size: CGSize(width: w, height: w)))
-                    if optional && letter.isEmpty {
-                        shape.strokeBorder(FriendsKit.purple.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-                            .padding(.bottom, 2)
-                    }
+        return ZStack {
+            if locked {
+                ZStack(alignment: .top) {
+                    shape.fill(Color.black.mixed(over: green, 0.35))
+                    shape.fill(LinearGradient(colors: [green.mixed(over: .white, 0.7), green], startPoint: .top, endPoint: .bottom))
+                        .padding(.bottom, 3)
+                }
+                .shadow(color: green.opacity(0.45), radius: 6, y: 2)
+                Text(letter).font(Brand.font(w * 0.48, .black)).foregroundStyle(.white).padding(.bottom, 3)
+                Image(systemName: "lock.fill").font(.system(size: max(5, w * 0.16), weight: .black)).foregroundStyle(.white.opacity(0.85))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(4)
+            } else {
+                GlossyTile(face: letter.isEmpty ? .empty : .typed, letter: letter, width: w)
+                    .modifier(TypePop(letter: letter, size: CGSize(width: w, height: w)))
+                if optional && letter.isEmpty {
+                    shape.strokeBorder(FriendsKit.purple.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                        .padding(.bottom, 2)
                 }
             }
-            .frame(width: w, height: w)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: 44, maxHeight: 44)
-        .aspectRatio(1, contentMode: .fit)
+        .frame(width: w, height: w)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(locked ? "\(letter), locked" : letter.isEmpty ? "Empty" : letter)
     }
@@ -1299,6 +1456,122 @@ struct FriendlyGameScreen: View {
         let score = g.state.score
         ShareService.shareMoment(MomentShare.pocketResult(
             gameTitle: g.kind.title, won: won, mine: score?[g.me], theirs: score?[g.me.other], opponent: g.opponent.username))
+    }
+}
+
+/// Word Chain's staircase on the chain-frame art (founder 10-13): the previous word on top, the newest below it starting
+/// directly under the previous word's last letter (the same letter), a gold link joining the two. Shows the last two
+/// words, three if they fit at a comfortable size. Tiles shrink to fit the interior; if the staircase would need tiles
+/// under 18 pt, the newer word starts at the left edge instead (the link still runs from the previous last letter to the
+/// new first letter). Static layout, computed once per words change.
+private struct ChainStairs: View {
+    let words: [ChainWord]
+    let me: FriendlySide
+    let active: Bool
+    let link: String
+    let themName: String
+    let green: Color
+    let size: CGSize
+
+    private struct Layout {
+        var t: CGFloat = 0
+        var gap: CGFloat = 0
+        var rowGap: CGFloat = 0
+        var x0: CGFloat = 0
+        var rows: [(word: ChainWord, col: Int)] = []
+        var y0: CGFloat = 0
+    }
+
+    private static let gapRatio: CGFloat = 0.16
+    private static let rowGapRatio: CGFloat = 0.5
+    private static let stairMin: CGFloat = 18
+    private static let threeMin: CGFloat = 26
+
+    /// Tile size for `cols` columns and `rowCount` rows inside `size`.
+    private static func tile(cols: Int, rows rowCount: Int, in size: CGSize) -> CGFloat {
+        let byW = size.width / (CGFloat(cols) + gapRatio * CGFloat(cols - 1))
+        let byH = size.height / (CGFloat(rowCount) + rowGapRatio * CGFloat(rowCount - 1))
+        return min(byW, byH, 44)
+    }
+
+    private static func stairCols(_ shown: [ChainWord]) -> (cols: Int, starts: [Int]) {
+        var starts: [Int] = []
+        var col = 0
+        for i in shown.indices {
+            if i > 0 { col += max(shown[i - 1].word.count - 1, 0) }
+            starts.append(col)
+        }
+        return (col + (shown.last?.word.count ?? 1), starts)
+    }
+
+    private static func layout(words: [ChainWord], size: CGSize) -> Layout {
+        var shown = Array(words.suffix(2))
+        if words.count >= 3 {
+            let three = Array(words.suffix(3))
+            let st = stairCols(three)
+            if tile(cols: st.cols, rows: 3, in: size) >= threeMin { shown = three }
+        }
+        let st = stairCols(shown)
+        var t = tile(cols: st.cols, rows: shown.count, in: size)
+        var starts = st.starts
+        var cols = st.cols
+        if shown.count > 1 && t < stairMin {
+            // Left-edge fallback: every word starts at column 0.
+            starts = shown.map { _ in 0 }
+            cols = shown.map { $0.word.count }.max() ?? 1
+            t = tile(cols: cols, rows: shown.count, in: size)
+        }
+        var l = Layout()
+        l.t = t
+        l.gap = t * gapRatio
+        l.rowGap = t * rowGapRatio
+        let groupW = CGFloat(cols) * t + CGFloat(cols - 1) * l.gap
+        let groupH = CGFloat(shown.count) * t + CGFloat(shown.count - 1) * l.rowGap
+        l.x0 = (size.width - groupW) / 2
+        l.y0 = (size.height - groupH) / 2
+        l.rows = Array(zip(shown, starts)).map { (word: $0.0, col: $0.1) }
+        return l
+    }
+
+    var body: some View {
+        let l = Self.layout(words: words, size: size)
+        let pitch = l.t + l.gap
+        ZStack(alignment: .topLeading) {
+            ForEach(Array(l.rows.enumerated()), id: \.offset) { k, row in
+                let letters = Array(row.word.word).map(String.init)
+                let mine = row.word.by == me
+                let newest = k == l.rows.count - 1 && active
+                HStack(spacing: l.gap) {
+                    ForEach(letters.indices, id: \.self) { i in
+                        let glow = newest && i == letters.count - 1
+                        // §B1 glossy tiles in the player's color (purple yours, gold theirs); the newest word's last letter
+                        // glows green (the next word starts with it).
+                        PocketTile(face: mine ? .correct : .present, letter: letters[i], width: l.t,
+                                   glow: green, glowAmount: glow ? 1 : 0, pop: newest)
+                    }
+                }
+                .fixedSize()
+                .offset(x: l.x0 + CGFloat(row.col) * pitch, y: l.y0 + CGFloat(k) * (l.t + l.rowGap))
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(mine ? "You" : themName) played \(row.word.word), plus \(row.word.points)")
+            }
+            // The gold link from each word's last letter down to the next word's first letter.
+            ForEach(1..<max(l.rows.count, 1), id: \.self) { k in
+                let prev = l.rows[k - 1], cur = l.rows[k]
+                let px = l.x0 + CGFloat(prev.col + prev.word.word.count - 1) * pitch + l.t / 2
+                let cx = l.x0 + CGFloat(cur.col) * pitch + l.t / 2
+                let py = l.y0 + CGFloat(k - 1) * (l.t + l.rowGap) + l.t
+                let cy = l.y0 + CGFloat(k) * (l.t + l.rowGap)
+                let lh = l.rowGap + l.t * 0.5
+                Image(link).resizable().interpolation(.high)
+                    .aspectRatio(PocketBoard.chainLinkAspect, contentMode: .fit)
+                    .frame(height: lh)
+                    .rotationEffect(.radians(Double(atan2(cx - px, cy - py)) * -1))
+                    .position(x: (px + cx) / 2, y: (py + cy) / 2)
+                    .accessibilityHidden(true)
+            }
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
     }
 }
 
@@ -1457,6 +1730,9 @@ private struct SpinningCoin: View {
     let spinKey: Int
     /// The result line, shown only once the coin has settled (never before it lands).
     var caption: AnyView? = nil
+    /// Founder 10-13: the coin floats over the velvet stage in front of the theater backdrop (the card is drawn here; the
+    /// backdrop is clipped to the card, the coin and its flight are not).
+    var staged = false
     @State private var angle: Double = 0
     @State private var hop: CGFloat = 0
     @State private var squash: CGFloat = 1
@@ -1472,32 +1748,12 @@ private struct SpinningCoin: View {
         // result; mid-flip it shows the face the running flip is heading for.
         let landed = settled ? face : (shownFace ?? face)
         VStack(spacing: 8) {
-            ZStack {
-                if let shadow = PocketArt.coinShadow {
-                    // The contact shadow shrinks and fades as the coin rises.
-                    Image(shadow).resizable().interpolation(.high).scaledToFit()
-                        .frame(width: 140, height: 140)
-                        .offset(y: 10)
-                        .scaleEffect(1 + hop / 260)
-                        .opacity(0.9 + Double(hop) / 260)
-                        .accessibilityHidden(true)
-                }
-                // the reveal glow
-                Circle().fill(RadialGradient(colors: [Color(hex: 0xFDE68A).opacity(0.7), .clear], center: .center,
-                                             startRadius: 10, endRadius: 110))
-                    .frame(width: 220, height: 220)
-                    .opacity(glow ? 1 : 0)
-                    .scaleEffect(glow ? 1 : 0.6)
-                    .allowsHitTesting(false)
-                CoinFlipFace(angle: angle, front: PocketArt.coin(landed),
-                             back: PocketArt.coin(landed == .heads ? .tails : .heads))
-                    .frame(width: 150, height: 150)
-                    .scaleEffect(x: 2 - squash, y: squash, anchor: .bottom)
-                    .rotationEffect(.degrees(teeter), anchor: .bottom)
-                    .offset(y: hop)
-                    .shadow(color: Color(hex: 0xCA8A04).opacity(0.35), radius: 12, y: 4)
+            if staged, let backdrop = PocketArt.coinBackdrop, let stage = PocketArt.coinStage {
+                stagedCard(backdrop: backdrop, stage: stage, landed: landed)
+            } else {
+                coinStack(landed: landed)
+                    .frame(width: 150, height: 160)
             }
-            .frame(width: 150, height: 160)
             if let caption {
                 caption
                     .opacity(settled ? 1 : 0)
@@ -1513,6 +1769,63 @@ private struct SpinningCoin: View {
         }
         .onAppear { if lastKey == nil { lastKey = spinKey } }
         .onDisappear { flipTask?.cancel() }
+    }
+
+    /// The coin with its contact shadow and reveal glow (150 x 160 at rest).
+    private func coinStack(landed: CoinFace) -> some View {
+        ZStack {
+            if let shadow = PocketArt.coinShadow {
+                // The contact shadow shrinks and fades as the coin rises.
+                Image(shadow).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: 140, height: 140)
+                    .offset(y: 10)
+                    .scaleEffect(1 + hop / 260)
+                    .opacity(0.9 + Double(hop) / 260)
+                    .accessibilityHidden(true)
+            }
+            // the reveal glow
+            Circle().fill(RadialGradient(colors: [Color(hex: 0xFDE68A).opacity(0.7), .clear], center: .center,
+                                         startRadius: 10, endRadius: 110))
+                .frame(width: 220, height: 220)
+                .opacity(glow ? 1 : 0)
+                .scaleEffect(glow ? 1 : 0.6)
+                .allowsHitTesting(false)
+            CoinFlipFace(angle: angle, front: PocketArt.coin(landed),
+                         back: PocketArt.coin(landed == .heads ? .tails : .heads))
+                .frame(width: 150, height: 150)
+                .scaleEffect(x: 2 - squash, y: squash, anchor: .bottom)
+                .rotationEffect(.degrees(teeter), anchor: .bottom)
+                .offset(y: hop)
+                .shadow(color: Color(hex: 0xCA8A04).opacity(0.35), radius: 12, y: 4)
+        }
+    }
+
+    /// The Call It card: theater wallpaper (aspect-fill, clipped to the card's corners), the round velvet stage across
+    /// ~90% of the width at the bottom, and the coin centered over the stage's top with headroom above it.
+    private func stagedCard(backdrop: String, stage: String, landed: CoinFace) -> some View {
+        let cardHeight: CGFloat = 256
+        return GeometryReader { geo in
+            let w = geo.size.width
+            let stageW = w * 0.9
+            let stageH = stageW * PocketBoard.coinStagePixels.height / PocketBoard.coinStagePixels.width
+            ZStack(alignment: .bottom) {
+                Image(backdrop).resizable().interpolation(.high).scaledToFill()
+                    .frame(width: w, height: cardHeight)
+                    .clipShape(RoundedRectangle(cornerRadius: GameTray.radius, style: .continuous))
+                    .accessibilityHidden(true)
+                Image(stage).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: stageW, height: stageH)
+                    .padding(.bottom, 8)
+                    .accessibilityHidden(true)
+                // The coin rests on the stage's top surface (about a third of the way down the stage art).
+                coinStack(landed: landed)
+                    .frame(width: 150, height: 160)
+                    .scaleEffect(0.76, anchor: .bottom)
+                    .padding(.bottom, 8 + stageH * 0.6)
+            }
+            .frame(width: w, height: cardHeight, alignment: .bottom)
+        }
+        .frame(height: cardHeight)
     }
 
     private func wait(_ s: Double) async { try? await Task.sleep(nanoseconds: UInt64(s * 1_000_000_000)) }
@@ -1536,7 +1849,7 @@ private struct SpinningCoin: View {
             let spin = 1.55
             withAnimation(.timingCurve(0.12, 0.55, 0.2, 1, duration: spin)) { angle = 360 * 5 }
             withAnimation(.easeOut(duration: 0.12)) { squash = 1.06 }
-            withAnimation(.easeOut(duration: spin * 0.46)) { hop = -120 }
+            withAnimation(.easeOut(duration: spin * 0.46)) { hop = staged ? -70 : -120 }
             // ticks that slow with the spin
             Task { @MainActor in
                 for gap in [0.12, 0.13, 0.15, 0.18, 0.22, 0.27, 0.34] {

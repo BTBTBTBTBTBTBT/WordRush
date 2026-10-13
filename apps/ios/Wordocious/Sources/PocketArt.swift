@@ -43,6 +43,20 @@ enum PocketArt {
     /// Founder 10-12: the RPS reveal's wrestling ring (back + side ropes only, open at the front; free-ChatGPT art,
     /// docs/design/brand/2.8/pocket/ring). The two hands square off on its canvas.
     static var ring: String? { ArtAsset.exists("art-pocket-ring") ? "art-pocket-ring" : nil }
+    /// Founder 10-13: the matching boards for the other pocket games (free-ChatGPT art, docs/design/brand/2.8/pocket). Each
+    /// is a static image laid out once; nil = the code-drawn tray fallback.
+    /// Tic-Tac-Tile (option B, classic #): 780x776, cells measured in `PocketBoard.tttCols` / `tttRows`.
+    static var tttGrid: String? { ArtAsset.exists("art-pocket-ttt-grid") ? "art-pocket-ttt-grid" : nil }
+    /// Call It: the velvet stage the coin floats over (1100x472) and the theater wallpaper behind it (1200x592).
+    static var coinStage: String? { ArtAsset.exists("art-pocket-coin-stage") ? "art-pocket-coin-stage" : nil }
+    static var coinBackdrop: String? { ArtAsset.exists("art-pocket-coin-backdrop") ? "art-pocket-coin-backdrop" : nil }
+    /// Pass the Puzzle: the puzzle-piece tray (770x914), body rect x 62-620, y 176-829.
+    static var passTray: String? { ArtAsset.exists("art-pocket-pass-tray") ? "art-pocket-pass-tray" : nil }
+    /// Word Chain: the gold chain frame (1100x581, interior x 110-985, y 206-462) and the vertical double link (213x458).
+    static var chainBoard: String? { ArtAsset.exists("art-pocket-chain-board") ? "art-pocket-chain-board" : nil }
+    static var chainLink: String? { ArtAsset.exists("art-pocket-chain-link") ? "art-pocket-chain-link" : nil }
+    /// Ghost: the ghost-shaped tray (1200x307), tile panel x 256-1078, y 101-226.
+    static var ghostTray: String? { ArtAsset.exists("art-pocket-ghost-tray") ? "art-pocket-ghost-tray" : nil }
     /// The ghost, the puzzle piece and the gold chain links: small markers for Ghost, Pass the Puzzle and Word Chain.
     static var ghostMarker: String? { ArtAsset.exists("art-pocket-ghost-marker") ? "art-pocket-ghost-marker" : nil }
     static var puzzlePiece: String? { ArtAsset.exists("art-pocket-puzzle-piece") ? "art-pocket-puzzle-piece" : nil }
@@ -137,21 +151,78 @@ struct PocketMarker: View {
     }
 }
 
+/// A pocket board image laid out once at the available width (never stretched: the art's own aspect), with its content
+/// placed in the art's pixel space. `content` gets points-per-pixel and draws inside a frame the size of the image; use
+/// `.placed(_:scale:)` to put a view over a rect measured in image pixels. Founder 10-13: the matching boards.
+struct PocketBoardArt<Content: View>: View {
+    let art: String
+    let pixels: CGSize
+    var maxWidth: CGFloat = 480
+    @ViewBuilder var content: (_ scale: CGFloat) -> Content
+
+    var body: some View {
+        Image(art).resizable().interpolation(.high)
+            .aspectRatio(pixels.width / pixels.height, contentMode: .fit)
+            .accessibilityHidden(true)
+            .overlay {
+                GeometryReader { geo in
+                    let scale = geo.size.width / pixels.width
+                    ZStack(alignment: .topLeading) { content(scale) }
+                        .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+                }
+            }
+            .frame(maxWidth: maxWidth)
+            .frame(maxWidth: .infinity)
+    }
+}
+
+extension View {
+    /// Centers this view in `rect` (image pixels) scaled by `scale`, sized to it.
+    func placed(_ rect: CGRect, scale: CGFloat) -> some View {
+        frame(width: rect.width * scale, height: rect.height * scale)
+            .position(x: rect.midX * scale, y: rect.midY * scale)
+    }
+}
+
+/// Measured geometry of the pocket boards' art (image pixels).
+enum PocketBoard {
+    static let tttPixels = CGSize(width: 780, height: 776)
+    /// The nine cells between the # bars: columns / rows (x0, x1) / (y0, y1).
+    static let tttCols: [(CGFloat, CGFloat)] = [(45, 256), (296, 479), (519, 735)]
+    static let tttRows: [(CGFloat, CGFloat)] = [(45, 259), (281, 474), (498, 731)]
+    static func tttCell(_ i: Int) -> CGRect {
+        let c = tttCols[i % 3], r = tttRows[i / 3]
+        return CGRect(x: c.0, y: r.0, width: c.1 - c.0, height: r.1 - r.0)
+    }
+
+    static let passPixels = CGSize(width: 770, height: 914)
+    static let passBody = CGRect(x: 62, y: 176, width: 558, height: 653)
+
+    static let chainPixels = CGSize(width: 1100, height: 581)
+    static let chainInterior = CGRect(x: 110, y: 206, width: 875, height: 256)
+    static let chainLinkAspect: CGFloat = 213.0 / 458.0
+
+    static let ghostPixels = CGSize(width: 1200, height: 307)
+    static let ghostPanel = CGRect(x: 256, y: 101, width: 822, height: 125)
+
+    static let coinStagePixels = CGSize(width: 1100, height: 472)
+    static let coinBackdropPixels = CGSize(width: 1200, height: 592)
+}
+
 /// The Tic-Tac-Tile win strike: the strike art drawn through the three winning cells, drawn in
-/// from the first cell (a quick scale, no motion under Reduce Motion). `cell` and `gap` are the
-/// board's own numbers (92 and 10), so it lines up with the grid it sits over.
+/// from the first cell (a quick scale, no motion under Reduce Motion). Laid out in the grid art's own
+/// pixel space (`scale` = points per pixel), so it lines up with the cells it sits over.
 struct TttStrikeView: View {
     let cells: [Int]
-    let cell: CGFloat
-    let gap: CGFloat
+    let scale: CGFloat
     @State private var drawn = Theme.reduceMotion
 
     var body: some View {
         if let art = PocketArt.tttStrike, let a = cells.first, let b = cells.last, a != b {
-            let pitch = cell + gap
-            let size = pitch * 3 - gap
-            let start = CGPoint(x: CGFloat(a % 3) * pitch + cell / 2, y: CGFloat(a / 3) * pitch + cell / 2)
-            let end = CGPoint(x: CGFloat(b % 3) * pitch + cell / 2, y: CGFloat(b / 3) * pitch + cell / 2)
+            let ra = PocketBoard.tttCell(a), rb = PocketBoard.tttCell(b)
+            let start = CGPoint(x: ra.midX * scale, y: ra.midY * scale)
+            let end = CGPoint(x: rb.midX * scale, y: rb.midY * scale)
+            let cell = ra.width * scale
             let length = hypot(end.x - start.x, end.y - start.y) + cell * 0.7
             let angle = atan2(end.y - start.y, end.x - start.x)
             Image(art).resizable().interpolation(.high)
@@ -160,7 +231,6 @@ struct TttStrikeView: View {
                 .opacity(drawn ? 1 : 0)
                 .rotationEffect(.radians(Double(angle)), anchor: .center)
                 .position(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
-                .frame(width: size, height: size)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
                 .onAppear {
