@@ -51,6 +51,9 @@ interface RevenueData {
     paidActive?: number;
     mrr?: number;
     proceedsMrr?: number;
+    /** Apple has no SUBSCRIPTION report yet (no App Store subscription activity): the week's sales report instead. */
+    noSubscriptionReport?: boolean;
+    sales?: { through: string; days: number; firstDownloads: number; redownloads: number; updates: number; purchases: number; proceeds: Record<string, number> };
   };
   stripe: {
     configured: boolean;
@@ -447,6 +450,25 @@ function AppleSalesCard({ apple }: { apple: RevenueData['apple'] }) {
         </div>
       ) : apple.error ? (
         <p className="text-sm font-bold text-red-500">{apple.error}</p>
+      ) : apple.noSubscriptionReport && apple.sales ? (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div><p className="text-2xl font-black text-gray-900">{apple.sales.firstDownloads}</p><p className="text-xs font-bold text-gray-400">first downloads</p></div>
+            <div><p className="text-2xl font-black text-gray-900">{apple.sales.redownloads}</p><p className="text-xs font-bold text-gray-400">re-downloads</p></div>
+            <div><p className="text-2xl font-black text-gray-900">{apple.sales.updates}</p><p className="text-xs font-bold text-gray-400">updates</p></div>
+            <div>
+              <p className="text-2xl font-black text-gray-900">{apple.sales.purchases}</p>
+              <p className="text-xs font-bold text-gray-400">
+                in-app purchases{Object.entries(apple.sales.proceeds).map(([c, v]) => ` · ${v.toFixed(2)} ${c}`).join('')}
+              </p>
+            </div>
+          </div>
+          <p className="text-[11px] font-bold text-gray-300 mt-3">
+            Last 7 days of Apple&apos;s daily sales report{apple.sales.through ? ` (through ${apple.sales.through})` : ''}. Apple
+            hasn&apos;t started a subscription report for this account yet: it appears after the first App Store subscription
+            or trial, and then this card switches to subscribers and MRR on its own.
+          </p>
+        </>
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
