@@ -36,7 +36,16 @@ final class MusicalCastTests: XCTestCase {
         let active: [HActive]
         let taps: [HTap]
     }
+    private struct ReplayRow: Decodable {
+        struct Song: Decodable { let notes: [Int]; let beats: [Double] }
+        struct Step: Decodable { let castId: String; let atMs: Int }
+        let id: String
+        let song: Song
+        let steps: [Step]
+        let duration: Int
+    }
     private struct F: Decodable {
+        let replays: [ReplayRow]
         let halloween: Halloween
         let scale: [Int]
         let timing: Timing
@@ -157,6 +166,22 @@ final class MusicalCastTests: XCTestCase {
 
     /// Item 49: the Halloween tunes, the season note prefix, the per-season voices, the active tune sets, and the
     /// season-aware tap sequences (a Halloween tune only matches in season; the normal five match everywhere).
+    /// Founder 10-13: the playback finishes the jingle in its own rhythm — same song, steps and length as the TS core.
+    func testReplaysFinishTheJingle() throws {
+        let rows = try fixture().replays
+        let all = MusicalCast.melodies + MusicalCast.halloweenMelodies
+        XCTAssertEqual(all.map(\.id), rows.map(\.id))
+        for (m, w) in zip(all, rows) {
+            let song = MusicalCast.song(m)
+            XCTAssertEqual(song.notes, w.song.notes, m.id)
+            XCTAssertEqual(song.beats, w.song.beats, m.id)
+            let steps = MusicalCast.replay(m)
+            XCTAssertEqual(steps.map(\.castId), w.steps.map(\.castId), m.id)
+            XCTAssertEqual(steps.map(\.atMs), w.steps.map(\.atMs), m.id)
+            XCTAssertEqual(MusicalCast.replayDuration(m), w.duration, m.id)
+        }
+    }
+
     func testHalloweenSection() throws {
         let h = try fixture().halloween
         XCTAssertEqual(MusicalCast.halloweenMelodies.count, h.melodies.count)

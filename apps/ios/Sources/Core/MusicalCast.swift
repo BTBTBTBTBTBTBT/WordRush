@@ -85,15 +85,22 @@ public enum MusicalCast {
     /// Public-domain tunes (their best-known opening, every note on a cast key).
     public static let melodies: [MusicalMelody] = [
         MusicalMelody(id: "mary", name: "Mary Had a Little Lamb", achievement: "tune_little_lamb",
-                      notes: [E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4]),
+                      notes: [E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4],
+                      song: [E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4, E4, D4, C4, D4, E4, E4, E4, E4, D4, D4, E4, D4, C4],
+                      beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2]),
         MusicalMelody(id: "twinkle", name: "Twinkle, Twinkle, Little Star", achievement: "tune_little_star",
-                      notes: [C4, C4, G4, G4, A4, A4, G4, F4, F4, E4, E4, D4, D4, C4]),
+                      notes: [C4, C4, G4, G4, A4, A4, G4, F4, F4, E4, E4, D4, D4, C4],
+                      beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2]),
         MusicalMelody(id: "ode", name: "Ode to Joy", achievement: "tune_ode_to_joy",
-                      notes: [E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4]),
+                      notes: [E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4],
+                      song: [E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4, E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, D4, C4, C4],
+                      beats: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 0.5, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 0.5, 2]),
         MusicalMelody(id: "birthday", name: "Happy Birthday", achievement: "tune_happy_birthday",
-                      notes: [G4, G4, A4, G4, C5, B4, G4, G4, A4, G4, D5, C5]),
+                      notes: [G4, G4, A4, G4, C5, B4, G4, G4, A4, G4, D5, C5],
+                      beats: [0.75, 0.25, 1, 1, 1, 2, 0.75, 0.25, 1, 1, 1, 2]),
         MusicalMelody(id: "buns", name: "Hot Cross Buns", achievement: "tune_hot_cross_buns",
-                      notes: [E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4]),
+                      notes: [E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4],
+                      beats: [1, 1, 2, 1, 1, 2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 2]),
     ]
 
     /// The Halloween tunes (item 49): public-domain compositions played on the cast's own white keys (matching is by
@@ -165,16 +172,32 @@ public enum MusicalCast {
     public static let achievementKeys: [String] = (melodies + halloweenMelodies).map(\.achievement)
 
     /// The playback (founder 10-12): a completed tune is sung back once, cleanly — `replayLeadInMs` after the last tap,
-    /// then a note every `replayBeatMs`, each on its own figure. Mirrors core `MELODY_REPLAY` / `melodyReplay`.
+    /// each note on its own figure. Founder 10-13: the cast finishes the jingle (`song`) in its own rhythm (`beats`, in
+    /// `replayBeatMs` units). Mirrors core `MELODY_REPLAY` / `melodySong` / `melodyReplay` / `melodyReplayDuration`.
     public static let replayLeadInMs = 450
     public static let replayBeatMs = 300
 
+    /// What the cast sings for a tune: its notes and each one's length in beats.
+    public static func song(_ m: MusicalMelody) -> (notes: [Int], beats: [Double]) {
+        let notes = m.song ?? m.notes
+        return (notes, m.beats ?? notes.map { _ in 1 })
+    }
+
     /// The completed tune as the cast plays it back: which figure sings each note and when (ms after the last tap).
     public static func replay(_ m: MusicalMelody) -> [(castId: String, atMs: Int)] {
-        m.notes.enumerated().compactMap { i, midi in
+        let (notes, beats) = song(m)
+        var at = 0.0
+        return notes.enumerated().compactMap { i, midi in
+            let atMs = replayLeadInMs + Int((at * Double(replayBeatMs)).rounded())
+            at += beats[i]
             guard let k = scale.firstIndex(of: midi) else { return nil }
-            return (ids[k], replayLeadInMs + i * replayBeatMs)
+            return (ids[k], atMs)
         }
+    }
+
+    /// The whole playback's length (ms after the last tap): the lead-in + every note's beats.
+    public static func replayDuration(_ m: MusicalMelody) -> Int {
+        replayLeadInMs + Int((song(m).beats.reduce(0, +) * Double(replayBeatMs)).rounded())
     }
 }
 
@@ -221,9 +244,15 @@ public struct MusicalMelody: Equatable {
     public let achievement: String
     /// The tune as MIDI notes, in C (every note on the cast's keys). Matched by its intervals, so any key that fits counts.
     public let notes: [Int]
+    /// What the cast sings back once matched (founder 10-13): the jingle finished to its natural end, never a second
+    /// verse. nil → `notes`.
+    public let song: [Int]?
+    /// Each sung note's length in replay beats (same length as `song ?? notes`). nil → 1 each.
+    public let beats: [Double]?
 
-    public init(id: String, name: String, achievement: String, notes: [Int]) {
+    public init(id: String, name: String, achievement: String, notes: [Int], song: [Int]? = nil, beats: [Double]? = nil) {
         self.id = id; self.name = name; self.achievement = achievement; self.notes = notes
+        self.song = song; self.beats = beats
     }
 }
 

@@ -30,6 +30,10 @@ data class MusicalMelody(
     val achievement: String,
     /** The tune as MIDI notes, in C. Matched by its intervals, so any key that fits counts. */
     val notes: List<Int>,
+    /** What the cast sings back once matched (founder 10-13): the jingle finished to its natural end, never a second verse. null → [notes]. */
+    val song: List<Int>? = null,
+    /** Each sung note's length in replay beats (same length as `song ?: notes`). null → 1 each. */
+    val beats: List<Double>? = null,
 )
 
 data class MelodyState(val notes: List<Int> = emptyList(), val lastAt: Long? = null)
@@ -138,11 +142,28 @@ object MusicalCast {
 
     /** Public-domain tunes (their best-known opening, every note on a cast key). */
     val MELODIES: List<MusicalMelody> = listOf(
-        MusicalMelody("mary", "Mary Had a Little Lamb", "tune_little_lamb", listOf(E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4)),
-        MusicalMelody("twinkle", "Twinkle, Twinkle, Little Star", "tune_little_star", listOf(C4, C4, G4, G4, A4, A4, G4, F4, F4, E4, E4, D4, D4, C4)),
-        MusicalMelody("ode", "Ode to Joy", "tune_ode_to_joy", listOf(E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4)),
-        MusicalMelody("birthday", "Happy Birthday", "tune_happy_birthday", listOf(G4, G4, A4, G4, C5, B4, G4, G4, A4, G4, D5, C5)),
-        MusicalMelody("buns", "Hot Cross Buns", "tune_hot_cross_buns", listOf(E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4)),
+        MusicalMelody(
+            "mary", "Mary Had a Little Lamb", "tune_little_lamb", listOf(E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4),
+            song = listOf(E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4, E4, D4, C4, D4, E4, E4, E4, E4, D4, D4, E4, D4, C4),
+            beats = listOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0),
+        ),
+        MusicalMelody(
+            "twinkle", "Twinkle, Twinkle, Little Star", "tune_little_star", listOf(C4, C4, G4, G4, A4, A4, G4, F4, F4, E4, E4, D4, D4, C4),
+            beats = listOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0),
+        ),
+        MusicalMelody(
+            "ode", "Ode to Joy", "tune_ode_to_joy", listOf(E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4),
+            song = listOf(E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4, E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, D4, C4, C4),
+            beats = listOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 0.5, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 0.5, 2.0),
+        ),
+        MusicalMelody(
+            "birthday", "Happy Birthday", "tune_happy_birthday", listOf(G4, G4, A4, G4, C5, B4, G4, G4, A4, G4, D5, C5),
+            beats = listOf(0.75, 0.25, 1.0, 1.0, 1.0, 2.0, 0.75, 0.25, 1.0, 1.0, 1.0, 2.0),
+        ),
+        MusicalMelody(
+            "buns", "Hot Cross Buns", "tune_hot_cross_buns", listOf(E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4),
+            beats = listOf(1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 2.0),
+        ),
     )
 
     private const val E5 = 76
@@ -210,16 +231,32 @@ object MusicalCast {
 
     /**
      * The playback (founder 10-12): a completed tune is sung back once, cleanly — [REPLAY_LEAD_IN_MS] after the last tap,
-     * then a note every [REPLAY_BEAT_MS], each on its own figure. Mirrors core `MELODY_REPLAY` / `melodyReplay`.
+     * each note on its own figure. Founder 10-13: the cast finishes the jingle (`song`) in its own rhythm (`beats`, in
+     * [REPLAY_BEAT_MS] units). Mirrors core `MELODY_REPLAY` / `melodySong` / `melodyReplay` / `melodyReplayDuration`.
      */
     const val REPLAY_LEAD_IN_MS = 450L
     const val REPLAY_BEAT_MS = 300L
 
-    /** The completed tune as the cast plays it back: (cast id, ms after the last tap) per note. */
-    fun replay(m: MusicalMelody): List<Pair<String, Long>> = m.notes.mapIndexedNotNull { i, midi ->
-        val k = SCALE.indexOf(midi)
-        if (k < 0) null else CAST_IDS[k] to (REPLAY_LEAD_IN_MS + i * REPLAY_BEAT_MS)
+    /** What the cast sings for a tune: its notes and each one's length in beats. */
+    fun song(m: MusicalMelody): Pair<List<Int>, List<Double>> {
+        val notes = m.song ?: m.notes
+        return notes to (m.beats ?: notes.map { 1.0 })
     }
+
+    /** The completed tune as the cast plays it back: (cast id, ms after the last tap) per note. */
+    fun replay(m: MusicalMelody): List<Pair<String, Long>> {
+        val (notes, beats) = song(m)
+        var at = 0.0
+        return notes.mapIndexedNotNull { i, midi ->
+            val atMs = REPLAY_LEAD_IN_MS + Math.round(at * REPLAY_BEAT_MS)
+            at += beats[i]
+            val k = SCALE.indexOf(midi)
+            if (k < 0) null else CAST_IDS[k] to atMs
+        }
+    }
+
+    /** The whole playback's length (ms after the last tap): the lead-in + every note's beats. */
+    fun replayDuration(m: MusicalMelody): Long = REPLAY_LEAD_IN_MS + Math.round(song(m).second.sum() * REPLAY_BEAT_MS)
 }
 
 // ── Achievement listing (achievement-rules.ts SECRET_ACHIEVEMENT_KEYS / achievementListed) ─────────────────

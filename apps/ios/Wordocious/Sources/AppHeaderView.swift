@@ -643,7 +643,7 @@ struct LivingCastHeader: View {
         if musical && playback == nil { playNote(m) }
     }
 
-    /// Founder 10-12: a completed tune is sung back once, cleanly (even beat, each note on its figure), so the player
+    /// Founder 10-12: a completed tune is sung back once, cleanly (each note on its figure; 10-13: the whole jingle, in its own rhythm), so the player
     /// hears that the keys made a song — every time, not only the first (the achievement itself unlocks once).
     private func playBack(_ tune: MusicalMelody) {
         playback?.cancel()
@@ -694,7 +694,7 @@ struct LivingCastHeader: View {
             let key = tune.achievement
             playBack(tune)
             // The unlock card waits for the playback to finish (it dims the screen, which would hide the cast singing).
-            let wait = UInt64(MusicalCast.replayLeadInMs + tune.notes.count * MusicalCast.replayBeatMs + 250) * 1_000_000
+            let wait = UInt64(MusicalCast.replayDuration(tune) + 250) * 1_000_000
             Task { try? await Task.sleep(nanoseconds: wait); await AchievementService.unlockTune(key) }
         }
     }

@@ -88,17 +88,41 @@ export interface MusicalMelody {
   achievement: string;
   /** The tune as MIDI notes, in C (every note on the cast's keys). Matched by its intervals, so any key that fits counts. */
   notes: readonly number[];
+  /**
+   * What the cast sings back once the tune is matched (founder 10-13): the jingle finished to its natural end — Mary on
+   * through "its fleece was white as snow", Ode to Joy home to its closing C — never a second verse. Absent → `notes`.
+   */
+  song?: readonly number[];
+  /** Each sung note's length in replay beats (same length as `song ?? notes`), so held notes hold. Absent → 1 each. */
+  beats?: readonly number[];
 }
 
 const C4 = 60, D4 = 62, E4 = 64, F4 = 65, G4 = 67, A4 = 69, B4 = 71, C5 = 72, D5 = 74;
 
 /** Public-domain tunes (their best-known opening, every note on a cast key). */
 export const MUSICAL_MELODIES: readonly MusicalMelody[] = [
-  { id: 'mary', name: 'Mary Had a Little Lamb', achievement: 'tune_little_lamb', notes: [E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4] },
-  { id: 'twinkle', name: 'Twinkle, Twinkle, Little Star', achievement: 'tune_little_star', notes: [C4, C4, G4, G4, A4, A4, G4, F4, F4, E4, E4, D4, D4, C4] },
-  { id: 'ode', name: 'Ode to Joy', achievement: 'tune_ode_to_joy', notes: [E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4] },
-  { id: 'birthday', name: 'Happy Birthday', achievement: 'tune_happy_birthday', notes: [G4, G4, A4, G4, C5, B4, G4, G4, A4, G4, D5, C5] },
-  { id: 'buns', name: 'Hot Cross Buns', achievement: 'tune_hot_cross_buns', notes: [E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4] },
+  {
+    id: 'mary', name: 'Mary Had a Little Lamb', achievement: 'tune_little_lamb', notes: [E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4],
+    song: [E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4, E4, D4, C4, D4, E4, E4, E4, E4, D4, D4, E4, D4, C4],
+    beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+  },
+  {
+    id: 'twinkle', name: 'Twinkle, Twinkle, Little Star', achievement: 'tune_little_star', notes: [C4, C4, G4, G4, A4, A4, G4, F4, F4, E4, E4, D4, D4, C4],
+    beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2],
+  },
+  {
+    id: 'ode', name: 'Ode to Joy', achievement: 'tune_ode_to_joy', notes: [E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4],
+    song: [E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4, E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, D4, C4, C4],
+    beats: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 0.5, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 0.5, 2],
+  },
+  {
+    id: 'birthday', name: 'Happy Birthday', achievement: 'tune_happy_birthday', notes: [G4, G4, A4, G4, C5, B4, G4, G4, A4, G4, D5, C5],
+    beats: [0.75, 0.25, 1, 1, 1, 2, 0.75, 0.25, 1, 1, 1, 2],
+  },
+  {
+    id: 'buns', name: 'Hot Cross Buns', achievement: 'tune_hot_cross_buns', notes: [E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4],
+    beats: [1, 1, 2, 1, 1, 2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 2],
+  },
 ];
 
 const A4h = 69, B4h = 71, C5h = 72, D5h = 74, E5h = 76, G4h = 67, F4h = 65, E4h = 64, D4h = 62, C4h = 60;
@@ -189,23 +213,34 @@ export function melodyTap(state: MelodyState, castId: string, atMs: number, seas
 }
 
 /**
- * The playback (founder 10-12): every time a tune is completed the cast sings it back once, cleanly — even beat,
- * each note on its own figure — so the player hears that the keys made a song. `leadInMs` after the last tap, then a
- * note every `beatMs`. Taps during the playback are ignored (they never feed the matcher).
+ * The playback (founder 10-12): every time a tune is completed the cast sings it back once, cleanly — each note on
+ * its own figure — so the player hears that the keys made a song. Founder 10-13: they finish the jingle (`song`) in
+ * its own rhythm (`beats`). `leadInMs` after the last tap, then each note `beats[i] × beatMs` after the one before.
+ * Taps during the playback are ignored (they never feed the matcher).
  */
 export const MELODY_REPLAY = { leadInMs: 450, beatMs: 300 } as const;
 
+/** What the cast sings for a tune: its notes and each one's length in beats. */
+export function melodySong(m: MusicalMelody): { notes: readonly number[]; beats: readonly number[] } {
+  const notes = m.song ?? m.notes;
+  return { notes, beats: m.beats ?? notes.map(() => 1) };
+}
+
 /** The completed tune as the cast plays it back: which figure sings each note and when (ms after the last tap). */
 export function melodyReplay(m: MusicalMelody): Array<{ castId: string; atMs: number }> {
-  return m.notes.flatMap((midi, i) => {
+  const { notes, beats } = melodySong(m);
+  let at = 0;
+  return notes.flatMap((midi, i) => {
+    const atMs = MELODY_REPLAY.leadInMs + Math.round(at * MELODY_REPLAY.beatMs);
+    at += beats[i];
     const k = (MUSICAL_SCALE as readonly number[]).indexOf(midi);
-    return k < 0 ? [] : [{ castId: MUSICAL_CAST_IDS[k], atMs: MELODY_REPLAY.leadInMs + i * MELODY_REPLAY.beatMs }];
+    return k < 0 ? [] : [{ castId: MUSICAL_CAST_IDS[k], atMs }];
   });
 }
 
-/** The whole playback's length (ms after the last tap): the last note's start + one beat. */
+/** The whole playback's length (ms after the last tap): the lead-in + every note's beats. */
 export function melodyReplayDuration(m: MusicalMelody): number {
-  return MELODY_REPLAY.leadInMs + m.notes.length * MELODY_REPLAY.beatMs;
+  return MELODY_REPLAY.leadInMs + Math.round(melodySong(m).beats.reduce((a, b) => a + b, 0) * MELODY_REPLAY.beatMs);
 }
 
 /** The secret achievement keys (achievement-rules NEW_ACHIEVEMENTS, `secret`: shown only once unlocked). */

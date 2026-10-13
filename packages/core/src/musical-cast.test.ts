@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO, activeMelodies, melodyIntervals, MELODY_GAP_MS, MELODY_START, MUSICAL_ACHIEVEMENT_KEYS, MUSICAL_CAST_FLAG, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_SCALE, matchMelody, melodyTap,
   midiNoteName, musicalCastEnabled, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState,
-  MELODY_REPLAY, melodyReplay, melodyReplayDuration,
+  MELODY_REPLAY, melodyReplay, melodyReplayDuration, melodySong,
 } from './musical-cast';
 import { NEW_ACHIEVEMENTS, SECRET_ACHIEVEMENT_KEYS, achievementListed } from './achievement-rules';
 
@@ -161,19 +161,33 @@ describe('the Halloween tunes (item 49)', () => {
 });
 
 describe('melody playback (founder 10-12)', () => {
-  it('maps every note of every tune to a cast figure, one beat apart after the lead-in', () => {
+  it('maps every sung note of every tune to a cast figure, spaced by its beats after the lead-in', () => {
     for (const m of [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES]) {
+      const { notes, beats } = melodySong(m);
+      expect(beats).toHaveLength(notes.length);
+      // The song starts with the matched tune (it finishes the jingle, never replaces it).
+      expect(melodyIntervals(notes.slice(0, m.notes.length))).toEqual(melodyIntervals(m.notes));
       const r = melodyReplay(m);
-      expect(r).toHaveLength(m.notes.length);
+      expect(r).toHaveLength(notes.length);
+      let at = 0;
       r.forEach((step, i) => {
-        expect(step.atMs).toBe(MELODY_REPLAY.leadInMs + i * MELODY_REPLAY.beatMs);
-        expect(musicalNote(step.castId)!.midi).toBe(m.notes[i]);
+        expect(step.atMs).toBe(MELODY_REPLAY.leadInMs + Math.round(at * MELODY_REPLAY.beatMs));
+        expect(Number.isInteger(step.atMs)).toBe(true);
+        expect(musicalNote(step.castId)!.midi).toBe(notes[i]);
+        at += beats[i];
       });
-      expect(melodyReplayDuration(m)).toBe(MELODY_REPLAY.leadInMs + m.notes.length * MELODY_REPLAY.beatMs);
+      expect(melodyReplayDuration(m)).toBe(MELODY_REPLAY.leadInMs + Math.round(at * MELODY_REPLAY.beatMs));
     }
+  });
+  it('finishes Mary through "its fleece was white as snow" and Ode to Joy home on C (founder 10-13)', () => {
+    const song = (id: string) => melodySong(MUSICAL_MELODIES.find((m) => m.id === id)!).notes;
+    expect(song('mary')).toHaveLength(26);
+    expect(song('mary').at(-1)).toBe(60);
+    expect(song('ode')).toHaveLength(30);
+    expect(song('ode').slice(-3)).toEqual([62, 60, 60]);
   });
   it('plays Mary Had a Little Lamb on R O W O R R R · O O O · R O O', () => {
     const mary = MUSICAL_MELODIES.find((m) => m.id === 'mary')!;
-    expect(melodyReplay(mary).map((s) => s.castId)).toEqual(['r', 'o1', 'w', 'o1', 'r', 'r', 'r', 'o1', 'o1', 'o1', 'r', 'o2', 'o2']);
+    expect(melodyReplay(mary).map((s) => s.castId).slice(0, 13)).toEqual(['r', 'o1', 'w', 'o1', 'r', 'r', 'r', 'o1', 'o1', 'o1', 'r', 'o2', 'o2']);
   });
 });

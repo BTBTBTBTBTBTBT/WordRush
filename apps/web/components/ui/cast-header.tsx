@@ -138,7 +138,7 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
   };
 
   /**
-   * Founder 10-12: a completed tune is sung back once, cleanly (even beat, each note on its figure), so the player hears
+   * Founder 10-12: a completed tune is sung back once, cleanly (each note on its figure; 10-13: the whole jingle, in its own rhythm), so the player hears
    * that the keys made a song — every time, not only the first (the achievement itself unlocks once).
    */
   const playBack = (tune: MusicalMelody) => {

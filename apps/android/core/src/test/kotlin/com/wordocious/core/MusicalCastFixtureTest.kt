@@ -76,6 +76,22 @@ class MusicalCastFixtureTest {
         assertEquals(secrets, SECRET_ACHIEVEMENT_KEYS)
     }
 
+    /** Founder 10-13: the playback finishes the jingle in its own rhythm — same song, steps and length as the TS core. */
+    @Test fun replays_finish_the_jingle() {
+        val rows = f["replays"]!!.jsonArray.map { it.jsonObject }
+        val all = MusicalCast.MELODIES + MusicalCast.HALLOWEEN_MELODIES
+        assertEquals(rows.map { it["id"]!!.jsonPrimitive.content }, all.map { it.id })
+        all.zip(rows).forEach { (m, w) ->
+            val (notes, beats) = MusicalCast.song(m)
+            val song = w["song"]!!.jsonObject
+            assertEquals(m.id, ints(song, "notes"), notes)
+            assertEquals(m.id, song["beats"]!!.jsonArray.map { it.jsonPrimitive.double }, beats)
+            val steps = w["steps"]!!.jsonArray.map { it.jsonObject }
+            assertEquals(m.id, steps.map { it["castId"]!!.jsonPrimitive.content to it["atMs"]!!.jsonPrimitive.long }, MusicalCast.replay(m))
+            assertEquals(m.id, w["duration"]!!.jsonPrimitive.long, MusicalCast.replayDuration(m))
+        }
+    }
+
     /** A fixture's nullable string (absent / JSON null → null). */
     private fun JsonObject.str(k: String): String? = this[k]?.takeIf { it !is JsonNull }?.jsonPrimitive?.contentOrNull
 

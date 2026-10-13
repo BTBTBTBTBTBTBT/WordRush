@@ -51,7 +51,7 @@ import { AVATAR_MANIFEST, applyAvatarPick, avatarLayout, avatarPatternShapes, av
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
 import { SEASON_WINDOWS, currentSeason, levelTier, levelTierLabel } from '../src/level-season';
 import { AVATAR_ACCESS_TABLE, avatarAccessKey, avatarEarnedKeys, avatarLockedCardLines, avatarPartAccess, avatarPartRule, avatarSaveCheck, enforceAvatarAccess, evaluateEarn, type AvatarAccessContext, type AvatarEarnCondition, type AvatarEarnStats } from '../src/avatar-access';
-import { HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO, SEASON_NOTE_PREFIX, activeMelodies, MELODY_GAP_MS, MELODY_START, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_POP_KEYS, MUSICAL_SCALE, MUSICAL_TIMING, matchMelody, melodyIntervals, melodyTap, midiNoteName, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState } from '../src/musical-cast';
+import { HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO, SEASON_NOTE_PREFIX, activeMelodies, MELODY_GAP_MS, MELODY_START, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_POP_KEYS, MUSICAL_SCALE, MUSICAL_TIMING, matchMelody, melodyIntervals, melodyReplay, melodyReplayDuration, melodySong, melodyTap, midiNoteName, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState } from '../src/musical-cast';
 import { SECRET_ACHIEVEMENT_KEYS, achievementListed } from '../src/achievement-rules';
 import { avatarPartSeason, isPartAvailable, mascotSeason, seasonNudgeDue, seasonNudgeKey, seasonTag, seasonalShelf, wearsSeasonalPart } from '../src/avatar-season';
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
@@ -1282,6 +1282,8 @@ export function renderMusicalCastFixtures() {
     scale: MUSICAL_SCALE, timing: MUSICAL_TIMING, popKeys: MUSICAL_POP_KEYS, gapMs: MELODY_GAP_MS,
     melodies: MUSICAL_MELODIES.map((m) => ({ ...m, intervals: melodyIntervals(m.notes) })), secrets: SECRET_ACHIEVEMENT_KEYS,
     notes, names, transform, taps, matches, listed, halloween,
+    // Founder 10-13: the playback finishes the jingle in its own rhythm (every tune, everyday + Halloween).
+    replays: [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES].map((m) => ({ id: m.id, song: melodySong(m), steps: melodyReplay(m), duration: melodyReplayDuration(m) })),
   };
 }
 
