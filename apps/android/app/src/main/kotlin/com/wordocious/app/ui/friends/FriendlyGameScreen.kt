@@ -108,6 +108,7 @@ import com.wordocious.app.ui.dashedBorder
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.CHAIN_TARGET
+import com.wordocious.core.CHAIN_WORD_MAX
 import com.wordocious.core.ChainState
 import com.wordocious.core.CoinFace
 import com.wordocious.core.CoinState
@@ -1390,7 +1391,7 @@ private fun ChainBoard(
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         if (s.words.isEmpty()) {
             Text(
-                if (myTurn) "Any $WORD_MIN- to $WORD_MAX-letter word opens the chain." else "${them.replaceFirstChar { it.uppercaseChar() }} opens the chain.",
+                if (myTurn) "Any $WORD_MIN- to $CHAIN_WORD_MAX-letter word opens the chain." else "${them.replaceFirstChar { it.uppercaseChar() }} opens the chain.",
                 fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
             )
         }

@@ -97,7 +97,7 @@ val FRIENDLY_TITLES: Map<FriendlyKind, String> = mapOf(
 /** Wins needed: best of 3 (RPS, Tic-Tac-Tile, Ghost), best of 5 (Call It); Word Chain is points. */
 val FRIENDLY_TARGET: Map<FriendlyKind, Int> = mapOf(
     FriendlyKind.RPS to 2, FriendlyKind.TTT to 2, FriendlyKind.COIN to 3, FriendlyKind.PASS to 1,
-    FriendlyKind.GHOST to 2, FriendlyKind.CHAIN to 30,
+    FriendlyKind.GHOST to 2, FriendlyKind.CHAIN to CHAIN_TARGET,
 )
 
 /** Call It stakes — a fixed list (no free text). */
@@ -106,12 +106,15 @@ val COIN_STAKES: List<String> = listOf("Bragging rights", "Loser picks tonight's
 /** Pass the Puzzle shares one Classic board: six guesses between the two players. */
 const val PASS_MAX_GUESSES = 6
 
-/** Ghost and Word Chain play on the 5- to 7-letter word lists. */
+/** Ghost plays on the 5- to 7-letter word lists (Word Chain's shortest word too). */
 const val WORD_MIN = 5
 const val WORD_MAX = 7
 
-/** Word Chain: a word scores its letters; first to 30 wins. */
-const val CHAIN_TARGET = 30
+/** Word Chain takes long words too (founder 10-13): 5 to 15 letters, checked on the server. Mirrors core CHAIN_WORD_MAX. */
+const val CHAIN_WORD_MAX = 15
+
+/** Word Chain: a word scores its letters; first to 50 wins (30 before long words, 10-13). */
+const val CHAIN_TARGET = 50
 
 data class FriendlyScore(val a: Int = 0, val b: Int = 0) {
     operator fun get(side: Side): Int = if (side == Side.A) a else b
@@ -391,8 +394,8 @@ fun applyFriendlyMove(s: FriendlyState, by: Side, move: FriendlyMove, ctx: MoveC
         }
         s is ChainState && move is FriendlyMove.Chain -> {
             val word = move.word.trim().uppercase()
-            if (!Regex("^[A-Z]+$").matches(word) || word.length < WORD_MIN || word.length > WORD_MAX) {
-                return MoveResult.Err("$WORD_MIN to $WORD_MAX letters, please")
+            if (!Regex("^[A-Z]+$").matches(word) || word.length < WORD_MIN || word.length > CHAIN_WORD_MAX) {
+                return MoveResult.Err("$WORD_MIN to $CHAIN_WORD_MAX letters, please")
             }
             val needed = s.needed
             if (needed != null && word[0] != needed) return MoveResult.Err("Start with $needed")

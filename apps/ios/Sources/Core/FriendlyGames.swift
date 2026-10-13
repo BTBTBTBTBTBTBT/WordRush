@@ -392,11 +392,13 @@ public enum FriendlyGames {
     public static let coinStakes = ["Bragging rights", "Loser picks tonight's VS mode", "Winner goes first next time"]
     /// Pass the Puzzle shares one Classic board: six guesses between the two players.
     public static let passMaxGuesses = 6
-    /// Ghost and Word Chain play on the 5- to 7-letter word lists.
+    /// Ghost plays on the 5- to 7-letter word lists (Word Chain's shortest word too).
     public static let wordMin = 5
     public static let wordMax = 7
-    /// Word Chain: a word scores its letters; first to 30 wins.
-    public static let chainTarget = 30
+    /// Word Chain takes long words too (founder 10-13): 5 to 15 letters, checked on the server. Mirrors CHAIN_WORD_MAX.
+    public static let chainWordMax = 15
+    /// Word Chain: a word scores its letters; first to 50 wins (30 before long words, 10-13).
+    public static let chainTarget = 50
     /// A friend is "on now" when their app heartbeat is under two minutes old.
     public static let onlineWindowMs = 2 * 60 * 1000
 
@@ -573,7 +575,7 @@ public enum FriendlyGames {
 
         case (.chain(var c), .chain(let raw)):
             let word = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-            if !isLetters(word) || word.count < wordMin || word.count > wordMax { return .failure("\(wordMin) to \(wordMax) letters, please") }
+            if !isLetters(word) || word.count < wordMin || word.count > chainWordMax { return .failure("\(wordMin) to \(chainWordMax) letters, please") }
             if let need = c.nextLetter, word.first != need { return .failure("Start with \(need)") }
             if c.words.contains(where: { $0.word == word }) { return .failure("Already played") }
             if let blocked, blocked(word) { return .failure("Try another word") }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  CHAIN_TARGET, PASS_MAX_GUESSES, WORD_MAX, WORD_MIN, tttLine, whoseTurn,
+  CHAIN_TARGET, CHAIN_WORD_MAX, PASS_MAX_GUESSES, WORD_MAX, WORD_MIN, tttLine, whoseTurn,
   type ChainState, type CoinFace, type CoinState, type FriendlyMove, type GhostState, type PassState, type RpsPick, type RpsState,
   type Side, type TttState,
 } from '@wordle-duel/core';
@@ -891,7 +891,7 @@ export function ChainBoard({ state, me, you, them, active, busy, onMove, accent,
       <div className="w-full flex flex-col" style={{ gap: 6 }}>
         {state.words.length === 0 && (
           <p className="text-center text-[12px] font-bold py-2" style={{ color: FR.label }}>
-            Any {WORD_MIN} to {WORD_MAX} letter word opens the chain.
+            Any {WORD_MIN} to {CHAIN_WORD_MAX} letter word opens the chain.
           </p>
         )}
         {state.words.map((w, wi) => {

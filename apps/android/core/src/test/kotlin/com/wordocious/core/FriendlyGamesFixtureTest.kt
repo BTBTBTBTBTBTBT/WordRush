@@ -174,8 +174,11 @@ class FriendlyGamesFixtureTest {
         assertEquals(MoveResult.Err("One letter, please"), applyFriendlyMove(ghost, Side.A, FriendlyMove.Ghost("ab")))
         assertEquals(MoveResult.Err("Try another letter"), applyFriendlyMove(ghost, Side.A, FriendlyMove.Ghost("x"), MoveContext(blocked = { it == "X" })))
         val chain = newFriendlyState(FriendlyKind.CHAIN)
-        assertEquals(MoveResult.Err("5 to 7 letters, please"), applyFriendlyMove(chain, Side.A, FriendlyMove.Chain("abc")))
-        assertEquals(MoveResult.Err("5 to 7 letters, please"), applyFriendlyMove(chain, Side.A, FriendlyMove.Chain("ABCDEFGH")))
+        assertEquals(MoveResult.Err("5 to 15 letters, please"), applyFriendlyMove(chain, Side.A, FriendlyMove.Chain("abc")))
+        assertEquals(MoveResult.Err("5 to 15 letters, please"), applyFriendlyMove(chain, Side.A, FriendlyMove.Chain("SUPERCONDUCTIVITY")))
+        assertTrue(applyFriendlyMove(chain, Side.A, FriendlyMove.Chain("SERENDIPITOUS")) !is MoveResult.Err)
+        assertEquals(50, CHAIN_TARGET)
+        assertEquals(15, CHAIN_WORD_MAX)
         assertEquals(MoveResult.Err("Not in the word list"), applyFriendlyMove(chain, Side.A, FriendlyMove.Chain("zzzzz"), MoveContext(isWord = { false })))
         val one = (applyFriendlyMove(chain, Side.A, FriendlyMove.Chain("crane")) as MoveResult.Ok).state
         val two = (applyFriendlyMove(one, Side.B, FriendlyMove.Chain("eerie")) as MoveResult.Ok).state

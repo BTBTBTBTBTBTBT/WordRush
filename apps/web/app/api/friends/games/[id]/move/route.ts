@@ -1,12 +1,12 @@
 import { randomInt } from 'node:crypto';
 import { PUSH_TITLE, pushCopy, richPushTitle } from '@wordle-duel/core';
 import { NextRequest, NextResponse } from 'next/server';
-import { FRIENDLY_TITLES, friendlyScoreLabel, applyFriendlyMove, containsBlockedTerm, friendlyCardLine, type FriendlyMove } from '@wordle-duel/core';
+import { FRIENDLY_TITLES, friendlyScoreLabel, applyFriendlyMove, friendlyCardLine, pocketWordBlocked, type FriendlyMove } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
 import { publishGameChange } from '@/lib/friendly-live-server';
-import { gameView, grantPocketAchievements, hasWordPrefix, isListWord, passWordOk, profilesById, sideOf, winnerId, type GameRow } from '@/lib/friendly-games-server';
+import { gameView, grantPocketAchievements, hasWordPrefix, isPocketWord, passWordOk, profilesById, sideOf, winnerId, type GameRow } from '@/lib/friendly-games-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,9 +41,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     random: () => randomInt(0, 1_000_000) / 1_000_000,
     solution: row.secret ?? undefined,
     isValidWord: passWordOk,
-    isWord: isListWord,
+    isWord: isPocketWord,
     hasPrefix: hasWordPrefix,
-    blocked: containsBlockedTerm,
+    // Founder 10-13: the play-word guard, not the username one (that refused ABOUT, SECOND, CONCERT ...).
+    blocked: pocketWordBlocked,
   });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
 

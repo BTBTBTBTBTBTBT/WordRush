@@ -28,16 +28,21 @@ export const FRIENDLY_TITLES: Record<FriendlyKind, string> = {
   chain: 'Word Chain',
 };
 /** Wins needed: best of 3 (RPS, Tic-Tac-Tile, Ghost), best of 5 (Call It); Word Chain is points. */
-export const FRIENDLY_TARGET: Record<FriendlyKind, number> = { rps: 2, ttt: 2, coin: 3, pass: 1, ghost: 2, chain: 30 };
+export const FRIENDLY_TARGET: Record<FriendlyKind, number> = { rps: 2, ttt: 2, coin: 3, pass: 1, ghost: 2, chain: 50 };
 /** Call It stakes — a fixed list (no free text). */
 export const COIN_STAKES = ['Bragging rights', "Loser picks tonight's VS mode", 'Winner goes first next time'] as const;
 /** Pass the Puzzle shares one Classic board: six guesses between the two players. */
 export const PASS_MAX_GUESSES = 6;
-/** Ghost and Word Chain play on the 5- to 7-letter word lists. */
+/** Ghost plays on the 5- to 7-letter word lists (Word Chain's shortest word too). */
 export const WORD_MIN = 5;
 export const WORD_MAX = 7;
-/** Word Chain: a word scores its letters; first to 30 wins. */
-export const CHAIN_TARGET = 30;
+/**
+ * Word Chain takes long words too (founder 10-13: "what if I want to play serendipitous?"): 5 to 15 letters, checked on
+ * the server against the 5-7 lists + apps/web/data/chain-long-words.json (8-15, spell-checked, profanity-swept).
+ */
+export const CHAIN_WORD_MAX = 15;
+/** Word Chain: a word scores its letters; first to 50 wins (30 before long words, 10-13). */
+export const CHAIN_TARGET = 50;
 
 export interface RpsState { kind: 'rps'; picks: { a?: RpsPick; b?: RpsPick }; rounds: Array<{ a: RpsPick; b: RpsPick; winner: Side | null }>; score: { a: number; b: number } }
 export interface TttState { kind: 'ttt'; board: CellMark[]; starter: Side; turn: Side; games: Array<{ winner: Side | null }>; score: { a: number; b: number } }
@@ -205,7 +210,7 @@ export function applyFriendlyMove(s: FriendlyState, by: Side, move: FriendlyMove
 
   if (s.kind === 'chain' && move.kind === 'chain') {
     const word = (move.word ?? '').trim().toUpperCase();
-    if (!/^[A-Z]+$/.test(word) || word.length < WORD_MIN || word.length > WORD_MAX) return { ok: false, error: `${WORD_MIN} to ${WORD_MAX} letters, please` };
+    if (!/^[A-Z]+$/.test(word) || word.length < WORD_MIN || word.length > CHAIN_WORD_MAX) return { ok: false, error: `${WORD_MIN} to ${CHAIN_WORD_MAX} letters, please` };
     const last = s.words[s.words.length - 1];
     if (last && word[0] !== last.word[last.word.length - 1]) return { ok: false, error: `Start with ${last.word[last.word.length - 1]}` };
     if (s.words.some((w) => w.word === word)) return { ok: false, error: 'Already played' };
@@ -215,6 +220,42 @@ export function applyFriendlyMove(s: FriendlyState, by: Side, move: FriendlyMove
     return done({ ...s, turn: other(by), words: [...s.words, { by, word, points }], score: { ...s.score, [by]: s.score[by] + points } });
   }
   return { ok: false, error: 'Bad move' };
+}
+
+/**
+ * The play-word guard for Ghost fragments and Word Chain words (founder 10-13). The username guard (containsBlockedTerm)
+ * folds letters and hunts slurs hidden inside names, so on real dictionary words it refused ABOUT, SECOND, BACON, LABOR,
+ * CONCERT and ~1,000 more. This one blocks slurs and profanity as whole words (with their plurals / inflections) and only
+ * the unmistakable terms as substrings, minus the innocent carriers (THERAPIST, RETARDANT, PUSSYCAT, SHIITAKE).
+ */
+const POCKET_BLOCKED_WORDS: ReadonlySet<string> = new Set([
+  // scripts/data/offensive-blocklist.txt
+  'NEGRO', 'NEGROES', 'CHINK', 'CHINKS', 'CHINKY', 'DARKY', 'DARKIE', 'DARKIES', 'SPIC', 'SPICS', 'SPICK', 'SPICKS', 'FAG', 'FAGS',
+  'FAGOT', 'FAGOTS', 'WETBACK', 'WETBACKS', 'TRANNY', 'TRANNIES', 'KAFFIR', 'KAFIR', 'POLACK', 'POLACKS', 'COOLIE', 'COOLIES',
+  'COOLY', 'SAMBO', 'SQUAW', 'SQUAWS', 'KRAUT', 'KRAUTS', 'PONCE', 'NEGRESS', 'NEGRITO', 'NEGROID', 'MULATTO', 'MULATTA',
+  'REDSKIN', 'REDSKINS', 'SHEMALE', 'SHYLOCK', 'SPASTIC', 'LADYBOY', 'LADYBOYS', 'GYPSY', 'RETARD', 'RETARDS', 'RETARDED',
+  'MIDGET', 'MIDGETS', 'KIKE', 'KIKES', 'GOOK', 'GOOKS', 'COON', 'COONS', 'DYKE', 'DYKES', 'DAGO', 'DAGOS', 'WOP', 'WOPS',
+  'PAKI', 'PAKIS', 'HEEB', 'HEEBS', 'NAZI', 'NAZIS', 'HITLER',
+  // sexual / crude
+  'RAPE', 'RAPED', 'RAPES', 'RAPER', 'RAPERS', 'RAPING', 'PENIS', 'PENISES', 'DICK', 'DICKS', 'COCK', 'COCKS', 'TWAT', 'TWATS',
+  'WANK', 'WANKS', 'WANKED', 'WANKER', 'WANKERS', 'WANKING', 'SLUT', 'SLUTS', 'SLUTTY', 'PUSSY', 'PUSSIES', 'CLIT', 'CLITS',
+  'CLITORIS', 'BOOBS', 'TITS', 'TITTY', 'TITTIES', 'ANUS', 'SEXY', 'HORNY', 'ORGASM', 'ORGASMS', 'SEMEN', 'SPERM', 'CUM',
+  'ERECTION', 'ERECTIONS', 'TESTICLE', 'TESTICLES', 'GENITALS', 'GENITALIA', 'VAGINA', 'VAGINAS', 'STRIPPER', 'STRIPPERS',
+]);
+const POCKET_BLOCKED_PARTS: readonly string[] = [
+  'FUCK', 'SHIT', 'CUNT', 'NIGGER', 'NIGGA', 'FAGGOT', 'WHORE', 'BITCH', 'DILDO', 'BLOWJOB', 'JIZZ', 'PORN', 'COCKSUCK',
+  'MOTHERF', 'ASSHOLE', 'DICKHEAD', 'MASTURBAT', 'PEDOPHIL', 'PAEDOPHIL', 'MOLEST', 'EJACULAT', 'RAPIST', 'RETARD', 'TRANNY',
+  'WETBACK', 'SHEMALE', 'TOWELHEAD', 'RAGHEAD', 'ZIPPERHEAD', 'BASTARD', 'PUSSY',
+];
+const POCKET_PART_CARRIERS: readonly string[] = ['THERAPIST', 'RETARDANT', 'PUSSYCAT', 'PUSSYFOOT', 'PUSSYWILLOW', 'SHIITAKE', 'SHITAKE'];
+
+/** Ghost fragment / Word Chain word the friend would see → refused (upper or lower case in). */
+export function pocketWordBlocked(raw: string): boolean {
+  const w = raw.trim().toUpperCase();
+  if (POCKET_BLOCKED_WORDS.has(w)) return true;
+  let rest = w;
+  for (const c of POCKET_PART_CARRIERS) rest = rest.split(c).join(' ');
+  return POCKET_BLOCKED_PARTS.some((part) => rest.includes(part));
 }
 
 /** What the OTHER player may see: an open RPS pick is hidden until both are in. */

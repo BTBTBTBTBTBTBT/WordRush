@@ -6,7 +6,7 @@
 // Pass the Puzzle key colors, Ghost tiles, Word Chain checks). No React, so vitest pins it.
 
 import {
-  CHAIN_TARGET, FRIENDLY_TARGET, FRIENDLY_TITLES, PASS_MAX_GUESSES, WORD_MAX, WORD_MIN, applyFriendlyMove, friendlyHeadline, isOnline, presenceLine, tttLine, whoseTurn,
+  CHAIN_TARGET, CHAIN_WORD_MAX, FRIENDLY_TARGET, FRIENDLY_TITLES, PASS_MAX_GUESSES, WORD_MAX, WORD_MIN, applyFriendlyMove, friendlyHeadline, isOnline, presenceLine, tttLine, whoseTurn,
   type CellMark, type ChainState, type FriendlyKind, type FriendlyState, type FriendsBannerInput, type GhostState, type Side,
 } from '@wordle-duel/core';
 import { ART_SIZE } from './art';
@@ -168,7 +168,7 @@ export function sortForPicker<T extends PresenceFriend>(friends: T[], nowMs: num
 
 // ── BJ13: the pocket-game friend picker (character-select grid) ────────────
 
-/** The one rules line under the game's title: "Best of 3 · first to 2", "First to 30 points". */
+/** The one rules line under the game's title: "Best of 3 · first to 2", "First to 50 points". */
 export function kindRules(kind: FriendlyKind): string {
   if (kind === 'pass') return `${PASS_MAX_GUESSES === 6 ? 'Six' : PASS_MAX_GUESSES} guesses, shared board`;
   const t = FRIENDLY_TARGET[kind];
@@ -418,7 +418,7 @@ export function chainNeededLetter(s: ChainState): string | null {
  */
 export function chainPrecheck(s: ChainState, me: Side, word: string): string | null {
   const w = word.trim().toUpperCase();
-  if (w.length < WORD_MIN || w.length > WORD_MAX) return `${WORD_MIN} to ${WORD_MAX} letters, please`;
+  if (w.length < WORD_MIN || w.length > CHAIN_WORD_MAX) return `${WORD_MIN} to ${CHAIN_WORD_MAX} letters, please`;
   const r = applyFriendlyMove(s, me, { kind: 'chain', word: w });
   return r.ok ? null : r.error;
 }

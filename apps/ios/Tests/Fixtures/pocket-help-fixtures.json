@@ -221,7 +221,7 @@
           }
         },
         {
-          "text": "Longer words score more points. No word can be played twice.",
+          "text": "Any word of 5 to 15 letters: longer words score more points. No word can be played twice.",
           "picture": {
             "art": [
               "art-pocket-chain-links"
@@ -241,7 +241,7 @@
           }
         }
       ],
-      "win": "First to 30 points wins.",
+      "win": "First to 50 points wins.",
       "turns": "Take your turn any time. Your friend gets a ping, and the game waits for you both for 3 days."
     }
   },

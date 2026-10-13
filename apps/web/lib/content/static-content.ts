@@ -90,7 +90,7 @@ export const HELP_MODES: HelpMode[] = [
   { title: 'Call It', desc: 'Call heads or tails before the flip. First to win 3 flips takes the match.', accent: '#f59e0b' },
   { title: 'Pass the Puzzle', desc: 'You and a friend share one hidden word and take turns guessing. 6 guesses.', accent: '#0d9488' },
   { title: 'Ghost', desc: 'Add a letter to a growing fragment without finishing a word. Win 2 rounds.', accent: '#2563eb' },
-  { title: 'Word Chain', desc: 'Start each word with the last letter of the one before. First to 30 points.', accent: '#059669' },
+  { title: 'Word Chain', desc: 'Start each word with the last letter of the one before. Words of 5 to 15 letters, first to 50 points.', accent: '#059669' },
 ];
 
 // ── Help sheet: FAQ tab ─────────────────────────────────────────────────────

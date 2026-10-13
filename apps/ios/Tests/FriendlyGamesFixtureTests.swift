@@ -116,7 +116,9 @@ final class FriendlyGamesFixtureTests: XCTestCase {
     /// Word Chain / Ghost refusals the scripts don't reach, worded like core.
     func testWordGameErrorsMatchCore() {
         let chain = FriendlyGames.newState(.chain)
-        if case .failure(let m) = FriendlyGames.applyMove(chain, by: .a, .chain("CAT")) { XCTAssertEqual(m, "5 to 7 letters, please") } else { XCTFail("short word") }
+        if case .failure(let m) = FriendlyGames.applyMove(chain, by: .a, .chain("CAT")) { XCTAssertEqual(m, "5 to 15 letters, please") } else { XCTFail("short word") }
+        if case .failure(let m) = FriendlyGames.applyMove(chain, by: .a, .chain("SUPERCONDUCTIVITY")) { XCTAssertEqual(m, "5 to 15 letters, please") } else { XCTFail("long word") }
+        if case .ok = FriendlyGames.applyMove(chain, by: .a, .chain("SERENDIPITOUS")) {} else { XCTFail("13 letters is fine (founder 10-13)") }
         if case .failure(let m) = FriendlyGames.applyMove(chain, by: .a, .chain("CRANE"), isWord: { _ in false }) { XCTAssertEqual(m, "Not in the word list") } else { XCTFail("not a word") }
         if case .failure(let m) = FriendlyGames.applyMove(chain, by: .a, .chain("CRANE"), blocked: { _ in true }) { XCTAssertEqual(m, "Try another word") } else { XCTFail("blocked word") }
         let ghost = FriendlyGames.newState(.ghost)
@@ -203,7 +205,8 @@ final class FriendlyGamesFixtureTests: XCTestCase {
         XCTAssertEqual(FriendlyKind(title: "Word Chain"), .chain)
         XCTAssertEqual(FriendlyGames.wordMin, 5)
         XCTAssertEqual(FriendlyGames.wordMax, 7)
-        XCTAssertEqual(FriendlyGames.chainTarget, 30)
+        XCTAssertEqual(FriendlyGames.chainWordMax, 15)
+        XCTAssertEqual(FriendlyGames.chainTarget, 50)
         XCTAssertEqual(FriendlyKind.ghost.target, 2)
         XCTAssertEqual(FriendlyKind(title: "Call It"), .coin)
         XCTAssertEqual(FriendlyGames.commas(11990), "11,990")

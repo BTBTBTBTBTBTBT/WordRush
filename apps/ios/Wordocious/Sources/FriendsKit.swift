@@ -96,7 +96,7 @@ enum FriendsKit {
 
     // MARK: BJ13 — the pocket-game friend picker (web lib/friends-play.ts parity)
 
-    /// The one rules line under the game's title: "Best of 3 · first to 2", "First to 30 points".
+    /// The one rules line under the game's title: "Best of 3 · first to 2", "First to 50 points".
     static func rules(_ k: FriendlyKind) -> String {
         switch k {
         case .pass: return "\(FriendlyGames.passMaxGuesses == 6 ? "Six" : "\(FriendlyGames.passMaxGuesses)") guesses, shared board"

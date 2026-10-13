@@ -105,10 +105,10 @@ public enum PocketHelp {
             kind: .chain, key: "pocket-chain", title: "Word Chain",
             steps: [
                 s("Play a word that starts with the last letter of the word before it.", p(["art-pocket-tile-purple", "art-pocket-chain-connector", "art-pocket-tile-gold"])),
-                s("Longer words score more points. No word can be played twice.", p(["art-pocket-chain-links"])),
+                s("Any word of 5 to 15 letters: longer words score more points. No word can be played twice.", p(["art-pocket-chain-links"])),
                 s("Build the chain back and forth with your friend.", p(["art-pocket-tile-purple", "art-pocket-tile-gold", "art-pocket-tile-purple"])),
             ],
-            win: "First to 30 points wins.",
+            win: "First to 50 points wins.",
             turns: turnsLine),
     ]
 

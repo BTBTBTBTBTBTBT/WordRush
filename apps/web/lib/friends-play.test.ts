@@ -223,8 +223,9 @@ describe('Ghost and Word Chain (spec §9)', () => {
   });
 
   it('Word Chain precheck uses the core errors (word list left to the server)', () => {
-    expect(chainPrecheck(chain, 'b', 'EAT')).toBe('5 to 7 letters, please');
-    expect(chainPrecheck(chain, 'b', 'EXCITING')).toBe('5 to 7 letters, please');
+    expect(chainPrecheck(chain, 'b', 'EAT')).toBe('5 to 15 letters, please');
+    expect(chainPrecheck(chain, 'b', 'EXCITING')).toBeNull();
+    expect(chainPrecheck(chain, 'b', 'ELECTROMAGNETISM')).toBe('5 to 15 letters, please');
     expect(chainPrecheck(chain, 'b', 'TRAIN')).toBe('Start with E');
     expect(chainPrecheck({ ...chain, words: [...chain.words, { by: 'b', word: 'EAGLE', points: 5 }], turn: 'a' }, 'a', 'eagle')).toBe('Already played');
     expect(chainPrecheck(chain, 'b', 'eagle')).toBeNull();
@@ -235,8 +236,8 @@ describe('Ghost and Word Chain (spec §9)', () => {
     expect(gameSubLine(newFriendlyState('ghost'), 'a', 'doug', false)).toBe('BEST OF 3');
     expect(gameSubLine(ghost, 'a', 'doug', false)).toBe('BEST OF 3 · YOU TOOK ROUND 1');
     expect(gameSubLine(ghost, 'b', 'doug', true)).toBe('BEST OF 3 · LIVE, DOUG IS ON · DOUG TOOK ROUND 1');
-    expect(gameSubLine(newFriendlyState('chain'), 'a', 'amy', false)).toBe('FIRST TO 30');
-    expect(gameSubLine(chain, 'b', 'amy', false)).toBe('FIRST TO 30 · AMY PLAYED CRANE +5');
+    expect(gameSubLine(newFriendlyState('chain'), 'a', 'amy', false)).toBe('FIRST TO 50');
+    expect(gameSubLine(chain, 'b', 'amy', false)).toBe('FIRST TO 50 · AMY PLAYED CRANE +5');
     expect(scoreOf(chain, 'b')).toEqual({ mine: 0, theirs: 5 });
   });
 });
@@ -247,7 +248,7 @@ describe('BJ13 pocket-game friend picker', () => {
     expect(kindRules('ttt')).toBe('Best of 3 · first to 2');
     expect(kindRules('ghost')).toBe('Best of 3 · first to 2');
     expect(kindRules('coin')).toBe('Best of 5 · first to 3');
-    expect(kindRules('chain')).toBe('First to 30 points');
+    expect(kindRules('chain')).toBe('First to 50 points');
     expect(kindRules('pass')).toBe('Six guesses, shared board');
   });
   it('gives each cell one short status', () => {

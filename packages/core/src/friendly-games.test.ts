@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyFriendlyMove, friendStreak, friendlyCardLine, friendlyScoreLabel, friendlyHeadline, friendlyStateFor, friendlyWinner,
+  CHAIN_TARGET, CHAIN_WORD_MAX, FRIENDLY_TARGET, applyFriendlyMove, pocketWordBlocked, friendStreak, friendlyCardLine, friendlyScoreLabel, friendlyHeadline, friendlyStateFor, friendlyWinner,
   friendsBannerClockLine, friendsBannerHeadline, isOnline, newFriendlyState, presenceLine, tttLine, whoseTurn,
   type FriendlyState,
 } from './friendly-games';
@@ -121,7 +121,7 @@ describe('ghost and word chain', () => {
     s = play(s, [['a', { kind: 'ghost', letter: 'z' }]], ctx);
     expect(friendlyWinner(s)).toBe('b');
   });
-  it('word chain: last letter starts the next, letters score, first to 30', () => {
+  it('word chain: last letter starts the next, letters score, 5 to 15 letters, first to 50', () => {
     let s = newFriendlyState('chain');
     expect(applyFriendlyMove(s, 'a', { kind: 'chain', word: 'zzzzz' }, ctx).ok).toBe(false);
     s = play(s, [['a', { kind: 'chain', word: 'crane' }]], ctx);
@@ -131,6 +131,27 @@ describe('ghost and word chain', () => {
     s = play(s, [['b', { kind: 'chain', word: 'eagles' }], ['a', { kind: 'chain', word: 'salad' }], ['b', { kind: 'chain', word: 'dough' }], ['a', { kind: 'chain', word: 'house' }], ['b', { kind: 'chain', word: 'eagle' }]], ctx);
     expect((s as any).score).toEqual({ a: 15, b: 16 });
     expect(friendlyCardLine({ kind: 'chain', state: s, me: 'a', them: 'Doug', minutesAgo: 1 })).toBe('Your word · starts with E');
+  });
+  it('word chain takes 5 to 15 letters (founder 10-13: SERENDIPITOUS) and races to 50', () => {
+    let s = newFriendlyState('chain');
+    s = play(s, [['a', { kind: 'chain', word: 'stupendous' }]], {});
+    s = play(s, [['b', { kind: 'chain', word: 'serendipitous' }]], {});
+    expect((s as any).score).toEqual({ a: 10, b: 13 });
+    const long = applyFriendlyMove(s, 'a', { kind: 'chain', word: 'superconductivity' }, {});
+    expect(long.ok ? '' : long.error).toBe('5 to 15 letters, please');
+    expect(FRIENDLY_TARGET.chain).toBe(50);
+    expect(CHAIN_TARGET).toBe(50);
+    expect(CHAIN_WORD_MAX).toBe(15);
+  });
+  it('the play-word guard blocks slurs and profanity, never ordinary words (founder 10-13: ABOUT was refused)', () => {
+    for (const ok of ['ABOUT', 'SECOND', 'BACON', 'LABOR', 'SCONE', 'CONCERT', 'CONFIDENT', 'GRAPE', 'DRAPES', 'SCRAPED', 'THERAPIST',
+      'PSYCHOTHERAPIST', 'RETARDANT', 'PUSSYCAT', 'COCKATOO', 'PEACOCK', 'ESSEX', 'ANALYSIS', 'SPICES', 'DICKENS', 'TITANIC', 'CON', 'AB']) {
+      expect(pocketWordBlocked(ok), ok).toBe(false);
+    }
+    for (const bad of ['FUCKED', 'SHITTY', 'NIGGER', 'RAPE', 'RAPIST', 'BITCHY', 'WHORE', 'DILDOS', 'PENIS', 'COCKS', 'SLUTS',
+      'RETARDED', 'PORNOGRAPHY', 'MOTHERFUCKER', 'KIKES', 'CHINK', 'TRANNIES', 'faggot']) {
+      expect(pocketWordBlocked(bad), bad).toBe(true);
+    }
   });
 });
 

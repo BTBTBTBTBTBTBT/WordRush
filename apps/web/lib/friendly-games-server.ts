@@ -15,6 +15,8 @@ import legacy from '@/data/solutions-legacy.json';
 import { NO_AVATAR_FIELDS, selectWithAvatarColumns, withOwnAvatarFields, type AvatarFields } from './avatar-fields-server';
 import allowed6 from '@/data/allowed-6.json';
 import allowed7 from '@/data/allowed-7.json';
+// Word Chain's 8-15 letter words (founder 10-13): spell-checked, common, profanity-swept; server-only (~370 KB, never shipped to apps).
+import chainLong from '@/data/chain-long-words.json';
 
 let dictReady = false;
 /** The 5-letter lists, loaded once per server instance (Pass the Puzzle). */
@@ -56,6 +58,17 @@ export function isListWord(w: string): boolean {
   const arr = words();
   const i = lowerBound(arr, w.toUpperCase());
   return arr[i] === w.toUpperCase();
+}
+/**
+ * A word Ghost / Word Chain accept: 5-7 letters on the lists, or (Word Chain, founder 10-13) 8-15 letters on the long list
+ * (sorted upper case). Ghost never reaches 8: its fragments must stay a prefix of a 5-7 letter word.
+ */
+export function isPocketWord(w: string): boolean {
+  if (w.length <= 7) return isListWord(w);
+  const arr = chainLong as string[];
+  const key = w.toUpperCase();
+  const i = lowerBound(arr, key);
+  return arr[i] === key;
 }
 /** Some 5–7 letter word starts with these letters. */
 export function hasWordPrefix(fragment: string): boolean {

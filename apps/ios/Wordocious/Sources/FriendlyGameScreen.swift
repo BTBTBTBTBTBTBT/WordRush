@@ -1131,7 +1131,7 @@ struct FriendlyGameScreen: View {
         let me = g.me
         VStack(spacing: 8) {
             if c.words.isEmpty {
-                PocketBubble(text: g.isActive && g.yourTurn ? "Open the chain with any 5- to 7-letter word." : "\(themName) opens the chain.",
+                PocketBubble(text: g.isActive && g.yourTurn ? "Open the chain with any \(FriendlyGames.wordMin)- to \(FriendlyGames.chainWordMax)-letter word." : "\(themName) opens the chain.",
                              color: FriendsInk.muted, size: 13, names: [themName], nameColor: themColor, minScale: 0.4)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)

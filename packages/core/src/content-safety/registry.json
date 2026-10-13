@@ -198,6 +198,20 @@
    ]
   },
   {
+   "id": "chain-long",
+   "games": [
+    "Word Chain"
+   ],
+   "kind": "accept",
+   "schema": "accept-list",
+   "web": "apps/web/data/chain-long-words.json",
+   "copies": [],
+   "lengths": [
+    8,
+    15
+   ]
+  },
+  {
    "id": "crossword",
    "games": [
     "Crosswordocious"

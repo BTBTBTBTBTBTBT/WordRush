@@ -313,7 +313,7 @@ fun h2hWords(w: Int, l: Int): String? = when {
 
 // ── BJ13: the pocket-game friend picker (web lib/friends-play.ts parity) ─────
 
-/** The one rules line under the game's title: "Best of 3 · first to 2", "First to 30 points". */
+/** The one rules line under the game's title: "Best of 3 · first to 2", "First to 50 points". */
 fun friendlyRules(kind: FriendlyKind): String {
     val t = com.wordocious.core.FRIENDLY_TARGET.getValue(kind)
     return when (kind) {

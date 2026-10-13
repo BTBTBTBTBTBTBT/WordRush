@@ -93,10 +93,10 @@ object PocketHelp {
             FriendlyKind.CHAIN, "pocket-chain", "Word Chain",
             listOf(
                 s("Play a word that starts with the last letter of the word before it.", p(listOf("art-pocket-tile-purple", "art-pocket-chain-connector", "art-pocket-tile-gold"))),
-                s("Longer words score more points. No word can be played twice.", p(listOf("art-pocket-chain-links"))),
+                s("Any word of 5 to 15 letters: longer words score more points. No word can be played twice.", p(listOf("art-pocket-chain-links"))),
                 s("Build the chain back and forth with your friend.", p(listOf("art-pocket-tile-purple", "art-pocket-tile-gold", "art-pocket-tile-purple"))),
             ),
-            "First to 30 points wins.", POCKET_TURNS_LINE,
+            "First to 50 points wins.", POCKET_TURNS_LINE,
         ),
     )
 

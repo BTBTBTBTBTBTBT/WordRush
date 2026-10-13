@@ -278,7 +278,7 @@ export const HOW_TO_PLAY: HTPSection[] = [
       },
       {
         id: 'pocket-chain', title: 'Word Chain', accent: '#059669',
-        lines: ['Play a word that starts with the last letter of the one before it.', 'Longer words score more, no word can repeat, and 30 points wins.'],
+        lines: ['Play a word that starts with the last letter of the one before it.', 'Any word of 5 to 15 letters. Longer words score more, no word can repeat, and 50 points wins.'],
       },
     ],
   },
