@@ -3006,3 +3006,34 @@ html[data-season-tone="dark"] { --ink-lift: 65%; }
   /* A lone last card: across the middle two columns at one column's width, centered. */
   .home-cards.grid > :nth-child(4n + 1):last-child { grid-column: 2 / span 2; justify-self: center; width: calc((100% - 10px) / 2); }
 }
+
+
+/* ── Pocket games, the website layout (founder 10-13: "the website version needs to look like a website, not a phone").
+   From 1024 px the live game screen (components/friends/game-screen.tsx, <Shell desk>) is a two-column grid up to 1160 px: the
+   board large on the LEFT (.pk-board, grown to ~560-640 px by friendly-boards useBoardWidth), the score window, turn pill, the
+   board's entry / keyboard, reactions and the rules line stacked on the RIGHT (400 px). The board components keep their phone
+   markup: .pk-wrap / .pk-root become display: contents so every piece is a grid item of .pk-shell. Below 1024 px nothing here
+   applies and the phone column is exactly as before. ── */
+@media (min-width: 1024px) {
+  .pk-shell.pk-shell {
+    max-width: 1160px;
+    padding: 14px var(--desk-gutter, 24px) 48px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    grid-template-rows: repeat(20, auto) 1fr;
+    column-gap: 40px;
+    row-gap: 0;
+    align-items: start;
+  }
+  .pk-shell > *, .pk-wrap > *, .pk-root > * { margin-top: 0 !important; }
+  .pk-shell > .pk-wrap, .pk-root { display: contents; }
+  .pk-shell > :not(.pk-wrap), .pk-root > :not(.pk-board) { grid-column: 2; margin-bottom: 14px !important; }
+  .pk-shell > .pk-full { grid-column: 1 / -1; }
+  .pk-root > .pk-board { grid-column: 1; grid-row: 2 / -1; align-self: start; }
+  .pk-wrap > .pk-pulse, .pk-wrap > .pk-floaters { grid-column: 1; grid-row: 2 / -1; }
+  .pk-root > :not(.pk-board).w-full { width: 100%; }
+}
+@media (min-width: 1024px) and (hover: hover) {
+  .pk-cell:not(:disabled):hover { background: rgba(255, 255, 255, 0.34) !important; cursor: pointer; }
+  .pk-pick:not(:disabled):hover { transform: translateY(-3px); filter: brightness(1.05); }
+}

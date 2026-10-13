@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  CHAIN_TARGET, CHAIN_WORD_MAX, PASS_MAX_GUESSES, WORD_MAX, WORD_MIN, tttLine, whoseTurn,
+  CHAIN_TARGET, CHAIN_WORD_MAX, PASS_MAX_GUESSES, WORD_MIN, tttLine, whoseTurn,
   type ChainState, type CoinFace, type CoinState, type FriendlyMove, type GhostState, type PassState, type RpsPick, type RpsState,
   type Side, type TttState,
 } from '@wordle-duel/core';
@@ -21,6 +21,10 @@ import { haptic } from '@/lib/haptics';
 import { BubbleOneLine } from '@/components/ui/bubble-text';
 import type { TrayState } from '@/lib/game-tray';
 import { softMix } from '@/lib/soft-surface';
+import {
+  CHAIN_BOARD_H, CHAIN_BOARD_W, CHAIN_INTERIOR, CHAIN_LINK_ASPECT, GHOST_PANEL, GHOST_TRAY_H, GHOST_TRAY_W, PASS_TRAY_H, PASS_TRAY_W,
+  TTT_GRID_H, TTT_GRID_W, chainInputTile, chainLayout, ghostTileSize, passGeometry, tttCell, tttStrike,
+} from '@/lib/pocket-boards';
 
 // The six pocket-game boards (Friends overhaul §4 + §9, canvas board AE). Each one
 // only renders the server's state and hands a move up; the screen sends it.
@@ -73,6 +77,27 @@ const POCKET_ART: Record<string, ArtName> = {
   heads: 'art-pocket-coin-heads-w', tails: 'art-pocket-coin-tails-crest',
 };
 
+/**
+ * A hand standing on the ring's mat: the outlined variant (art-pocket-rps-<hand>-ring: a baked deep-plum outline + shadow, ~8% padding each
+ * side). It is drawn at the SAME scale the plain hand has in a `size` box, so the visible hand is unchanged. `clipTop` crops the top
+ * share of the art (the face-down fist hides its ? bubble: the bottom 62% only).
+ */
+function RingHand({ name, size, clipTop = 0 }: { name: 'rock' | 'paper' | 'scissors' | 'hidden'; size: number; clipTop?: number }) {
+  const plain = ART_SIZE[`art-pocket-rps-${name}` as ArtName];
+  const ring = ART_SIZE[`art-pocket-rps-${name}-ring` as ArtName];
+  const k = size / Math.max(plain[0], plain[1]);
+  const w = Math.round(ring[0] * k);
+  const h = Math.round(ring[1] * k);
+  const shown = Math.round(h * (1 - clipTop));
+  return (
+    <div aria-hidden="true" style={{ width: w, height: shown, overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={artSrc(`art-pocket-rps-${name}-ring` as ArtName)} alt="" draggable={false} decoding="async" width={ring[0]} height={ring[1]}
+        style={{ position: 'absolute', left: 0, bottom: 0, width: w, height: h, maxWidth: 'none' }} />
+    </div>
+  );
+}
+
 function Art({ name, size }: { name: string; size: number }) {
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={artSrc(POCKET_ART[name] ?? 'art-pocket-rps-rock')} alt={name} loading="lazy" decoding="async" width={size} height={size} draggable={false} style={{ width: size, height: size, objectFit: 'contain' }} />;
@@ -83,6 +108,36 @@ function PocketPiece({ name, height, style, className }: { name: ArtName; height
   const [w, h] = ART_SIZE[name];
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={artSrc(name)} alt="" aria-hidden="true" width={Math.round((height * w) / h)} height={height} draggable={false} decoding="async" className={className} style={{ width: 'auto', height, ...style }} />;
+}
+
+
+/**
+ * The width a board can use (px), measured once and on resize, capped at `max` (the art is laid out from it, never stretched).
+ * Starts at a phone-ish default so the first paint is already close.
+ */
+function useBoardWidth(max: number, deskMax: number = max): [React.RefObject<HTMLDivElement>, number] {
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(Math.min(max, 340));
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // Desktop (>= 1024 px, the website layout): the board column is wide, so the board may grow to `deskMax`; phones and tablets keep `max`.
+    const cap = () => (typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 1024px)').matches ? deskMax : max);
+    const measure = () => { const w = Math.floor(el.getBoundingClientRect().width); if (w > 0) setWidth(Math.min(cap(), w)); };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [max, deskMax]);
+  return [ref, width];
+}
+
+/** A board's art as a full-width <img> sized from its real pixels (never stretched). */
+function BoardArt({ name, width, style }: { name: ArtName; width: number; style?: React.CSSProperties }) {
+  const [w, h] = ART_SIZE[name];
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={artSrc(name)} alt="" aria-hidden="true" width={w} height={h} draggable={false} decoding="async" className="pointer-events-none select-none" style={{ display: 'block', width, height: Math.round((width * h) / w), maxWidth: 'none', ...style }} />;
 }
 
 /** "YOUR TURN" over a pocket board while it is your move: a gold capsule (flag + words) that pops in once, then rests (iOS / Android parity). */
@@ -101,7 +156,7 @@ export function YourTurnLabel() {
  * rock → paper → scissors (the "Your pick" art, one swap every 0.42 s; a still rock under Reduce Motion). Once their pick is
  * in: the face-down fist only (the bottom 63% of art-pocket-rps-hidden, clipped — never the ? bubble).
  */
-function TheirHand({ picked }: { picked: boolean }) {
+function TheirHand({ picked, size = 80 }: { picked: boolean; size?: number }) {
   const [cycle, setCycle] = useState(0);
   const still = prefersReducedMotion();
   useEffect(() => {
@@ -109,17 +164,9 @@ function TheirHand({ picked }: { picked: boolean }) {
     const id = window.setInterval(() => setCycle((c) => (c + 1) % 3), 420);
     return () => window.clearInterval(id);
   }, [picked, still]);
-  if (picked) {
-    return (
-      <div aria-hidden="true" style={{ width: 92, height: 74, overflow: 'hidden', position: 'relative' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={artSrc('art-pocket-rps-hidden')} alt="" draggable={false} decoding="async" width={92} height={116}
-          style={{ position: 'absolute', left: 0, bottom: 0, width: 92, height: 116, maxWidth: 'none', objectFit: 'cover' }} />
-      </div>
-    );
-  }
+  if (picked) return <RingHand name="hidden" size={size} clipTop={0.38} />;
   const hand = still ? 'rock' : (['rock', 'paper', 'scissors'] as const)[cycle];
-  return <div aria-hidden="true" style={{ opacity: still ? 0.6 : 0.75 }}><Art name={hand} size={80} /></div>;
+  return <div aria-hidden="true" style={{ opacity: still ? 0.6 : 0.75 }}><RingHand name={hand} size={size} /></div>;
 }
 
 /**
@@ -154,7 +201,18 @@ const COIN_TICKS = [120, 130, 150, 180, 220, 270, 340] as const;
  * ~1.55 s), lands with a squash, a small bounce and a teeter, THEN the gold glow, a success buzz and the result line (`caption`).
  * Web Animations on transform / opacity only (compositor). Reduce Motion: the landed face, the caption at once.
  */
-function CoinFlip({ face, flipKey, caption }: { face: CoinFace; flipKey: number; caption?: string | null }) {
+function CoinFlip({ face, flipKey, caption, width }: { face: CoinFace; flipKey: number; caption?: string | null; width: number }) {
+  // The stage (art-pocket-coin-stage) fills ~88% of the card; the coin floats over its top surface with room above for the hop.
+  const W = width;
+  const H = Math.round(W * 0.26);
+  const stageW = Math.round(W * 0.88);
+  const stageH = Math.round((stageW * ART_SIZE['art-pocket-coin-stage'][1]) / ART_SIZE['art-pocket-coin-stage'][0]);
+  const padB = Math.round(W * 0.03);
+  const rest = padB + Math.round(stageH * 0.9);   // the coin's bottom edge, from the card's bottom
+  const hop = Math.round(W * 0.15);
+  const cardH = rest + H + hop + Math.round(W * 0.03);
+  const hopRef = useRef(hop);
+  hopRef.current = hop;
   const [landed, setLanded] = useState<CoinFace>(face);
   const [settled, setSettled] = useState(true);
   const shown = useRef<CoinFace>(face);
@@ -185,7 +243,7 @@ function CoinFlip({ face, flipKey, caption }: { face: CoinFace; flipKey: number;
       lift.animate([
         kf(0, 0, 1, 1, 0, 'ease-out'),
         kf(T.crouch, 0, 1.14, 0.86, 0, 'ease-out'),
-        kf(tUp, -120, 0.94, 1.06, 0, 'ease-in'),
+        kf(tUp, -hopRef.current, 0.94, 1.06, 0, 'ease-in'),
         kf(tDown, 0, 1, 1, 0, 'ease-out'),
         kf(tLand, 0, 1.12, 0.88, 0, 'ease-out'),
         kf(tBounce, -12, 1, 1, 0, 'ease-in'),
@@ -216,20 +274,22 @@ function CoinFlip({ face, flipKey, caption }: { face: CoinFace; flipKey: number;
   }, [flipKey, face]);
   const other: CoinFace = landed === 'heads' ? 'tails' : 'heads';
   const [cw, ch] = ART_SIZE[COIN_ART.heads];
-  const H = 118;
-  const W = Math.round((H * cw) / ch);
+  const CW = Math.round((H * cw) / ch);
   const faceStyle: React.CSSProperties = { position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' };
   return (
-    // The Call It table (art-pocket-board-call-it-table): the coin hovers over its cushion and lands on it.
-    <div className="flex flex-col items-center gap-2">
-      <div className="relative" style={{ width: 210, height: 214 }} role="img" aria-label={settled ? `Coin, ${face}` : 'Coin flipping'}>
-        <PocketPiece name="art-pocket-board-call-it-table" height={138} className="absolute" style={{ left: '50%', bottom: 0, marginLeft: -105, width: 210 }} />
+    <div className="flex flex-col items-center gap-2 w-full">
+      {/* The theater card: the backdrop fills it (aspect-fill, clipped to the corners), the velvet stage stands at the bottom, the coin hovers over it. */}
+      <div className="relative overflow-hidden" style={{ width: W, height: cardH, borderRadius: 20 }} role="img" aria-label={settled ? `Coin, ${face}` : 'Coin flipping'}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={artSrc('art-pocket-coin-backdrop')} alt="" aria-hidden="true" draggable={false} decoding="async" width={1200} height={592}
+          className="absolute inset-0 pointer-events-none select-none" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <PocketPiece name="art-pocket-coin-stage" height={stageH} className="absolute" style={{ left: '50%', bottom: padB, marginLeft: -stageW / 2, width: stageW }} />
         <div ref={glowRef} aria-hidden="true" className="absolute pointer-events-none"
-          style={{ left: '50%', top: 0, width: 220, height: 220, marginLeft: -110, opacity: 0, background: 'radial-gradient(circle, rgba(253,230,138,0.7), rgba(253,230,138,0) 70%)' }} />
-        <div className="absolute left-0 right-0 flex items-center justify-center" style={{ top: 8, height: 130 }}>
+          style={{ left: '50%', bottom: rest - Math.round(H * 0.55), width: Math.round(H * 2), height: Math.round(H * 2), marginLeft: -H, opacity: 0, background: 'radial-gradient(circle, rgba(253,230,138,0.7), rgba(253,230,138,0) 70%)' }} />
+        <div className="absolute left-0 right-0 flex items-end justify-center" style={{ bottom: rest, height: H }}>
           <div ref={liftRef} style={{ transformOrigin: '50% 100%', willChange: 'transform' }}>
             <div style={{ perspective: 700 }}>
-              <div ref={turnRef} style={{ position: 'relative', width: W, height: H, transformStyle: 'preserve-3d' }}>
+              <div ref={turnRef} style={{ position: 'relative', width: CW, height: H, transformStyle: 'preserve-3d' }}>
                 <div style={faceStyle}><PocketPiece name={COIN_ART[landed]} height={H} /></div>
                 <div style={{ ...faceStyle, transform: 'rotateX(180deg)' }}><PocketPiece name={COIN_ART[other]} height={H} /></div>
               </div>
@@ -238,7 +298,7 @@ function CoinFlip({ face, flipKey, caption }: { face: CoinFace; flipKey: number;
         </div>
       </div>
       {caption !== undefined && (
-        // The result line appears only once the coin has landed (no spoiler mid-flip); its space is held.
+        // The result line appears only once the coin has landed (no spoiler mid-flip); its space is held. It sits under the card, on the page.
         <p className="text-[12px] font-black uppercase text-center" style={{ color: FR.ink, letterSpacing: 0.6, opacity: settled ? 1 : 0, transition: 'opacity 250ms ease-out' }}>{caption}</p>
       )}
     </div>
@@ -292,14 +352,22 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
     if (!ok) setPending(null);
   };
 
-  // 2.8 item 9d: the arena (art-pocket-board-rps-arena) is the stage: the two hands sit in its two wells.
-  // Before the reveal the left well holds your locked pick and the right the hidden fist; on a reveal both
-  // hands flip in together with the clash burst between them. Reduce Motion: no flip, no burst.
+  // Founder 10-12 (iOS / Android parity): the two hands square off in the wrestling ring (art-pocket-ring: back + side ropes, open at
+  // the front), there for the whole countdown and the pick wells alike. The hands stand on its canvas, in front of the back ropes.
+  // Before the reveal the left well holds your locked pick and the right the hidden fist; on a reveal both hands flip in together
+  // with the clash burst between them. Reduce Motion: no flip, no burst.
   const calm = prefersReducedMotion();
-  const ARENA_W = 300;
-  const ARENA_H = Math.round((ARENA_W * ART_SIZE['art-pocket-board-rps-arena'][1]) / ART_SIZE['art-pocket-board-rps-arena'][0]);
+  // The card (founder 10-13): the audience / spotlight backdrop fills it (cover, corners clipped) and the ring spans its FULL width,
+  // bottom-aligned, with no inner padding; the hands are the outlined ring art with a soft contact shadow on the mat.
+  const [ringRef, boxW] = useBoardWidth(420, 640);
+  const ARENA_W = boxW;
+  const [rw, rh] = ART_SIZE['art-pocket-ring'];
+  const RING_H = Math.round((ARENA_W * rh) / rw);
+  const HAND = Math.round(ARENA_W * 0.2);
+  const ARENA_H = Math.round(ARENA_W * 0.44);
+  const handCy = ARENA_H - Math.round(RING_H * 0.2) - Math.round(HAND / 2);   // the hands' feet stand on the canvas
   const wellStyle = (leftPct: number): React.CSSProperties => ({
-    position: 'absolute', left: `${leftPct * 100}%`, top: '43%', width: 84, height: 84, marginLeft: -42, marginTop: -42,
+    position: 'absolute', left: `${leftPct * 100}%`, top: handCy - HAND / 2, width: HAND, height: HAND, marginLeft: -HAND / 2,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   });
   // Both hands pump together while the words count, then turn over around the vertical axis (the art only: labels never mirror).
@@ -312,13 +380,13 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
       <div key={`${revealKey}-${side}`} style={{ ...wellStyle(leftPct), animation: countdown && !turning ? 'rps-pump 0.4s ease-in-out 3' : undefined, filter: won ? `drop-shadow(0 0 10px ${side === me ? TILE.you : TILE.them})` : undefined, perspective: 600 }}>
         <div
           style={{
-            position: 'relative', width: 80, height: 80, transformStyle: 'preserve-3d',
+            position: 'relative', width: HAND, height: HAND, transformStyle: 'preserve-3d',
             transform: countdown && !turning ? 'rotateY(180deg)' : undefined,
             animation: turning && !calm && !settledHand ? 'rps-turn 0.55s cubic-bezier(.2,.8,.3,1.1) both' : undefined,
           }}
         >
-          <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}><Art name={p} size={80} /></div>
-          <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }} aria-hidden="true"><Art name="rock" size={80} /></div>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}><RingHand name={p} size={HAND} /></div>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }} aria-hidden="true"><RingHand name="rock" size={HAND} /></div>
         </div>
       </div>
     );
@@ -330,36 +398,59 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
     ? last.winner === null ? 'Tie' : last.winner === me ? 'You won the round' : `${them.name} won the round`
     : null;
 
+  // A static soft dark ellipse under a hand, on the mat (no animation; the pump and the turn move the hand over it).
+  const shadow = (leftPct: number) => (
+    <span aria-hidden="true" className="absolute pointer-events-none"
+      style={{
+        left: `${leftPct * 100}%`, top: handCy + Math.round(HAND * 0.34), width: Math.round(HAND * 1.05), height: Math.round(HAND * 0.24),
+        marginLeft: -Math.round(HAND * 0.525), background: 'radial-gradient(ellipse at center, rgba(28, 10, 56, 0.5), rgba(28, 10, 56, 0) 70%)',
+      }} />
+  );
+  const roundNo = reveal ? state.rounds.length : state.rounds.length + 1;
+
   return (
-    <div className="flex flex-col items-center gap-3">
-      <GameTray accent={accent} state={tray} className="w-full flex flex-col items-center gap-1.5">
-        <div className="relative" style={{ width: ARENA_W, height: ARENA_H }}>
+    <div className="pk-root flex flex-col items-center gap-3">
+      <div ref={ringRef} className="pk-board w-full flex flex-col items-center gap-1.5">
+        <div className="relative overflow-hidden" style={{ width: ARENA_W, height: ARENA_H, borderRadius: 20 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={artSrc('art-pocket-board-rps-arena')} alt="" aria-hidden="true" width={ARENA_W} height={ARENA_H} draggable={false} decoding="async" style={{ width: ARENA_W, height: ARENA_H }} />
+          <img src={artSrc('art-pocket-rps-backdrop')} alt="" aria-hidden="true" draggable={false} decoding="async" width={1200} height={475}
+            className="absolute inset-0 pointer-events-none select-none" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <BoardArt name="art-pocket-ring" width={ARENA_W} style={{ position: 'absolute', left: 0, bottom: 0 }} />
+          {(reveal || active) && (
+            <span className="absolute left-0 right-0 text-center font-black uppercase pointer-events-none"
+              style={{ top: Math.max(6, Math.round(ARENA_W * 0.022)), fontSize: Math.max(12, Math.round(ARENA_W * 0.04)), letterSpacing: '0.12em', color: '#ffffff', textShadow: '0 1px 3px rgba(20,8,40,0.9), 0 0 10px rgba(20,8,40,0.7)' }}>
+              Round {roundNo}
+            </span>
+          )}
           {reveal ? (
             <>
-              {hand(me, 0.30)}
-              {hand(theirSide, 0.74)}
+              {shadow(0.28)}
+              {shadow(0.72)}
+              {hand(me, 0.28)}
+              {hand(theirSide, 0.72)}
               {revealing && !calm && flipped && (
-                <PocketPiece name="art-pocket-clash-burst" height={70} className="absolute pointer-events-none"
-                  style={{ left: '52%', top: '43%', marginLeft: -35, marginTop: -35, animation: 'friends-flip 0.35s ease-out both', opacity: 0.95 }} />
+                <PocketPiece name="art-pocket-clash-burst" height={Math.round(HAND * 0.85)} className="absolute pointer-events-none"
+                  style={{ left: '50%', top: handCy, marginLeft: -Math.round(HAND * 0.42), marginTop: -Math.round(HAND * 0.42), animation: 'friends-flip 0.35s ease-out both', opacity: 0.95 }} />
               )}
               {countdown && beat >= 0 && (
-                // The words pop in the middle slot; SHOOT! is gold and bigger.
-                <div key={beat} className="absolute pointer-events-none rps-word" style={{ left: '52%', top: '43%', width: 92, marginLeft: -46, marginTop: -14 }} aria-hidden="true">
+                // The words pop in the middle slot (over the star); SHOOT! is gold and bigger.
+                <div key={beat} className="absolute pointer-events-none rps-word" style={{ left: '50%', top: handCy, width: 92, marginLeft: -46, marginTop: -14 }} aria-hidden="true">
                   <BubbleOneLine text={['ROCK...', 'PAPER...', 'SCISSORS...', 'SHOOT!'][Math.min(beat, 3)]} palette={beat === 3 ? 'leaderboard' : 'friends'} size={beat === 3 ? 20 : 15} minScale={0.5} />
                 </div>
               )}
             </>
           ) : (
             <>
-              <div style={wellStyle(0.30)}>{chosen ? <Art name={chosen} size={80} /> : null}</div>
-              <div style={wellStyle(0.74)} aria-label={theirPick ? `${them.name} picked` : `${them.name} has not picked`}>
-                <TheirHand picked={!!theirPick} />
+              {chosen && shadow(0.28)}
+              {shadow(0.72)}
+              <div style={wellStyle(0.28)}>{chosen ? <RingHand name={chosen} size={HAND} /> : null}</div>
+              <div style={wellStyle(0.72)} aria-label={theirPick ? `${them.name} picked` : `${them.name} has not picked`}>
+                <TheirHand picked={!!theirPick} size={HAND} />
               </div>
             </>
           )}
         </div>
+      </div>
         <div className="w-full flex justify-between px-6 text-[10px] font-black uppercase" style={{ letterSpacing: 0.8, color: FR.label }}>
           <span style={{ color: reveal && flippedOrStatic && last!.winner === me ? TILE.you : undefined }}>YOU{reveal && flippedOrStatic && last!.winner === me ? ' · WON' : ''}</span>
           <span className="truncate" style={{ maxWidth: 120, color: reveal && flippedOrStatic && last!.winner === theirSide ? TILE.them : undefined }}>{them.name}{reveal && flippedOrStatic && last!.winner === theirSide ? ' · WON' : ''}</span>
@@ -372,7 +463,6 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
             Last round: <Art name={last[me]} size={18} /> vs <Art name={last[theirSide]} size={18} /> · {lastLine}
           </span>
         )}
-      </GameTray>
 
       {active && (
         <>
@@ -389,7 +479,7 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
                   disabled={locked && !sel}
                   aria-pressed={sel}
                   aria-label={p}
-                  className="flex flex-col items-center justify-center gap-1 transition-transform active:scale-95"
+                  className="pk-pick flex flex-col items-center justify-center gap-1 transition-transform active:scale-95"
                   style={{
                     width: 104, height: 118, borderRadius: 16,
                     ...(sel ? { background: TILE.you, border: `1.5px solid ${TILE.you}` } : EMPTY),
@@ -414,8 +504,11 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
 
 // ── Tic-Tac-Tile ────────────────────────────────────────────────────────────
 
-/** A Tic-Tac-Tile piece (J2): the 3D purple X (you) or pink O (them); decorative, the cell carries the label. */
-function Piece({ side }: { side: 'x' | 'o' }) {
+/**
+ * A Tic-Tac-Tile piece (J2): the 3D purple X (you) or pink O (them), filling its cell to the edges (founder 10-13: "go to the
+ * edges", a ~4% inset); decorative, the cell carries the label. A winning three glows (static drop-shadow, no animation).
+ */
+function Piece({ side, win = false }: { side: 'x' | 'o'; win?: boolean }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -426,29 +519,16 @@ function Piece({ side }: { side: 'x' | 'o' }) {
       height={256}
       draggable={false}
       className="gt-pop pointer-events-none select-none"
-      style={{ width: '76%', height: '76%', objectFit: 'contain', filter: 'drop-shadow(0 2px 2px rgba(40,20,80,0.25))' }}
+      style={{ width: '92%', height: '92%', objectFit: 'contain', filter: win ? `drop-shadow(0 0 7px ${side === 'x' ? TILE.you : '#ec4899'})` : 'drop-shadow(0 2px 2px rgba(40,20,80,0.25))' }}
     />
   );
-}
-
-const TTT_CELL = 92;
-const TTT_GAP = 10;
-
-/** Where the win strike sits over the 3 x 3 grid: the middle, length and angle of the line through its three cells. */
-export function tttStrike(line: [number, number, number]): { cx: number; cy: number; len: number; deg: number } {
-  const pos = (i: number) => ({ x: (i % 3) * (TTT_CELL + TTT_GAP) + TTT_CELL / 2, y: Math.floor(i / 3) * (TTT_CELL + TTT_GAP) + TTT_CELL / 2 });
-  const a = pos(line[0]);
-  const b = pos(line[2]);
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const len = Math.hypot(dx, dy) + TTT_CELL * 0.7;
-  return { cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, len, deg: (Math.atan2(dy, dx) * 180) / Math.PI };
 }
 
 /** The O piece's pink (the legend dot). */
 const TTT_O = '#ec4899';
 
-export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }: BoardProps<TttState>) {
+export function TttBoard({ state, me, them, active, busy, onMove }: BoardProps<TttState>) {
+  const [boxRef, boxW] = useBoardWidth(400, 600);
   const [pendingCell, setPendingCell] = useState<number | null>(null);
   const myTurn = active && whoseTurn(state) === me;
   const sig = `${state.board.join(',')}|${state.games.length}`;
@@ -468,15 +548,23 @@ export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }
     if (!ok) setPendingCell(null);
   };
 
+  const GW = boxW;
+  const sc = GW / TTT_GRID_W;
+  const GH = Math.round(TTT_GRID_H * sc);
+  const pct = (v: number, of: number) => `${(v / of) * 100}%`;
+
   return (
-    <div className="flex flex-col items-center gap-3">
-      <GameTray accent={accent} state={tray}>
-      <div className="relative grid grid-cols-3" style={{ gap: TTT_GAP }}>
+    <div className="pk-root flex flex-col items-center gap-3">
+      <div ref={boxRef} className="pk-board w-full flex justify-center">
+      {/* The lilac "#" slab (art-pocket-ttt-grid) is the board: nine cells between its bars; taps hit the cell rects. */}
+      <div className="relative" style={{ width: GW, height: GH }}>
+        <BoardArt name="art-pocket-ttt-grid" width={GW} />
         {board.map((m, i) => {
           const mine = m === me;
           const theirs = !!m && !mine;
           const threat = threats.includes(i);
           const win = winLine.includes(i);
+          const r = tttCell(i);
           return (
             <button
               key={i}
@@ -484,20 +572,16 @@ export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }
               onClick={() => tap(i)}
               disabled={!myTurn || !!m}
               aria-label={m ? (mine ? 'Your tile' : `${them.name}'s tile`) : `Empty tile ${i + 1}`}
-              className="flex items-center justify-center transition-transform active:scale-95"
+              className="pk-cell absolute flex items-center justify-center transition-transform active:scale-95"
               style={{
-                width: TTT_CELL, height: TTT_CELL, borderRadius: 16,
-                background: mine ? softMix(TILE.you, 0.16) : theirs ? softMix(TTT_O, 0.14) : EMPTY.background,
-                border: mine ? `1.5px solid ${softMix(TILE.you, 0.4)}` : theirs ? `1.5px solid ${softMix(TTT_O, 0.4)}` : EMPTY.border,
-                boxShadow: win
-                  ? `${LIP}, 0 0 0 2.5px ${mine ? TILE.you : TTT_O}, 0 0 18px ${mine ? TILE.you : TTT_O}aa`
-                  : threat ? `${LIP}, 0 0 14px rgba(124,58,237,0.35)` : LIP,
+                left: pct(r.x, TTT_GRID_W), top: pct(r.y, TTT_GRID_H), width: pct(r.w, TTT_GRID_W), height: pct(r.h, TTT_GRID_H),
+                borderRadius: 14, background: 'transparent',
                 outline: threat ? `2px dashed ${TILE.you}` : undefined,
                 outlineOffset: threat ? -6 : undefined,
                 cursor: myTurn && !m ? 'pointer' : 'default',
               }}
             >
-              {mine ? <Piece side="x" /> : theirs ? <Piece side="o" /> : null}
+              {mine ? <Piece side="x" win={win} /> : theirs ? <Piece side="o" win={win} /> : null}
             </button>
           );
         })}
@@ -507,7 +591,7 @@ export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }
             aria-hidden="true"
             className="absolute pointer-events-none"
             style={{
-              left: strike.cx - strike.len / 2, top: strike.cy - 17, width: strike.len, height: 34,
+              left: (strike.cx - strike.len / 2) * sc, top: (strike.cy - strike.thick / 2) * sc, width: strike.len * sc, height: strike.thick * sc,
               backgroundImage: `url(${artSrc('art-pocket-ttt-strike')})`, backgroundSize: '100% 100%', backgroundRepeat: 'no-repeat',
               transform: `rotate(${strike.deg}deg)`, transformOrigin: '50% 50%',
               animation: prefersReducedMotion() ? undefined : 'ttt-strike-in 380ms cubic-bezier(.2,.7,.3,1) both',
@@ -515,7 +599,7 @@ export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }
           />
         )}
       </div>
-      </GameTray>
+      </div>
       <div className="flex items-center gap-4 text-[11px] font-black" style={{ letterSpacing: 0.8 }}>
         <span className="flex items-center gap-1.5" style={{ color: TILE.you }}>
           <span className="w-2.5 h-2.5 rounded-full" style={{ background: TILE.you }} /> YOU · X
@@ -533,12 +617,13 @@ export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }
 
 // ── Call It ─────────────────────────────────────────────────────────────────
 
-export function CoinBoard({ state, me, them, active, busy, revealKey, onMove, accent, tray }: BoardProps<CoinState>) {
+export function CoinBoard({ state, me, them, active, busy, revealKey, onMove }: BoardProps<CoinState>) {
   const last = state.rounds[state.rounds.length - 1];
   const face: CoinFace = last ? last.flip : 'heads';
   const myCall = active && whoseTurn(state) === me;
   const [calling, setCalling] = useState<CoinFace | null>(null);
   const THEM = them.name.toUpperCase();
+  const [boxRef, boxW] = useBoardWidth(420, 640);
 
   const call = async (c: CoinFace) => {
     if (!myCall || busy || calling) return;
@@ -548,14 +633,15 @@ export function CoinBoard({ state, me, them, active, busy, revealKey, onMove, ac
   };
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <GameTray accent={accent} state={tray} className="w-full flex flex-col items-center gap-2">
+    <div className="pk-root flex flex-col items-center gap-3">
+      <div ref={boxRef} className="pk-board w-full flex flex-col items-center">
         <CoinFlip
           face={face}
           flipKey={revealKey}
+          width={boxW}
           caption={last ? `${last.flip} · ${last.caller === me ? 'you' : them.name} called ${last.call}` : 'No flips yet'}
         />
-      </GameTray>
+      </div>
 
       {active && (
         <>
@@ -591,15 +677,8 @@ export function CoinBoard({ state, me, them, active, busy, revealKey, onMove, ac
 
 // ── Pass the Puzzle ─────────────────────────────────────────────────────────
 
-const PASS_TILE = 44;
-
-function passTileStyle(st: 'correct' | 'present' | 'absent'): React.CSSProperties {
-  if (st === 'correct') return { background: TILE.you, color: '#ffffff', boxShadow: '0 0 6px rgba(124,58,237,0.45)' };
-  if (st === 'present') return { background: TILE.them, color: '#ffffff' };
-  return { background: TILE.absent, color: '#475569' };
-}
-
-export function PassBoard({ state, me, you, them, active, busy, onMove, answer, accent, tray, error }: BoardProps<PassState> & { answer: string | null }) {
+export function PassBoard({ state, me, you, them, active, busy, onMove, answer, error }: BoardProps<PassState> & { answer: string | null }) {
+  const [boxRef, boxW] = useBoardWidth(400, 560);
   const [input, setInput] = useState('');
   const [hint, setHint] = useState<string | null>(null);
   const myTurn = active && whoseTurn(state) === me;
@@ -624,55 +703,48 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer, 
 
   usePhysicalKeys(active, onKey);
 
-  const chip = (p: Player | null, faded = false) => (
-    <span className="shrink-0 flex items-center justify-center" style={{ width: 28, opacity: faded ? 0.4 : 1 }}>
-      {p ? <FriendAvatar name={p.name} userId={p.userId} url={p.url} accent={p.accent} config={p.config} castId={p.castId} frame={p.frame} pro={p.pro} size={26} /> : <span style={{ width: 26, height: 26 }} />}
+  // The puzzle-piece tray (art-pocket-pass-tray) is the board: the six rows + their ring markers sit centered as one group in its body.
+  const TW = boxW;
+  const TH = Math.round((TW * PASS_TRAY_H) / PASS_TRAY_W);
+  const g = passGeometry(TW, PASS_MAX_GUESSES, 5);
+  // A gold ring marker beside each row (close to the tiles); the guesser's avatar sits in it once the row is played.
+  const marker = (p: Player | null, current: boolean) => (
+    <span
+      className="absolute flex items-center justify-center rounded-full"
+      style={{ left: 0, top: (g.t - g.ring) / 2, width: g.ring, height: g.ring, border: `${Math.max(1.5, g.t * 0.05)}px solid #f5b82e`, opacity: p || current ? 1 : 0.55, boxSizing: 'border-box', overflow: 'hidden' }}
+    >
+      {p && <FriendAvatar name={p.name} userId={p.userId} url={p.url} accent={p.accent} config={p.config} castId={p.castId} frame={p.frame} pro={p.pro} size={Math.max(10, Math.round(g.ring - g.t * 0.14))} />}
     </span>
   );
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <GameTray accent={accent} state={tray}>
-      <div className="flex flex-col" style={{ gap: 5 }}>
+    <div className="pk-root flex flex-col items-center gap-3">
+      <div ref={boxRef} className="pk-board w-full flex justify-center">
+      <div className="relative" style={{ width: TW, height: TH }}>
+        <BoardArt name="art-pocket-pass-tray" width={TW} />
         {Array.from({ length: PASS_MAX_GUESSES }, (_, r) => {
-          const g = state.guesses[r];
-          const current = !g && r === state.guesses.length && active;
-          const who = g ? (g.by === me ? you : them) : current ? (myTurn ? you : them) : null;
+          const gu = state.guesses[r];
+          const current = !gu && r === state.guesses.length && active;
+          const who = gu ? (gu.by === me ? you : them) : current ? (myTurn ? you : them) : null;
           return (
-            <div key={r} className="flex items-center" style={{ gap: 6 }}>
-              {chip(who, current && !myTurn)}
-              <div className="flex" style={{ gap: 5 }}>
-                {Array.from({ length: 5 }, (_, i) => {
-                  const letter = g ? g.word[i] : current && myTurn ? input[i] ?? '' : '';
-                  const style: React.CSSProperties = g
-                    ? passTileStyle(tileState(g.tiles[i] ?? 'ABSENT'))
-                    : { ...EMPTY, color: '#2a1650', boxShadow: letter ? `0 0 0 2px #c4b5fd` : current ? `0 0 0 1.5px ${softMix('#7c3aed', 0.3)}` : undefined };
-                  if (g) {
-                    const st = tileState(g.tiles[i] ?? 'ABSENT');
-                    return (
-                      <ArtTile key={i} tone={st === 'correct' ? 'purple' : st === 'present' ? 'gold' : 'white'} size={PASS_TILE} fontSize={20} pop
-                        style={st === 'absent' ? { opacity: 0.62 } : undefined}>
-                        {letter}
-                      </ArtTile>
-                    );
-                  }
-                  return (
-                    <span
-                      key={i}
-                      className="flex items-center justify-center font-black uppercase"
-                      style={{ width: PASS_TILE, height: PASS_TILE, borderRadius: 8, fontSize: 20, ...style }}
-                    >
-                      {letter}
-                    </span>
-                  );
-                })}
-              </div>
-              <span style={{ width: 28 }} />
+            <div key={r} className="absolute" style={{ left: g.ringX, top: g.top + r * g.pitch, width: g.tileX - g.ringX + 4 * g.pitch + g.t, height: g.t }}>
+              {marker(who, current)}
+              {Array.from({ length: 5 }, (_, i) => {
+                const letter = gu ? gu.word[i] : current && myTurn ? input[i] ?? '' : '';
+                const pos: React.CSSProperties = { position: 'absolute', left: g.tileX - g.ringX + i * g.pitch, top: 0 };
+                const st = gu ? tileState(gu.tiles[i] ?? 'ABSENT') : null;
+                return (
+                  <ArtTile key={i} tone={st === 'correct' ? 'purple' : st === 'present' ? 'gold' : 'white'} size={g.t} fontSize={Math.round(g.t * 0.46)} radius={Math.round(g.t * 0.2)} pop={!!gu}
+                    style={{ ...pos, ...(st === 'absent' ? { opacity: 0.55 } : null), ...(!gu && letter ? { boxShadow: '0 0 0 2px #f5b82e' } : null) }}>
+                    {letter}
+                  </ArtTile>
+                );
+              })}
             </div>
           );
         })}
       </div>
-      </GameTray>
+      </div>
 
       {(hint || error) && <p className="text-[12px] font-bold" role="alert" style={{ color: '#dc2626' }}>{hint ?? error}</p>}
       {answer && (
@@ -751,7 +823,8 @@ const sideGlow = (mine: boolean) => (mine ? '0 0 6px rgba(124,58,237,0.4)' : '0 
 
 // ── Ghost ───────────────────────────────────────────────────────────────────
 
-export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, accent, tray, error }: BoardProps<GhostState>) {
+export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, error }: BoardProps<GhostState>) {
+  const [boxRef, boxW] = useBoardWidth(480, 640);
   const myTurn = active && whoseTurn(state) === me;
   const [pick, setPick] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
@@ -762,7 +835,11 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, a
   const card = last && state.fragment === '' ? ghostRoundCard(last, me, them.name) : null;
   const showSlot = myTurn;
   const count = tiles.length + (showSlot ? 1 : 0);
-  const size = Math.min(52, Math.floor((340 - Math.max(0, count - 1) * 6) / Math.max(1, count)));
+  const GW = boxW;
+  const GH = Math.round((GW * GHOST_TRAY_H) / GHOST_TRAY_W);
+  const gsc = GW / GHOST_TRAY_W;
+  const size = ghostTileSize(GW, count);
+  const gap = Math.max(3, Math.round(size * 0.14));
 
   const send = async () => {
     if (!myTurn || busy || !pick) return;
@@ -780,7 +857,7 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, a
   usePhysicalKeys(active, onKey);
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="pk-root flex flex-col items-center gap-3">
       {card && (
         <div
           key={revealKey}
@@ -796,30 +873,37 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, a
         </div>
       )}
 
-      <GameTray accent={accent} state={tray} className="w-full">
-      <div className="flex justify-center items-center" style={{ gap: 6, minHeight: 56 }}>
-        {tiles.map((t, i) => (
-          <ArtTile key={i} tone={t.mine ? 'purple' : 'gold'} size={size} fontSize={Math.round(size * 0.46)} radius={10} pop={i === tiles.length - 1}>
-            {t.letter}
-          </ArtTile>
-        ))}
-        {showSlot && (
-          <span
-            className="flex items-center justify-center font-black uppercase"
-            style={{
-              width: size, height: size, borderRadius: 10, fontSize: Math.round(size * 0.46),
-              background: softMix('#7c3aed', pick ? 0.16 : 0.06), color: TILE.you, border: `2px dashed ${TILE.you}`,
-            }}
-            aria-label={pick ? `Your letter ${pick}` : 'Your letter goes here'}
-          >
-            {pick ?? ''}
-          </span>
-        )}
-        {tiles.length === 0 && !showSlot && (
-          <span className="text-[12px] font-bold" style={{ color: FR.label }}>No letters yet</span>
-        )}
+      <div ref={boxRef} className="pk-board w-full flex justify-center">
+      {/* The ghost tray (art-pocket-ghost-tray): the fragment's tiles sit centered in its plum panel. */}
+      <div className="relative" style={{ width: GW, height: GH }}>
+        <BoardArt name="art-pocket-ghost-tray" width={GW} />
+        <div className="absolute flex justify-center items-center"
+          style={{ left: GHOST_PANEL.x * gsc, top: GHOST_PANEL.y * gsc, width: GHOST_PANEL.w * gsc, height: GHOST_PANEL.h * gsc, gap }}>
+          {tiles.map((t, i) => (
+            // The newest letter is gold, the rest purple.
+            <ArtTile key={i} tone={i === tiles.length - 1 ? 'gold' : 'purple'} size={size} fontSize={Math.round(size * 0.5)} radius={Math.round(size * 0.2)} pop={i === tiles.length - 1}>
+              {t.letter}
+            </ArtTile>
+          ))}
+          {showSlot && (
+            // A dashed outline marks the next slot.
+            <span
+              className="flex items-center justify-center font-black uppercase"
+              style={{
+                width: size, height: size, borderRadius: Math.round(size * 0.2), fontSize: Math.round(size * 0.5),
+                background: pick ? 'rgba(252,211,77,0.18)' : 'transparent', color: '#fde68a', border: '2px dashed #fcd34d', boxSizing: 'border-box',
+              }}
+              aria-label={pick ? `Your letter ${pick}` : 'Your letter goes here'}
+            >
+              {pick ?? ''}
+            </span>
+          )}
+          {tiles.length === 0 && !showSlot && (
+            <span className="text-[12px] font-bold" style={{ color: '#e9d5ff' }}>No letters yet</span>
+          )}
+        </div>
       </div>
-      </GameTray>
+      </div>
 
       {(hint || error) && <p className="text-[12px] font-bold" role="alert" style={{ color: '#dc2626' }}>{hint ?? error}</p>}
 
@@ -847,17 +931,19 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, a
 
 // ── Word Chain ──────────────────────────────────────────────────────────────
 
-const CHAIN_TILE = 30;
 const INPUT_TILE = 40;
 
-export function ChainBoard({ state, me, you, them, active, busy, onMove, accent, tray, error }: BoardProps<ChainState>) {
+export function ChainBoard({ state, me, them, active, busy, onMove, error }: BoardProps<ChainState>) {
+  const [boxRef, boxW] = useBoardWidth(480, 640);
+  const [rowRef, rowW] = useBoardWidth(480, 400);
   const myTurn = active && whoseTurn(state) === me;
   const locked = chainNeededLetter(state);
   const [typed, setTyped] = useState('');
   const [hint, setHint] = useState<string | null>(null);
   useEffect(() => { setTyped(''); setHint(null); }, [state.words.length]);
   const word = (locked ?? '') + typed;
-  const room = WORD_MAX - (locked ? 1 : 0);
+  // Founder 10-13: a word is 5 to 15 letters (the server checks the dictionary).
+  const room = CHAIN_WORD_MAX - (locked ? 1 : 0);
 
   const submit = async () => {
     if (!myTurn || busy) return;
@@ -885,51 +971,76 @@ export function ChainBoard({ state, me, you, them, active, busy, onMove, accent,
     endRef.current?.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }, [state.words.length]);
 
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <GameTray accent={accent} state={tray} className="w-full">
-      <div className="w-full flex flex-col" style={{ gap: 6 }}>
-        {state.words.length === 0 && (
-          <p className="text-center text-[12px] font-bold py-2" style={{ color: FR.label }}>
-            Any {WORD_MIN} to {CHAIN_WORD_MAX} letter word opens the chain.
-          </p>
-        )}
-        {state.words.map((w, wi) => {
-          const mine = w.by === me;
-          const newest = wi === state.words.length - 1;
-          const p = mine ? you : them;
-          return (
-            <div key={wi} className="flex items-center" style={{ gap: 6 }}>
-              <FriendAvatar name={p.name} userId={p.userId} url={p.url} accent={p.accent} config={p.config} castId={p.castId} frame={p.frame} pro={p.pro} size={22} />
-              <div className="flex-1 flex" style={{ gap: 3 }}>
-                {[...w.word].map((ch, i) => {
-                  const glow = newest && i === w.word.length - 1;
-                  return (
-                    <ArtTile
-                      key={i}
-                      tone={mine ? 'purple' : 'gold'} size={CHAIN_TILE} fontSize={14} radius={6} pop={glow}
-                      style={glow ? { boxShadow: `0 0 0 2px #ffffff, 0 0 0 4px ${FR.solid}, 0 0 14px ${FR.solid}` } : undefined}
-                    >
-                      {ch}
-                    </ArtTile>
-                  );
-                })}
-              </div>
-              <span
-                className="shrink-0 px-2 flex items-center text-[11px] font-black rounded-full"
-                style={{ height: 22, background: mine ? '#ede9fe' : '#fef3c7', color: mine ? '#6d28d9' : '#b45309' }}
-              >
-                +{w.points}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      </GameTray>
+  // The chain board (art-pocket-chain-board) is the frame: the last words hang in a staircase inside its plum interior, each new word
+  // starting under the previous word's last letter, joined by the gold link (art-pocket-chain-link).
+  const BW = boxW;
+  const BH = Math.round((BW * CHAIN_BOARD_H) / CHAIN_BOARD_W);
+  const bsc = BW / CHAIN_BOARD_W;
+  const inX = CHAIN_INTERIOR.w * bsc * 0.03;
+  const inY = CHAIN_INTERIOR.h * bsc * 0.04;
+  const iw = CHAIN_INTERIOR.w * bsc - 2 * inX;
+  const ih = CHAIN_INTERIOR.h * bsc - 2 * inY;
+  const lay = chainLayout(state.words.map((w) => w.word.length), iw, ih);
+  const newest = state.words[state.words.length - 1];
 
+  // The typing row: the typed letters plus ONE empty next-slot, shrinking as the word grows so it always fits one row.
+  const slots = Math.min(CHAIN_WORD_MAX, word.length + 1);
+  const itile = chainInputTile(rowW, slots, INPUT_TILE);
+  const igap = Math.max(2, Math.round(itile * 0.12));
+
+  return (
+    <div className="pk-root flex flex-col items-center gap-3">
+      <div ref={boxRef} className="pk-board w-full flex justify-center">
+      <div className="relative" style={{ width: BW, height: BH }}>
+        <BoardArt name="art-pocket-chain-board" width={BW} />
+        <div className="absolute" style={{ left: CHAIN_INTERIOR.x * bsc + inX, top: CHAIN_INTERIOR.y * bsc + inY, width: iw, height: ih }}>
+          {!lay && (
+            <p className="absolute inset-0 flex items-center justify-center text-center text-[12px] font-bold px-2" style={{ color: '#e9d5ff' }}>
+              Any {WORD_MIN} to {CHAIN_WORD_MAX} letter word opens the chain.
+            </p>
+          )}
+          {lay?.rows.map((row) => {
+            const w = state.words[row.index];
+            const mine = w.by === me;
+            const isNewest = row.index === state.words.length - 1;
+            return [...w.word].map((ch, i) => {
+              const glow = isNewest && i === w.word.length - 1;
+              return (
+                <ArtTile
+                  key={`${row.index}-${i}`}
+                  tone={mine ? 'purple' : 'gold'} size={lay.t} fontSize={Math.round(lay.t * 0.5)} radius={Math.round(lay.t * 0.2)} pop={glow}
+                  style={{ position: 'absolute', left: row.x + i * lay.pitchX, top: row.y, ...(glow ? { boxShadow: `0 0 0 2px #ffffff, 0 0 0 4px ${FR.solid}, 0 0 14px ${FR.solid}` } : null) }}
+                >
+                  {ch}
+                </ArtTile>
+              );
+            });
+          })}
+          {lay?.links.map((l, i) => {
+            const lw = lay.t * 0.79 * CHAIN_LINK_ASPECT;
+            return (
+              <span key={i} aria-hidden="true" className="absolute pointer-events-none"
+                style={{
+                  left: l.cx - lw / 2, top: l.cy - l.length / 2, width: lw, height: l.length, zIndex: 2,
+                  backgroundImage: `url(${artSrc('art-pocket-chain-link')})`, backgroundSize: `${lw}px ${lay.t * 0.79}px`, backgroundRepeat: 'no-repeat round', backgroundPosition: 'center',
+                  transform: `rotate(${l.deg}deg)`, transformOrigin: '50% 50%',
+                }} />
+            );
+          })}
+        </div>
+      </div>
+      </div>
+      {newest && (
+        <p className="text-[11.5px] font-black uppercase text-center" style={{ color: FR.label, letterSpacing: 0.6 }}>
+          {newest.word} · +{newest.points} · {newest.by === me ? 'you' : them.name}
+        </p>
+      )}
+
+      {/* Measured always (hidden until it is your word) so the row fits its own column: the narrower side column on desktop. */}
+      <div ref={rowRef} className="w-full" style={{ display: active && myTurn ? 'block' : 'none' }}>
       {active && myTurn && (
-        <div className="flex justify-center" style={{ gap: 5 }} aria-label="Your word">
-          {Array.from({ length: WORD_MAX }, (_, i) => {
+        <div className="flex justify-center w-full" style={{ gap: igap }} aria-label="Your word">
+          {Array.from({ length: slots }, (_, i) => {
             const ch = word[i] ?? '';
             const isLocked = !!locked && i === 0;
             const optional = i >= WORD_MIN;
@@ -944,15 +1055,16 @@ export function ChainBoard({ state, me, you, them, active, busy, onMove, accent,
               <span
                 key={i}
                 className="relative flex items-center justify-center font-black uppercase"
-                style={{ width: INPUT_TILE, height: INPUT_TILE, borderRadius: 8, fontSize: 18, ...style }}
+                style={{ width: itile, height: itile, borderRadius: Math.round(itile * 0.2), fontSize: Math.round(itile * 0.46), boxSizing: 'border-box', ...style }}
               >
                 {ch}
-                {isLocked && <Lock className="absolute" style={{ width: 9, height: 9, top: 3, right: 3, color: '#ffffff' }} aria-label="Locked" />}
+                {isLocked && <Lock className="absolute" style={{ width: Math.max(7, itile * 0.22), height: Math.max(7, itile * 0.22), top: 2, right: 2, color: '#ffffff' }} aria-label="Locked" />}
               </span>
             );
           })}
         </div>
       )}
+      </div>
 
       {(hint || error) && <p className="text-[12px] font-bold" role="alert" style={{ color: '#dc2626' }}>{hint ?? error}</p>}
 

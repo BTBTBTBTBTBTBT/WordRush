@@ -281,7 +281,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
   const gradient = game ? KIND_GRADIENT[game.kind] : FR.title;
 
   const topBar = (
-    <div className="relative flex items-center justify-center" style={{ minHeight: 44 }}>
+    <div className="pk-full relative flex items-center justify-center" style={{ minHeight: 44 }}>
       <HeaderBack kind="close" onClick={close} className="absolute left-0" />
       {/* The pocket game's 3D icon beside its title (docs/ART_SPEC.md §9). */}
       <span className="flex items-center gap-1.5 px-10 min-w-0">
@@ -433,7 +433,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
   };
 
   return (
-    <Shell>
+    <Shell desk>
       {topBar}
 
       <div
@@ -475,7 +475,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
         />
       )}
 
-      <div ref={boardRef} className="relative">
+      <div ref={boardRef} className="pk-wrap relative">
         {game.state.kind === 'rps' && <RpsBoard state={game.state} {...boardProps} />}
         {game.state.kind === 'ttt' && <TttBoard state={game.state} {...boardProps} />}
         {game.state.kind === 'coin' && <CoinBoard state={game.state} {...boardProps} />}
@@ -483,9 +483,9 @@ export function FriendlyGameScreen({ id }: { id: string }) {
         {game.state.kind === 'ghost' && <GhostBoard state={game.state} {...boardProps} />}
         {game.state.kind === 'chain' && <ChainBoard state={game.state} {...boardProps} />}
         {/* Your-turn pulse: a soft ring that breathes once when the move comes back to you. */}
-        <div ref={pulseRef} aria-hidden="true" className="absolute inset-0 pointer-events-none" style={{ borderRadius: 20, opacity: 0, boxShadow: `0 0 0 2px ${softMix(KIND_COLOR[game.kind], 0.55)}, 0 0 22px ${softMix(KIND_COLOR[game.kind], 0.4)}` }} />
+        <div ref={pulseRef} aria-hidden="true" className="pk-pulse absolute inset-0 pointer-events-none" style={{ borderRadius: 20, opacity: 0, boxShadow: `0 0 0 2px ${softMix(KIND_COLOR[game.kind], 0.55)}, 0 0 22px ${softMix(KIND_COLOR[game.kind], 0.4)}` }} />
         {/* Live reactions float up from the bottom of the board. */}
-        <div aria-hidden="true" className="absolute inset-x-0 bottom-2 h-0 pointer-events-none">
+        <div aria-hidden="true" className="pk-floaters absolute inset-x-0 bottom-2 h-0 pointer-events-none">
           {floaters.map((f) => (
             <span key={f.id} className="live-float absolute" style={{ left: `${f.x}%`, bottom: 0, opacity: f.mine ? 0.85 : 1 }}>
               <ReactionIcon reaction={f.reaction} size={34} />
@@ -554,10 +554,14 @@ export function FriendlyGameScreen({ id }: { id: string }) {
 /** Light-only: the shared washes (the game tray) mix over white here in every theme. */
 const LIGHT_CARD_BASE = { ['--color-card-base' as string]: '#ffffff' } as React.CSSProperties;
 
-function Shell({ children }: { children: React.ReactNode }) {
+/**
+ * `desk` (the live game screen): from 1024 px up the column becomes the website layout (globals.css .pk-shell): the board large on
+ * the left, the score window / turn / entry / reactions on the right. Phones and tablets keep the phone column.
+ */
+function Shell({ children, desk = false }: { children: React.ReactNode; desk?: boolean }) {
   return (
     <PageBackground tint="friends" scheme="light" className="min-h-screen overflow-y-auto" style={LIGHT_CARD_BASE}>
-      <div className="relative max-w-md mx-auto px-4 pt-2 pb-10 space-y-3.5">{children}</div>
+      <div className={`relative max-w-md mx-auto px-4 pt-2 pb-10 space-y-3.5${desk ? ' pk-shell' : ''}`}>{children}</div>
     </PageBackground>
   );
 }
