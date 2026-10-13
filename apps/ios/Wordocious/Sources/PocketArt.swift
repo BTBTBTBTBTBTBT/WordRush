@@ -57,6 +57,25 @@ enum PocketArt {
     static var chainLink: String? { ArtAsset.exists("art-pocket-chain-link") ? "art-pocket-chain-link" : nil }
     /// Ghost: the ghost-shaped tray (1200x307), tile panel x 256-1078, y 101-226.
     static var ghostTray: String? { ArtAsset.exists("art-pocket-ghost-tray") ? "art-pocket-ghost-tray" : nil }
+    /// Founder 10-13: the RPS reveal card's wallpaper (1200x475 audience + spotlight) and the outlined hands that stand in the ring
+    /// (plain hand + baked deep-plum outline and drop shadow, ~8% padding each side). Pick buttons keep the plain hands.
+    static var rpsBackdrop: String? { ArtAsset.exists("art-pocket-rps-backdrop") ? "art-pocket-rps-backdrop" : nil }
+    static func rpsRing(_ p: RpsPick) -> String? { ArtAsset.exists("art-pocket-rps-\(p.rawValue)-ring") ? "art-pocket-rps-\(p.rawValue)-ring" : nil }
+    static var rpsHiddenRing: String? { ArtAsset.exists("art-pocket-rps-hidden-ring") ? "art-pocket-rps-hidden-ring" : nil }
+    /// The ring art's on-screen size when the visible hand keeps the plain hand's size in a `box` x `box` frame (the ring art is the
+    /// plain hand + ~8% padding, so it scales by the same factor as the plain art would).
+    static func rpsRingSize(_ p: RpsPick?, box: CGFloat) -> CGSize {
+        // (plain px, ring px)
+        let t: (CGSize, CGSize)
+        switch p {
+        case .rock?: t = (CGSize(width: 230, height: 206), CGSize(width: 262, height: 238))
+        case .paper?: t = (CGSize(width: 247, height: 278), CGSize(width: 287, height: 318))
+        case .scissors?: t = (CGSize(width: 215, height: 284), CGSize(width: 247, height: 316))
+        case nil: t = (CGSize(width: 222, height: 281), CGSize(width: 254, height: 313))
+        }
+        let k = box / max(t.0.width, t.0.height)
+        return CGSize(width: t.1.width * k, height: t.1.height * k)
+    }
     /// The ghost, the puzzle piece and the gold chain links: small markers for Ghost, Pass the Puzzle and Word Chain.
     static var ghostMarker: String? { ArtAsset.exists("art-pocket-ghost-marker") ? "art-pocket-ghost-marker" : nil }
     static var puzzlePiece: String? { ArtAsset.exists("art-pocket-puzzle-piece") ? "art-pocket-puzzle-piece" : nil }
@@ -158,6 +177,8 @@ struct PocketBoardArt<Content: View>: View {
     let art: String
     let pixels: CGSize
     var maxWidth: CGFloat = 480
+    /// Founder 10-13: when set, the board is narrowed (aspect kept) so it is no taller than this.
+    var maxHeight: CGFloat? = nil
     @ViewBuilder var content: (_ scale: CGFloat) -> Content
 
     var body: some View {
@@ -171,7 +192,7 @@ struct PocketBoardArt<Content: View>: View {
                         .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
                 }
             }
-            .frame(maxWidth: maxWidth)
+            .frame(maxWidth: maxHeight.map { min(maxWidth, max(120, $0) * pixels.width / pixels.height) } ?? maxWidth)
             .frame(maxWidth: .infinity)
     }
 }

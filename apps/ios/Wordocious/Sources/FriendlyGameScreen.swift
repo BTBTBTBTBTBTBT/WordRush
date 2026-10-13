@@ -35,6 +35,10 @@ struct FriendlyGameScreen: View {
     @State private var arrived = false
     @State private var turnPulse = 0
     @State private var floaters: [LiveFloater] = []
+    /// Founder 10-13: the scroll area's height and where the board starts in it, so Pass the Puzzle's tray and Word Chain's frame
+    /// are sized to sit fully above the pinned keyboard (aspect kept, narrower on short phones).
+    @State private var viewportH: CGFloat = 0
+    @State private var boardTop: CGFloat = 0
 
     init(gameId: String, initial: FriendlyGameView? = nil) {
         _gameId = State(initialValue: gameId)
@@ -68,6 +72,7 @@ struct FriendlyGameScreen: View {
         VStack(spacing: 0) {
             topBar
             if let g = game {
+                GeometryReader { vp in
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 16) {
@@ -79,7 +84,10 @@ struct FriendlyGameScreen: View {
                             if g.isActive && g.yourTurn { PocketYourTurnFlag() }
                             // Item 22: their turn = a slim lobby strip above the board (board stays visible).
                             if g.isActive && !g.yourTurn { PocketWaitStrip(name: themName, since: g.updatedAt, nameColor: themColor, accent: gameAccent) }
-                            board(g)
+                            board(g, room: boardRoom(g))
+                                .background(GeometryReader { b in
+                                    Color.clear.preference(key: BoardTopKey.self, value: b.frame(in: .named("fgsScroll")).minY)
+                                })
                                 .modifier(ShakeEffect(animatableData: shakeCount))
                                 .scaleEffect(arrived ? 1.014 : 1)
                                 .overlay { if turnPulse > 0 && !Theme.reduceMotion { LiveTurnRing(color: FriendsKit.tileAccent(g.kind)).id(turnPulse) } }
@@ -89,11 +97,16 @@ struct FriendlyGameScreen: View {
                             if !g.isActive { overButtons(g) }
                         }
                         .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 24)
+                        .coordinateSpace(name: "fgsScroll")
                     }
+                    .onPreferenceChange(BoardTopKey.self) { boardTop = $0.isFinite ? $0 : 0 }
                     // Word Chain: keep the newest word in view.
                     .onChange(of: chainCount(g)) { _ in
                         withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo("chain-end", anchor: .bottom) }
                     }
+                }
+                .onAppear { viewportH = vp.size.height }
+                .onChange(of: vp.size.height) { viewportH = $0 }
                 }
                 if g.isActive, case .pass(let p) = g.state { passKeyboard(g, p) }
                 if g.isActive, case .ghost(let gs) = g.state { ghostKeyboard(g, gs) }
@@ -581,15 +594,23 @@ struct FriendlyGameScreen: View {
 
     // MARK: Boards
 
-    @ViewBuilder private func board(_ g: FriendlyGameView) -> some View {
+    @ViewBuilder private func board(_ g: FriendlyGameView, room: CGFloat?) -> some View {
         switch g.state {
         case .rps(let r): rpsBoard(g, r)
         case .ttt(let t): tttBoard(g, t)
         case .coin(let c): coinBoard(g, c)
-        case .pass(let p): passBoard(g, p)
+        case .pass(let p): passBoard(g, p, room: room)
         case .ghost(let gs): ghostBoard(g, gs)
-        case .chain(let c): chainBoard(g, c)
+        case .chain(let c): chainBoard(g, c, room: room)
         }
+    }
+
+    /// The height the pinned-keyboard games' board may take: from where it starts to the bottom of the scroll area, less what
+    /// sits under it (Pass the Puzzle's status line, Word Chain's legend) and a little air. nil until measured.
+    private func boardRoom(_ g: FriendlyGameView) -> CGFloat? {
+        guard g.isActive, g.kind == .pass || g.kind == .chain, viewportH > 0, boardTop > 0 else { return nil }
+        let below: CGFloat = g.kind == .pass ? 34 : 36
+        return max(120, viewportH - boardTop - below - 10)
     }
 
     /// Ghost and Word Chain pin their input (and its inline error) above the keyboard.
@@ -642,12 +663,17 @@ struct FriendlyGameScreen: View {
         let theirs = r.picks[me.other]
         VStack(spacing: 14) {
             if let last = r.rounds.last {
-                RpsReveal(round: r.rounds.count, mine: last[me], theirs: last[me.other],
+                let reveal = RpsReveal(round: r.rounds.count, mine: last[me], theirs: last[me.other],
                           winner: last.winner.map { $0 == me ? 1 : 2 } ?? 0, them: themName,
                           accent: gameAccent, myColor: myColor, themColor: themColor)
                     .id(r.rounds.count)
                     .frame(maxWidth: .infinity)
-                    .gameTray(accent: FriendsKit.tileAccent(.rps), state: g.isActive ? .normal : trayState(g))
+                // Founder 10-13: with the ring and the audience wallpaper the card is the arena itself (no tray around it).
+                if PocketArt.ring != nil && PocketArt.rpsBackdrop != nil {
+                    reveal
+                } else {
+                    reveal.gameTray(accent: FriendsKit.tileAccent(.rps), state: g.isActive ? .normal : trayState(g))
+                }
             }
             if g.isActive {
                 VStack(spacing: 6) {
@@ -939,13 +965,13 @@ struct FriendlyGameScreen: View {
         }
     }
 
-    @ViewBuilder private func passBoard(_ g: FriendlyGameView, _ p: PassState) -> some View {
+    @ViewBuilder private func passBoard(_ g: FriendlyGameView, _ p: PassState, room: CGFloat?) -> some View {
         let profile = AuthService.shared.profile
         let typing = g.isActive && g.yourTurn
         if let tray = PocketArt.passTray {
             // Founder 10-13: the puzzle-piece tray. The six guess rows and their ring markers sit as one group, centered
             // in the piece's body (rings close to the tiles, a gap of ~12% of a tile).
-            PocketBoardArt(art: tray, pixels: PocketBoard.passPixels) { scale in
+            PocketBoardArt(art: tray, pixels: PocketBoard.passPixels, maxHeight: room) { scale in
                 let t: CGFloat = 76                       // tile, in art pixels
                 let gap = t * 0.16, ring = t * 0.62, ringGap = t * 0.12
                 let groupW = ring + ringGap + 5 * t + 4 * gap
@@ -1100,9 +1126,11 @@ struct FriendlyGameScreen: View {
                     PocketBoardArt(art: tray, pixels: PocketBoard.ghostPixels, maxWidth: 560) { scale in
                         let panel = PocketBoard.ghostPanel
                         let slots = letters.count + ((myLetter || letters.isEmpty) ? 1 : 0)
-                        let pitch = min(100, (panel.width - 40) / CGFloat(max(slots, 1)))
-                        let t = pitch * 0.86
-                        HStack(spacing: (pitch - t) * scale) {
+                        // Founder 10-13: tiles ~83% of the plum panel's height, shrinking only when the fragment and the
+                        // next slot would not fit the panel's width.
+                        let n = CGFloat(max(slots, 1))
+                        let t = min(panel.height * 0.83, (panel.width - 40) / (n + 0.16 * (n - 1)))
+                        HStack(spacing: t * 0.16 * scale) {
                             ForEach(letters.indices, id: \.self) { i in
                                 PocketTile(face: i == letters.count - 1 ? .present : .correct, letter: letters[i],
                                            width: t * scale, pop: true)
@@ -1257,12 +1285,12 @@ struct FriendlyGameScreen: View {
 
     // Word Chain (§9)
 
-    @ViewBuilder private func chainBoard(_ g: FriendlyGameView, _ c: ChainState) -> some View {
+    @ViewBuilder private func chainBoard(_ g: FriendlyGameView, _ c: ChainState, room: CGFloat?) -> some View {
         let me = g.me
         if let frame = PocketArt.chainBoard, let link = PocketArt.chainLink {
             // Founder 10-13: the gold chain frame. The last two words (three if they fit) as a staircase: each new word
             // starts directly under the previous word's last letter, joined by the gold link.
-            PocketBoardArt(art: frame, pixels: PocketBoard.chainPixels, maxWidth: 560) { scale in
+            PocketBoardArt(art: frame, pixels: PocketBoard.chainPixels, maxWidth: 560, maxHeight: room) { scale in
                 let inner = PocketBoard.chainInterior
                 let w = inner.width * scale, h = inner.height * scale
                 ZStack {
@@ -1594,9 +1622,19 @@ private struct RpsReveal: View {
     @State private var turn: Double = Theme.reduceMotion ? 0 : 180
     private static let words = ["ROCK...", "PAPER...", "SCISSORS...", "SHOOT!"]
 
+    /// The arena: the ring across the card's full width and the audience wallpaper behind it.
+    private var arena: Bool { PocketArt.ring != nil && PocketArt.rpsBackdrop != nil }
+
     var body: some View {
         VStack(spacing: 6) {
-            PocketBubble(text: "Round \(round)", color: accent, size: 15)
+            if arena {
+                // White with a soft dark shadow so it reads over the wallpaper.
+                PocketBubble(text: "Round \(round)", color: .white, size: 15, palette: PlayerTint.platePalette(lightInk: true))
+                    .shadow(color: Color(hex: 0x1A0536).opacity(0.7), radius: 3, y: 1)
+                    .padding(.top, 8)
+            } else {
+                PocketBubble(text: "Round \(round)", color: accent, size: 15)
+            }
             HStack(spacing: 18) {
                 card(mine, label: "YOU", win: winner == 1, tint: FriendsKit.purple, ink: myColor)
                 ZStack {
@@ -1621,17 +1659,16 @@ private struct RpsReveal: View {
                 card(theirs, label: them.uppercased(), win: winner == 2, tint: FriendsKit.amber, ink: themColor)
             }
             // Founder 10-12: the hands square off inside a wrestling ring (was the purple arena plate), there for the whole
-            // countdown, not only after the flip. Its canvas sits under the hands; the ropes rise behind them.
-            // The ring art is open at the front (cut just past the star, founder 10-12), so the canvas runs to the card's
-            // edge and the hands stand inside it: a little room above for the ropes, none below.
+            // countdown, not only after the flip. The ring art is open at the front (cut just past the star, founder 10-12), so the
+            // canvas runs to the card's bottom edge and the hands stand inside it: a little room above for the ropes, none below.
             .padding(.top, PocketArt.ring == nil ? 0 : 20)
             .padding(.bottom, PocketArt.ring == nil ? 0 : 2)
             .background(alignment: .bottom) {
-                if let ring = PocketArt.ring {
+                if !arena, let ring = PocketArt.ring {
                     Image(ring).resizable().interpolation(.high).scaledToFit()
                         .frame(width: 330)
                         .accessibilityHidden(true)
-                } else if let plate = PocketArt.arenaPlate {
+                } else if !arena, let plate = PocketArt.arenaPlate {
                     Image(plate).resizable().interpolation(.high).scaledToFit()
                         .frame(width: 270).offset(y: 14)
                         .opacity(flipped ? 0.9 : 0)
@@ -1639,6 +1676,23 @@ private struct RpsReveal: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity)
+        // Founder 10-13: the ring spans the card edge to edge, bottom-aligned, over the audience wallpaper (aspect-fill),
+        // corners clipped to the card.
+        .background(alignment: .bottom) {
+            if arena, let ring = PocketArt.ring {
+                Image(ring).resizable().interpolation(.high).scaledToFit()
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
+            }
+        }
+        .background {
+            if arena, let wall = PocketArt.rpsBackdrop {
+                Image(wall).resizable().interpolation(.high).scaledToFill()
+                    .accessibilityHidden(true)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: arena ? GameTray.radius : 0, style: .continuous))
         .onAppear {
             guard !flipped else { return }
             if Theme.reduceMotion { flipped = true; turn = 0; return }
@@ -1671,10 +1725,26 @@ private struct RpsReveal: View {
     private func card(_ p: RpsPick, label: String, win: Bool, tint: Color, ink: Color) -> some View {
         VStack(spacing: 3) {
             // The pick turns over from the pumping fist (only the art turns — the label never mirrors).
-            RpsTurnArt(angle: turn, front: PocketArt.rps(p), back: PocketArt.rps(.rock))
-                .frame(width: 58, height: 58)
-                .offset(y: flipped ? 0 : bob)
-                .accessibilityLabel(flipped ? p.rawValue.capitalized : "Hidden pick")   // §AB: the pick, not the asset name
+            // In the ring the hands are the outlined art (the plain hand + a baked plum outline and drop shadow), scaled so the
+            // visible hand keeps its size, on a static soft contact shadow on the mat (founder 10-13).
+            let outlined = arena && PocketArt.rpsRing(p) != nil && PocketArt.rpsRing(.rock) != nil
+            ZStack(alignment: .bottom) {
+                if outlined {
+                    Ellipse().fill(RadialGradient(colors: [Color(hex: 0x28084F).opacity(0.4), Color(hex: 0x28084F).opacity(0)],
+                                                  center: .center, startRadius: 0, endRadius: 30))
+                        .frame(width: 62, height: 14)
+                        .offset(y: 4)
+                        .accessibilityHidden(true)
+                }
+                RpsTurnArt(angle: turn, front: outlined ? PocketArt.rpsRing(p)! : PocketArt.rps(p),
+                           back: outlined ? PocketArt.rpsRing(.rock)! : PocketArt.rps(.rock),
+                           frontSize: outlined ? PocketArt.rpsRingSize(p, box: 58) : nil,
+                           backSize: outlined ? PocketArt.rpsRingSize(.rock, box: 58) : nil)
+                    .frame(width: 58, height: 58)
+                    .offset(y: flipped ? 0 : bob)
+                    .accessibilityLabel(flipped ? p.rawValue.capitalized : "Hidden pick")   // §AB: the pick, not the asset name
+            }
+            .frame(width: 58, height: 58)
             PocketBubble(text: label, color: ink, size: 12, minScale: 0.4, hug: false)
                 .frame(width: 74)
                 .opacity(win ? 1 : 0.75)
@@ -1709,6 +1779,9 @@ private struct RpsTurnArt: View, Animatable {
     var angle: Double
     let front: String
     let back: String
+    /// The outlined ring art's own size (it is bigger than the frame by its baked padding); nil = fit the frame.
+    var frontSize: CGSize? = nil
+    var backSize: CGSize? = nil
     var animatableData: Double {
         get { angle }
         set { angle = newValue }
@@ -1716,7 +1789,9 @@ private struct RpsTurnArt: View, Animatable {
 
     var body: some View {
         let c = cos(angle * .pi / 180)
+        let size = c >= 0 ? frontSize : backSize
         Image(c >= 0 ? front : back).resizable().interpolation(.high).scaledToFit()
+            .frame(width: size?.width, height: size?.height)
             .scaleEffect(x: max(0.06, abs(c)), y: 1)
     }
 }
@@ -1912,6 +1987,12 @@ private struct CoinFlipFace: View, Animatable {
     }
 }
 
+
+/// Where the board starts inside the game screen's scroll content.
+private struct BoardTopKey: PreferenceKey {
+    static var defaultValue: CGFloat = .infinity
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = min(value, nextValue()) }
+}
 
 // MARK: Live play helpers (9b)
 
