@@ -71,6 +71,7 @@ enum AdsConfig {
     /// runs a build with the "ads" flag live. Currently empty: no devices added yet.
     static let testDeviceIDFAs: [String] = [
         "9FA1D3A0-F2FB-4C0D-A2AC-6018863D16CF", // Brian (BMT) iPhone, registered 2026-10-13
+        "EF4B0117-34F0-4227-8F01-47DD77701317", // JP (JPGolf) iPhone, registered 2026-10-13
     ]
 
     /// True when this device's IDFA is in `testDeviceIDFAs`. Without tracking
