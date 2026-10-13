@@ -994,6 +994,8 @@ html[data-season-tone="dark"] [data-page-tint="vs"] {
 }
 /* The soft numbers (lettering in the deep purple) take their light twin on a dark season's night glass, on every
    page (the VS / Friends pages pin the light scheme, so the [data-page-scheme="auto"] rule doesn't reach them). */
+/* Founder 10-13: the small plain-caps captions on the pocket screens get a soft dark shadow over the night art (none in the light theme). */
+html[data-season-tone="dark"] .pk-caps :is(p, .pk-cap):not([role="dialog"] *) { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); }
 html[data-season-tone="dark"] .soft-num { color: #e9ddff; text-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); }
 /* The same on the light-only Friends pages (LIGHT_CARD_BASE pins the white card base): the night
    glass + the Friends inks' light twins (--fr-*, light fallbacks in lib/friends-look + friends-play). */

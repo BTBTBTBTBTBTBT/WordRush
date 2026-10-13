@@ -96,6 +96,20 @@ describe('Word Chain staircase', () => {
     expect(l.rows[1].x).toBeCloseTo(l.rows[0].x, 5);
     expect(Math.abs(l.links[0].deg)).toBeGreaterThan(45);
   });
+  it('long words (> 10 letters) stack left-aligned, no staircase, tiles >= 17 px for 15 letters at 390 wide', () => {
+    const w = CHAIN_INTERIOR.w * (358 / 1100) * 0.97;
+    const h = CHAIN_INTERIOR.h * (358 / 1100) * 0.92;
+    for (const pair of [[15, 13], [11, 5], [5, 12]]) {
+      const l = chainLayout(pair, w, h)!;
+      expect(l.rows).toHaveLength(2);
+      expect(l.rows[1].x).toBeCloseTo(l.rows[0].x, 5);
+      expect(l.rows[0].x).toBeGreaterThanOrEqual(-0.5);
+      for (const r of l.rows) expect(r.x + (r.len - 1) * l.pitchX + l.t).toBeLessThanOrEqual(w + 0.5);
+    }
+    expect(chainLayout([15, 13], w, h)!.t).toBeGreaterThanOrEqual(17);
+    // 5 + 5 keeps the staircase
+    expect(chainLayout([5, 5], w, h)!.flush).toBe(false);
+  });
   it('shows three words only when they stay big enough', () => {
     expect(chainLayout([5, 5, 5], W, H)!.rows).toHaveLength(2);
     const big = chainLayout([5, 5, 5], CHAIN_INTERIOR.w * (480 / 1100), CHAIN_INTERIOR.h * (480 / 1100))!;

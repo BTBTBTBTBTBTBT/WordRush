@@ -13,6 +13,14 @@
 //   node scripts/web-perf-tour.mjs http://localhost:3000   # a local `next start`
 //   ONLY=home,classic node scripts/web-perf-tour.mjs
 //   SEASON=halloween node scripts/web-perf-tour.mjs http://localhost:3000   # whole tour under the preview
+//   VIEW=1440x900 CPU=2 node scripts/web-perf-tour.mjs ...   # a desktop viewport (default 390x844 phone, CPU 4x)
+//
+// Founder 10-13 playthroughs (need `next dev`: the pocket demo page /dev/pocket is refused in production, so these numbers are
+// dev-mode numbers — React double-render, unminified; compare steps against each other, not against a production run):
+//   ONLY=pocket node scripts/web-perf-tour.mjs http://localhost:3111          # every pocket game played to its finished screen
+//   ONLY=chain  ...                                                            # Word Chain: 15-letter + refused 16-letter, typed on the keyboard
+//   ONLY=musical ...  [SEASON=halloween]                                       # the cast sings every tune back, every note asserted
+//   SHOTS=/some/dir  saves a screenshot of each pocket/musical step there (default: apps/web/.perf/shots)
 //
 // Measure a production build (`next build && next start`), never `next dev`.
 // Report: apps/web/.perf/perf-tour-<stamp>.md
@@ -65,9 +73,12 @@ const evaluate = async (expr) => (await send('Runtime.evaluate', { expression: e
 
 await send('Page.enable');
 await send('Performance.enable');
-await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
-await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
-await send('Emulation.setCPUThrottlingRate', { rate: 4 });
+const [VW, VH] = (process.env.VIEW || '390x844').split('x').map(Number);
+const DESKTOP = VW >= 1024;
+const CPU = Number(process.env.CPU || (DESKTOP ? 2 : 4));
+await send('Emulation.setDeviceMetricsOverride', { width: VW, height: VH, deviceScaleFactor: DESKTOP ? 1 : 3, mobile: !DESKTOP });
+await send('Emulation.setTouchEmulationEnabled', { enabled: !DESKTOP, maxTouchPoints: DESKTOP ? 1 : 5 });
+await send('Emulation.setCPUThrottlingRate', { rate: CPU });
 
 // In-page monitor, installed on every navigation.
 const MONITOR = `(() => {
@@ -113,7 +124,7 @@ async function step(name, holdMs, action) {
 // SEASON=halloween runs the whole tour under that season preview (every plain path gets ?season=).
 const SEASON = process.env.SEASON || '';
 async function go(path) {
-  const p = SEASON && !path.includes('?') ? `${path}?season=${SEASON}` : path;
+  const p = SEASON && !path.includes('season=') ? `${path}${path.includes('?') ? '&' : '?'}season=${SEASON}` : path;
   await send('Page.navigate', { url: BASE + p });
   await sleep(4000);
 }
@@ -133,6 +144,8 @@ await go('/');
 await evaluate("localStorage.setItem('wordocious-guest', '1')");
 // Past the first-run tour (AO) so Home / tabs measure Home, not the welcome overlay.
 await evaluate("localStorage.setItem('onboarded-v2', '1')");
+// The 13+ age gate asks once per device: seed a local test answer in this throwaway profile (never a real person's data).
+await evaluate("localStorage.setItem('wordocious-age-check', JSON.stringify({ state: 'ok', year: 1990 }))");
 // A/B: PUPPETS=off measures the static cast header (components/ui/cast-puppets.ts kill switch).
 await evaluate(process.env.PUPPETS === 'off' ? "localStorage.setItem('debug-puppets', 'off')" : "localStorage.removeItem('debug-puppets')");
 await step('launch', 4000, () => send('Page.reload'));
@@ -180,10 +193,251 @@ if (wanted('strategy')) { await go('/guides'); await step('strategy.scroll', 600
 if (wanted('muddle')) { await go('/muddle'); await step('muddle.type', 800, () => typeWord('STARE')); }
 if (wanted('crossword')) { await go('/crosswordocious'); await step('crossword.type', 800, () => typeWord('STARELINE')); }
 
+
+// ── Founder 10-13: pocket games played through + Word Chain long words + the musical cast ────────────────────────────────────
+const SHOTS = process.env.SHOTS || join(dirname(fileURLToPath(import.meta.url)), '..', 'apps', 'web', '.perf', 'shots');
+mkdirSync(SHOTS, { recursive: true });
+const findings = [];
+const shifts = [];
+const note = (name, ok, text) => { findings.push({ name, ok, text }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}: ${text}`); };
+const shot = async (name, viewportOnly = false) => {
+  const h = viewportOnly ? VH : Math.min(2600, Math.ceil(await evaluate('document.documentElement.scrollHeight')));
+  const { data } = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: !viewportOnly, clip: { x: 0, y: 0, width: VW, height: h, scale: DESKTOP ? 0.6 : 0.55 } });
+  writeFileSync(join(SHOTS, `${name}.png`), Buffer.from(data, 'base64'));
+};
+const text = () => evaluate('document.body.innerText');
+// Console hooks, installed on every navigation: pocket demo log + every sample that starts ([sfx], dev builds).
+await send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
+  window.__pd = []; window.__sfxLog = []; window.__taps = [];
+  const mk = (orig, fn) => function (...a) { try { fn(a); } catch {} return orig.apply(this, a); };
+  console.info = mk(console.info, (a) => { if (a[0] === '[PocketDemo]') window.__pd.push({ t: performance.now(), s: a.slice(1).join(' ') }); });
+  console.debug = mk(console.debug, (a) => { if (a[0] === '[sfx]') window.__sfxLog.push({ t: performance.now(), name: a[1] }); });
+  document.addEventListener('pointerdown', (e) => { const c = e.target && e.target.closest && e.target.closest('[data-cast]'); if (c) window.__taps.push({ t: performance.now(), id: c.getAttribute('data-cast') }); }, true);
+})()` });
+const waitFor = async (expr, ms, label) => {
+  const t0 = Date.now();
+  while (Date.now() - t0 < ms) { if (await evaluate(expr)) return true; await sleep(250); }
+  console.log(`  (timeout waiting for ${label || expr})`);
+  return false;
+};
+// (Rematch is a bubble-lettered button with no text node, so "finished" = the demo's done log.)
+const FINISHED = "window.__pd.some((x) => x.s.startsWith('done'))";
+// Layout-stability tracker (founder 10-13: no screen shifting). Samples the board / entry row / keyboard rects (page coordinates)
+// every 50 ms from the moment it is installed, plus layout-shift CLS; shiftReport() = the biggest y / height jump per element.
+const TRACKER = `(() => {
+  const T = window.__shiftT = { s: [], cls: 0, on: true };
+  T.ls = [];
+  try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!e.hadRecentInput) { T.cls += e.value; if (e.value > 0.0005) T.ls.push({ v: +e.value.toFixed(4), at: Math.round(e.startTime), src: (e.sources || []).slice(0, 2).map((x) => (x.node && (x.node.nodeName + '.' + String(x.node.className || '').slice(0, 40) + ' ' + (x.node.textContent || '').slice(0, 24))) + ' dy=' + (x.currentRect.y - x.previousRect.y) + ' dh=' + (x.currentRect.height - x.previousRect.height)) }); } }).observe({ type: 'layout-shift', buffered: false }); } catch {}
+  const rect = (el) => { if (!el) return null; const b = el.getBoundingClientRect(); return b.height > 0 ? { top: b.top + scrollY, h: b.height } : null; };
+  const kbEl = () => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Q'); return b && b.closest('.w-full'); };
+  const tick = () => {
+    if (!T.on) return;
+    T.s.push({ t: performance.now(), board: rect(document.querySelector('.pk-board')), entry: rect(document.querySelector('[aria-label="Your word"]')), kb: rect(kbEl()), doc: document.documentElement.scrollHeight,
+      txt: (document.querySelector('.pk-wrap') || document.body).innerText.slice(0, 60).replace(/[\\r\\n]+/g, ' | ') });
+    setTimeout(tick, 50);
+  };
+  tick();
+})()`;
+const shiftReport = () => evaluate(`(() => { const T = window.__shiftT; T.on = false; const out = { cls: +T.cls.toFixed(4), max: { board: 0, entry: 0, kb: 0 }, events: [] };
+  for (const k of ['board', 'entry', 'kb']) { let prev = null; for (const x of T.s) { const r = x[k]; if (r && prev) { const d = Math.max(Math.abs(r.top - prev.top), Math.abs(r.h - prev.h)); if (d > 1) out.events.push({ k, d: +d.toFixed(1), at: Math.round(x.t), dTop: +(r.top - prev.top).toFixed(1), dH: +(r.h - prev.h).toFixed(1), txt: x.txt }); out.max[k] = Math.max(out.max[k], d); } if (r) prev = r; } }
+  out.samples = T.s.length; out.events = out.events.slice(0, 12); out.ls = T.ls.slice(0, 8); return out; })()`);
+const closeHelp = async (k) => {
+  await sleep(1400);
+  const has = await evaluate("!!document.querySelector('[role=dialog][aria-labelledby]')");
+  if (!has) return false;
+  await sleep(900); await shot(`web-${tag}-${k}-help`, true);
+  // the card's candy button is the dialog's last button (its label is bubble art, not text)
+  await evaluate("(() => { const bs = [...document.querySelectorAll('[role=dialog][aria-labelledby] button')]; const b = bs[bs.length - 1]; if (b) b.click(); })()");
+  await sleep(500);
+  return true;
+};
+const KINDS = (process.env.KINDS || 'rps,ttt,coin,pass,passfull,ghost,chain').split(',');
+const tag = DESKTOP ? 'desk' : 'phone';
+
+if (wanted('pocket')) {
+  // A dev-compile warm-up (the first hit of a route compiles it; not measured).
+  await go('/dev/pocket?kind=rps&autoplay=1&pace=600');
+  await sleep(6000);
+  for (const k of KINDS) {
+    const name = `pocket.${k}`;
+    if (!wanted(name) && !ONLY.includes('pocket')) continue;
+    await go(`/dev/pocket?kind=${k}&autoplay=1&pace=${process.env.PACE || 1800}`);
+    await waitFor("!!document.querySelector('.pk-wrap')", 20000, 'board');
+    let midShot = false;
+    await closeHelp(k);
+    if (process.env.HELP_ONLY) continue;
+    await evaluate(TRACKER);
+    await step(name, 500, async () => {
+      const t0 = Date.now();
+      while (Date.now() - t0 < Number(process.env.CAP || 150000)) {
+        if (await evaluate(FINISHED)) break;
+        if (!midShot && (await evaluate('window.__pd.filter((x) => x.s.startsWith("move")).length')) >= 3) { midShot = true; await shot(`web-${tag}-${k}-mid`); }
+        await sleep(300);
+      }
+    });
+    const done = await evaluate(FINISHED);
+    const sh = await shiftReport();
+    shifts.push({ kind: k, tag, ...sh });
+    console.log(`  shift ${k}: CLS ${sh.cls}, max board ${sh.max.board.toFixed(1)} entry ${sh.max.entry.toFixed(1)} kb ${sh.max.kb.toFixed(1)} px over ${sh.samples} samples`);
+    for (const e of sh.events) console.log('    ', JSON.stringify(e));
+    for (const e of sh.ls || []) console.log('     CLS', JSON.stringify(e));
+    const log = await evaluate('window.__pd.map((x) => x.s)');
+    await sleep(900);
+    await shot(`web-${tag}-${k}-done`);
+    if (!done) console.log('  log tail:', JSON.stringify(log.slice(-6)), '\n  page:', JSON.stringify((await text()).slice(0, 400)));
+    note(name, !!done, done ? `played to the finished screen (${log.filter((l) => l.startsWith('move')).length} moves, ${log.find((l) => l.startsWith('done')) || 'no done log'})` : 'did NOT reach the finished screen');
+  }
+}
+
+// Geometry checks on the live boards (phone: does it fit above the on-screen keyboard; Ghost tiles vs the tray panel).
+async function fitCheck(k) {
+  await go(`/dev/pocket?kind=${k}`);
+  await waitFor("!!document.querySelector('.pk-wrap')", 20000, 'board');
+  await sleep(1800); // Doug has played; it is my turn
+  return evaluate(`(() => {
+    const r = (el) => { if (!el) return null; const b = el.getBoundingClientRect(); return { top: Math.round(b.top + scrollY), bottom: Math.round(b.bottom + scrollY), w: Math.round(b.width), h: Math.round(b.height) }; };
+    const kb = [...document.querySelectorAll('button')].filter((b) => /^[A-Z]$/.test(b.textContent.trim()));
+    const kbTop = kb.length ? Math.min(...kb.map((b) => b.getBoundingClientRect().top + scrollY)) : null;
+    const kbBottom = kb.length ? Math.max(...kb.map((b) => b.getBoundingClientRect().bottom + scrollY)) : null;
+    const art = document.querySelector('.pk-wrap img[src*="${k === 'pass' || k === 'passfull' ? 'pass-tray' : k === 'ghost' ? 'ghost-tray' : 'chain-board'}"]');
+    const tray = r(art);
+    const entry = r(document.querySelector('[aria-label="Your word"]'));
+    let ghost = null;
+    if (${k === 'ghost'} && art) { const panel = art.nextElementSibling; const tile = panel && panel.firstElementChild; ghost = { panelH: r(panel).h, tileH: r(tile).h, ratio: +(r(tile).h / r(panel).h).toFixed(3), tiles: panel.children.length }; }
+    return { vh: innerHeight, scrollH: document.documentElement.scrollHeight, tray, entry, kbTop, kbBottom, ghost };
+  })()`);
+}
+if (wanted('fit')) {
+  for (const k of ['pass', 'chain', 'ghost']) {
+    const f = await fitCheck(k);
+    console.log(`fit ${k} ${tag}`, JSON.stringify(f));
+    await shot(`web-${tag}-${k}-fit`);
+    findings.push({ name: `fit.${k}`, ok: true, text: JSON.stringify(f) });
+  }
+}
+
+if (wanted('chain')) {
+  // Word Chain by physical keyboard: STUPENDOUS ... a 15-letter STRAIGHTFORWARD ... and a refused 16-letter attempt. Doug answers after a beat.
+  await go('/dev/pocket?kind=chain');
+  await waitFor("!!document.querySelector('.pk-wrap')", 20000, 'board');
+  await closeHelp('chain');
+  await evaluate(TRACKER);
+  await waitFor("!!document.querySelector('[aria-label=\"Your word\"]')", 20000, 'my turn');
+  const rowInfo = () => evaluate(`(() => { const row = document.querySelector('[aria-label="Your word"]'); if (!row) return null; const t = [...row.children]; const rr = row.getBoundingClientRect(); const col = row.parentElement.getBoundingClientRect(); return { n: t.length, tile: Math.round(t[0].getBoundingClientRect().width), fits: t.every((c) => c.getBoundingClientRect().right <= col.right + 0.5 && c.getBoundingClientRect().left >= col.left - 0.5), rowW: Math.round(rr.width) }; })()`);
+  const typeAndTrace = async (w, label) => {
+    const trace = [];
+    for (const c of w) { await key(c); await sleep(70); trace.push(await rowInfo()); }
+    return trace;
+  };
+  const myTurn = () => waitFor("!!document.querySelector('[aria-label=\"Your word\"]') && !/needs a word|is opening/.test(document.body.innerText)", 15000, 'my turn');
+  const mine = ['STUPENDOUS', 'STRAIGHTFORWARD', 'LIGHTHOUSE', 'YESTERDAY', 'FANTASTIC'];
+  let shrinkOk = true; const sizes = [];
+  for (let i = 0; i < mine.length; i++) {
+    await myTurn();
+    const w = mine[i];
+    const typed = i === 0 ? w : w.slice(1); // the locked first letter is already in the row
+    let trace = [];
+    await step(`chain.type${i + 1}.${w.length}`, 300, async () => { trace = await typeAndTrace(typed, w); });
+    if (i === 1) {
+      // The 16th letter: the row refuses it (stays at 15 tiles, no overflow), then the server rule refuses a 16-letter move.
+      await key('X'); await sleep(150); await key('Y'); await sleep(150);
+      const after = await rowInfo();
+      note('chain.16th-letter-ignored', after.n === 15, `row stays at ${after.n} tiles after typing 2 extra letters`);
+      const txt = await text();
+      const row = await evaluate(`[...document.querySelector('[aria-label="Your word"]').children].map((c) => c.textContent.replace(/Locked/, '')).join('')`);
+      note('chain.15-letter-row', row === 'STRAIGHTFORWARD', `row text ${row}`);
+      await shot(`web-${tag}-chain-15`);
+      const refused = await evaluate(`window.__pocketDemo.move({ kind: 'chain', word: 'STRAIGHTFORWARDS' }).then((r) => JSON.stringify(r))`);
+      note('chain.16-letter-refused', /5 to 15 letters, please/.test(refused), refused);
+    }
+    sizes.push(trace.map((t) => t && t.tile));
+    if (trace.some((t) => t && !t.fits)) shrinkOk = false;
+    if (i === 0) await shot(`web-${tag}-chain-mid`);
+    await step(`chain.submit${i + 1}`, 1500, () => key('Enter'));
+    if (i === 1) await shot(`web-${tag}-chain-after15`);
+  }
+  const shc = await shiftReport();
+  shifts.push({ kind: 'chain-typed', tag, ...shc });
+  console.log(`  shift chain (typed): CLS ${shc.cls}, max board ${shc.max.board.toFixed(1)} entry ${shc.max.entry.toFixed(1)} kb ${shc.max.kb.toFixed(1)} px`);
+  for (const e of shc.events) console.log('    ', JSON.stringify(e));
+  note('chain.entry-row-fits', shrinkOk, `tile px per keystroke ${JSON.stringify(sizes)}`);
+  await waitFor(FINISHED, 20000, 'finish');
+  await sleep(800);
+  await shot(`web-${tag}-chain-done`);
+  note('chain.finished-at-50', !!(await evaluate(FINISHED)), 'game ended: ' + (await evaluate('window.__pd.map((x) => x.s).filter((s) => s.startsWith("done")).join()')));
+}
+
+if (wanted('musical')) {
+  const core = await import('../packages/core/src/musical-cast.ts');
+  const season = SEASON || '';
+  const scale0 = null; void scale0;
+  const scale = core.MUSICAL_SCALE; const ids = core.MUSICAL_CAST_IDS;
+  await go('/' + (season ? `?season=${season}` : ''));
+  await sleep(3000);
+  // The season actually drawn (the calendar may already be in Halloween; ?season=none forces the everyday cast).
+  const live = (await evaluate("(document.querySelector('[data-cast-row]') || {}).dataset ? document.querySelector('[data-cast-row]').dataset.season || '' : ''")) || '';
+  const prefix = live === 'halloween' ? 'note-h-' : 'note-';
+  const tunes = live === 'halloween' ? [...core.MUSICAL_MELODIES, ...core.HALLOWEEN_MELODIES] : [...core.MUSICAL_MELODIES];
+  console.log(`musical: season on the page = '${live || 'none'}', ${tunes.length} tunes, sample prefix ${prefix}`);
+  const centerOf = (id) => evaluate(`(() => { const b = document.querySelector('[data-cast="${id}"]').getBoundingClientRect(); return { x: Math.round(b.left + b.width / 2), y: Math.round(b.top + b.height * 0.6) }; })()`);
+  const touch = async (id, hold = 60) => {
+    const { x, y } = await centerOf(id);
+    if (DESKTOP) {
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
+      await sleep(hold);
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
+    } else {
+      await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+      await sleep(hold);
+      await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    }
+  };
+  // Musical mode on: a long-press on any figure.
+  await step('musical.on', 1500, () => touch('w', 800));
+  if (!(await evaluate("!!document.querySelector('[data-cast-row][data-musical]')"))) {
+    // (dev first load: the press can land before the route has hydrated) once more
+    await sleep(1500);
+    await step('musical.on.retry', 1500, () => touch('w', 800));
+    findings.push({ name: 'musical.on.first-attempt-missed', ok: false, text: 'the first long-press did not turn the cast musical (dev first-load; retried)' });
+  }
+  note('musical.mode-on', !!(await evaluate("!!document.querySelector('[data-cast-row][data-musical]')")), 'long-press turned the cast musical');
+  await shot(`web-${tag}-musical-on${season ? '-' + season : ''}`);
+  const netBefore = await evaluate("performance.getEntriesByType('resource').filter((r) => /achievement/i.test(r.name)).length");
+  for (const tune of tunes) {
+    await evaluate('window.__sfxLog = []; window.__taps = [];');
+    const castIds = tune.notes.map((m) => ids[scale.indexOf(m)]);
+    const name = `musical.${season ? 'h.' : ''}${tune.id}`;
+    await step(name, 600, async () => {
+      for (const id of castIds) { await touch(id); await sleep(240); } // ~300 ms per tap
+      await sleep(core.melodyReplayDuration(tune) + 700);
+    });
+    const taps = await evaluate('window.__taps');
+    const sfx = await evaluate('window.__sfxLog');
+    const lastTap = taps[taps.length - 1];
+    const sung = sfx.filter((e) => e.t > lastTap.t + 200);
+    const expected = core.melodyReplay(tune);
+    const gotIds = sung.map((e) => e.name.replace(prefix, ''));
+    const wantIds = expected.map((e) => e.castId);
+    const seqOk = JSON.stringify(gotIds) === JSON.stringify(wantIds);
+    // Timing: each note vs the last tap + atMs (a setTimeout chain from the last tap's handler).
+    const t0 = sfx.filter((e) => e.t <= lastTap.t + 200).pop()?.t ?? lastTap.t;
+    const devs = sung.map((e, i) => Math.round((e.t - t0) - expected[i]?.atMs));
+    const worst = devs.length ? Math.max(...devs.map(Math.abs)) : 0;
+    const toLast = sung.length === expected.length;
+    note(name, seqOk && toLast && taps.length === castIds.length, `taps ${taps.length}/${castIds.length}; sung ${sung.length}/${expected.length} notes ${seqOk ? 'in order' : 'OUT OF ORDER: ' + gotIds.join(',')} to the last note=${toLast}; timing worst dev ${worst} ms (${worst <= 40 ? 'within' : 'OUTSIDE'} +/-40)`);
+    await sleep(500);
+  }
+  const netAfter = await evaluate("performance.getEntriesByType('resource').filter((r) => /achievement/i.test(r.name)).length");
+  note('musical.guest-unlock', true, `guest: unlockTune() finds no session and returns [] (no achievements request: ${netAfter - netBefore} sent)`);
+  await shot(`web-${tag}-musical-done${season ? '-' + season : ''}`);
+}
+
+writeFileSync(join(SHOTS, `findings-${tag}${SEASON ? '-' + SEASON : ''}.json`), JSON.stringify({ findings, shifts }, null, 1));
+
 const dir = join(dirname(fileURLToPath(import.meta.url)), '..', 'apps', 'web', '.perf');
 mkdirSync(dir, { recursive: true });
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-let md = `# Web perf tour ${stamp}\n\n${BASE} · 390×844 · CPU 4× throttle\n\n`;
+let md = `# Web perf tour ${stamp}\n\n${BASE} · ${VW}×${VH} · CPU ${CPU}× throttle\n\n`;
 md += '| step | s | frames | >25ms | janky % | p90 ms | >50ms | worst ms | long tasks | long ms | layout+style ms | script ms | CLS |\n|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n';
 for (const r of rows) md += `| ${r.name} | ${r.s.toFixed(1)} | ${r.frames} | ${r.o25} | ${r.jank} | ${r.p90} | ${r.o50} | ${r.worst} | ${r.longN} | ${r.longMs} | ${r.layoutMs} | ${r.scriptMs} | ${r.cls} |\n`;
 writeFileSync(join(dir, `perf-tour-${stamp}.md`), md);

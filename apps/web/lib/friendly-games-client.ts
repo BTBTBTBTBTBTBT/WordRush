@@ -100,6 +100,8 @@ export async function startGame(kind: FriendlyKind, friendId: string, stake?: st
 
 /** One game (the screen polls this every 2 s). null = not found / not yours. */
 export async function fetchGame(id: string): Promise<GameView | null | 'error'> {
+  // Dev only (/dev/pocket): a local scripted game, no network. A production build compiles this branch away.
+  if (process.env.NODE_ENV === 'development' && id.startsWith('debug-pocket-')) return (await import('./pocket-demo')).demoFetch();
   try {
     const res = await fetch(`/api/friends/games/${encodeURIComponent(id)}`, { headers: await profileApiHeaders() });
     if (res.status === 404) return null;
@@ -116,6 +118,7 @@ export type MoveOutcome = { ok: true; game: GameView } | { ok: false; error: str
 
 /** Send a move. 400 → the rule's message (shown inline); 409 → refetch and try again. */
 export async function sendMove(id: string, move: FriendlyMove): Promise<MoveOutcome> {
+  if (process.env.NODE_ENV === 'development' && id.startsWith('debug-pocket-')) return (await import('./pocket-demo')).demoMove(move);
   const res = await post(`/api/friends/games/${encodeURIComponent(id)}/move`, { move });
   if (!res) return { ok: false, error: 'Network error. Try again.' };
   const json = await res.json().catch(() => ({}));

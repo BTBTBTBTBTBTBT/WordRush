@@ -74,12 +74,12 @@ export const GHOST_TRAY_H = 307;
 /** The plum panel the fragment's tiles sit in, art pixels. */
 export const GHOST_PANEL = { x: 256, y: 101, w: 822, h: 125 } as const;
 
-/** The tile size for `count` slots (tiles + the next-slot) centered in the panel, px; the gap is 14% of a tile. */
+/** The tile size for `count` slots (tiles + the next-slot) centered in the panel, px; the gap is 14% of a tile; the tile is ~83% of the panel's height (founder 10-13: 80-85%, all three platforms). */
 export function ghostTileSize(width: number, count: number): number {
   const s = width / GHOST_TRAY_W;
   const n = Math.max(1, count);
   const byWidth = (GHOST_PANEL.w * s * 0.96) / (n + 0.14 * (n - 1));
-  return Math.floor(Math.min(GHOST_PANEL.h * s * 0.78, byWidth));
+  return Math.floor(Math.min(GHOST_PANEL.h * s * 0.83, byWidth));
 }
 
 // ── Word Chain: the gold chain frame (art-pocket-chain-board, 1100 x 581) + the staircase ───────────────────────────────────
@@ -92,6 +92,8 @@ export const CHAIN_INTERIOR = { x: 110, y: 206, w: 875, h: 256 } as const;
 export const CHAIN_LINK_ASPECT = 213 / 458;
 
 const CH_PITCH_X = 1.2;   // letters are spaced (founder: "larger and spaced out more so it doesn't look crammed")
+const CH_PITCH_X_LONG = 1.08;  // long words: tighter, so 15 letters still get big tiles
+const CH_LONG_LETTERS = 10;
 const CH_PITCH_Y = 1.55;  // row pitch: the tile plus room for the link
 const CH_MAX_T = 44;
 /** Readable minimums: three words in the staircase, then two in the staircase, then (flush-left) whatever fits. */
@@ -130,30 +132,37 @@ export interface ChainLayout {
  */
 export function chainLayout(lens: number[], width: number, height: number): ChainLayout | null {
   if (lens.length === 0) return null;
+  const n = lens.length;
+  // Long words (founder 10-13): when either of the two newest words is longer than 10 letters the staircase is skipped: the two
+  // rows stack left-aligned across the full interior width (tighter letter pitch) so the tiles stay as large as possible
+  // (>= 17 px for 15 letters at 390 wide). The link still runs from the previous last letter to the new first letter.
+  const long = lens.slice(-2).some((l) => l > CH_LONG_LETTERS);
+  const px = long ? CH_PITCH_X_LONG : CH_PITCH_X;
   const build = (shown: number[], flush: boolean): { t: number; starts: number[] } => {
     // Start offsets in tile units; the word's last letter sits at start + (len - 1) * pitch.
     const starts: number[] = [];
     let wu = 0;
     shown.forEach((len, i) => {
-      const s = i === 0 || flush ? 0 : starts[i - 1] + (shown[i - 1] - 1) * CH_PITCH_X;
-      starts.push(s);
-      wu = Math.max(wu, s + len * CH_PITCH_X - (CH_PITCH_X - 1));
+      const s0 = i === 0 || flush ? 0 : starts[i - 1] + (shown[i - 1] - 1) * px;
+      starts.push(s0);
+      wu = Math.max(wu, s0 + len * px - (px - 1));
     });
     const hu = 1 + CH_PITCH_Y * (shown.length - 1);
     return { t: Math.min(CH_MAX_T, height / hu, width / wu), starts };
   };
-  const n = lens.length;
-  let shown = lens.slice(-Math.min(3, n));
-  let flush = false;
-  let b = build(shown, false);
-  if (shown.length === 3 && b.t < CH_MIN_THREE) { shown = lens.slice(-2); b = build(shown, false); }
-  if (shown.length === 2 && b.t < CH_MIN_STAIR) { flush = true; b = build(shown, true); }
+  let shown = lens.slice(-Math.min(long ? 2 : 3, n));
+  let flush = long && shown.length > 1;
+  let b = build(shown, flush);
+  if (!long) {
+    if (shown.length === 3 && b.t < CH_MIN_THREE) { shown = lens.slice(-2); b = build(shown, false); }
+    if (shown.length === 2 && b.t < CH_MIN_STAIR) { flush = true; b = build(shown, true); }
+  }
   // A lone first word is just one row; its minimum is whatever fits (a 15-letter word at 360 wide).
   const t = b.t;
   const hu = 1 + CH_PITCH_Y * (shown.length - 1);
   let wu = 0;
-  shown.forEach((len, i) => { wu = Math.max(wu, b.starts[i] + len * CH_PITCH_X - (CH_PITCH_X - 1)); });
-  const offX = (width - wu * t) / 2;
+  shown.forEach((len, i) => { wu = Math.max(wu, b.starts[i] + len * px - (px - 1)); });
+  const offX = long ? 0 : (width - wu * t) / 2;
   const offY = (height - hu * t) / 2;
   const rows: ChainRow[] = shown.map((len, i) => ({ index: n - shown.length + i, len, x: offX + b.starts[i] * t, y: offY + i * CH_PITCH_Y * t }));
   const links: ChainLink[] = [];
@@ -161,7 +170,7 @@ export function chainLayout(lens: number[], width: number, height: number): Chai
     const p = rows[i - 1];
     const q = rows[i];
     // From the bottom edge of the previous last letter (12% in) to the top edge of the new first letter (12% in).
-    const ax = p.x + ((p.len - 1) * CH_PITCH_X + 0.5) * t;
+    const ax = p.x + ((p.len - 1) * px + 0.5) * t;
     const ay = p.y + t * 0.88;
     const bx = q.x + 0.5 * t;
     const by = q.y + t * 0.12;
@@ -169,7 +178,7 @@ export function chainLayout(lens: number[], width: number, height: number): Chai
     const dy = by - ay;
     links.push({ cx: (ax + bx) / 2, cy: (ay + by) / 2, length: Math.hypot(dx, dy), deg: (Math.atan2(-dx, dy) * 180) / Math.PI });
   }
-  return { t, pitchX: CH_PITCH_X * t, rows, links, flush };
+  return { t, pitchX: px * t, rows, links, flush };
 }
 
 /**

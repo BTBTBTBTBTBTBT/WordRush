@@ -47,6 +47,9 @@ import { softMix } from '@/lib/soft-surface';
 // A8, L): the Friends wallpaper (light-only), the score card with the game's
 // top bar and soft numbers, every board on the shared game tray, candy actions.
 
+/** The fixed height (px) of the turn slot above every pocket board: the their-turn strip (row 34 + one clock / bounce line) fits it exactly. */
+const TURN_SLOT_H = 58;
+
 /** Floating live reactions currently on screen. */
 interface Floater { id: number; reaction: LiveReaction; mine: boolean; x: number }
 
@@ -64,7 +67,10 @@ function roundCount(g: GameView): number {
 
 export function FriendlyGameScreen({ id }: { id: string }) {
   const router = useRouter();
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user: realUser, profile, loading: authLoading } = useAuth();
+  // Dev only (/dev/pocket): a local scripted game stands in for a signed-in player; a production build compiles this away.
+  const demo = process.env.NODE_ENV === 'development' && id.startsWith('debug-pocket-');
+  const user = realUser ?? (demo ? ({ id: 'debug-pocket-me' } as unknown as typeof realUser) : null);
   const [game, setGame] = useState<GameView | null>(null);
   const [missing, setMissing] = useState(false);
   /** The game could not be read yet (offline / server error) and nothing is on screen: say so (iOS parity), keep polling. */
@@ -85,7 +91,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
 
   // 9b live play (isLive('live_play'); off = today's 2 s poll, no optimistic moves, no presence).
   const { isLive } = useFlags();
-  const liveOn = isLive(LIVE_PLAY_SWITCH);
+  const liveOn = !demo && isLive(LIVE_PLAY_SWITCH);
   const liveRef = useRef(liveOn);
   liveRef.current = liveOn;
   const snapRef = useRef<LiveSnapshot<GameView>>(emptySnapshot<GameView>());
@@ -205,10 +211,10 @@ export function FriendlyGameScreen({ id }: { id: string }) {
 
   // Their presence (the friends digest) for the "live while they're on" line and ring.
   useEffect(() => {
-    if (!user) return;
+    if (!user || demo) return;
     void loadFriends();
     return onFriendsChange(() => setFriendsTick((v) => v + 1));
-  }, [user]);
+  }, [user, demo]);
 
   const onMove = useCallback(async (move: FriendlyMove): Promise<boolean> => {
     if (busyRef.current) return false;
@@ -461,19 +467,23 @@ export function FriendlyGameScreen({ id }: { id: string }) {
         </div>
       </div>
 
-      {error && !keyboardGame && <p className="text-center text-[12.5px] font-bold" role="alert" style={{ color: '#dc2626' }}>{error}</p>}
-
-      {/* YOUR TURN over every pocket board while the move is yours (iOS / Android parity). */}
-      {myMove && <div className="flex justify-center"><YourTurnLabel /></div>}
-
-      {/* 2.8 item 22: their turn = the quiet lobby strip (status line, a live clock under an hour, a keepy tile). */}
-      {active && turn !== null && turn !== 'both' && turn !== me && (
-        <PocketWaitStrip
-          name={them.name}
-          since={game.updatedAt}
-          avatar={<FriendAvatar name={them.name} userId={them.userId} url={them.url} config={them.config} castId={them.castId} frame={them.frame} pro={them.pro} size={34} online={online} />}
-        />
-      )}
+      {/* NO SCREEN SHIFTING (founder 10-13): ONE fixed-height slot above the board holds whatever the turn needs (an error, YOUR TURN,
+          or their-turn lobby strip), so the board never moves when the turn flips or a line appears. It stays when the game ends. */}
+      <div className="pk-turn flex items-center justify-center" style={{ height: TURN_SLOT_H }}>
+        {error && !keyboardGame ? (
+          <p className="text-center text-[12.5px] font-bold" role="alert" style={{ color: '#dc2626' }}>{error}</p>
+        ) : myMove ? (
+          // YOUR TURN over every pocket board while the move is yours (iOS / Android parity).
+          <YourTurnLabel />
+        ) : active && turn !== null && turn !== 'both' && turn !== me ? (
+          // 2.8 item 22: their turn = the quiet lobby strip (status line, a live clock under an hour, a keepy tile).
+          <PocketWaitStrip
+            name={them.name}
+            since={game.updatedAt}
+            avatar={<FriendAvatar name={them.name} userId={them.userId} url={them.url} config={them.config} castId={them.castId} frame={them.frame} pro={them.pro} size={34} online={online} />}
+          />
+        ) : null}
+      </div>
 
       <div ref={boardRef} className="pk-wrap relative">
         {game.state.kind === 'rps' && <RpsBoard state={game.state} {...boardProps} />}
@@ -561,7 +571,7 @@ const LIGHT_CARD_BASE = { ['--color-card-base' as string]: '#ffffff' } as React.
 function Shell({ children, desk = false }: { children: React.ReactNode; desk?: boolean }) {
   return (
     <PageBackground tint="friends" scheme="light" className="min-h-screen overflow-y-auto" style={LIGHT_CARD_BASE}>
-      <div className={`relative max-w-md mx-auto px-4 pt-2 pb-10 space-y-3.5${desk ? ' pk-shell' : ''}`}>{children}</div>
+      <div className={`relative max-w-md mx-auto px-4 pt-2 pb-10 space-y-3.5 pk-caps${desk ? ' pk-shell' : ''}`}>{children}</div>
     </PageBackground>
   );
 }

@@ -40,6 +40,14 @@ const EMPTY = { background: softMix('#7c3aed', 0.08), border: `1.5px solid ${sof
 /** A key / pick card's soft bottom lip. */
 const LIP = `inset 0 -2.5px 0 ${softMix('#7c3aed', 0.3)}`;
 
+/**
+ * NO SCREEN SHIFTING (founder 10-13): the error / hint line above a keyboard is a FIXED-height slot (always there, empty
+ * when there is nothing to say), so a message appearing never pushes the keyboard down.
+ */
+function HintSlot({ text }: { text: string | null | undefined }) {
+  return <p className="text-[12px] font-bold text-center w-full" role="alert" style={{ color: '#dc2626', height: 16, lineHeight: '16px' }}>{text ?? ''}</p>;
+}
+
 export interface Player {
   name: string; url: string | null; emoji: string | null;
   /** Profile accent for the letter tile (ART_SPEC §20), when known. */
@@ -434,8 +442,12 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
               )}
               {countdown && beat >= 0 && (
                 // The words pop in the middle slot (over the star); SHOOT! is gold and bigger.
-                <div key={beat} className="absolute pointer-events-none rps-word" style={{ left: '50%', top: handCy, width: 92, marginLeft: -46, marginTop: -14 }} aria-hidden="true">
-                  <BubbleOneLine text={['ROCK...', 'PAPER...', 'SCISSORS...', 'SHOOT!'][Math.min(beat, 3)]} palette={beat === 3 ? 'leaderboard' : 'friends'} size={beat === 3 ? 20 : 15} minScale={0.5} />
+                <div key={beat} className="absolute pointer-events-none rps-word" style={{ left: '50%', top: handCy, width: 120, marginLeft: -60, marginTop: -14 }} aria-hidden="true">
+                  {beat === 3
+                    ? <BubbleOneLine text="SHOOT!" palette="leaderboard" size={20} minScale={0.5} />
+                    // Founder 10-13: the small beat words are plain caps (the Home tile-title style); only SHOOT! (20 px) stays bubble lettering.
+                    : <span role="img" aria-label={['ROCK', 'PAPER', 'SCISSORS'][beat]} className="flex items-center justify-center font-black uppercase"
+                        style={{ height: 19.5, fontSize: 14, letterSpacing: '0.05em', whiteSpace: 'nowrap', color: '#ffffff', textShadow: '0 1px 3px rgba(20,8,40,0.9), 0 0 8px rgba(20,8,40,0.7)' }}>{['ROCK...', 'PAPER...', 'SCISSORS...'][beat]}</span>}
                 </div>
               )}
             </>
@@ -451,18 +463,21 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
           )}
         </div>
       </div>
-        <div className="w-full flex justify-between px-6 text-[10px] font-black uppercase" style={{ letterSpacing: 0.8, color: FR.label }}>
+        <div className="pk-cap w-full flex justify-between px-6 text-[10px] font-black uppercase" style={{ letterSpacing: 0.8, color: FR.label }}>
           <span style={{ color: reveal && flippedOrStatic && last!.winner === me ? TILE.you : undefined }}>YOU{reveal && flippedOrStatic && last!.winner === me ? ' · WON' : ''}</span>
           <span className="truncate" style={{ maxWidth: 120, color: reveal && flippedOrStatic && last!.winner === theirSide ? TILE.them : undefined }}>{them.name}{reveal && flippedOrStatic && last!.winner === theirSide ? ' · WON' : ''}</span>
         </div>
-        {!reveal && active && (theirPick
-          ? <span className="text-[11px] font-black" style={{ color: FR.online, letterSpacing: 0.6 }}>✓ {THEM} PICKED</span>
-          : <span className="text-[11px] font-black" style={{ color: FR.label, letterSpacing: 0.6 }}>{THEM} IS PICKING</span>)}
-        {!reveal && last && (
-          <span className="flex items-center gap-1 text-[10.5px] font-bold" style={{ color: FR.label }}>
-            Last round: <Art name={last[me]} size={18} /> vs <Art name={last[theirSide]} size={18} /> · {lastLine}
-          </span>
-        )}
+        {/* NO SCREEN SHIFTING: both status lines live in ONE fixed-height slot (empty lines keep their room). */}
+        <div className="w-full flex flex-col items-center justify-center gap-1" style={{ height: 40 }}>
+          {!reveal && active && (theirPick
+            ? <span className="pk-cap text-[11px] font-black" style={{ color: FR.online, letterSpacing: 0.6, lineHeight: '16px' }}>✓ {THEM} PICKED</span>
+            : <span className="pk-cap text-[11px] font-black" style={{ color: FR.label, letterSpacing: 0.6, lineHeight: '16px' }}>{THEM} IS PICKING</span>)}
+          {!reveal && last && (
+            <span className="pk-cap flex items-center gap-1 text-[10.5px] font-bold" style={{ color: FR.label, height: 18 }}>
+              Last round: <Art name={last[me]} size={18} /> vs <Art name={last[theirSide]} size={18} /> · {lastLine}
+            </span>
+          )}
+        </div>
 
       {active && (
         <>
@@ -600,7 +615,7 @@ export function TttBoard({ state, me, them, active, busy, onMove }: BoardProps<T
         )}
       </div>
       </div>
-      <div className="flex items-center gap-4 text-[11px] font-black" style={{ letterSpacing: 0.8 }}>
+      <div className="pk-cap flex items-center gap-4 text-[11px] font-black" style={{ letterSpacing: 0.8 }}>
         <span className="flex items-center gap-1.5" style={{ color: TILE.you }}>
           <span className="w-2.5 h-2.5 rounded-full" style={{ background: TILE.you }} /> YOU · X
         </span>
@@ -646,6 +661,8 @@ export function CoinBoard({ state, me, them, active, busy, revealKey, onMove }: 
       {active && (
         <>
           <div className="w-full"><SectionLabel>{myCall ? 'Your call' : `${THEM} calls`}</SectionLabel></div>
+          {/* NO SCREEN SHIFTING: the call buttons and the "they call" line share ONE fixed-height slot. */}
+          <div className="w-full flex items-center" style={{ height: 42 }}>
           {myCall ? (
             <div className="w-full grid grid-cols-2 gap-2.5">
               {(['heads', 'tails'] as CoinFace[]).map((c) => (
@@ -662,8 +679,9 @@ export function CoinBoard({ state, me, them, active, busy, revealKey, onMove }: 
               ))}
             </div>
           ) : (
-            <p className="text-[12px] font-bold" style={{ color: FR.label }}>{them.name} calls this one. You&apos;ll see it land live.</p>
+            <p className="text-[12px] font-bold w-full text-center" style={{ color: FR.label }}>{them.name} calls this one. You&apos;ll see it land live.</p>
           )}
+          </div>
         </>
       )}
 
@@ -746,7 +764,7 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer, 
       </div>
       </div>
 
-      {(hint || error) && <p className="text-[12px] font-bold" role="alert" style={{ color: '#dc2626' }}>{hint ?? error}</p>}
+      <HintSlot text={hint ?? error} />
       {answer && (
         <p className="text-[12px] font-black uppercase" style={{ color: FR.ink, letterSpacing: 0.8 }}>
           The word was <span style={{ color: TILE.you, letterSpacing: 2 }}>{answer}</span>
@@ -754,7 +772,7 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer, 
       )}
       {active && (
         <>
-          <p className="text-[12px] font-bold" style={{ color: FR.label }}>
+          <p className="text-[12px] font-bold text-center" style={{ color: FR.label, minHeight: 16 }}>
             {myTurn ? 'Your guess. Then it passes to ' + them.name + '.' : `${them.name} is guessing. The board fills in live.`}
           </p>
           <div className="w-full" style={{ opacity: myTurn ? 1 : 0.55 }}>
@@ -858,21 +876,6 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, e
 
   return (
     <div className="pk-root flex flex-col items-center gap-3">
-      {card && (
-        <div
-          key={revealKey}
-          className="w-full flex flex-col items-center gap-0.5 px-3 py-2.5 text-center"
-          style={{ background: FR.soft, borderRadius: 14, animation: revealKey ? 'friends-flip 0.45s ease-out both' : undefined }}
-        >
-          <span className="text-[13px] font-black" style={{ color: FR.ink }}>
-            <span style={{ letterSpacing: 2 }}>{card.letters}</span> — {card.text}
-          </span>
-          <span className="text-[10.5px] font-black uppercase" style={{ color: FR.mid, letterSpacing: 0.8 }}>
-            Round {state.rounds.length} to {card.youLost ? them.name : 'you'}
-          </span>
-        </div>
-      )}
-
       <div ref={boxRef} className="pk-board w-full flex justify-center">
       {/* The ghost tray (art-pocket-ghost-tray): the fragment's tiles sit centered in its plum panel. */}
       <div className="relative" style={{ width: GW, height: GH }}>
@@ -905,20 +908,40 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, e
       </div>
       </div>
 
-      {(hint || error) && <p className="text-[12px] font-bold" role="alert" style={{ color: '#dc2626' }}>{hint ?? error}</p>}
+      <HintSlot text={hint ?? error} />
 
-      {active && (
-        <>
-          <p className="text-[12px] font-bold text-center" style={{ color: FR.label }}>
+      {/* ONE fixed two-line slot: the last round's result card (it shows until the first letter of the next round), else the instruction. */}
+      <div className="w-full flex items-center justify-center" style={{ height: 40 }}>
+        {card ? (
+          <div
+            key={revealKey}
+            className="w-full h-full flex flex-col items-center justify-center text-center"
+            style={{ background: FR.soft, borderRadius: 12, animation: revealKey ? 'friends-flip 0.45s ease-out both' : undefined }}
+          >
+            <span className="text-[12.5px] font-black leading-tight" style={{ color: FR.ink }}>
+              <span style={{ letterSpacing: 2 }}>{card.letters}</span> — {card.text}
+            </span>
+            <span className="text-[10px] font-black uppercase leading-tight" style={{ color: FR.mid, letterSpacing: 0.8 }}>
+              Round {state.rounds.length} to {card.youLost ? them.name : 'you'}
+            </span>
+          </div>
+        ) : active ? (
+          <p className="text-[12px] font-bold text-center leading-tight" style={{ color: FR.label }}>
             {myTurn
               ? state.fragment ? 'Your letter. Pick one, then add it.' : 'You start this round. Pick any letter.'
               : `${them.name} is adding a letter. It lands here live.`}
           </p>
-          {myTurn && (
-            <CastButton screen="pink" color="pink" block icon={pick ? 'plus' : undefined} onClick={() => void send()} disabled={!pick || busy}>
+        ) : null}
+      </div>
+
+      {active && (
+        <>
+          {/* Kept in the layout (just hidden) while it is their letter, so the keys never move. */}
+          <div className="w-full" style={{ visibility: myTurn ? 'visible' : 'hidden' }} aria-hidden={!myTurn}>
+            <CastButton screen="pink" color="pink" block icon={pick ? 'plus' : undefined} onClick={() => void send()} disabled={!myTurn || !pick || busy} tabIndex={myTurn ? 0 : -1}>
               {pick ? `ADD ${pick}` : 'PICK A LETTER'}
             </CastButton>
-          )}
+          </div>
           <LetterKeys onKey={onKey} selected={pick} disabled={!myTurn} />
         </>
       )}
@@ -976,7 +999,7 @@ export function ChainBoard({ state, me, them, active, busy, onMove, error }: Boa
   const BW = boxW;
   const BH = Math.round((BW * CHAIN_BOARD_H) / CHAIN_BOARD_W);
   const bsc = BW / CHAIN_BOARD_W;
-  const inX = CHAIN_INTERIOR.w * bsc * 0.03;
+  const inX = CHAIN_INTERIOR.w * bsc * 0.015;
   const inY = CHAIN_INTERIOR.h * bsc * 0.04;
   const iw = CHAIN_INTERIOR.w * bsc - 2 * inX;
   const ih = CHAIN_INTERIOR.h * bsc - 2 * inY;
@@ -989,7 +1012,7 @@ export function ChainBoard({ state, me, them, active, busy, onMove, error }: Boa
   const igap = Math.max(2, Math.round(itile * 0.12));
 
   return (
-    <div className="pk-root flex flex-col items-center gap-3">
+    <div className="pk-root flex flex-col items-center gap-2">
       <div ref={boxRef} className="pk-board w-full flex justify-center">
       <div className="relative" style={{ width: BW, height: BH }}>
         <BoardArt name="art-pocket-chain-board" width={BW} />
@@ -1030,16 +1053,14 @@ export function ChainBoard({ state, me, them, active, busy, onMove, error }: Boa
         </div>
       </div>
       </div>
-      {newest && (
-        <p className="text-[11.5px] font-black uppercase text-center" style={{ color: FR.label, letterSpacing: 0.6 }}>
-          {newest.word} · +{newest.points} · {newest.by === me ? 'you' : them.name}
-        </p>
-      )}
+      <p className="text-[11.5px] font-black uppercase text-center w-full" style={{ color: FR.label, letterSpacing: 0.6, height: 16, lineHeight: '16px' }}>
+        {newest ? `${newest.word} · +${newest.points} · ${newest.by === me ? 'you' : them.name}` : ''}
+      </p>
 
       {/* Measured always (hidden until it is your word) so the row fits its own column: the narrower side column on desktop. */}
-      <div ref={rowRef} className="w-full" style={{ display: active && myTurn ? 'block' : 'none' }}>
+      <div ref={rowRef} className="w-full flex items-center" style={{ height: INPUT_TILE, visibility: active && myTurn ? 'visible' : 'hidden' }}>
       {active && myTurn && (
-        <div className="flex justify-center w-full" style={{ gap: igap }} aria-label="Your word">
+        <div className="flex justify-center items-center w-full" style={{ gap: igap, height: INPUT_TILE }} aria-label="Your word">
           {Array.from({ length: slots }, (_, i) => {
             const ch = word[i] ?? '';
             const isLocked = !!locked && i === 0;
@@ -1066,12 +1087,12 @@ export function ChainBoard({ state, me, them, active, busy, onMove, error }: Boa
       )}
       </div>
 
-      {(hint || error) && <p className="text-[12px] font-bold" role="alert" style={{ color: '#dc2626' }}>{hint ?? error}</p>}
-
       {active && (
         <>
-          <p className="text-[12px] font-bold text-center" style={{ color: FR.label }}>
-            {myTurn
+          {/* ONE fixed two-line slot: a refused word / error (red) replaces the instruction while it shows, so nothing moves. */}
+          <p className="text-[12px] font-bold text-center leading-tight w-full" role={hint ?? error ? 'alert' : undefined}
+            style={{ color: hint ?? error ? '#dc2626' : FR.label, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {hint ?? error ? (hint ?? error) : myTurn
               ? locked ? `Your word. It starts with ${locked}.` : 'Your word. Any word opens the chain.'
               : locked ? `${them.name} needs a word starting with ${locked}. It lands here live.` : `${them.name} is opening the chain. It lands here live.`}
           </p>

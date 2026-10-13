@@ -51,7 +51,7 @@ export function FrCard({ accent, bar, children, className = '', style, barHeight
 export function SectionLabel({ children, right, color = FR.label }: { children: React.ReactNode; right?: React.ReactNode; color?: string }) {
   return (
     <div className="flex items-center justify-between gap-2 pt-1">
-      <span className="text-[11px] font-black uppercase flex items-center gap-1.5" style={{ letterSpacing: 1.2, color }}>{children}</span>
+      <span className="pk-cap text-[11px] font-black uppercase flex items-center gap-1.5" style={{ letterSpacing: 1.2, color }}>{children}</span>
       {right}
     </div>
   );

@@ -30,7 +30,7 @@ function Art({ name, width, className, style }: { name: ArtName; width: number; 
 }
 
 /** Tap to bounce a letter tile; it falls if you wait too long. No stakes, nothing saved. */
-export function KeepyUppy({ letter = 'W' }: { letter?: string }) {
+export function KeepyUppy({ letter = 'W', compact = false }: { letter?: string; compact?: boolean }) {
   const tileRef = useRef<HTMLButtonElement>(null);
   const animRef = useRef<Animation | null>(null);
   const [count, setCount] = useState(0);
@@ -64,11 +64,11 @@ export function KeepyUppy({ letter = 'W' }: { letter?: string }) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-1.5 select-none">
-      <div style={{ height: 76 }} className="flex items-end">
-        <button data-tile type="button" ref={tileRef} onClick={bounce} aria-label="Bounce the tile" className="block active:scale-95" style={{ width: 52, height: 52, position: 'relative' }}>
-          <Art name="art-pocket-tile-purple" width={52} />
-          <span className="absolute inset-0 flex items-center justify-center font-black text-white" style={{ fontSize: 24, textShadow: '0 1px 2px rgba(60,20,120,0.5)' }}>{letter}</span>
+    <div className={`flex flex-col items-center select-none ${compact ? 'gap-1' : 'gap-1.5'}`}>
+      <div style={{ height: compact ? 40 : 76 }} className="flex items-end">
+        <button data-tile type="button" ref={tileRef} onClick={bounce} aria-label="Bounce the tile" className="block active:scale-95" style={{ width: compact ? 40 : 52, height: compact ? 40 : 52, position: 'relative' }}>
+          <Art name="art-pocket-tile-purple" width={compact ? 40 : 52} />
+          <span className="absolute inset-0 flex items-center justify-center font-black text-white" style={{ fontSize: compact ? 18 : 24, textShadow: '0 1px 2px rgba(60,20,120,0.5)' }}>{letter}</span>
         </button>
       </div>
       <p className="text-[11.5px] font-extrabold" style={{ color: VS.label }} aria-live="off">{keepyLine(count, best)}</p>
@@ -165,19 +165,23 @@ export function PocketWaitStrip({ name, since, avatar }: { name: string; since: 
   }, []);
   const waited = since ? waitedSeconds(Date.parse(since), now) : 0;
   const line = waitingStatusLine({ kind: 'pocket', name });
+  // The strip lives in a fixed-height slot above the board (no screen shifting), so the keepy game REPLACES the strip in place.
+  if (play) return <div role="status" aria-label={line}><KeepyUppy compact /></div>;
   return (
-    <div className="flex flex-col items-center gap-1.5" role="status" aria-live="polite" aria-label={line}>
+    <div className="flex flex-col items-center gap-1" role="status" aria-live="polite" aria-label={line}>
       <div className="flex items-center gap-3 w-full justify-center">
         <Art name="art-lobby-seat-medallion" width={34} style={{ opacity: 0.9 }} />
         <div className="min-w-0 flex-1" style={{ maxWidth: 240 }}>
-          <BubbleText text={line} palette="friends" maxSize={22} minSize={16} level={2} className="w-full" />
+          {/* Founder 10-13: small captions are plain caps (the Home tile-title style), never bubble lettering; a fixed one-line slot. */}
+          <p role="heading" aria-level={2} className="w-full text-center text-[14px] font-black uppercase leading-none truncate" style={{ height: 34, lineHeight: '34px', letterSpacing: '0.06em', color: 'var(--fr-pink-ink, #831843)' }}>{line}</p>
         </div>
         {avatar}
       </div>
-      {since && waited < 3600 && <p className="text-[12px] font-black tabular-nums" style={{ color: VS.label }}>{waitClock(waited)}</p>}
-      {play ? <KeepyUppy /> : (
+      {/* The clock and the keepy link share ONE line. */}
+      <div className="flex items-center justify-center gap-2" style={{ height: 16 }}>
+        {since && waited < 3600 && <span className="text-[12px] font-black tabular-nums" style={{ color: VS.label }}>{waitClock(waited)}</span>}
         <button data-squish type="button" onClick={() => setPlay(true)} className="text-[11px] font-extrabold underline" style={{ color: VS.label }}>Bounce a tile while you wait</button>
-      )}
+      </div>
     </div>
   );
 }

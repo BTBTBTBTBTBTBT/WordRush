@@ -22,8 +22,8 @@ import { SOFT_INK, alphaHex, darken, softMix } from '@/lib/soft-surface';
 
 const PIECE_H = 46;
 
-// Founder 10-13: a one-piece picture is a whole board (ring, # grid, trays): shown big (up to 220 x 64), aspect kept.
-const BOARD_H = 64;
+// Founder 10-13: a one-piece picture is a whole board (ring, # grid, trays): shown big (up to 220 x 96), aspect kept.
+const BOARD_H = 96;
 const BOARD_W = 220;
 
 function Piece({ name, board = false }: { name: string; board?: boolean }) {
@@ -57,7 +57,7 @@ export function PocketHelpCard({ kind, onClose, firstPlay = false }: { kind: Fri
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 animate-fade-in" style={{ backgroundColor: 'rgba(30, 15, 60, 0.55)' }} onClick={onClose}>
-      <div ref={cardRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative max-w-sm w-full soft-pop" onClick={(e) => e.stopPropagation()}>
+      <div ref={cardRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative max-w-sm w-full soft-pop help-pop" onClick={(e) => e.stopPropagation()}>
         <div
           className="relative overflow-hidden flex flex-col"
           style={{
