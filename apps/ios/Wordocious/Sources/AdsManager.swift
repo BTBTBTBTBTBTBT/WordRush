@@ -87,12 +87,25 @@ enum AdsConfig {
     /// live + a build that may request + region allowed + not a listed test
     /// device + not Pro + not an admin/tester account — §228).
     @MainActor static var active: Bool {
-        configured && flagLive && requestsAds
+        if previewActive { return ConsentGate.decision == .allowed }
+        return configured && flagLive && requestsAds
             && ConsentGate.decision == .allowed
             && !isLocalTestDevice
             && !AuthService.shared.isProActive
             && !AuthService.shared.isAdsExempt
     }
+
+    /// Settings → Admin → Ads → "Preview ads in games" (founder 10-13). Lets a phone on
+    /// `testDeviceIDFAs` run the REAL game-start ad flow — ignoring the "ads" flag, Pro and the
+    /// admin exemption — so the founder can see it before launch. Safe because those phones are
+    /// also registered in LevelPlay → Test devices (locked to ironSource test ads): nothing live is
+    /// ever requested. Any other phone ignores the switch; DEBUG builds still never request.
+    static let previewDefaultsKey = "ads-preview-in-games"
+    static var previewSwitch: Bool {
+        get { UserDefaults.standard.bool(forKey: previewDefaultsKey) }
+        set { UserDefaults.standard.set(newValue, forKey: previewDefaultsKey) }
+    }
+    static var previewActive: Bool { configured && requestsAds && isLocalTestDevice && previewSwitch }
 }
 
 /// Owns the LevelPlay SDK lifecycle and the game-start interstitial.
@@ -139,10 +152,14 @@ final class AdsManager: NSObject, ObservableObject {
     /// Admin/tester accounts never initialize through here — the only way they
     /// start the SDK is the explicit Test Suite tap (`launchTestSuite`).
     func start() {
-        guard AdsConfig.configured, AdsConfig.flagLive, AdsConfig.requestsAds, !started else { return }
+        guard AdsConfig.configured, AdsConfig.requestsAds, !started else { return }
         guard ConsentGate.decision == .allowed else { return }
-        guard !AdsConfig.isLocalTestDevice else { return }
-        guard !AuthService.shared.isAdsExempt else { return }
+        // Preview (a listed test device, test ads only) skips the flag / test-device / exempt gates.
+        if !AdsConfig.previewActive {
+            guard AdsConfig.flagLive else { return }
+            guard !AdsConfig.isLocalTestDevice else { return }
+            guard !AuthService.shared.isAdsExempt else { return }
+        }
         started = true
 
         // Regulation defaults, set before initialization as the SDK docs
@@ -359,6 +376,7 @@ extension AdsConfig {
             + " \u{00B7} region \(ConsentGate.decision == .allowed ? "allowed" : "blocked")"
             + " \u{00B7} exempt: \(exempt)"
             + " \u{00B7} test device \(isLocalTestDevice ? "yes" : "no")"
+            + (previewActive ? " \u{00B7} PREVIEW (test ads)" : "")
             + (requestsAds ? "" : " \u{00B7} DEBUG build (no requests)")
             + " \u{00B7} \(active ? "ADS ACTIVE" : "ads inactive")"
     }
@@ -372,6 +390,7 @@ struct AdsAdminSection: View {
     @State private var copied = false
     @State private var notice: String?
     @State private var launching = false
+    @State private var preview = AdsConfig.previewSwitch
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -403,6 +422,22 @@ struct AdsAdminSection: View {
                     .buttonStyle(QuietButtonStyle(size: .small, fullWidth: false))
                     .disabled(launching)
             }
+            Toggle(isOn: Binding(get: { preview }, set: { on in
+                preview = on
+                AdsConfig.previewSwitch = on
+                if on {
+                    if AdsConfig.isLocalTestDevice { AdsManager.shared.start() }
+                    else { notice = "This phone isn\u{2019}t on the ads test list, so the preview stays off here." }
+                }
+            })) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Preview ads in games").font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
+                    Text("Shows the real game-start ad on this phone \u{2014} test ads only, test-list phones only. Takes effect at the next game (or relaunch if ads already started off).")
+                        .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .tint(Color(hex: 0x7C3AED))
         }
         .padding(.vertical, 4)
         .familyNotice("Ads", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } }),

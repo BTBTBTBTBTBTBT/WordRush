@@ -777,8 +777,23 @@ private fun AdsAdminRows() {
             com.wordocious.app.data.AdsManager.launchTestSuite(act) { err -> note = err ?: "Test suite opened" }
         })
     }
+    var preview by remember { mutableStateOf(com.wordocious.app.data.AdsManager.previewActive) }
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Preview ads in games", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
+            Text("Shows the real game-start ad on this phone: test ads only, test-list phones only. Takes effect at the next game (or relaunch).",
+                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        }
+        androidx.compose.material3.Switch(checked = preview, onCheckedChange = { on ->
+            val ok = com.wordocious.app.data.AdsManager.setPreview(on, id?.id)
+            preview = ok
+            if (on && !ok) note = "This phone isn't on the ads test list, so the preview stays off here."
+            if (ok) (ctx as? android.app.Activity)?.let { com.wordocious.app.data.AdsManager.start(it) }
+        })
+    }
     // profile?.role only subscribes this status line to the profile (exempt flips when it lands).
-    val status = remember(flags, profile?.role, profile?.isAdmin, id?.id) {
+    val status = remember(flags, profile?.role, profile?.isAdmin, id?.id, preview) {
         com.wordocious.app.data.AdsManager.statusLine(ctx, id?.id, flags)
     }
     Text(status, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,

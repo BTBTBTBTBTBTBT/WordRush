@@ -98,6 +98,26 @@ object AdsManager {
     fun isTestDevice(gaid: String?): Boolean =
         gaid != null && TEST_DEVICE_GAIDS.any { it.equals(gaid, ignoreCase = true) }
 
+    /**
+     * Settings → Admin → Ads → "Preview ads in games" (founder 10-13, iOS parity): lets a phone on
+     * [TEST_DEVICE_GAIDS] run the REAL game-start ad flow — ignoring the `ads` flag, Pro and the
+     * admin exemption — to see it before launch. Safe because those phones are also registered in
+     * LevelPlay → Test devices (test ads only). The GAID read is async, so turning the switch on
+     * stores the GAID it verified; any other phone (or a cleared ID) leaves the preview off.
+     */
+    private const val PREVIEW_KEY = "ads-preview-in-games"
+
+    /** Turns the preview on for [gaid] when it is a listed test device; returns whether it took. */
+    fun setPreview(on: Boolean, gaid: String?): Boolean {
+        val ok = on && isTestDevice(gaid)
+        com.wordocious.app.data.SettingsPref.set(PREVIEW_KEY, if (ok) gaid.orEmpty() else "")
+        return ok
+    }
+
+    val previewActive: Boolean
+        get() = configured && requestsAds &&
+            com.wordocious.app.data.SettingsPref.get(PREVIEW_KEY, "").let { it.isNotEmpty() && isTestDevice(it) }
+
     /** Set by [start]: true when the device region requires consent we cannot yet collect. */
     private var regionBlocked = false
 
@@ -107,7 +127,7 @@ object AdsManager {
      * Pro + not an admin/tester account — §228) — web AdGate gate.
      */
     val active: Boolean
-        get() = configured && flagLive() && requestsAds && !regionBlocked &&
+        get() = if (previewActive) !regionBlocked else configured && flagLive() && requestsAds && !regionBlocked &&
             !AuthService.isProActive && !AuthService.isAdsExempt
 
     private var started = false
@@ -137,7 +157,7 @@ object AdsManager {
      */
     fun start(activity: Activity) {
         if (!configured || !requestsAds || started) return
-        if (!flagLive() || AuthService.isAdsExempt) return
+        if (!previewActive && (!flagLive() || AuthService.isAdsExempt)) return
         val appContext = activity.applicationContext
         regionBlocked = ConsentGate.blocksAds(appContext)
         if (regionBlocked) return
@@ -150,7 +170,7 @@ object AdsManager {
         // Re-check at every (re)try: the kill switch must stop a backoff loop too. A pending admin
         // test-suite request is an explicit tap, so it proceeds past the flag (but never past
         // configured / release-build / region — see launchTestSuite).
-        if (suiteCallback == null && !flagLive()) { started = false; return }
+        if (suiteCallback == null && !flagLive() && !previewActive) { started = false; return }
         initInFlight = true
         runCatching {
             // No CMP yet, so the most conservative flags everywhere we do
@@ -261,7 +281,7 @@ object AdsManager {
         return "Configured ${yn(configured)} · Flag live ${yn(flagLive(flags))} · " +
             "Region allowed ${yn(!ConsentGate.blocksAds(context.applicationContext))} · " +
             "Exempt ${yn(AuthService.isAdsExempt)} · Test device ${yn(isTestDevice(gaid))} · " +
-            "Release build ${yn(requestsAds)}"
+            "Release build ${yn(requestsAds)}" + (if (previewActive) " · PREVIEW (test ads)" else "")
     }
 
     /** Exponential backoff, capped at 64 s: 2, 4, 8, 16, 32, 64, 64, ... */
@@ -296,7 +316,8 @@ object AdsManager {
      */
     private fun preload() {
         // Exempt (admin / tester) devices never load live inventory, even when an admin opened the SDK for the suite.
-        if (!configured || !initialized || AuthService.isAdsExempt || !flagLive()) return
+        if (!configured || !initialized) return
+        if (!previewActive && (AuthService.isAdsExempt || !flagLive())) return
         runCatching {
             if (interstitial == null) {
                 interstitial = LevelPlayInterstitialAd(INTERSTITIAL_AD_UNIT).apply {
@@ -313,7 +334,7 @@ object AdsManager {
         /** Exponential backoff, capped at 64 s, per the documented retry pattern. */
         override fun onAdLoadFailed(error: LevelPlayAdError) {
             loadRetryAttempt += 1
-            mainHandler.postDelayed({ if (flagLive() && !AuthService.isAdsExempt) interstitial?.loadAd() }, backoffMs(loadRetryAttempt))
+            mainHandler.postDelayed({ if (previewActive || (flagLive() && !AuthService.isAdsExempt)) interstitial?.loadAd() }, backoffMs(loadRetryAttempt))
         }
 
         override fun onAdDisplayed(adInfo: LevelPlayAdInfo) {}
