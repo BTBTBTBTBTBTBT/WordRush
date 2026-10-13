@@ -132,7 +132,11 @@ async function fetchAppleSubscriptions(): Promise<
       error: 'ASC_PRIVATE_KEY is not a readable PEM — paste the whole AuthKey_<KEY_ID>.p8 including the BEGIN/END lines (\\n-escaped newlines and surrounding quotes are fine).',
     };
   }
-  const vendor = process.env.ASC_VENDOR_NUMBER!.trim();
+  // ASC_VENDOR_NUMBER may list several ("94560860,94202141"): the team was converted from an individual to
+  // Showloud, LLC, and Sales and Trends can sit under either vendor. Apple answers a wrong one with
+  // 400 "Invalid vendor number specified" — move to the next (founder 10-13).
+  const vendors = process.env.ASC_VENDOR_NUMBER!.split(',').map((v) => v.trim()).filter(Boolean);
+  let vi = 0;
   try {
     // Daily reports appear with ~1 day lag; walk back a few days to the most
     // recent one that exists (404 = not published yet / no activity).
@@ -147,7 +151,7 @@ async function fetchAppleSubscriptions(): Promise<
         'filter[reportDate]': reportDate,
         'filter[reportSubType]': 'SUMMARY',
         'filter[reportType]': 'SUBSCRIPTION',
-        'filter[vendorNumber]': vendor,
+        'filter[vendorNumber]': vendors[vi],
         'filter[version]': version,
       });
       const r = await fetch(`https://api.appstoreconnect.apple.com/v1/salesReports?${qs}`, {
@@ -158,7 +162,8 @@ async function fetchAppleSubscriptions(): Promise<
         const detail = await appleErrorDetail(r);
         const latest = detail.match(/latest version for this report is (\d+_\d+)/i)?.[1];
         if (r.status === 400 && latest && latest !== version) { version = latest; daysAgo--; continue; }
-        return { connected: true as const, error: `Apple salesReports: HTTP ${r.status}${detail ? ` — ${detail}` : ''}` };
+        if (r.status === 400 && /invalid vendor number/i.test(detail) && vi < vendors.length - 1) { vi++; daysAgo--; continue; }
+        return { connected: true as const, error: `Apple salesReports (vendor ${vendors[vi]}): HTTP ${r.status}${detail ? ` — ${detail}` : ''}` };
       }
       const tsv = gunzipSync(Buffer.from(await r.arrayBuffer())).toString('utf8');
       return { connected: true as const, reportDate, ...parseAppleSubscriptionReport(tsv) };
