@@ -60,11 +60,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AdsManager
@@ -662,12 +659,15 @@ private fun HubBoard(session: HubSession) {
 private fun HubEntryLine(session: HubSession) {
     Box(Modifier.fillMaxWidth().heightIn(min = HUB_ENTRY_H).feedbackAnchor(), contentAlignment = Alignment.Center) {
         if (session.typing.isEmpty()) Text("Tap letters or type", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-        else Text(
-            buildAnnotatedString {
-                for (ch in session.typing) withStyle(SpanStyle(color = if (ch == session.centre) Color(0xFFD97706) else WTheme.text)) { append(ch) }
-            },
-            fontSize = 28.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, letterSpacing = 1.sp, maxLines = 1, softWrap = false,
-        )
+        // Doug 10-13: one letter per Text. As one two-color text, an entry holding the gold center letter
+        // followed by a T ("CRAFT") stopped repainting on Android: every later letter showed one tap
+        // late (the state was right; the screen lagged). Single-letter texts never shape across colors.
+        else Row(horizontalArrangement = Arrangement.spacedBy(1.dp), verticalAlignment = Alignment.CenterVertically) {
+            for (ch in session.typing) Text(
+                ch.toString(), color = if (ch == session.centre) Color(0xFFD97706) else WTheme.text,
+                fontSize = 28.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, maxLines = 1, softWrap = false,
+            )
+        }
     }
 }
 

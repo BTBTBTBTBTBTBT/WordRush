@@ -62,7 +62,7 @@ struct AgeCheckQuestionView: View {
         ZStack {
             // The app's own wall (the season's wall in season), so the scene sits in the same world as Home.
             PageBackground(tint: .home, lightOnly: true).ignoresSafeArea()
-            ScrollView {
+            AgeFitToHeight {
                 VStack(spacing: 12) {
                     // The live WORDOCIOUS cast row stays on top; the question lives below it.
                     LivingCastHeader(pro: false)
@@ -256,7 +256,7 @@ struct AgeCheckUnderView: View {
         ZStack {
             // The app's own wall (the season's wall in season), so the scene sits in the same world as Home.
             PageBackground(tint: .home, lightOnly: true).ignoresSafeArea()
-            ScrollView {
+            AgeFitToHeight {
                 VStack(spacing: 12) {
                     // The live WORDOCIOUS cast row stays on top.
                     LivingCastHeader(pro: false).padding(.top, 4)
@@ -295,4 +295,29 @@ struct AgeCheckUnderView: View {
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
     }
+}
+
+/// Doug's phone 10-13: on a short screen (iPhone SE / mini) the age screens ran taller than the window, so Continue
+/// (and the under-13 "A grown-up? Sign in") sat below the fold of a scroll nobody would guess at. Like web (0a2a9053f)
+/// and Android, the whole screen scales down to fit the visible height instead; taller screens are untouched.
+private struct AgeFitToHeight<Content: View>: View {
+    @ViewBuilder var content: Content
+    @State private var natural: CGFloat = 0
+
+    var body: some View {
+        GeometryReader { g in
+            let s = natural > g.size.height && natural > 0 ? g.size.height / natural : 1
+            content
+                .fixedSize(horizontal: false, vertical: true)
+                .background(GeometryReader { c in Color.clear.preference(key: AgeNaturalHeightKey.self, value: c.size.height) })
+                .scaleEffect(s, anchor: .top)
+                .frame(width: g.size.width, height: g.size.height, alignment: s < 1 ? .top : .center)
+        }
+        .onPreferenceChange(AgeNaturalHeightKey.self) { natural = $0 }
+    }
+}
+
+private struct AgeNaturalHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }

@@ -21,15 +21,16 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Constraints
 import com.wordocious.app.data.AgeGate
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.runtime.Composable
@@ -107,6 +108,20 @@ fun AgeGateOverlay() {
     }
 }
 
+/**
+ * Doug's phone 10-13 (360 x 780 dp): the age screens ran taller than the window, so Continue (and the
+ * under-13 screen's "A grown-up? Sign in") sat below the fold behind a page scroll nobody would guess
+ * at. Like web (0a2a9053f), the whole screen now scales down to fit the visible height instead; taller
+ * screens are untouched.
+ */
+private fun Modifier.fitToHeight(): Modifier = layout { measurable, c ->
+    val p = measurable.measure(c.copy(minHeight = 0, maxHeight = Constraints.Infinity))
+    val s = if (c.hasBoundedHeight && p.height > c.maxHeight) c.maxHeight.toFloat() / p.height else 1f
+    layout(p.width, if (c.hasBoundedHeight) minOf(p.height, c.maxHeight) else p.height) {
+        p.placeWithLayer(0, 0) { scaleX = s; scaleY = s; transformOrigin = TransformOrigin(0.5f, 0f) }
+    }
+}
+
 private const val ROW_DP = 54
 private const val VISIBLE = 5
 
@@ -123,7 +138,7 @@ fun AgeCheckQuestion(onAnswer: (Int) -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            Modifier.widthIn(max = 420.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
+            Modifier.widthIn(max = 420.dp).fillMaxWidth().fitToHeight().padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -330,6 +345,8 @@ fun AgeCheckUnder() {
     val context = LocalContext.current
     val recoveryFailed by AgeCheckStore.recoveryFailed.collectAsState()
     var showSignIn by remember { mutableStateOf(false) }
+    // The wall is dark in season (Halloween): the lines read light gold there, the brand purple on the day wall (iOS parity).
+    val ink = if (rememberSeason() != null) Color(0xFFFFDB8C) else Ink
     Box(
         Modifier.fillMaxSize()
             .pageBackground(PageTint.HOME, alwaysLight = true)
@@ -338,7 +355,7 @@ fun AgeCheckUnder() {
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            Modifier.widthIn(max = 420.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
+            Modifier.widthIn(max = 420.dp).fillMaxWidth().fitToHeight().padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -348,7 +365,7 @@ fun AgeCheckUnder() {
             Text(
                 "Wordocious is for players 13 and up. We would love to play with you when you are older!",
                 fontFamily = Nunito, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, lineHeight = 20.sp,
-                color = Ink, textAlign = TextAlign.Center,
+                color = ink, textAlign = TextAlign.Center,
             )
             Text(
                 "Parents: questions or corrections? ${AgeCheck.SUPPORT_EMAIL}",
@@ -361,7 +378,7 @@ fun AgeCheckUnder() {
                     }
                 },
                 fontFamily = Nunito, fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
-                color = Ink.copy(alpha = 0.75f), textAlign = TextAlign.Center,
+                color = ink.copy(alpha = 0.75f), textAlign = TextAlign.Center,
             )
             // A grown-up who tapped the wrong year: sign in, and an account the server has confirmed as 13+ unlocks this
             // device (AgeCheckStore.finishRecovery). Quiet on purpose; nothing else about the screen changes.
@@ -369,7 +386,7 @@ fun AgeCheckUnder() {
                 Text(
                     AgeRecovery.UNCONFIRMED_LINE,
                     fontFamily = Nunito, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp, lineHeight = 16.sp,
-                    color = Ink, textAlign = TextAlign.Center,
+                    color = ink, textAlign = TextAlign.Center,
                     modifier = Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite },
                 )
             }
