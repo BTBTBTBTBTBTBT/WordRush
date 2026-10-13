@@ -185,6 +185,7 @@ struct PocketBoardArt<Content: View>: View {
         Image(art).resizable().interpolation(.high)
             .aspectRatio(pixels.width / pixels.height, contentMode: .fit)
             .accessibilityHidden(true)
+            .layoutLog("art")
             .overlay {
                 GeometryReader { geo in
                     let scale = geo.size.width / pixels.width

@@ -125,7 +125,7 @@ struct PocketHelpSheet: View {
                     // Founder 10-13: a one-piece picture is a whole board (ring, # grid, trays): shown big, aspect kept.
                     let board = pic.art.count == 1
                     Image(name).resizable().interpolation(.high).scaledToFit()
-                        .frame(width: board ? 220 : 40, height: board ? 64 : 40).accessibilityHidden(true)
+                        .frame(width: board ? 220 : 40, height: board ? 96 : 40).accessibilityHidden(true)
                 }
             }
         }

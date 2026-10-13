@@ -39,6 +39,8 @@ struct FriendlyGameScreen: View {
     /// are sized to sit fully above the pinned keyboard (aspect kept, narrower on short phones).
     @State private var viewportH: CGFloat = 0
     @State private var boardTop: CGFloat = 0
+    /// The first ~0.6 s of the screen settle the layout; after that the fit never changes (no screen shifting).
+    @State private var fitSettled = false
 
     init(gameId: String, initial: FriendlyGameView? = nil) {
         _gameId = State(initialValue: gameId)
@@ -76,15 +78,16 @@ struct FriendlyGameScreen: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 16) {
-                            // Game over: a win → O3 pops in; a loss → R (MASCOT_SPEC §3).
-                            if !g.isActive, let outcome = Self.resultOutcome(g) {
-                                ResultHost(outcome: outcome, winner: Mascots.pocketWin)
-                            }
                             scoreWindow(g)
-                            if g.isActive && g.yourTurn { PocketYourTurnFlag() }
-                            // Item 22: their turn = a slim lobby strip above the board (board stays visible).
-                            if g.isActive && !g.yourTurn { PocketWaitStrip(name: themName, since: g.updatedAt, nameColor: themColor, accent: gameAccent) }
+                                .layoutLog("score")
+                            // Founder 10-13 (no screen shifting): ONE fixed-height slot under the score window holds, in turn, the
+                            // YOUR TURN flag, their lobby strip, or (game over: a win → O3 pops in; a loss → R, MASCOT_SPEC §3)
+                            // the result mascot, so a turn change or the finish never pushes the board.
+                            turnSlot(g)
+                                .layoutLog("slot")
                             board(g, room: boardRoom(g))
+                                .opacity((g.kind == .pass || g.kind == .chain) && !fitSettled && g.isActive ? 0 : 1)
+                                .layoutLog("board")
                                 .background(GeometryReader { b in
                                     Color.clear.preference(key: BoardTopKey.self, value: b.frame(in: .named("fgsScroll")).minY)
                                 })
@@ -96,21 +99,25 @@ struct FriendlyGameScreen: View {
                             if let moveError, !pinsInput(g) { errorText(moveError) }
                             if !g.isActive { overButtons(g) }
                         }
-                        .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 24)
+                        .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, g.kind == .pass || g.kind == .chain ? 4 : 24)
                         .coordinateSpace(name: "fgsScroll")
                     }
-                    .onPreferenceChange(BoardTopKey.self) { boardTop = $0.isFinite ? $0 : 0 }
+                    .onPreferenceChange(BoardTopKey.self) { if !fitSettled, $0.isFinite, $0 > 0 { boardTop = $0 } }
                     // Word Chain: keep the newest word in view.
                     .onChange(of: chainCount(g)) { _ in
                         withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo("chain-end", anchor: .bottom) }
                     }
                 }
-                .onAppear { viewportH = vp.size.height }
-                .onChange(of: vp.size.height) { viewportH = $0 }
+                // Measured ONCE per screen (founder 10-13: no screen shifting): the first real size is kept for good.
+                .onAppear {
+                    viewportH = vp.size.height
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { fitSettled = true }
                 }
-                if g.isActive, case .pass(let p) = g.state { passKeyboard(g, p) }
-                if g.isActive, case .ghost(let gs) = g.state { ghostKeyboard(g, gs) }
-                if g.isActive, case .chain(let c) = g.state { chainInputArea(g, c) }
+                .onChange(of: vp.size.height) { h in if !fitSettled { viewportH = h } }
+                }
+                if g.isActive, case .pass(let p) = g.state { passKeyboard(g, p).layoutLog("pinned") }
+                if g.isActive, case .ghost(let gs) = g.state { ghostKeyboard(g, gs).layoutLog("pinned") }
+                if g.isActive, case .chain(let c) = g.state { chainInputArea(g, c).layoutLog("pinned") }
             } else if let loadError {
                 Spacer()
                 // O3 when the game is gone, R unplugged for any other error
@@ -375,6 +382,26 @@ struct FriendlyGameScreen: View {
         .padding(.horizontal, 8).padding(.top, 4).frame(height: 48)
     }
 
+    /// The fixed-height slot under the score window (see `body`).
+    static let turnSlotHeight: CGFloat = 64
+
+    @ViewBuilder private func turnSlot(_ g: FriendlyGameView) -> some View {
+        ZStack {
+            if g.isActive && g.yourTurn { PocketYourTurnFlag() }
+            // Item 22: their turn = a slim lobby strip above the board (board stays visible).
+            if g.isActive && !g.yourTurn {
+                PocketWaitStrip(name: themName, since: g.updatedAt, nameColor: themColor, accent: gameAccent)
+            }
+            if !g.isActive, let outcome = Self.resultOutcome(g) {
+                ResultHost(outcome: outcome, winner: Mascots.pocketWin)
+                    .scaleEffect(Self.turnSlotHeight / 92)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.turnSlotHeight, alignment: .center)
+        .zIndex(1)   // an opened lobby mini game overlays the board instead of pushing it
+    }
+
     // MARK: Score window
 
     private func scoreWindow(_ g: FriendlyGameView) -> some View {
@@ -393,7 +420,7 @@ struct FriendlyGameScreen: View {
                 // Founder 10-10 (RPS: the tiny lettered line was hard to read): plain heavy text.
                 Text(subLine(g)).font(Brand.font(12, .heavy)).tracking(0.3)
                     .foregroundStyle(FriendsInk.dark ? Color(hex: 0xF9A8D4) : Color(hex: 0xB0306F))
-                    .lineLimit(2).minimumScaleFactor(0.85)
+                    .lineLimit(2, reservesSpace: true).minimumScaleFactor(0.85)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12).padding(.vertical, 10)
@@ -518,7 +545,7 @@ struct FriendlyGameScreen: View {
                       status: (text: String, tone: Color)? = nil) -> some View {
         HStack(spacing: 10) {
             if !leading { Spacer(minLength: 0) }
-            if leading { FriendsPresenceAvatar(url: url, username: name, emoji: emoji, size: 40, online: online) }
+            if leading { FriendsPresenceAvatar(url: url, username: name, emoji: emoji, size: 40, online: online).frame(width: 46, height: 46) }
             VStack(alignment: leading ? .leading : .trailing, spacing: 0) {
                 // Founder 10-10: the name is bubble lettering in the player's own name color (a long name shrinks to fit).
                 PocketBubble(text: label, color: labelColor, size: 15, minScale: 0.4, alignment: leading ? .leading : .trailing, hug: false)
@@ -539,13 +566,16 @@ struct FriendlyGameScreen: View {
                         if leading { PocketMarker(art: PocketArt.turnMarker, size: 15) }
                     }
                     .padding(.top, 2)
+                } else {
+                    // The chip's slot stays reserved (nobody to play once it is over) so the banner never changes height.
+                    Color.clear.frame(height: 19).padding(.top, 2)
                 }
                 if let score {
                     // §A2: the score in the bubble numerals.
                     PocketBubble(text: "\(score)", color: leading ? FriendsKit.purple : Color(hex: 0xB45309), size: 36)
                 }
             }
-            if !leading { FriendsPresenceAvatar(url: url, username: name, emoji: emoji, size: 40, online: online) }
+            if !leading { FriendsPresenceAvatar(url: url, username: name, emoji: emoji, size: 40, online: online).frame(width: 46, height: 46) }
             if leading { Spacer(minLength: 0) }
         }
         .padding(.horizontal, 12).padding(.vertical, 12)
@@ -601,16 +631,18 @@ struct FriendlyGameScreen: View {
         case .coin(let c): coinBoard(g, c)
         case .pass(let p): passBoard(g, p, room: room)
         case .ghost(let gs): ghostBoard(g, gs)
-        case .chain(let c): chainBoard(g, c, room: room)
+        case .chain(let c): chainBoard(g, c, room: room).padding(.top, -8)
         }
     }
 
     /// The height the pinned-keyboard games' board may take: from where it starts to the bottom of the scroll area, less what
     /// sits under it (Pass the Puzzle's status line, Word Chain's legend) and a little air. nil until measured.
     private func boardRoom(_ g: FriendlyGameView) -> CGFloat? {
-        guard g.isActive, g.kind == .pass || g.kind == .chain, viewportH > 0, boardTop > 0 else { return nil }
-        let below: CGFloat = g.kind == .pass ? 34 : 36
-        return max(120, viewportH - boardTop - below - 10)
+        guard g.kind == .pass || g.kind == .chain, viewportH > 0, boardTop > 0 else { return nil }
+        // Pass the Puzzle keeps its status line under the tray; Word Chain has nothing under the frame (the color legend is
+        // gone, the score window already carries the colors) and pulls the frame up under the turn slot by 8 pt.
+        if g.kind == .chain { return max(120, viewportH - boardTop + 8 - 6) }
+        return max(120, viewportH - boardTop - 34 - 10)
     }
 
     /// Ghost and Word Chain pin their input (and its inline error) above the keyboard.
@@ -674,6 +706,9 @@ struct FriendlyGameScreen: View {
                 } else {
                     reveal.gameTray(accent: FriendsKit.tileAccent(.rps), state: g.isActive ? .normal : trayState(g))
                 }
+            } else if PocketArt.ring != nil && PocketArt.rpsBackdrop != nil {
+                // Before the first round the same arena stands empty, so the first reveal never pushes the picks down.
+                RpsArenaEmpty()
             }
             if g.isActive {
                 VStack(spacing: 6) {
@@ -728,7 +763,7 @@ struct FriendlyGameScreen: View {
                     }
                 }
                 VStack(spacing: 8) {
-                    heading("Your pick")
+                    heading("Your pick").layoutLog("picks")
                     HStack(spacing: 10) {
                         ForEach(RpsPick.allCases, id: \.self) { p in
                             let selected = mine == p
@@ -929,13 +964,13 @@ struct FriendlyGameScreen: View {
             }
             if g.isActive {
                 if myCall {
-                    heading("Your call")
+                    heading("Your call").layoutLog("heading")
                     HStack(spacing: 10) {
                         callButton("HEADS", solid: true) { send(.coin(.heads)) }
                         callButton("TAILS", solid: false) { send(.coin(.tails)) }
                     }
                 } else {
-                    heading("\(themName) calls", names: [themName], nameColor: themColor)
+                    heading("\(themName) calls", names: [themName], nameColor: themColor).layoutLog("heading")
                 }
             }
             VStack(spacing: 6) {
@@ -1111,8 +1146,8 @@ struct FriendlyGameScreen: View {
         let myLetter = g.isActive && g.yourTurn
         let letters = Array(s.fragment).map(String.init)
         VStack(spacing: 12) {
-            // A round just ended (or the match did): what happened.
-            if let last = s.rounds.last, s.fragment.isEmpty {
+            // The match is over: how the last round went (in play it sits UNDER the tray, so the tray never moves).
+            if !g.isActive, let last = s.rounds.last, s.fragment.isEmpty {
                 ghostRoundCard(last, round: s.rounds.count, me: me)
                     .id("ghost-round-\(s.rounds.count)")
                     .transition(.scale(scale: 0.95).combined(with: .opacity))
@@ -1165,6 +1200,12 @@ struct FriendlyGameScreen: View {
                     // §L: the fragment sits on the shared tray.
                     .gameTray(accent: FriendsKit.tileAccent(.ghost))
                     .animation(Theme.reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75), value: s.fragment)
+                }
+                // A round just ended: what happened (below the tray, never above it).
+                if let last = s.rounds.last, s.fragment.isEmpty {
+                    ghostRoundCard(last, round: s.rounds.count, me: me)
+                        .id("ghost-round-\(s.rounds.count)")
+                        .transition(.scale(scale: 0.95).combined(with: .opacity))
                 }
                 if !myLetter {
                     HStack(spacing: 6) {
@@ -1246,17 +1287,17 @@ struct FriendlyGameScreen: View {
             send(.ghost(l))
         }
         return VStack(spacing: 8) {
-            errorSlot.padding(.horizontal, 16)
-            if g.yourTurn {
-                // §A8: the purple candy ADD (dimmed until a letter is picked).
-                Button(action: play) {
-                    if sending { ProgressView().tint(.white) }
-                    else { CandyLabel(title: ghostPending.map { "Add \($0)" } ?? "Tap a letter", symbol: ghostPending == nil ? nil : "plus") }
-                }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium))
-                .disabled(ghostPending == nil || sending)
-                .padding(.horizontal, 16)
+            // §A8: the purple candy ADD (dimmed until a letter is picked). Always laid out (invisible on their turn) so the
+            // pinned area never changes height between turns.
+            Button(action: play) {
+                if sending { ProgressView().tint(.white) }
+                else { CandyLabel(title: ghostPending.map { "Add \($0)" } ?? "Tap a letter", symbol: ghostPending == nil ? nil : "plus") }
             }
+            .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium))
+            .disabled(ghostPending == nil || sending || !g.yourTurn)
+            .padding(.horizontal, 16)
+            .opacity(g.yourTurn ? 1 : 0)
+            .accessibilityHidden(!g.yourTurn)
             LetterKeyboard(
                 onLetter: { l in
                     guard mine else { return }
@@ -1281,6 +1322,13 @@ struct FriendlyGameScreen: View {
         }
         .padding(.top, 6).padding(.bottom, 6)
         .background(Self.keyboardBed)
+        // Founder 10-13: an input error floats just above the pinned area (it used to reserve a slot inside it, which cost the
+        // board 44 pt) and covers the board's lower edge only while it shows; nothing moves.
+        .overlay(alignment: .top) {
+            if let moveError {
+                errorText(moveError).padding(.horizontal, 16).alignmentGuide(.top) { $0[.bottom] }
+            }
+        }
     }
 
     // Word Chain (§9)
@@ -1290,7 +1338,9 @@ struct FriendlyGameScreen: View {
         if let frame = PocketArt.chainBoard, let link = PocketArt.chainLink {
             // Founder 10-13: the gold chain frame. The last two words (three if they fit) as a staircase: each new word
             // starts directly under the previous word's last letter, joined by the gold link.
-            PocketBoardArt(art: frame, pixels: PocketBoard.chainPixels, maxWidth: 560, maxHeight: room) { scale in
+            // Full content width whenever it fits above the keyboard; it narrows only if it must, never below 85%.
+            let fullH = min(UIScreen.main.bounds.width - 32, 560) * PocketBoard.chainPixels.height / PocketBoard.chainPixels.width
+            PocketBoardArt(art: frame, pixels: PocketBoard.chainPixels, maxWidth: 560, maxHeight: room.map { max($0, fullH * 0.85) }) { scale in
                 let inner = PocketBoard.chainInterior
                 let w = inner.width * scale, h = inner.height * scale
                 ZStack {
@@ -1307,7 +1357,7 @@ struct FriendlyGameScreen: View {
                 .position(x: inner.midX * scale, y: inner.midY * scale)
             }
             .animation(Theme.reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: c.words.count)
-            Color.clear.frame(height: 1).id("chain-end")
+            .id("chain-end")
         } else {
             VStack(spacing: 8) {
                 if c.words.isEmpty {
@@ -1331,9 +1381,11 @@ struct FriendlyGameScreen: View {
             .gameTray(accent: FriendsKit.tileAccent(.chain), state: trayState(g))
             .animation(Theme.reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: c.words.count)
         }
-        HStack(spacing: 16) {
-            legend("YOU", TilePalette.correct.base, ink: myColor)
-            legend(themName.uppercased(), TilePalette.present.base, ink: themColor)
+        if PocketArt.chainBoard == nil || PocketArt.chainLink == nil {
+            HStack(spacing: 16) {
+                legend("YOU", TilePalette.correct.base, ink: myColor)
+                legend(themName.uppercased(), TilePalette.present.base, ink: themColor)
+            }
         }
     }
 
@@ -1391,12 +1443,13 @@ struct FriendlyGameScreen: View {
                     .animation(Theme.reduceMotion ? nil : .easeOut(duration: 0.15), value: slots)
                 }
                 .frame(height: 44)
+                .layoutLog("entry")
                 .padding(.horizontal, 16)
             } else {
                 PocketBubble(text: "\(themName)'s word - it lands in the chain here.", color: FriendsInk.muted, size: 13,
                              names: [themName], nameColor: themColor, minScale: 0.4)
+                    .frame(height: 44)   // the entry row's own height: the keyboard never moves between turns
             }
-            errorSlot.padding(.horizontal, 16)
             LetterKeyboard(
                 onLetter: { l in
                     guard mine, letters.count < wordMax else { return }
@@ -1423,6 +1476,13 @@ struct FriendlyGameScreen: View {
         }
         .padding(.top, 8).padding(.bottom, 6)
         .background(Self.keyboardBed)
+        // Founder 10-13: an input error floats just above the pinned area (it used to reserve a slot inside it, which cost the
+        // board 44 pt) and covers the board's lower edge only while it shows; nothing moves.
+        .overlay(alignment: .top) {
+            if let moveError {
+                errorText(moveError).padding(.horizontal, 16).alignmentGuide(.top) { $0[.bottom] }
+            }
+        }
     }
 
     /// Your word's tiles: the locked first letter a glossy green tile with a lock;
@@ -1508,15 +1568,20 @@ private struct ChainStairs: View {
         var x0: CGFloat = 0
         var rows: [(word: ChainWord, col: Int)] = []
         var y0: CGFloat = 0
+        /// Long words / a too-tight staircase: both rows left-aligned across the full width, joined by a run of links.
+        var stacked = false
     }
 
     private static let gapRatio: CGFloat = 0.16
     private static let rowGapRatio: CGFloat = 0.5
+    private static let stackRowGapRatio: CGFloat = 1.0
     private static let stairMin: CGFloat = 18
     private static let threeMin: CGFloat = 26
+    /// Either visible word longer than this skips the staircase.
+    private static let longWord = 10
 
     /// Tile size for `cols` columns and `rowCount` rows inside `size`.
-    private static func tile(cols: Int, rows rowCount: Int, in size: CGSize) -> CGFloat {
+    private static func tile(cols: Int, rows rowCount: Int, in size: CGSize, rowGapRatio: CGFloat = rowGapRatio) -> CGFloat {
         let byW = size.width / (CGFloat(cols) + gapRatio * CGFloat(cols - 1))
         let byH = size.height / (CGFloat(rowCount) + rowGapRatio * CGFloat(rowCount - 1))
         return min(byW, byH, 44)
@@ -1534,7 +1599,8 @@ private struct ChainStairs: View {
 
     private static func layout(words: [ChainWord], size: CGSize) -> Layout {
         var shown = Array(words.suffix(2))
-        if words.count >= 3 {
+        let long = shown.contains { $0.word.count > longWord }
+        if words.count >= 3 && !long {
             let three = Array(words.suffix(3))
             let st = stairCols(three)
             if tile(cols: st.cols, rows: 3, in: size) >= threeMin { shown = three }
@@ -1543,19 +1609,26 @@ private struct ChainStairs: View {
         var t = tile(cols: st.cols, rows: shown.count, in: size)
         var starts = st.starts
         var cols = st.cols
-        if shown.count > 1 && t < stairMin {
-            // Left-edge fallback: every word starts at column 0.
+        var stacked = false
+        var rowGapRatio = rowGapRatio
+        if shown.count > 1 && (long || t < stairMin) {
+            // Every word starts at column 0, the tiles as large as the interior allows (two words at most).
+            stacked = true
+            rowGapRatio = stackRowGapRatio
+            shown = Array(shown.suffix(2))
             starts = shown.map { _ in 0 }
             cols = shown.map { $0.word.count }.max() ?? 1
-            t = tile(cols: cols, rows: shown.count, in: size)
+            t = tile(cols: cols, rows: shown.count, in: size, rowGapRatio: rowGapRatio)
         }
         var l = Layout()
         l.t = t
+        l.stacked = stacked
         l.gap = t * gapRatio
         l.rowGap = t * rowGapRatio
         let groupW = CGFloat(cols) * t + CGFloat(cols - 1) * l.gap
         let groupH = CGFloat(shown.count) * t + CGFloat(shown.count - 1) * l.rowGap
-        l.x0 = (size.width - groupW) / 2
+        // Stacked rows are left-aligned (the words run edge to edge); the staircase is centered.
+        l.x0 = stacked ? 0 : (size.width - groupW) / 2
         l.y0 = (size.height - groupH) / 2
         l.rows = Array(zip(shown, starts)).map { (word: $0.0, col: $0.1) }
         return l
@@ -1583,20 +1656,38 @@ private struct ChainStairs: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(mine ? "You" : themName) played \(row.word.word), plus \(row.word.points)")
             }
-            // The gold link from each word's last letter down to the next word's first letter.
+            // The gold link from each word's last letter down to the next word's first letter (stacked rows: a short run of
+            // links along the line between the two letters).
             ForEach(1..<max(l.rows.count, 1), id: \.self) { k in
                 let prev = l.rows[k - 1], cur = l.rows[k]
                 let px = l.x0 + CGFloat(prev.col + prev.word.word.count - 1) * pitch + l.t / 2
                 let cx = l.x0 + CGFloat(cur.col) * pitch + l.t / 2
                 let py = l.y0 + CGFloat(k - 1) * (l.t + l.rowGap) + l.t
                 let cy = l.y0 + CGFloat(k) * (l.t + l.rowGap)
-                let lh = l.rowGap + l.t * 0.5
-                Image(link).resizable().interpolation(.high)
-                    .aspectRatio(PocketBoard.chainLinkAspect, contentMode: .fit)
-                    .frame(height: lh)
-                    .rotationEffect(.radians(Double(atan2(cx - px, cy - py)) * -1))
-                    .position(x: (px + cx) / 2, y: (py + cy) / 2)
-                    .accessibilityHidden(true)
+                if l.stacked {
+                    let lh = min(l.rowGap * 1.5, l.t * 1.3)
+                    // The run stays inside the gap between the rows (inset from both tile edges), so it never covers a letter.
+                    let (px, py, cy) = (px, py + l.rowGap * 0.3, cy - l.rowGap * 0.3)
+                    let dist = hypot(cx - px, cy - py)
+                    let n = max(1, Int((dist / (lh * 0.72)).rounded(.up)))
+                    let angle = -Double(atan2(cx - px, cy - py))
+                    ForEach(0..<n, id: \.self) { i in
+                        let f = (CGFloat(i) + 0.5) / CGFloat(n)
+                        Image(link).resizable().interpolation(.high)
+                            .aspectRatio(PocketBoard.chainLinkAspect, contentMode: .fit)
+                            .frame(height: lh)
+                            .rotationEffect(.radians(angle))
+                            .position(x: px + (cx - px) * f, y: py + (cy - py) * f)
+                            .accessibilityHidden(true)
+                    }
+                } else {
+                    let lh = l.rowGap + l.t * 0.5
+                    Image(link).resizable().interpolation(.high)
+                        .aspectRatio(PocketBoard.chainLinkAspect, contentMode: .fit)
+                        .frame(height: lh)
+                        .position(x: (px + cx) / 2, y: (py + cy) / 2)
+                        .accessibilityHidden(true)
+                }
             }
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
@@ -1604,7 +1695,7 @@ private struct ChainStairs: View {
 }
 
 /// Both picks of the last round, flipping in together; the winner glows.
-private struct RpsReveal: View {
+struct RpsReveal: View {
     let round: Int
     let mine: RpsPick
     let theirs: RpsPick
@@ -1621,6 +1712,8 @@ private struct RpsReveal: View {
     @State private var bob: CGFloat = 0
     @State private var turn: Double = Theme.reduceMotion ? 0 : 180
     private static let words = ["ROCK...", "PAPER...", "SCISSORS...", "SHOOT!"]
+    /// The arena card's fixed height (founder 10-13: nothing moves when a round is played).
+    static let arenaHeight: CGFloat = 150
 
     /// The arena: the ring across the card's full width and the audience wallpaper behind it.
     private var arena: Bool { PocketArt.ring != nil && PocketArt.rpsBackdrop != nil }
@@ -1677,6 +1770,7 @@ private struct RpsReveal: View {
             }
         }
         .frame(maxWidth: .infinity)
+        .frame(height: arena ? Self.arenaHeight : nil, alignment: .bottom)
         // Founder 10-13: the ring spans the card edge to edge, bottom-aligned, over the audience wallpaper (aspect-fill),
         // corners clipped to the card.
         .background(alignment: .bottom) {
@@ -1693,6 +1787,7 @@ private struct RpsReveal: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: arena ? GameTray.radius : 0, style: .continuous))
+        .layoutLog("arena")
         .onAppear {
             guard !flipped else { return }
             if Theme.reduceMotion { flipped = true; turn = 0; return }
@@ -1745,12 +1840,48 @@ private struct RpsReveal: View {
                     .accessibilityLabel(flipped ? p.rawValue.capitalized : "Hidden pick")   // §AB: the pick, not the asset name
             }
             .frame(width: 58, height: 58)
-            PocketBubble(text: label, color: ink, size: 12, minScale: 0.4, hug: false)
+            Group {
+                if arena {
+                    // On the ring's lilac mat the player color washed out (founder 10-13): deep plum plain caps instead.
+                    Text(PocketType.clean(label)).font(Brand.font(13, .black)).tracking(0.4)
+                        .foregroundColor(Color(hex: 0x3B0F75))
+                        .lineLimit(1).minimumScaleFactor(0.4)
+                        .frame(height: 12 * 1.3)
+                } else {
+                    PocketBubble(text: label, color: ink, size: 12, minScale: 0.4, hug: false)
+                }
+            }
                 .frame(width: 74)
                 .opacity(win ? 1 : 0.75)
         }
         .frame(width: 84, height: 92)
         .modifier(RpsCardBox(inRing: PocketArt.ring != nil, win: win && flipped, tint: tint))
+    }
+}
+
+/// The empty arena shown before the first round (same size as the reveal card).
+private struct RpsArenaEmpty: View {
+    var body: some View {
+        VStack {
+            PocketBubble(text: "Round 1", color: .white, size: 15, palette: PlayerTint.platePalette(lightInk: true))
+                .shadow(color: Color(hex: 0x1A0536).opacity(0.7), radius: 3, y: 1)
+                .padding(.top, 8)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: RpsReveal.arenaHeight)
+        .background(alignment: .bottom) {
+            if let ring = PocketArt.ring {
+                Image(ring).resizable().interpolation(.high).scaledToFit().frame(maxWidth: .infinity).accessibilityHidden(true)
+            }
+        }
+        .background {
+            if let wall = PocketArt.rpsBackdrop {
+                Image(wall).resizable().interpolation(.high).scaledToFill().accessibilityHidden(true)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: GameTray.radius, style: .continuous))
+        .layoutLog("arena")
     }
 }
 
@@ -1829,11 +1960,15 @@ private struct SpinningCoin: View {
                 coinStack(landed: landed)
                     .frame(width: 150, height: 160)
             }
-            if let caption {
-                caption
-                    .opacity(settled ? 1 : 0)
-                    .animation(.easeOut(duration: 0.25), value: settled)
+            // The result line's slot is always there (founder 10-13: no screen shifting), empty until the coin has landed.
+            ZStack {
+                if let caption {
+                    caption
+                        .opacity(settled ? 1 : 0)
+                        .animation(.easeOut(duration: 0.25), value: settled)
+                }
             }
+            .frame(height: 18)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(settled ? (face == .heads ? "Coin, heads" : "Coin, tails") : "Coin flipping")   // §AB
@@ -1901,6 +2036,7 @@ private struct SpinningCoin: View {
             .frame(width: w, height: cardHeight, alignment: .bottom)
         }
         .frame(height: cardHeight)
+        .layoutLog("coincard")
     }
 
     private func wait(_ s: Double) async { try? await Task.sleep(nanoseconds: UInt64(s * 1_000_000_000)) }
@@ -1994,6 +2130,25 @@ private struct BoardTopKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = min(value, nextValue()) }
 }
 
+#if DEBUG
+/// DEBUG only (founder 10-13: no screen shifting): `-layoutLog` prints `LAYOUT|<name>|y|h` whenever a tagged view's global
+/// frame changes, so a scripted playthrough can be checked for any move > 1 pt.
+extension View {
+    @ViewBuilder func layoutLog(_ name: String) -> some View {
+        if ProcessInfo.processInfo.arguments.contains("-layoutLog") {
+            background(GeometryReader { geo in
+                let f = geo.frame(in: .global)
+                Color.clear
+                    .onAppear { fputs(String(format: "LAYOUT|%@|%.1f|%.1f\n", name, f.minY, f.height), stderr) }
+                    .onChange(of: f) { n in fputs(String(format: "LAYOUT|%@|%.1f|%.1f\n", name, n.minY, n.height), stderr) }
+            })
+        } else { self }
+    }
+}
+#else
+extension View { func layoutLog(_ name: String) -> some View { self } }
+#endif
+
 // MARK: Live play helpers (9b)
 
 /// The your-turn pulse: a soft ring that breathes once around the board when the move comes back to you.
@@ -2071,7 +2226,53 @@ struct PocketBubble: View {
         return p
     }
 
+    /// Founder 10-13 ("impossible to read"): small labels are plain capitals like the Home tile titles (`HomeCardTitleStyle.plainCaps`);
+    /// bubble lettering stays for the big text (headline 21, scores 36, "?" 44, the answer, waiting-room 18).
+    private var plain: Bool { size <= 15 }
+
+    /// The plain-caps ink: the accent itself (lifted for dark surfaces / a dark season, like the tile), or white on a plate.
+    private var plainInk: Color {
+        guard let palette else { return Self.deepened(color.onSeasonCard.bubbleInk) }
+        // A plate palette (white letters on a dark plate / deep violet on a pale one) keeps its own ink, never lifted.
+        if Color.luma(palette.top) > 0.8 { return .white }
+        if palette.outline == .white { return palette.bottom }
+        return Self.deepened(palette.bottom.onSeasonCard.bubbleInk)
+    }
+
+    /// On the light wallpaper a bright accent (amber, orange) is deepened until it reads as plain text.
+    private static func deepened(_ c: Color) -> Color {
+        guard !Theme.isDark, Color.luma(c) > 0.28 else { return c }
+        return Color.black.mixed(over: c, 0.32)
+    }
+
+    private var plainText: Text {
+        let shown = PocketType.clean(text)
+        var attr = AttributedString(shown)
+        let nameInk = (nameColor ?? Color(hex: 0xDB2777)).bubbleInk
+        for n in names.map(PocketType.clean) where !n.isEmpty {
+            var from = attr.startIndex
+            while let r = attr[from...].range(of: n) {
+                attr[r].foregroundColor = nameInk
+                from = r.upperBound
+            }
+        }
+        return Text(attr)
+    }
+
     var body: some View {
+        if plain {
+            plainText
+                .font(Brand.font(size + 1, .black)).tracking(0.4)
+                .foregroundColor(plainInk)
+                // Over the night art (Call It's YOUR CALL on the hills) a soft dark halo keeps the caps legible (founder 10-13).
+                .shadow(color: Theme.isDark ? Color.black.opacity(0.55) : .clear, radius: 2, y: 1)
+                .lineLimit(1).minimumScaleFactor(minScale)
+                .frame(maxWidth: hug || fixed ? nil : .infinity, alignment: alignment)
+                .fixedSize(horizontal: fixed, vertical: false)
+                .frame(height: size * 1.3)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(text)
+        } else {
         let shown = PocketType.clean(text)
         let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
         let natural = CGFloat(BubbleText.widthEm(shown)) * size * dyn
@@ -2085,5 +2286,6 @@ struct PocketBubble: View {
         .frame(height: size * 1.3)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
+        }
     }
 }
