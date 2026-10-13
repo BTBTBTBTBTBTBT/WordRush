@@ -18,6 +18,7 @@ import { dailyHref, MODE_ROUTES } from '@/lib/mode-routes';
 import { ART_SIZE, artSrc, goProSignOfDay } from '@/lib/art';
 import { SOFT_INK, darken, softBackground, softBorder, softPill, softShadow } from '@/lib/soft-surface';
 import { ClockGlyph } from './result-line';
+import { formatScore } from '@/lib/composite-scoring';
 import { fitScale, formatNextDailyIn, unlimitedHref } from '@/lib/finished-layout';
 import { getSecondsUntilMidnightLocal } from '@/lib/play-limit-service';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
@@ -80,7 +81,7 @@ export function ResultStrip({ won, guesses, guessLabel = 'guesses', time, points
       <Icon3D name={won ? 'badge-w' : 'badge-l'} size={24} label={won ? 'Won' : 'Lost'} />
       {guesses != null && <StripChip accent="#7c3aed" icon={<Icon3D name="badge-check" size={18} />} value={guesses} label={guessLabel} />}
       {time && <StripChip accent="#2563eb" icon={<ClockGlyph size={17} />} value={time} label="time" />}
-      {points != null && <StripChip accent="#f5a524" icon={<Icon3D name="trophy" size={17} />} value={Math.round(points).toLocaleString()} label="pts" />}
+      {points != null && <StripChip accent="#f5a524" icon={<Icon3D name="trophy" size={17} />} value={formatScore(points)} label="pts" />}
       {/* Founder 10-02: an invisible twin of the leading W / L badge, so the chips sit on the screen's center line. */}
       <span aria-hidden="true" className="rs-twin shrink-0" style={{ width: 24, height: 24 }} />
     </div>

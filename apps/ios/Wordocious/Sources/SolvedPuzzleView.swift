@@ -173,12 +173,27 @@ struct SolvedPuzzleView: View {
 
     /// The score the breakdown card shows (same inputs) — the result strip and the
     /// share image's POINTS window.
+    /// Founder 10-13: a reopened Classic loss shared "0 POINTS" beside a leaderboard 48.9 — this left out the
+    /// loss's green-letter credit (12 per green), so only the sub-1 time bonus remained. Same inputs as the live
+    /// game's `scorePoints` now: hints, the best green count (hint rows excluded) and the puzzle's own day.
     private func points(_ d: MatchStatsService.SolvedDaily) -> Int {
         Int(DailyScoring.breakdown(gameMode: mode.rawValue, completed: d.won,
                                    guessCount: d.guessCount, timeSeconds: d.timeSeconds,
                                    boardsSolved: d.won ? d.solutions.count : solvedCount(d),
-                                   totalBoards: d.solutions.count,
-                                   dateKey: LeaderboardService.todayLocal()).total)
+                                   totalBoards: d.solutions.count, hintsUsed: d.hintsUsed,
+                                   bestCorrectLetters: bestCorrectLetters(d),
+                                   dateKey: getDailySeedDate(DailySeed.today(mode: mode)) ?? LeaderboardService.todayLocal()).total)
+    }
+
+    /// Single-board games only (the live game's `bestCorrectLettersForScore`): the most greens in one real guess.
+    private func bestCorrectLetters(_ d: MatchStatsService.SolvedDaily) -> Int? {
+        guard d.solutions.count == 1, let solution = d.solutions.first.map({ Array($0.uppercased()) }) else { return nil }
+        let hintRows = localBoards?.first?.hintEvaluations
+        return d.guesses.enumerated().reduce(0) { best, pair in
+            if hintRows?[String(pair.offset)] != nil { return best }
+            let g = Array(pair.element.uppercased())
+            return max(best, zip(g, solution).filter { $0 == $1 }.count)
+        }
     }
 
     /// §R2: the board(s) scaled to fit `size` — a single board on the shared tray,
