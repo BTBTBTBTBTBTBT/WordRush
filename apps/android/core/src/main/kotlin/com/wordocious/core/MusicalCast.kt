@@ -177,12 +177,21 @@ object MusicalCast {
      * keys by interval shape (see musical-cast.ts). Only active in season; each is a hidden achievement.
      */
     val HALLOWEEN_MELODIES: List<MusicalMelody> = listOf(
-        MusicalMelody("mountain_king", "In the Hall of the Mountain King", "tune_mountain_king", listOf(A4, B4, C5, D5, E5, C5, E5, D5, B4, D5)),
-        MusicalMelody("toccata", "Toccata and Fugue in D minor", "tune_toccata", listOf(A4, G4, A4, G4, F4, E4, D4, C4, D4)),
+        MusicalMelody("mountain_king", "In the Hall of the Mountain King", "tune_mountain_king", listOf(A4, B4, C5, D5, E5, C5, E5, D5, B4, D5),
+            song = listOf(D4, E4, F4, G4, A4, F4, A4, G4, E4, G4, G4, E4, G4, D4, E4, F4, G4, A4, F4, A4, D5, C5, A4, F4, A4, C5),
+            beats = listOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 3.0),
+        ),
+        MusicalMelody("toccata", "Toccata and Fugue in D minor", "tune_toccata", listOf(A4, G4, A4, G4, F4, E4, D4, C4, D4),
+            song = listOf(A4, G4, A4, G4, F4, E4, D4, C4, D4, A4, G4, A4, E4, F4, C4, D4),
+            beats = listOf(0.25, 0.25, 2.0, 0.25, 0.25, 0.25, 0.25, 0.5, 2.5, 0.25, 0.25, 2.0, 0.25, 0.25, 0.5, 3.0),
+        ),
         MusicalMelody("funeral_march", "Funeral March", "tune_funeral_march", listOf(A4, A4, A4, A4, C5, B4, B4, A4, A4, G4, A4)),
         MusicalMelody("marionette", "Funeral March of a Marionette", "tune_marionette", listOf(A4, A4, G4, F4, G4, A4, B4)),
         MusicalMelody("danse_macabre", "Danse Macabre", "tune_danse_macabre", listOf(A4, A4, C5, A4, B4, C5, A4, C5, A4, C5, B4, C5, B4, A4)),
-        MusicalMelody("bald_mountain", "Night on Bald Mountain", "tune_bald_mountain", listOf(B4, C5, B4, A4, B4, C5, C5, E5, B4)),
+        MusicalMelody("bald_mountain", "Night on Bald Mountain", "tune_bald_mountain", listOf(B4, C5, B4, A4, B4, C5, C5, E5, B4),
+            song = listOf(B4, C5, B4, A4, B4, C5, C5, E5, B4, B4, C5, D5, E5, E5, D5, C5, B4, A4),
+            beats = listOf(1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 0.5, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 1.0),
+        ),
         MusicalMelody("sorcerers_apprentice", "The Sorcerer's Apprentice", "tune_sorcerers_apprentice", listOf(A4, E5, A4, C5, A4, C5, B4, C5, A4, C5)),
     )
 

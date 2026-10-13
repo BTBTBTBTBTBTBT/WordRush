@@ -145,14 +145,24 @@ const A4h = 69, B4h = 71, C5h = 72, D5h = 74, E5h = 76, G4h = 67, F4h = 65, E4h 
  *   - The Sorcerer's Apprentice (Dukas, 1897), the march theme (A minor): A E A C A C B C A C, as written. Checked
  *     against a lettered beginner score.
  * No tune's interval shape is a prefix or a copy of another's (musical-cast.test.ts pins that).
+ * Founder 10-13, the sung-back jingle (`song`/`beats`), from Mutopia scores: Mountain King's whole first phrase in D minor
+ * (in A it would need A5; G for E#, and the semitone-lower E C E echo repeats as G E G); Toccata's first two statements
+ * at one octave (the score drops an octave each time); Bald Mountain's theme + its falling fill (an octave up, the score's
+ * B3/A3 are below the cast). The other four keep their opening (no checked continuation yet).
  */
 export const HALLOWEEN_MELODIES: readonly MusicalMelody[] = [
-  { id: 'mountain_king', name: 'In the Hall of the Mountain King', achievement: 'tune_mountain_king', notes: [A4h, B4h, C5h, D5h, E5h, C5h, E5h, D5h, B4h, D5h] },
-  { id: 'toccata', name: 'Toccata and Fugue in D minor', achievement: 'tune_toccata', notes: [A4h, G4h, A4h, G4h, F4h, E4h, D4h, C4h, D4h] },
+  { id: 'mountain_king', name: 'In the Hall of the Mountain King', achievement: 'tune_mountain_king', notes: [A4h, B4h, C5h, D5h, E5h, C5h, E5h, D5h, B4h, D5h],
+    song: [D4h, E4h, F4h, G4h, A4h, F4h, A4h, G4h, E4h, G4h, G4h, E4h, G4h, D4h, E4h, F4h, G4h, A4h, F4h, A4h, D5h, C5h, A4h, F4h, A4h, C5h],
+    beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3] },
+  { id: 'toccata', name: 'Toccata and Fugue in D minor', achievement: 'tune_toccata', notes: [A4h, G4h, A4h, G4h, F4h, E4h, D4h, C4h, D4h],
+    song: [A4h, G4h, A4h, G4h, F4h, E4h, D4h, C4h, D4h, A4h, G4h, A4h, E4h, F4h, C4h, D4h],
+    beats: [0.25, 0.25, 2, 0.25, 0.25, 0.25, 0.25, 0.5, 2.5, 0.25, 0.25, 2, 0.25, 0.25, 0.5, 3] },
   { id: 'funeral_march', name: 'Funeral March', achievement: 'tune_funeral_march', notes: [A4h, A4h, A4h, A4h, C5h, B4h, B4h, A4h, A4h, G4h, A4h] },
   { id: 'marionette', name: 'Funeral March of a Marionette', achievement: 'tune_marionette', notes: [A4h, A4h, G4h, F4h, G4h, A4h, B4h] },
   { id: 'danse_macabre', name: 'Danse Macabre', achievement: 'tune_danse_macabre', notes: [A4h, A4h, C5h, A4h, B4h, C5h, A4h, C5h, A4h, C5h, B4h, C5h, B4h, A4h] },
-  { id: 'bald_mountain', name: 'Night on Bald Mountain', achievement: 'tune_bald_mountain', notes: [B4h, C5h, B4h, A4h, B4h, C5h, C5h, E5h, B4h] },
+  { id: 'bald_mountain', name: 'Night on Bald Mountain', achievement: 'tune_bald_mountain', notes: [B4h, C5h, B4h, A4h, B4h, C5h, C5h, E5h, B4h],
+    song: [B4h, C5h, B4h, A4h, B4h, C5h, C5h, E5h, B4h, B4h, C5h, D5h, E5h, E5h, D5h, C5h, B4h, A4h],
+    beats: [1, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 0.5, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 1] },
   { id: 'sorcerers_apprentice', name: "The Sorcerer's Apprentice", achievement: 'tune_sorcerers_apprentice', notes: [A4h, E5h, A4h, C5h, A4h, C5h, B4h, C5h, A4h, C5h] },
 ];
 

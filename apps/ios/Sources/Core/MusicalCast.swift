@@ -112,9 +112,13 @@ public enum MusicalCast {
     ///     checked against a score and realized on the white keys by interval shape (see musical-cast.ts).
     public static let halloweenMelodies: [MusicalMelody] = [
         MusicalMelody(id: "mountain_king", name: "In the Hall of the Mountain King", achievement: "tune_mountain_king",
-                      notes: [A4, B4, C5, D5, E5, C5, E5, D5, B4, D5]),
+                      notes: [A4, B4, C5, D5, E5, C5, E5, D5, B4, D5],
+                      song: [D4, E4, F4, G4, A4, F4, A4, G4, E4, G4, G4, E4, G4, D4, E4, F4, G4, A4, F4, A4, D5, C5, A4, F4, A4, C5],
+                      beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]),
         MusicalMelody(id: "toccata", name: "Toccata and Fugue in D minor", achievement: "tune_toccata",
-                      notes: [A4, G4, A4, G4, F4, E4, D4, C4, D4]),
+                      notes: [A4, G4, A4, G4, F4, E4, D4, C4, D4],
+                      song: [A4, G4, A4, G4, F4, E4, D4, C4, D4, A4, G4, A4, E4, F4, C4, D4],
+                      beats: [0.25, 0.25, 2, 0.25, 0.25, 0.25, 0.25, 0.5, 2.5, 0.25, 0.25, 2, 0.25, 0.25, 0.5, 3]),
         MusicalMelody(id: "funeral_march", name: "Funeral March", achievement: "tune_funeral_march",
                       notes: [A4, A4, A4, A4, C5, B4, B4, A4, A4, G4, A4]),
         MusicalMelody(id: "marionette", name: "Funeral March of a Marionette", achievement: "tune_marionette",
@@ -122,7 +126,9 @@ public enum MusicalCast {
         MusicalMelody(id: "danse_macabre", name: "Danse Macabre", achievement: "tune_danse_macabre",
                       notes: [A4, A4, C5, A4, B4, C5, A4, C5, A4, C5, B4, C5, B4, A4]),
         MusicalMelody(id: "bald_mountain", name: "Night on Bald Mountain", achievement: "tune_bald_mountain",
-                      notes: [B4, C5, B4, A4, B4, C5, C5, E5, B4]),
+                      notes: [B4, C5, B4, A4, B4, C5, C5, E5, B4],
+                      song: [B4, C5, B4, A4, B4, C5, C5, E5, B4, B4, C5, D5, E5, E5, D5, C5, B4, A4],
+                      beats: [1, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 0.5, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 1]),
         MusicalMelody(id: "sorcerers_apprentice", name: "The Sorcerer's Apprentice", achievement: "tune_sorcerers_apprentice",
                       notes: [A4, E5, A4, C5, A4, C5, B4, C5, A4, C5]),
     ]
