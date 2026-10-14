@@ -779,11 +779,14 @@ private func muddleStarts(_ pattern: [Int]) -> [Int] {
 /// The width a word block's left column may use: the column minus the row
 /// padding, the spacer and the two 44 pt hint targets at the right.
 private func muddleColumnWidth(wide: Bool = false) -> CGFloat {
-    min(UIScreen.main.bounds.width, mdColumnMax(wide: wide)) - 2 * MdSize.columnPad - 2 * MdSize.trayPad - 2 * MdSize.rowPad - MdSize.gap - 2 * MdSize.hitTarget
+    min(UIScreen.main.bounds.width, mdColumnMax(wide: wide)) - 2 * MdSize.columnPad - 2 * MdSize.trayPad - 2 * MdSize.rowPad - MdSize.gap - 2 * mdScaled(MdSize.hitTarget, wide: wide)
 }
 
 /// §AG tablet slice 4: the play column is 420 pt on a phone and the 640 pt tablet column on medium/expanded.
 private func mdColumnMax(wide: Bool) -> CGFloat { wide ? 640 : 420 }
+
+/// §AG tablet slice 5: the scrambled-letter chips and the Letter · Solve circles grow ×1.4 on medium/expanded.
+private func mdScaled(_ base: CGFloat, wide: Bool) -> CGFloat { wide ? (base * 1.4).rounded(.down) : base }
 
 /// The tile side on the fixed six-column grid: 36 pt, or less only on a phone
 /// narrower than the grid plus the hint buttons.
@@ -904,10 +907,10 @@ private struct MuddlePunchCoin: View {
 /// Letter · Solve as small round candy buttons (§I4: amber bulb, pink eye)
 /// inside a 44 pt hit frame. The label is the accessibility label ("Reveal a
 /// letter" / "Solve this word").
-private func hintButton(_ label: String, _ symbol: String, action: @escaping () -> Void) -> some View {
+private func hintButton(_ label: String, _ symbol: String, wide: Bool = false, action: @escaping () -> Void) -> some View {
     // Founder 10-10: gold outlines (the gold letter tiles' color), not dark candy fills.
-    GoldOutlineIconButton(clay: symbol == "eye" ? "eye" : "hint", label: label, size: 34, action: action)
-        .frame(width: MdSize.hitTarget, height: MdSize.hitTarget)
+    GoldOutlineIconButton(clay: symbol == "eye" ? "eye" : "hint", label: label, size: mdScaled(34, wide: wide), action: action)
+        .frame(width: mdScaled(MdSize.hitTarget, wide: wide), height: mdScaled(MdSize.hitTarget, wide: wide))
 }
 
 /// A tappable tray letter (§I3): a small glossy letter chip (the B1 tile recipe
@@ -950,12 +953,13 @@ struct MuddleWordRow: View {
         let revealed = Array(s.revealed[row])
         let circled = Set(w.circled)
         let dimmed = muddleDimmed(tray: scramble, remaining: scrambleRemaining(pool: w.scramble, entry: s.entries[row]))
-        let side = muddleTileSide(wide: widthClass != .compact)
+        let wide = widthClass != .compact
+        let side = muddleTileSide(wide: wide)
         HStack(alignment: .center, spacing: MdSize.gap) {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 5) {
                     ForEach(0..<scramble.count, id: \.self) { i in
-                        trayLetter(scramble[i], size: MdSize.scrambleFont, color: FinishInk.softNumber, dimmed: dimmed[i] || solved) {
+                        trayLetter(scramble[i], size: MdSize.scrambleFont, color: FinishInk.softNumber, dimmed: dimmed[i] || solved, chip: mdScaled(MdSize.chip, wide: wide)) {
                             vm.tapTile(row, String(scramble[i]))
                         }
                         .disabled(solved || finished || dimmed[i])
@@ -979,8 +983,8 @@ struct MuddleWordRow: View {
             Spacer(minLength: 0)
             if !solved && !finished {
                 HStack(spacing: 0) {
-                    hintButton("Reveal a letter", "lightbulb") { vm.revealLetter(row) }
-                    hintButton("Solve this word", "eye") { vm.solveWord(row) }
+                    hintButton("Reveal a letter", "lightbulb", wide: wide) { vm.revealLetter(row) }
+                    hintButton("Solve this word", "eye", wide: wide) { vm.solveWord(row) }
                 }
             }
         }
@@ -1002,6 +1006,7 @@ struct MuddleWordRow: View {
 struct MuddleCompactRow: View {
     @ObservedObject var vm: MuddleVM
     let row: Int
+    @Environment(\.widthClass) private var widthClass
 
     var body: some View {
         let s = vm.state
@@ -1013,7 +1018,7 @@ struct MuddleCompactRow: View {
         HStack(spacing: MdSize.gap) {
             HStack(spacing: MdSize.compactGap) {
                 ForEach(0..<scramble.count, id: \.self) { i in
-                    trayLetter(scramble[i], size: MdSize.scrambleFont, color: FinishInk.softNumber, dimmed: dimmed[i], chip: MdSize.compactChip) {
+                    trayLetter(scramble[i], size: MdSize.scrambleFont, color: FinishInk.softNumber, dimmed: dimmed[i], chip: mdScaled(MdSize.compactChip, wide: widthClass != .compact)) {
                         vm.tapTile(row, String(scramble[i]))
                     }
                 }
@@ -1140,7 +1145,7 @@ struct MuddleFinalRow: View {
                     if showTray {
                         WordWrapLayout(spacing: 5, lineSpacing: 3) {
                             ForEach(0..<tray.count, id: \.self) { i in
-                                trayLetter(tray[i], size: MdSize.scrambleFont, color: FinishInk.softNumber, dimmed: dimmed[i], chip: MdSize.punchChip) {
+                                trayLetter(tray[i], size: MdSize.scrambleFont, color: FinishInk.softNumber, dimmed: dimmed[i], chip: mdScaled(MdSize.punchChip, wide: wide)) {
                                     vm.tapTile(SCRAMBLE_FINAL, String(tray[i]))
                                 }
                             }
@@ -1164,7 +1169,7 @@ struct MuddleFinalRow: View {
             }
             if showTray {
                 Spacer(minLength: 0)
-                hintButton("Reveal a letter", "lightbulb") { vm.revealLetter(SCRAMBLE_FINAL) }
+                hintButton("Reveal a letter", "lightbulb", wide: wide) { vm.revealLetter(SCRAMBLE_FINAL) }
             }
         }
         .padding(.horizontal, MdSize.rowPad).padding(.top, locked ? 5 : 8).padding(.bottom, locked ? 1 : 4)
