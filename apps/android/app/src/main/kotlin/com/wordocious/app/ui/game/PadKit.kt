@@ -32,6 +32,9 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Constraints
+import kotlin.math.roundToInt
 import com.wordocious.app.ui.CandyButton
 import com.wordocious.app.ui.HelperButton
 import com.wordocious.app.ui.helperTint
@@ -237,4 +240,20 @@ fun HintCandy(
         tint = color.helperTint(), vector = icon, used = used, enabled = !used, fill = fill,
         contentDescription = if (used) usedLabel else label,
     )
+}
+
+/** A pill row that never clips: laid out at its natural width, then scaled down as a whole (taps included) when the
+ *  screen is narrower — founder 10-14 bug: Starsweep's fourth pill ("Hint") was cut to "H" on a 411 dp Android phone.
+ *  The pills' labels take their natural width here (LocalNaturalLabels), so the unbounded measure never drops their text. */
+@Composable
+fun ShrinkToFitRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Layout({ androidx.compose.runtime.CompositionLocalProvider(com.wordocious.app.ui.LocalNaturalLabels provides true) { content() } }, modifier) { measurables, c ->
+        val p = measurables.first().measure(Constraints(maxHeight = c.maxHeight))
+        val k = if (c.hasBoundedWidth && p.width > c.maxWidth) c.maxWidth.toFloat() / p.width else 1f
+        val w = (p.width * k).roundToInt()
+        val h = (p.height * k).roundToInt()
+        layout(w, h) {
+            p.placeWithLayer((w - p.width) / 2, (h - p.height) / 2) { scaleX = k; scaleY = k }
+        }
+    }
 }

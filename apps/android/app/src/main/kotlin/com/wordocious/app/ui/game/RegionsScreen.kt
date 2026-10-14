@@ -427,7 +427,7 @@ fun RegionsBoard(state: RegionsState, focused: Int?, revealSolution: Boolean, on
 @Composable
 private fun RegionsPad(session: RegionsSession, onFinished: () -> Unit) {
     val s = session.state
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(horizontal = 2.dp)) {
+    ShrinkToFitRow(Modifier.padding(horizontal = 2.dp)) { Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         PadAction("Undo", Icons.AutoMirrored.Filled.Undo, onClick = { session.undo(onFinished) }, dim = s.history.isEmpty())
         PadAction("Erase", Icons.AutoMirrored.Filled.Backspace, onClick = { session.erase(onFinished) }, dim = !session.canErase)
         PadAction("Auto-cross", Icons.Filled.Close, onClick = { session.toggleAutoCross(onFinished) }, active = s.autoCross)
@@ -437,7 +437,7 @@ private fun RegionsPad(session: RegionsSession, onFinished: () -> Unit) {
             onClick = { session.hint(onFinished) }, color = com.wordocious.app.ui.CandyColor.AMBER,
             count = s.hintsUsed,
         )
-    }
+    } }
 }
 
 // ── Result + overlay ────────────────────────────────────────────────────────
