@@ -37,7 +37,7 @@ export const UI_ART_28_SIZE: Record<string, readonly [number, number]> = {
   'art-pocket-rps-paper-ring': [287, 318],
   'art-pocket-rps-scissors-ring': [247, 316],
   'art-pocket-rps-hidden-ring': [254, 313],
-  'art-pocket-rps-backdrop': [1200, 475],
+  'art-pocket-rps-backdrop': [1200, 471],
   'art-pocket-ring': [938, 317],
   'art-pocket-rps-hidden': [222, 281],
   'art-pocket-rps-paper': [247, 278],
