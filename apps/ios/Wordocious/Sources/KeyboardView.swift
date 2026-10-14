@@ -78,6 +78,11 @@ struct KeyboardView: View {
     }
 
     var body: some View {
+        // §AG tablet slice 2: the key rows cap at the 640 pt column on iPad (phones pass through).
+        keyRows.tabletColumn()
+    }
+
+    private var keyRows: some View {
         // BJ3: the per-board key states once per render (not once per key).
         let quadBoards = vm.useQuadrantKeyboard ? (primed ? shownBoards : vm.boardKeyStates()) : []
         return VStack(spacing: 7) {

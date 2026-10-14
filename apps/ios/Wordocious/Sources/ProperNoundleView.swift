@@ -852,6 +852,11 @@ struct NoundleKeyboard: View {
     private var keyHeight: CGFloat { layout == "michael" ? 44 : 52 }
 
     var body: some View {
+        // §AG tablet slice 2: the key rows cap at the 640 pt column on iPad (phones pass through).
+        keyRows.tabletColumn()
+    }
+
+    private var keyRows: some View {
         VStack(spacing: 7) {
             ForEach(0..<rows.count, id: \.self) { r in
                 HStack(spacing: 5) {

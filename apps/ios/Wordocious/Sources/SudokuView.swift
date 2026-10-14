@@ -553,6 +553,7 @@ struct SudokuPad: View {
             }
         }
         .padding(.horizontal, 2)
+        .tabletColumn()   // §AG tablet slice 2: tool bar + digit pad cap at the 640 pt column on iPad
         // Hardware keys (founder, 2026-09-30): web sudoku-game keydown — 1–9
         // place, Delete / 0 erase, N notes, H hint, ⌘Z undo, arrows move.
         .hardwareKeyboard(enabled: !vm.isFinished) { key in
