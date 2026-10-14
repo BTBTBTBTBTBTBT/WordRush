@@ -566,7 +566,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         ScrollToTopOnReselect(lbListState) // AJ: a re-tap of Leaderboard scrolls to the top.
         LazyColumn(
             state = lbListState, modifier = Modifier.fillMaxSize(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = LB_SIDE, end = LB_SIDE, bottom = TAB_CONTENT_BOTTOM_PAD), // AS3 (side padding is content padding so the stage can bleed to the screen edges)
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = LB_SIDE + tabletPageInset(rememberWidthClass()), end = LB_SIDE + tabletPageInset(rememberWidthClass()), bottom = TAB_CONTENT_BOTTOM_PAD), // AS3 (side padding is content padding so the stage can bleed to the screen edges)
         ) {
             // 11 + 11b (founder 10-07): the Leaderboard top is ONE living stage — the day's bubble title with your
             // mascot + the day's host, the game picker with no card, the selected-game strip (art · N today · YOUR

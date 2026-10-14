@@ -246,7 +246,7 @@ fun FriendsScreen(
     Column(
         Modifier.fillMaxSize().pageBackground(PageTint.FRIENDS, alwaysLight = true)
             .verticalScroll(friendsScroll)
-            .padding(horizontal = 16.dp, vertical = 10.dp).padding(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
+            .padding(horizontal = 16.dp + tabletPageInset(rememberWidthClass()), vertical = 10.dp).padding(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
         // BJ7: 12 between sections (was 16).
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {

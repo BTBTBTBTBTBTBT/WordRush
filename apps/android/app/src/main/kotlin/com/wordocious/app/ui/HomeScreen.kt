@@ -246,7 +246,7 @@ fun HomeScreen(
                 }
                 .verticalScroll(homeScroll)
                 .padding(top = HOME_HOST_OVERHANG)
-                .padding(horizontal = 16.dp).padding(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
+                .padding(horizontal = 16.dp + tabletPageInset(rememberWidthClass())).padding(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Proportional line boxes for the whole page (see homeTightTextStyle):

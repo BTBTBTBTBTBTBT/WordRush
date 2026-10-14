@@ -3,6 +3,8 @@ package com.wordocious.app.ui.game
 import com.wordocious.app.ui.gameBackground
 import com.wordocious.app.ui.gamePageFor
 import com.wordocious.app.ui.tabletPageMaxWidth
+import com.wordocious.app.ui.tabletPageMargin
+import com.wordocious.app.ui.GAME_TITLE_ART_HEADER_MAX
 import android.app.Activity
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -197,17 +199,26 @@ private data class MuddleSizes(
 )
 private val MUDDLE_REGULAR = MuddleSizes(34.dp, 24.dp, 22.dp, 20.dp, 28.dp, 18.dp, 30.dp, 22.dp, 44.dp, 30.dp, 28.dp, 14.sp, 18.sp)
 private val MUDDLE_SHORT = MuddleSizes(32.dp, 22.dp, 22.dp, 20.dp, 24.dp, 18.dp, 28.dp, 22.dp, 40.dp, 28.dp, 26.dp, 13.sp, 16.sp, lockedOneLine = true)
-/** Tablet slice 4 (iOS 352d03e95 + d4d56caba) grew these x1.4; tablet slice 5 (R3) x1.6, and the compact lines too. */
-private const val MUDDLE_TABLET_SCALE = 1.6f
-private fun muddleSizesFor(screenHeightDp: Int, tablet: Boolean = false): MuddleSizes {
+/**
+ * Tablet scale (R3) for Muddle's sizes: the widest word row (six scrambled chips + six answer
+ * tiles, 282 dp at phone size) fills about 90% of the page, between 1.6x and 2.6x. Phones 1x.
+ */
+@Composable
+private fun muddleTabletScale(wc: WidthClass): Float {
+    if (wc == WidthClass.COMPACT) return 1f
+    val screenW = LocalConfiguration.current.screenWidthDp
+    val page = minOf(screenW - tabletPageMargin(wc).value, tabletPageMaxWidth.value)
+    return ((page * 0.9f - 42f) / 282f).coerceIn(1.6f, 2.6f)
+}
+private fun muddleSizesFor(screenHeightDp: Int, k: Float = 1f): MuddleSizes {
     val base = if (screenHeightDp < SHORT_SCREEN_DP) MUDDLE_SHORT else MUDDLE_REGULAR
-    if (!tablet) return base
-    val k = MUDDLE_TABLET_SCALE
+    if (k == 1f) return base
     return base.copy(
         tile = base.tile * k, chip = base.chip * k, coin = base.coin * k, trayChip = base.trayChip * k,
-        hintRow = base.hintRow * k, hintBtn = base.hintBtn * k,
-        // Tablet slice 5 (R3): the compact word lines and their small tiles grow too, so a 1000 dp panel isn't sparse.
+        hintRow = base.hintRow * k, hintBtn = base.hintBtn * k, hintCircle = base.hintCircle * k,
         smallTile = base.smallTile * k, smallChip = base.smallChip * k, line = base.line * k, ring = base.ring * k,
+        // Tablet (R3): the caption under the picture is 1.3x.
+        captionSp = (base.captionSp.value * 1.3f).sp, captionLine = (base.captionLine.value * 1.3f).sp,
     )
 }
 private val LocalMuddleSizes = androidx.compose.runtime.compositionLocalOf { MUDDLE_REGULAR }
@@ -519,7 +530,7 @@ fun MuddleScreen(
             // compact header · the stage (cartoon + caption ALWAYS shown at the top, the rows
             // under them, scrolling internally only if they must) · Delete · Clear · keyboard.
             val screenH = LocalConfiguration.current.screenHeightDp
-            val sizes = muddleSizesFor(screenH, tablet)
+            val sizes = muddleSizesFor(screenH, muddleTabletScale(rememberWidthClass()))
             androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides sizes) {
                 Column(Modifier.fillMaxSize().gamePageFor(rememberWidthClass()), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     MuddleHeader(session, compact = true)
@@ -578,8 +589,16 @@ private fun MuddleHeader(session: MuddleSession, compact: Boolean) {
             // 44 dp, clear of Home on the left and sound + help on the right) so the cartoon gets
             // the height; the one meta line follows under the row.
             val res = com.wordocious.app.ui.gameTitleArtResForKey("SCRAMBLE")
-            Box(Modifier.fillMaxWidth().height(HEADER_BAND * art).padding(top = GAME_CONTROLS_INSET * chrome).padding(horizontal = HEADER_ART_INSET * art), contentAlignment = Alignment.Center) {
-                if (res != null) com.wordocious.app.ui.FittedGameTitleArt(res, com.wordocious.app.ui.gameTitleLabelForKey("SCRAMBLE"), maxHeight = HEADER_ART_MAX * art)
+            // Tablet (R4): the title's cap is the shared game-header cap x the title scale (2x on EXPANDED), beside the corner buttons.
+            val tabletTitle = wc != WidthClass.COMPACT
+            val titleMax = if (tabletTitle) GAME_TITLE_ART_HEADER_MAX * art else HEADER_ART_MAX
+            val top = GAME_CONTROLS_INSET * chrome
+            Box(
+                Modifier.fillMaxWidth().height(if (tabletTitle) titleMax + top else HEADER_BAND).padding(top = top)
+                    .padding(horizontal = if (tabletTitle) 80.dp else HEADER_ART_INSET),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (res != null) com.wordocious.app.ui.FittedGameTitleArt(res, com.wordocious.app.ui.gameTitleLabelForKey("SCRAMBLE"), maxHeight = titleMax)
                 else fallback()
             }
         } else {

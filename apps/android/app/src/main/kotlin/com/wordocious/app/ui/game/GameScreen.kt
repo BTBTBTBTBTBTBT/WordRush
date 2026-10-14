@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.drawscope.inset
 import com.wordocious.app.ui.gameBackground
 import com.wordocious.app.ui.gamePageFor
 import com.wordocious.app.ui.rememberWidthClass
+import com.wordocious.app.ui.WidthClass
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -1184,6 +1185,8 @@ internal fun SingleBoard(
         GameStatus.LOST -> TrayState.LOST
         else -> TrayState.PLAYING
     }
+    // Tablet slice 5 (R2): the board's width cap is the tablet page (1000 dp), not the 640 column, so it grows into the height.
+    val boardMaxW = if (rememberWidthClass() != WidthClass.COMPACT) com.wordocious.app.ui.tabletPageMaxWidth.value else BoardSizing.MAX_WIDTH
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
         val gap = BOARD_TILE_GAP
         // Inter-word gaps are 14 dp where intra-word gaps are the tile gap (iOS NoundleBoard).
@@ -1198,7 +1201,7 @@ internal fun SingleBoard(
         val availH = (maxHeight.value - chromeH).coerceAtLeast(0f)
         val fit = BoardSizing.fitSquare(
             availW = (maxWidth.value - chromeW).coerceAtLeast(0f), availH = if (pnFill) 100_000f else availH,
-            cols = wordLen, rows = rows, gap = gap.value, extraWidth = extraGroupGap.value,
+            cols = wordLen, rows = rows, gap = gap.value, extraWidth = extraGroupGap.value, maxWidth = boardMaxW,
         )
         val rowsFit = if (pnFill) BoardSizing.fillRows(fit.cellW, availH, rows, gap.value) else BoardSizing.Rows(fit.cellW, fit.cellW, gap.value)
         val tile = rowsFit.tileW

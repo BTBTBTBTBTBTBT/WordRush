@@ -485,10 +485,9 @@ fun ProfileScreen(
         // BJ1: the page swipe watches the whole list (the list's own vertical scroll consumes
         // vertical drags first, so only a clearly sideways swipe ever switches the game).
         modifier = Modifier.fillMaxSize().pageBackground(PageTint.STATS)
-            .then(swipeModifier)
-            .padding(horizontal = 16.dp),
+            .then(swipeModifier),
         state = listState,
-        contentPadding = PaddingValues(bottom = TAB_CONTENT_BOTTOM_PAD + 8.dp), // AS3
+        contentPadding = PaddingValues(start = 16.dp + tabletPageInset(rememberWidthClass()), end = 16.dp + tabletPageInset(rememberWidthClass()), bottom = TAB_CONTENT_BOTTOM_PAD + 8.dp), // AS3
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { Spacer(Modifier.height(8.dp)) }

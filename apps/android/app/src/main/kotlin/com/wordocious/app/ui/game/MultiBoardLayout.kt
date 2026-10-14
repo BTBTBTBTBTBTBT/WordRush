@@ -25,6 +25,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.WidthClass
+import com.wordocious.app.ui.rememberWidthClass
+import com.wordocious.app.ui.tabletPageMaxWidth
 import com.wordocious.core.BoardState
 import com.wordocious.core.GameStatus
 import com.wordocious.core.TileState
@@ -52,6 +55,7 @@ fun MultiBoardLayout(
 ) {
     val isOctordle = boards.size > 4
     val cols = if (isOctordle) 4 else 2
+    // Tablet slice 5 (R2): on MEDIUM / EXPANDED the grid may use the tablet page width, with square tiles.
     val rows = (boards.size + cols - 1) / cols
 
     // OctoWord tap-to-zoom state
@@ -61,6 +65,7 @@ fun MultiBoardLayout(
     // over the navigation-level handler while a board is zoomed.
     androidx.activity.compose.BackHandler(enabled = expandedIndex != null) { expandedIndex = null }
 
+    val tablet = rememberWidthClass() != WidthClass.COMPACT
     BoxWithConstraints(modifier = modifier) {
         val containerW = maxWidth
         val containerH = maxHeight
@@ -73,6 +78,7 @@ fun MultiBoardLayout(
             availW = containerW.value, availH = containerH.value,
             boardCols = cols, boardRows = rows, tileCols = tileCols, tileRows = tileRows,
             tileGap = 2f, boardChrome = MINI_BOARD_CHROME,
+            maxWidth = if (tablet) tabletPageMaxWidth.value else BoardSizing.MAX_WIDTH, square = tablet,
         )
 
         // Grid of mini boards filling the fitted grid equally, centered in the space.

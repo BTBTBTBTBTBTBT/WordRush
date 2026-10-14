@@ -62,6 +62,15 @@ fun Modifier.tabletPageFor(widthClass: WidthClass): Modifier =
         .wrapContentWidth(Alignment.CenterHorizontally)
         .widthIn(max = tabletPageMaxWidth)
 
+// Tablet slice 6: a page's side inset INSIDE a full-width scroll container (so a swipe in the margin scrolls):
+// the page margin, or more when the 1000 dp cap centres the page. Phones: 0 (the modifier is unchanged).
+@Composable
+fun tabletPageInset(widthClass: WidthClass): Dp {
+    if (widthClass == WidthClass.COMPACT) return 0.dp
+    val w = LocalConfiguration.current.screenWidthDp.dp
+    return maxOf(tabletPageMargin(widthClass), (w - tabletPageMaxWidth) / 2)
+}
+
 // Tablet slice 5: the game screens use the same page as the top-level tabs (min(width - 2 x margin,
 // tabletPageMaxWidth)). A phone keeps its 10 dp side padding, byte for byte.
 

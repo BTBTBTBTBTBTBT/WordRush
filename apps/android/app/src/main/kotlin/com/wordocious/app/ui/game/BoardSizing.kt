@@ -90,6 +90,8 @@ object BoardSizing {
         tileGap: Float,
         boardChrome: Float,
         maxWidth: Float = MAX_WIDTH,
+        // Tablet slice 5 (R2): square tiles. The grid keeps its aspect and is as large as the width AND height allow.
+        square: Boolean = false,
     ): Fit {
         val boardCols = boardCols.coerceAtLeast(1)
         val boardRows = boardRows.coerceAtLeast(1)
@@ -100,6 +102,15 @@ object BoardSizing {
         val cellW = ((boardW - boardChrome - tileGap * (tileCols - 1)) / tileCols).coerceAtLeast(0f)
         val boardHSquare = cellW * tileRows + tileGap * (tileRows - 1) + boardChrome
         val maxH = (availH * HEIGHT_FRACTION).coerceAtLeast(0f)
+        if (square) {
+            val cellFromH = ((maxH / boardRows - boardChrome - tileGap * (tileRows - 1)) / tileRows).coerceAtLeast(0f)
+            val cell = minOf(cellW, cellFromH)
+            return Fit(
+                width = (cell * tileCols + tileGap * (tileCols - 1) + boardChrome) * boardCols,
+                height = (cell * tileRows + tileGap * (tileRows - 1) + boardChrome) * boardRows,
+                cellW = cell, cellH = cell,
+            )
+        }
         val height = minOf(boardHSquare * boardRows, maxH)
         val cellH = ((height / boardRows - boardChrome - tileGap * (tileRows - 1)) / tileRows).coerceAtLeast(0f)
         return Fit(width = width, height = height, cellW = cellW, cellH = cellH)

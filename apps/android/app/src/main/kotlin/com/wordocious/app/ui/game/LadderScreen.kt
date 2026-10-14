@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import com.wordocious.app.ui.gamePageFor
+import com.wordocious.app.ui.rememberWidthClass
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -313,7 +315,7 @@ fun LadderScreen(
             // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
             LadderFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
-            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.fillMaxSize().gamePageFor(rememberWidthClass()), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 LadderHeader(session)
                 // Doug (Android, 10-05): the board scrolled as one block, so a few rungs pushed
                 // the REACH row under the controls. Now the tiles size to the height between the

@@ -671,7 +671,7 @@ fun MainScreen() {
                             val headerScroll = headerScrolls[tab.coerceIn(0, 3)]
                             // A re-tap scrolls the tab to the top: the header expands again.
                             androidx.compose.runtime.LaunchedEffect(tabReselect.getOrElse(tab) { 0 }) { headerScroll.reset() }
-                            Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab()).tabletPageFor(widthClass)
+                            Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab())
                                 .nestedScroll(scrollWatch).nestedScroll(headerScroll)
                                 .then(if (activeTab) Modifier.headerScrollFade(headerScroll) else Modifier)) {
                               androidx.compose.runtime.CompositionLocalProvider(LocalTabHidden provides tabHidden, LocalScrollActive provides scrollWatch.active, LocalPageTint provides tabPageTint(tab), LocalTabReselect provides tabReselect.getOrElse(tab) { 0 }) {
@@ -1187,7 +1187,7 @@ fun MainScreen() {
             androidx.activity.compose.BackHandler { showSettings = false }
             androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().pageBackground(PageTint.HOME).statusBarsPadding()) {
                 // Tablet slice 1: Settings sits in the same centered column as the tabs.
-                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().tabletColumnFor(widthClass)) {
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().tabletPageFor(widthClass)) {
                     SettingsScreen(onDone = { showSettings = false }, onOpenInfo = { infoRoute = it })
                 }
             }
