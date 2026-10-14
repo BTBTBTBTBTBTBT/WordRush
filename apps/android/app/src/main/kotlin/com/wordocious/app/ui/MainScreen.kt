@@ -1186,8 +1186,8 @@ fun MainScreen() {
         } else if (showSettings) {
             androidx.activity.compose.BackHandler { showSettings = false }
             androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().pageBackground(PageTint.HOME).statusBarsPadding()) {
-                // Tablet slice 1: Settings sits in the same centered column as the tabs.
-                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().tabletPageFor(widthClass)) {
+                // Tablet slice 1: Settings sits in the same centered column as the tabs (its margin is inside its scroll, slice 6).
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
                     SettingsScreen(onDone = { showSettings = false }, onOpenInfo = { infoRoute = it })
                 }
             }

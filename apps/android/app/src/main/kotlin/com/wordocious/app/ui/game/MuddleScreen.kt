@@ -568,7 +568,6 @@ fun MuddleScreen(
 private fun MuddleHeader(session: MuddleSession, compact: Boolean) {
     // Tablet slice 5 (R4): the title art, its band and the meta line scale with the tablet header.
     val wc = rememberWidthClass()
-    val art = com.wordocious.app.ui.titleArtScale(wc)
     val chrome = com.wordocious.app.ui.chromeScale(wc)
     val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     val s = session.state
@@ -590,15 +589,19 @@ private fun MuddleHeader(session: MuddleSession, compact: Boolean) {
             // the height; the one meta line follows under the row.
             val res = com.wordocious.app.ui.gameTitleArtResForKey("SCRAMBLE")
             // Tablet (R4): the title's cap is the shared game-header cap x the title scale (2x on EXPANDED), beside the corner buttons.
+            // Founder 10-14: the tablet title is at most 110 dp tall and 60% of the page wide.
             val tabletTitle = wc != WidthClass.COMPACT
-            val titleMax = if (tabletTitle) GAME_TITLE_ART_HEADER_MAX * art else HEADER_ART_MAX
+            val titleMax = if (tabletTitle) com.wordocious.app.ui.TABLET_TITLE_HEIGHT_MAX else HEADER_ART_MAX
             val top = GAME_CONTROLS_INSET * chrome
             Box(
                 Modifier.fillMaxWidth().height(if (tabletTitle) titleMax + top else HEADER_BAND).padding(top = top)
                     .padding(horizontal = if (tabletTitle) 80.dp else HEADER_ART_INSET),
                 contentAlignment = Alignment.Center,
             ) {
-                if (res != null) com.wordocious.app.ui.FittedGameTitleArt(res, com.wordocious.app.ui.gameTitleLabelForKey("SCRAMBLE"), maxHeight = titleMax)
+                if (res != null) com.wordocious.app.ui.FittedGameTitleArt(
+                    res, com.wordocious.app.ui.gameTitleLabelForKey("SCRAMBLE"), maxHeight = titleMax,
+                    widthCap = com.wordocious.app.ui.tabletTitleWidthCap(wc),
+                )
                 else fallback()
             }
         } else {

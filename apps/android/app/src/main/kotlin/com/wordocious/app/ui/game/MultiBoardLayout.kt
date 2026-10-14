@@ -78,7 +78,9 @@ fun MultiBoardLayout(
             availW = containerW.value, availH = containerH.value,
             boardCols = cols, boardRows = rows, tileCols = tileCols, tileRows = tileRows,
             tileGap = 2f, boardChrome = MINI_BOARD_CHROME,
-            maxWidth = if (tablet) tabletPageMaxWidth.value else BoardSizing.MAX_WIDTH, square = tablet,
+            // Founder 10-14: on tablets the grid fills the page width and the height above the keyboard
+            // (tiles go wide when the height is short, the phone rule), not a square-tile block at half width.
+            maxWidth = if (tablet) tabletPageMaxWidth.value else BoardSizing.MAX_WIDTH,
         )
 
         // Grid of mini boards filling the fitted grid equally, centered in the space.

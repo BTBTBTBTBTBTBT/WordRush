@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import com.wordocious.app.ui.gamePageFor
+import com.wordocious.app.ui.WidthClass
 import com.wordocious.app.ui.rememberWidthClass
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -321,8 +322,10 @@ fun LadderScreen(
                 // the REACH row under the controls. Now the tiles size to the height between the
                 // header and Undo/Hint, and a ladder too long even at the smallest tile scrolls
                 // only its climbed rungs — the typing row and the target stay pinned in view.
+                // Founder 10-14: a tablet's ladder sits centered in the free height (its rungs are capped, not stretched).
                 androidx.compose.foundation.layout.BoxWithConstraints(
-                    Modifier.weight(1f).fillMaxWidth().padding(vertical = 4.dp), contentAlignment = Alignment.TopCenter,
+                    Modifier.weight(1f).fillMaxWidth().padding(vertical = 4.dp),
+                    contentAlignment = if (rememberWidthClass() == WidthClass.COMPACT) Alignment.TopCenter else Alignment.Center,
                 ) { LadderPlayBoard(session, maxHeight) }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Capsule("Undo", Icons.AutoMirrored.Filled.Undo, dim = session.state.words.size <= 1) { session.undo(onFinished) }
@@ -451,14 +454,16 @@ private fun LadderPlayBoard(session: LadderSession, maxH: androidx.compose.ui.un
     val s = session.state
     val showEnd = s.current != s.end
     val fontScale = LocalDensity.current.fontScale
-    val fit = LadderFit.tile(maxH.value, rungs = s.words.size, showEnd = showEnd, labelLine = 15f * fontScale)
+    // Founder 10-14: on tablets the rungs grow to fill the free height (tile cap 120 dp) and the tray takes the page.
+    val tablet = rememberWidthClass() != WidthClass.COMPACT
+    val fit = LadderFit.tile(maxH.value, rungs = s.words.size, showEnd = showEnd, labelLine = 15f * fontScale, maxTile = if (tablet) LadderFit.TABLET_MAX_TILE else LadderFit.MAX_TILE)
     val tile = fit.tile.dp
     val gap = fit.gap.dp
     val scroll = rememberScrollState()
     LaunchedEffect(s.words.size, scroll.maxValue) { scroll.animateScrollTo(scroll.maxValue) }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(gap),
-        modifier = Modifier.widthIn(max = 420.dp).gameTray(
+        modifier = Modifier.widthIn(max = if (tablet) 1000.dp else 420.dp).gameTray(
             LADDER_ACCENT, finishTray(false, false),
             padding = androidx.compose.foundation.layout.PaddingValues(LadderFit.PAD.dp),
         ),
@@ -487,11 +492,14 @@ object LadderFit {
     /** [rungs] climbed words (START included) + the typing row (+ the REACH label of
      *  [labelLine] dp and the target when [showEnd]) inside a tray of [PAD] padding and
      *  the lip, in [availH] dp. */
-    fun tile(availH: Float, rungs: Int, showEnd: Boolean, labelLine: Float): Fit {
+    /** Tablet slice 5 (R1/R3): the rung tile cap on MEDIUM / EXPANDED. */
+    const val TABLET_MAX_TILE = 120f
+
+    fun tile(availH: Float, rungs: Int, showEnd: Boolean, labelLine: Float, maxTile: Float = MAX_TILE): Fit {
         val rows = rungs + 1 + (if (showEnd) 1 else 0)
         for (gap in floatArrayOf(6f, 4f)) {
             val fixed = PAD * 2 + GameTrayStyle.LIP.value + (if (showEnd) labelLine + gap else 0f)
-            val t = FinishedSizing.rowTile(availH, rows, gap, fixed, MAX_TILE, if (gap == 6f) 36f else MIN_TILE)
+            val t = FinishedSizing.rowTile(availH, rows, gap, fixed, maxTile, if (gap == 6f) 36f else MIN_TILE)
             if (t != null) return Fit(kotlin.math.floor(t), gap, scrolls = false)
         }
         return Fit(MIN_TILE, 4f, scrolls = true)

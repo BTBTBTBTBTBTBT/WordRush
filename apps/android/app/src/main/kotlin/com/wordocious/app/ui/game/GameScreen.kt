@@ -291,8 +291,10 @@ fun GauntletStepper(
     modifier: Modifier = Modifier,
     cleared: Set<Int> = (0 until current).toSet(),
     stageName: String = "",
+    /** Tablet slice 5 (R4): the header art is 1.6x on MEDIUM and EXPANDED (the medallions grow with it). */
+    scale: Float = 1f,
 ) {
-    val h = GauntletHeaderSpec.HEIGHT.dp
+    val h = GauntletHeaderSpec.HEIGHT.dp * scale
     val w = h * GauntletHeaderSpec.ASPECT
     val medals = GauntletHeaderSpec.medals(total, current, cleared)
     Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -850,6 +852,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                         total = g?.totalStages ?: 5,
                         cleared = g?.stageResults?.map { it.stageIndex }?.toSet() ?: emptySet(),
                         stageName = g?.let { it.stages.getOrNull(it.currentStage)?.name } ?: "",
+                        scale = if (rememberWidthClass() != com.wordocious.app.ui.WidthClass.COMPACT) 1.6f else 1f,
                     )
                 }
                 // iOS titles the CURRENT STAGE in Gauntlet (gauntletHeader) and

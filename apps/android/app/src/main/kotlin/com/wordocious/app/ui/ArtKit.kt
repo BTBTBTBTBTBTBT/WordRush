@@ -478,6 +478,8 @@ fun FittedGameTitleArt(
     minHeight: Dp = 0.dp,
     alignment: Alignment = Alignment.Center,
     heading: Boolean = true,
+    /** Tablet slice 5 (R4): the art's width cap (60% of the page); null = the box width only. */
+    widthCap: Dp? = null,
 ) {
     // AQ2: the ~900 px title decoded once at about screen width and shared (mode switches re-use it).
     // Season preview: the season's lettering at the same box rules (its own aspect).
@@ -486,7 +488,9 @@ fun FittedGameTitleArt(
     val ratio = if (intrinsic.isSpecified && intrinsic.width > 0f && intrinsic.height > 0f) intrinsic.height / intrinsic.width
         else GAME_TITLE_ART_FALLBACK_RATIO
     BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = alignment) {
-        val h = gameTitleArtHeight(maxWidth, ratio, minHeight, maxHeight)
+        var h = gameTitleArtHeight(maxWidth, ratio, minHeight, maxHeight)
+        // Tablet: a long title is also held to the width cap, so it never spans the whole page.
+        if (widthCap != null) h = minOf(h, maxOf(minHeight, widthCap * ratio))
         Image(
             painter,
             contentDescription = label,
@@ -535,12 +539,34 @@ fun GameHeaderTitle(dbKey: String, modifier: Modifier = Modifier, maxHeight: Dp?
     }
     val screenHeight = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp
     // Tablet slice 5 (R4): the title art is 2x its phone height on EXPANDED (1.6x MEDIUM), the corner row grows with it.
-    val k = titleArtScale(rememberWidthClass())
+    // Founder 10-14: never taller than 110 dp, and never wider than 60% of the page (long titles stay short).
+    val wc = rememberWidthClass()
+    val k = titleArtScale(wc)
+    val tablet = wc != WidthClass.COMPACT
     FittedGameTitleArt(
         res, gameTitleLabelForKey(dbKey),
-        modifier.fillMaxWidth().padding(top = GAME_CORNER_ROW * chromeScale(rememberWidthClass())).padding(horizontal = GAME_TITLE_ART_SIDE_INSET),
-        maxHeight = minOf(gameHeaderTitleMax(screenHeight), maxHeight ?: GAME_TITLE_ART_HEADER_MAX) * k, minHeight = GAME_TITLE_ART_HEADER_MIN * k,
+        modifier.fillMaxWidth().padding(top = GAME_CORNER_ROW * chromeScale(wc)).padding(horizontal = GAME_TITLE_ART_SIDE_INSET),
+        maxHeight = if (tablet) minOf(minOf(gameHeaderTitleMax(screenHeight), maxHeight ?: GAME_TITLE_ART_HEADER_MAX) * k, TABLET_TITLE_HEIGHT_MAX)
+            else minOf(gameHeaderTitleMax(screenHeight), maxHeight ?: GAME_TITLE_ART_HEADER_MAX),
+        minHeight = GAME_TITLE_ART_HEADER_MIN * k,
+        widthCap = if (tablet) tabletTitleWidthCap(wc) else null,
     )
+}
+
+/** Tablet slice 5 (founder 10-14): a game title art is at most 110 dp tall on a tablet ... */
+val TABLET_TITLE_HEIGHT_MAX: Dp = 110.dp
+
+/** ... and at most 60% of the tablet page wide (the page = min(screen - 2 x margin, 1000)). Null on a phone. */
+@Composable
+fun tabletTitleWidthCap(wc: WidthClass): Dp? {
+    if (wc == WidthClass.COMPACT) return null
+    return tabletTitleWidthCapFor(wc, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp)
+}
+
+/** The 60%-of-page width cap for a window [screenWidthDp] wide on [wc] (MEDIUM / EXPANDED). */
+fun tabletTitleWidthCapFor(wc: WidthClass, screenWidthDp: Int): Dp {
+    val page = minOf(screenWidthDp - tabletPageMargin(wc).value * 2, tabletPageMaxWidth.value)
+    return (page * 0.6f).dp
 }
 
 // ── §16 Title art motion ──────────────────────────────────────────────────
