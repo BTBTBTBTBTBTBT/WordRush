@@ -580,6 +580,7 @@ private struct BottomNav: View {
     // minus what they've already seen (FriendsBadgeStore); opening Friends clears it.
     @ObservedObject private var badge = FriendsBadgeStore.shared
     @Environment(\.accessibilityReduceMotion) private var envReduce
+    @Environment(\.widthClass) private var widthClass
     /// The Friends icon's happy wiggle when a new item arrives (±8°, 2 swings).
     @State private var wiggle: Double = 0
     /// The badge's spring-in (scale 0 → 1.15 → 1).
@@ -668,7 +669,7 @@ private struct BottomNav: View {
             Haptics.tap()
         } label: {
             VStack(spacing: 2) {
-                Icon3D(icon, size: 28)
+                Icon3D(icon, size: 28 * tabletChromeScale(widthClass))
                     .saturation(active ? 1 : 0.6)
                     .opacity(active ? 1 : 0.55)
                     .rotationEffect(.degrees(t == .friends ? wiggle : 0), anchor: .bottom)
@@ -681,14 +682,14 @@ private struct BottomNav: View {
                         }
                     }
                 Text(label)
-                    .font(Brand.font(11, active ? .black : .heavy))
+                    .font(Brand.font(11 * tabletChromeScale(widthClass), active ? .black : .heavy))
                     .foregroundStyle(active ? (SeasonKit.surfaces?.card != nil ? Color(hex: 0xFDBA74) : (ThemeKit.tabInk ?? Color(hex: 0x6D28D9)))
                                      : (Theme.isDark ? Theme.textMuted : Color(hex: 0x8A78AD)))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 // The selected tab's underline pill (a clear slot otherwise, so no tab shifts).
                 Capsule().fill(active ? (SeasonKit.surfaces?.card != nil ? Color(hex: 0xF97316) : (ThemeKit.tabInk ?? Color(hex: 0x7C3AED))) : .clear)
-                    .frame(width: 22, height: 3)
+                    .frame(width: 22 * tabletChromeScale(widthClass), height: 3)
                     .padding(.top, 1)
             }
             .frame(maxWidth: .infinity)

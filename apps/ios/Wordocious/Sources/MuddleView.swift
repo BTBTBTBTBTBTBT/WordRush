@@ -368,6 +368,7 @@ struct MuddleView: View {
                 } extras: {
                     result
                 }
+                .tabletPage()
                 .padding(.horizontal, MdSize.columnPad)
             } else {
                 playing
@@ -447,6 +448,7 @@ struct MuddleView: View {
                 .padding(.bottom, 4)
             }
         }
+        .tabletPage()
         .padding(.horizontal, MdSize.columnPad)
         .onPreferenceChange(MdRowsKey.self) { h in if h > 0, abs(h - rowsHeight) > 0.5 { rowsHeight = h } }
     }
@@ -457,26 +459,41 @@ struct MuddleView: View {
     /// and caption never move.
     private func middle(_ size: CGSize) -> some View {
         let gaps = MdSize.gap * 2
-        let cap = min(floor(UIScreen.main.bounds.height * MdSize.cartoonCap), floor(min(size.width, mdColumnMax(wide: widthClass != .compact)) * 0.75))
+        let wide = widthClass != .compact
+        // Phones: the 36 % cap and the 420 column, as before. Tablets (slice 5, R2): the picture takes the
+        // leftover height, up to its 4:3 width on the page, and the whole stack centers in the free height.
+        let cap = wide ? floor(min(size.width, tabletPageMaxWidth) * 0.75)
+                       : min(floor(UIScreen.main.bounds.height * MdSize.cartoonCap), floor(min(size.width, mdColumnMax(wide: false)) * 0.75))
         // The floor yields only when the whole middle area cannot even hold it (never on a supported phone).
         let floorH = min(MdSize.cartoonFloor, max(60, size.height - captionHeight - gaps - 60))
         let h = max(floorH, min(cap, size.height - captionHeight - rowsHeight - gaps))
         let rowsRoom = max(0, size.height - h - captionHeight - gaps)
         return VStack(spacing: MdSize.gap) {
-            // §AG tablet slice 4: on medium/expanded the cartoon block centers in the free height (no dead band above the rows).
-            if widthClass != .compact { Spacer(minLength: 0) }
-            MuddleCartoonPanel(cartoon: vm.puzzle.cartoon, altText: vm.puzzle.altText)
-                .frame(height: h)
+            if wide { Spacer(minLength: 0) }
+            cartoonBox(h, width: size.width)
             caption(finished: false)
-            Spacer(minLength: 0)
+            if !wide { Spacer(minLength: 0) }
             ScrollView(.vertical, showsIndicators: false) {
                 playRows
                     .background(GeometryReader { g in Color.clear.preference(key: MdRowsKey.self, value: g.size.height) })
             }
             .modifier(MdNoBounceIfFits())
             .frame(height: min(rowsHeight, rowsRoom))
+            if wide { Spacer(minLength: 0) }
         }
         .frame(width: size.width, height: size.height, alignment: .top)
+    }
+
+    /// The picture box: the full width on phones (unchanged). On tablets the 4:3 picture at the height it is given, centered.
+    @ViewBuilder
+    private func cartoonBox(_ h: CGFloat, width: CGFloat) -> some View {
+        if widthClass == .compact {
+            MuddleCartoonPanel(cartoon: vm.puzzle.cartoon, altText: vm.puzzle.altText)
+                .frame(height: h)
+        } else {
+            MuddleCartoonPanel(cartoon: vm.puzzle.cartoon, altText: vm.puzzle.altText)
+                .frame(width: min(width, h / 0.75), height: h)
+        }
     }
 
     /// §L: the words and the punchline on the shared game tray. BI8: only the active
@@ -541,13 +558,13 @@ struct MuddleView: View {
         VStack(spacing: 1) {
             Group {
                 if let art = GameTitleArt.forMode(.scramble) {
-                    GameTitleArtView(asset: art.asset, label: art.label, maxHeight: MdSize.titleCap - 4, minHeight: 0)
+                    GameTitleArtView(asset: art.asset, label: art.label, maxHeight: (MdSize.titleCap - 4) * tabletTitleScale(widthClass), minHeight: 0)
                 } else {
                     BubbleLabel("MUDDLE", color: muddleAccent, size: 23, minScale: 0.5, alignment: .center)
                 }
             }
-            .frame(height: GameCornerButton.rowHeight - GameCornerButton.topInset)
-            .padding(.horizontal, 2 * 44 + GameCornerButton.sideInset - MdSize.columnPad + 2)
+            .frame(height: GameCornerButton.headerRowHeight(widthClass) - GameCornerButton.topInset)
+            .padding(.horizontal, 2 * 44 * tabletChromeScale(widthClass) + GameCornerButton.sideInset - MdSize.columnPad + 2)
             metaLine
         }
         .padding(.top, GameCornerButton.topInset)
@@ -555,17 +572,17 @@ struct MuddleView: View {
 
     private var metaLine: some View {
         HStack(spacing: 6) {
-            if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(11)).foregroundStyle(Theme.textMuted) }
-            if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(11)).foregroundStyle(muddleAccent) }
-            Text("\(vm.boardsSolved)/\(SCRAMBLE_TOTAL_BOARDS) solved").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
-            Text("\(vm.checksLabel) · \(vm.leftLabel)").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+            if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(11 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted) }
+            if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(11 * tabletChromeScale(widthClass))).foregroundStyle(muddleAccent) }
+            Text("\(vm.boardsSolved)/\(SCRAMBLE_TOTAL_BOARDS) solved").font(Brand.caption(11 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
+            Text("\(vm.checksLabel) · \(vm.leftLabel)").font(Brand.caption(11 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
             if !vm.isFinished {
                 TimelineView(.periodic(from: .now, by: 1)) { _ in
                     HStack(spacing: 2) {
                         Image(systemName: "clock").font(.system(size: 9))
                         Text(timeText(vm.elapsed, clock: true))
                     }
-                    .font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                    .font(Brand.caption(11 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                 }
             }
         }
@@ -592,13 +609,13 @@ struct MuddleView: View {
         // BI8: the cartoon takes what the MEASURED caption + punchline + "See all"
         // leave (no estimates), with the same 150 pt floor and 36 % cap as play.
         let gap = MdSize.wordGap
-        let cap = min(floor(UIScreen.main.bounds.height * MdSize.cartoonCap), floor(min(size.width, mdColumnMax(wide: widthClass != .compact)) * 0.75))
+        let cap = widthClass == .compact ? min(floor(UIScreen.main.bounds.height * MdSize.cartoonCap), floor(min(size.width, mdColumnMax(wide: false)) * 0.75))
+                                         : floor(min(size.width, tabletPageMaxWidth) * 0.75)
         let cartoon = max(min(MdSize.cartoonFloor, floor(size.height * 0.5)), min(cap, size.height - finishedRest - gap))
         let won = vm.state.status == .won
         return ScrollView(showsIndicators: false) {
             VStack(spacing: gap) {
-                MuddleCartoonPanel(cartoon: vm.puzzle.cartoon, altText: vm.puzzle.altText)
-                    .frame(height: cartoon)
+                cartoonBox(cartoon, width: size.width)
                 VStack(spacing: gap) {
                     caption(finished: true)
                     MuddleFinalRow(vm: vm, finished: true)
@@ -779,20 +796,20 @@ private func muddleStarts(_ pattern: [Int]) -> [Int] {
 /// The width a word block's left column may use: the column minus the row
 /// padding, the spacer and the two 44 pt hint targets at the right.
 private func muddleColumnWidth(wide: Bool = false) -> CGFloat {
-    min(UIScreen.main.bounds.width, mdColumnMax(wide: wide)) - 2 * MdSize.columnPad - 2 * MdSize.trayPad - 2 * MdSize.rowPad - MdSize.gap - 2 * mdScaled(MdSize.hitTarget, wide: wide)
+    min(UIScreen.main.bounds.width - (wide ? 2 * tabletPageMargin(WidthClass(width: UIScreen.main.bounds.width)) : 0), mdColumnMax(wide: wide)) - 2 * MdSize.columnPad - 2 * MdSize.trayPad - 2 * MdSize.rowPad - MdSize.gap - 2 * mdScaled(MdSize.hitTarget, wide: wide)
 }
 
-/// §AG tablet slice 4: the play column is 420 pt on a phone and the 640 pt tablet column on medium/expanded.
-private func mdColumnMax(wide: Bool) -> CGFloat { wide ? 640 : 420 }
+/// §AG tablet slice 4: the play column is 420 pt on a phone; slice 5: the tablet page (1000 pt max) on medium/expanded.
+private func mdColumnMax(wide: Bool) -> CGFloat { wide ? tabletPageMaxWidth : 420 }
 
 /// §AG tablet slice 5: the scrambled-letter chips and the Letter · Solve circles grow ×1.4 on medium/expanded.
-private func mdScaled(_ base: CGFloat, wide: Bool) -> CGFloat { wide ? (base * 1.4).rounded(.down) : base }
+private func mdScaled(_ base: CGFloat, wide: Bool) -> CGFloat { wide ? (base * 1.6).rounded(.down) : base }
 
 /// The tile side on the fixed six-column grid: 36 pt, or less only on a phone
 /// narrower than the grid plus the hint buttons.
 private func muddleTileSide(wide: Bool = false) -> CGFloat {
     // §AG tablet slice 4: the answer boxes grow ×1.4 on tablet (44 pt, not 32).
-    let cap = wide ? (MdSize.tile * 1.4).rounded(.down) : MdSize.tile
+    let cap = wide ? (MdSize.tile * 1.6).rounded(.down) : MdSize.tile
     return min(cap, floor((muddleColumnWidth(wide: wide) - MdSize.tileGap * CGFloat(mdCols - 1)) / CGFloat(mdCols)))
 }
 

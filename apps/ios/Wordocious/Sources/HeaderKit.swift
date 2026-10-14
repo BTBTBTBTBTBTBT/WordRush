@@ -294,7 +294,10 @@ struct GameCornerButton: View {
     /// The controls row's height (the inset + the 44 pt tap area + a 2 pt gap) —
     /// solo game titles start below it (§19.3 / FINISH_SPEC §B4).
     static let rowHeight: CGFloat = 48
+    /// Slice 5 (R4): the controls row on tablets (the circles scale ×1.15 MEDIUM, ×1.3 EXPANDED).
+    static func headerRowHeight(_ widthClass: WidthClass) -> CGFloat { topInset + 44 * tabletChromeScale(widthClass) + 2 }
 
+    @Environment(\.widthClass) private var widthClass
     let kind: Kind
     /// §AY: Home finishes the app's Home route after `action` (false = the caller
     /// routes itself, e.g. VS confirms a forfeit first).
@@ -306,14 +309,14 @@ struct GameCornerButton: View {
         // FINISH_SPEC §AX: ~30 pt icons (were 23) in the same 44 pt tap areas — the
         // row's geometry is unchanged, so the title art fits exactly as before.
         case .home:
-            HeaderCircleButton(.symbol("house.fill"), size: 44, iconSize: HeaderControl.gameIcon, label: "Home") {
+            HeaderCircleButton(.symbol("house.fill"), size: 44 * tabletChromeScale(widthClass), iconSize: HeaderControl.gameIcon * tabletChromeScale(widthClass), label: "Home") {
                 if routesHome { HomeNav.press(action) } else { action() }
             }
         case .help:
             // FINISH_SPEC §B4: the controls row's right side is sound + help.
             HStack(spacing: 0) {
                 GameSoundToggle()
-                HeaderCircleButton(.icon(.help), size: 44, iconSize: HeaderControl.gameIcon, label: "How to play", action: action)
+                HeaderCircleButton(.icon(.help), size: 44 * tabletChromeScale(widthClass), iconSize: HeaderControl.gameIcon * tabletChromeScale(widthClass), label: "How to play", action: action)
             }
         }
     }
@@ -324,9 +327,10 @@ struct GameCornerButton: View {
 /// 3D sound icon, slashed + dimmed when muted.
 struct GameSoundToggle: View {
     @AppStorage("pref-sound") private var soundOn = true
+    @Environment(\.widthClass) private var widthClass
 
     var body: some View {
-        HeaderCircleButton(soundOn ? .icon(.sound) : .mutedIcon(.sound), size: 44, iconSize: HeaderControl.gameIcon,
+        HeaderCircleButton(soundOn ? .icon(.sound) : .mutedIcon(.sound), size: 44 * tabletChromeScale(widthClass), iconSize: HeaderControl.gameIcon * tabletChromeScale(widthClass),
                            label: soundOn ? "Sound on" : "Sound off") { soundOn.toggle() }
     }
 }

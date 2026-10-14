@@ -42,12 +42,12 @@ struct LetterKeyboard: View {
     @Environment(\.widthClass) private var widthClass
     private var keyHeight: CGFloat {
         (keyHeightOverride.map { min($0, layout == "michael" ? 44 : 52) } ?? (layout == "michael" ? 44 : 52))
-            * (widthClass == .compact ? 1 : 1.2)
+            * (widthClass == .compact ? 1 : 1.3)
     }
 
     var body: some View {
         // §AG tablet slice 2: the key rows cap at the 640 pt column on iPad (phones pass through).
-        keyRows.tabletColumn()
+        keyRows.tabletColumn(max: tabletKeyboardMaxWidth)
     }
 
     private var keyRows: some View {

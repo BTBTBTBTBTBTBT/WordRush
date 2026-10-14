@@ -437,14 +437,29 @@ extension View {
     @ViewBuilder
     func soloGameTitle(_ mode: GameMode, hostSize: CGFloat = 30, fallbackInset: CGFloat = 0, isHeader: Bool = true) -> some View {
         if let art = GameTitleArt.forMode(mode) {
-            GameTitleArtView(asset: art.asset, label: art.label, maxHeight: GameTitleArtView.soloCap, minHeight: 44,
-                             headerOf: isHeader ? mode : nil)
-                .padding(.horizontal, 16)
-                .padding(.top, GameCornerButton.rowHeight)
+            SoloGameTitleArt(asset: art.asset, label: art.label, mode: mode, isHeader: isHeader)
         } else {
             gameHost(mode, size: hostSize)
                 .padding(.horizontal, fallbackInset)
         }
+    }
+}
+
+/// Slice 5 (R4): a solo game's title art under its corner controls. Tablets: 2x the phone art (1.6x MEDIUM),
+/// and the row under the controls scales with the controls. Phones: unchanged.
+private struct SoloGameTitleArt: View {
+    let asset: String
+    let label: String
+    let mode: GameMode
+    let isHeader: Bool
+    @Environment(\.widthClass) private var widthClass
+
+    var body: some View {
+        let scale = tabletTitleScale(widthClass)
+        GameTitleArtView(asset: asset, label: label, maxHeight: GameTitleArtView.soloCap * scale, minHeight: 44 * scale,
+                         headerOf: isHeader ? mode : nil)
+            .padding(.horizontal, 16)
+            .padding(.top, GameCornerButton.headerRowHeight(widthClass))
     }
 }
 

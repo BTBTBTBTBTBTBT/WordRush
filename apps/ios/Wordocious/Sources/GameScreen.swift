@@ -8,6 +8,7 @@ struct GameScreen: View {
     @StateObject private var vm: GameViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.widthClass) private var widthClass
     @State private var adShown = false
     @State private var showVictory = false
     @State private var showGuide = false
@@ -158,7 +159,7 @@ struct GameScreen: View {
                 }
             }
             .padding(.horizontal, 10)
-            .tabletColumn()   // §AG: iPad game column (640 pt, same as the keyboards), centered on the wallpaper
+            .tabletPage()   // slice 5: the game page (1000 pt max, 32/24 pt margins); the keyboard keeps its 820 cap
 
             // FINISH_SPEC §B4: the controls row tucked right under the status bar —
             // Home on the left; sound + help on the right (every game, Gauntlet too).
@@ -337,12 +338,12 @@ struct GameScreen: View {
                 .soloGameTitle(mode, fallbackInset: 52)
             // FINISH_SPEC §B4: the status line sits right under the title art.
             HStack(spacing: 12) {
-                Text(progressLabel).font(Brand.font(12, .heavy)).foregroundStyle(Self.statusInk)
+                Text(progressLabel).font(Brand.font(12 * tabletChromeScale(widthClass), .heavy)).foregroundStyle(Self.statusInk)
                 if !vm.stageCleared {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 3) {
-                            Image(systemName: "clock").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: 0x60A5FA))
-                            Text(timeString).font(Brand.font(12, .heavy)).monospacedDigit().foregroundStyle(Self.statusInk)
+                            Image(systemName: "clock").font(.system(size: 11 * tabletChromeScale(widthClass), weight: .bold)).foregroundStyle(Color(hex: 0x60A5FA))
+                            Text(timeString).font(Brand.font(12 * tabletChromeScale(widthClass), .heavy)).monospacedDigit().foregroundStyle(Self.statusInk)
                         }
                     }
                 }

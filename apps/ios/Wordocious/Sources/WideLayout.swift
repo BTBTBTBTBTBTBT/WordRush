@@ -67,8 +67,68 @@ enum WideColumn {
 let tabletColumnMaxWidth: CGFloat = 640
 /// Max width of the top-level tab pages (Home, Leaderboard, Stats, Friends) on tablets.
 let tabletPageMaxWidth: CGFloat = 1000
+/// Slice 5: a card grid whose trailing row is CENTERED (3/3/2 reads symmetric). Same cell width as a full row.
+/// Used on tablets only; phones keep LazyVGrid.
+struct CenteredRowGrid: Layout {
+    let columns: Int
+    var spacing: CGFloat = 0
+
+    private func cellWidth(_ width: CGFloat) -> CGFloat {
+        (width - spacing * CGFloat(columns - 1)) / CGFloat(columns)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 0
+        let cell = cellWidth(width)
+        var total: CGFloat = 0
+        for start in stride(from: 0, to: subviews.count, by: columns) {
+            let row = subviews[start..<min(start + columns, subviews.count)]
+            if start > 0 { total += spacing }
+            total += row.map { $0.sizeThatFits(ProposedViewSize(width: cell, height: nil)).height }.max() ?? 0
+        }
+        return CGSize(width: width, height: total)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let cell = cellWidth(bounds.width)
+        var y = bounds.minY
+        for start in stride(from: 0, to: subviews.count, by: columns) {
+            let row = Array(subviews[start..<min(start + columns, subviews.count)])
+            let height = row.map { $0.sizeThatFits(ProposedViewSize(width: cell, height: nil)).height }.max() ?? 0
+            let rowWidth = CGFloat(row.count) * cell + CGFloat(row.count - 1) * spacing
+            var x = bounds.minX + (bounds.width - rowWidth) / 2
+            for view in row {
+                view.place(at: CGPoint(x: x, y: y), anchor: .topLeading, proposal: ProposedViewSize(width: cell, height: height))
+                x += cell + spacing
+            }
+            y += height + spacing
+        }
+    }
+}
+
 /// Max width of the cast title row on tablets, so it grows with the page without getting huge.
 let tabletCastMaxWidth: CGFloat = 820
+
+/// Slice 5: the letter keyboard's width cap on tablets (its keys grow; the page does not).
+let tabletKeyboardMaxWidth: CGFloat = 820
+
+/// Slice 5 (R4): game title art height scale on tablets: 1.6x MEDIUM, 2x EXPANDED, 1 on phones.
+func tabletTitleScale(_ widthClass: WidthClass) -> CGFloat {
+    switch widthClass {
+    case .compact: return 1
+    case .medium: return 1.6
+    case .expanded: return 2
+    }
+}
+
+/// Slice 5 (R4): the game header's chrome (corner circles, status line, tab bar) scale on tablets: 1.15x MEDIUM, 1.3x EXPANDED.
+func tabletChromeScale(_ widthClass: WidthClass) -> CGFloat {
+    switch widthClass {
+    case .compact: return 1
+    case .medium: return 1.15
+    case .expanded: return 1.3
+    }
+}
 
 /// Side margin of a top-level tab page on tablets: 32 on EXPANDED, 24 on MEDIUM, none on phones.
 func tabletPageMargin(_ widthClass: WidthClass) -> CGFloat {
