@@ -12,8 +12,8 @@ object BoardSizing {
     const val WIDTH_FRACTION = 0.96f
     /** A sliver of breathing room above and below. */
     const val HEIGHT_FRACTION = 0.98f
-    /** Never wider than this (tablets / landscape), in dp. */
-    const val MAX_WIDTH = 560f
+    /** Never wider than this (tablets / landscape), in dp. Tablet slice 2: the 640 dp game column. */
+    const val MAX_WIDTH = 640f
 
     /** A board's size (dp) and the cell (tile) size inside it. [cellW] == [cellH] for square cells. */
     data class Fit(val width: Float, val height: Float, val cellW: Float, val cellH: Float)

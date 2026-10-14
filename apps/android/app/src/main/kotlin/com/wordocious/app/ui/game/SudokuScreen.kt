@@ -1,6 +1,8 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.WidthClass
 import com.wordocious.app.ui.gameBackground
+import com.wordocious.app.ui.rememberWidthClass
 import com.wordocious.app.ui.cardShadow
 import android.app.Activity
 import androidx.compose.foundation.Canvas
@@ -439,8 +441,10 @@ fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, dig
     // Founder 10-10 ("hard to see the separation of the 9 boards"): real gaps between the 3 x 3 boxes, max(5, cell * 0.16),
     // with a bright seam down the middle (the old 35% seam vanished on the dark board). iOS SudokuBoardView.
     val seam = if (WTheme.isDark) Color(0xFFC4B5FD).copy(alpha = 0.7f) else GameTrayStyle.seam(GameTrayStyle.tint(SUDOKU_ACCENT, trayState))
+    // Tablet slice 2: the grid grows to the 640 dp column on MEDIUM/EXPANDED (phones keep 420).
+    val sudokuTablet = rememberWidthClass() != WidthClass.COMPACT
     androidx.compose.foundation.layout.BoxWithConstraints(
-        Modifier.fillMaxWidth().widthIn(max = 420.dp).aspectRatio(1f)
+        Modifier.fillMaxWidth().widthIn(max = if (sudokuTablet) 640.dp else 420.dp).aspectRatio(1f)
             .gameTray(SUDOKU_ACCENT, trayState, padding = androidx.compose.foundation.layout.PaddingValues(8.dp)),
     ) {
         val boxGap = maxOf(5f, (maxWidth.value - 16f) / 9f * 0.16f).dp

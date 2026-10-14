@@ -34,8 +34,8 @@ import kotlin.math.roundToInt
 object WideLayout {
     /** A window this wide (dp) or wider is a tablet / unfolded foldable. */
     const val WIDE_MIN_DP = 600f
-    /** The game screens' content column (the web's ~560 px). */
-    const val GAME_COLUMN_DP = 560f
+    /** The game screens' content column (tablet slice 2: 640 dp, the same column as the tab pages and the keyboards). */
+    const val GAME_COLUMN_DP = 640f
     /** The tab pages' content column (Home, Leaderboard, Stats, Friends). */
     const val PAGE_COLUMN_DP = 600f
     /** Popups and dialogs never get wider than this. */

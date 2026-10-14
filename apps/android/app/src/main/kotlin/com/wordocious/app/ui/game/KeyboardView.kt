@@ -1,6 +1,9 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.WidthClass
 import com.wordocious.app.ui.famKeyCap
+import com.wordocious.app.ui.rememberWidthClass
+import com.wordocious.app.ui.tabletColumnFor
 import com.wordocious.app.ui.famKeyLightMap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -90,7 +93,9 @@ fun KeyboardView(
     val layout = KeyboardLayoutPref.value
     // Michael Keyboard is a row taller — shorter keys keep total height close
     // to the 3-row layouts so tight boards (OctoWord) don't squeeze.
-    val keyH = keyHeight ?: if (layout == "michael") 44.dp else 52.dp
+    // Tablet slice 2: keys are 1.2x and the keyboard is capped to the 640 dp column on MEDIUM/EXPANDED; phones unchanged.
+    val widthClass = rememberWidthClass()
+    val keyH = (keyHeight ?: if (layout == "michael") 44.dp else 52.dp) * (if (widthClass == WidthClass.COMPACT) 1f else 1.2f)
     val enterTap = {
         com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.KEY, view)
         onEnter()
@@ -102,7 +107,7 @@ fun KeyboardView(
     // The keys squish but stay quiet: the key sound is the sound (no press/release on top).
     androidx.compose.runtime.CompositionLocalProvider(com.wordocious.app.ui.LocalSquishSound provides false) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+        modifier = Modifier.fillMaxWidth().tabletColumnFor(widthClass).padding(horizontal = 4.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp), // B2 row spacing (game-kit.html .kbd gap 6)
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

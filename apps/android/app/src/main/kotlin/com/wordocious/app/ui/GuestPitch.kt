@@ -90,8 +90,11 @@ fun GuestPitch(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy((-18).dp)) {
-            hosts.forEach { Mascot(it, if (hosts.size > 1) 104.dp else 120.dp, motion = MascotMotion.POP) }
+        // Tablet slice 3: the cast, podium and chips are 1.5x on MEDIUM/EXPANDED (the screen reads empty
+        // at phone art size across a 640 dp column); phones unchanged.
+        val art = if (rememberWidthClass() != WidthClass.COMPACT) 1.5f else 1f
+        Row(horizontalArrangement = Arrangement.spacedBy((-18).dp * art)) {
+            hosts.forEach { Mascot(it, (if (hosts.size > 1) 104.dp else 120.dp) * art, motion = MascotMotion.POP) }
         }
         Spacer(Modifier.height(10.dp))
         if (!showTitle) {
@@ -107,10 +110,10 @@ fun GuestPitch(
         )
         when (preview) {
             is GuestPreview.Chips -> Row(
-                Modifier.padding(top = 20.dp).alpha(0.72f).clearAndSetSemantics { },
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) { preview.chips.forEach { GuestChipTile(it) } }
-            GuestPreview.Podium -> GuestPodium(Modifier.padding(top = 20.dp).alpha(0.72f).clearAndSetSemantics { })
+                Modifier.padding(top = 20.dp * art).alpha(0.72f).clearAndSetSemantics { },
+                horizontalArrangement = Arrangement.spacedBy(10.dp * art),
+            ) { preview.chips.forEach { GuestChipTile(it, art) } }
+            GuestPreview.Podium -> GuestPodium(Modifier.padding(top = 20.dp * art).alpha(0.72f).clearAndSetSemantics { }, art)
             GuestPreview.None -> Unit
         }
         // BJ15: THE primary button is the cast button (SIGN IN lettering), as on the sign-in screen.
@@ -150,12 +153,12 @@ private fun GlossFace(accent: Color, width: Dp, height: Dp, corner: Dp, content:
 }
 
 @Composable
-private fun GuestChipTile(c: GuestChip) {
-    GlossFace(c.accent, 92.dp, 88.dp, 16.dp) {
+private fun GuestChipTile(c: GuestChip, art: Float = 1f) {
+    GlossFace(c.accent, 92.dp * art, 88.dp * art, 16.dp * art) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon3D(c.icon, 24.dp)
-            Text(c.value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White, fontFamily = Nunito)
-            Text(c.label, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.9f),
+            Icon3D(c.icon, 24.dp * art)
+            Text(c.value, fontSize = 20.sp * art, fontWeight = FontWeight.Black, color = Color.White, fontFamily = Nunito)
+            Text(c.label, fontSize = 9.sp * art, fontWeight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.9f),
                 letterSpacing = 0.4.sp, maxLines = 1, fontFamily = Nunito)
         }
     }
@@ -163,13 +166,13 @@ private fun GuestChipTile(c: GuestChip) {
 
 /** The Leaderboard's preview: a mini podium (2 · 1 · 3), the crown on first. */
 @Composable
-private fun GuestPodium(modifier: Modifier) {
+private fun GuestPodium(modifier: Modifier, art: Float = 1f) {
     val steps = listOf(2 to 56.dp, 1 to 78.dp, 3 to 42.dp)
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp * art), verticalAlignment = Alignment.Bottom) {
         steps.forEach { (rank, h) ->
-            Column(Modifier.width(78.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (rank == 1) Icon3D(Icon3DName.CROWN, 28.dp)
-                PodiumPedestal(rank, h)
+            Column(Modifier.width(78.dp * art), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp * art)) {
+                if (rank == 1) Icon3D(Icon3DName.CROWN, 28.dp * art)
+                PodiumPedestal(rank, h * art)
             }
         }
     }

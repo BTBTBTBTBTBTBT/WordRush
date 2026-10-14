@@ -19,11 +19,11 @@ class WideLayoutTest {
     @Test fun tabletsGetACenteredColumn() {
         assertTrue(WideLayout.isWide(600f))
         // A small tablet / unfolded foldable in portrait.
-        assertEquals(560f, WideLayout.columnWidth(600f, WideLayout.GAME_COLUMN_DP), 0.001f)
-        assertEquals(20f, WideLayout.sideGutter(600f, WideLayout.GAME_COLUMN_DP), 0.001f)
+        assertEquals(600f, WideLayout.columnWidth(600f, WideLayout.GAME_COLUMN_DP), 0.001f)
+        assertEquals(0f, WideLayout.sideGutter(600f, WideLayout.GAME_COLUMN_DP), 0.001f)
         assertEquals(600f, WideLayout.columnWidth(600f, WideLayout.PAGE_COLUMN_DP), 0.001f)
         // A 10" tablet in landscape.
-        assertEquals(560f, WideLayout.columnWidth(1280f, WideLayout.GAME_COLUMN_DP), 0.001f)
+        assertEquals(640f, WideLayout.columnWidth(1280f, WideLayout.GAME_COLUMN_DP), 0.001f)
         assertEquals(600f, WideLayout.columnWidth(1280f, WideLayout.PAGE_COLUMN_DP), 0.001f)
         assertEquals(340f, WideLayout.sideGutter(1280f, WideLayout.PAGE_COLUMN_DP), 0.001f)
     }

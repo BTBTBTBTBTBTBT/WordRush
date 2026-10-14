@@ -1,6 +1,8 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.WidthClass
 import com.wordocious.app.ui.gameBackground
+import com.wordocious.app.ui.rememberWidthClass
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -575,7 +577,9 @@ private fun HubBoard(session: HubSession) {
         val fixed = HUB_RANK_BAR_H + HUB_ENTRY_H + HUB_CONTROL_ROW_H * 2 + HUB_END_LINK_H + HUB_FOUND_HEADER_H + HUB_FOUND_MIN_H + HUB_ROW_GAP * 7 + 6.dp
         val trayW = HUB_TRAY_PAD * 2
         val trayH = HUB_TRAY_PAD * 2 + GameTrayStyle.LIP
-        val side = Honeycomb.sideFor((maxWidth - trayW).value, (maxHeight - fixed - trayH).value).dp.coerceIn(60.dp, 112.dp)
+        // Tablet slice 2: the hive may grow past the phone's 112 dp cell cap on MEDIUM/EXPANDED.
+        val hubMaxSide = if (rememberWidthClass() != WidthClass.COMPACT) 150.dp else 112.dp
+        val side = Honeycomb.sideFor((maxWidth - trayW).value, (maxHeight - fixed - trayH).value).dp.coerceIn(60.dp, hubMaxSide)
         val band = side * Honeycomb.height() + trayH
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(HUB_ROW_GAP)) {
             // The header already says "N/M pts" on the board.
