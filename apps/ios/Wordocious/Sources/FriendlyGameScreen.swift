@@ -2065,6 +2065,8 @@ private struct SpinningCoin: View {
     /// Founder 10-13: the coin floats over the velvet stage in front of the theater backdrop (the card is drawn here; the
     /// backdrop is clipped to the card, the coin and its flight are not).
     var staged = false
+    /// Founder 10-14 (iPad): the card grows with the stage so the coin never rides up into the turn line / score card.
+    @Environment(\.widthClass) private var widthClass
     @State private var angle: Double = 0
     @State private var hop: CGFloat = 0
     @State private var squash: CGFloat = 1
@@ -2139,7 +2141,14 @@ private struct SpinningCoin: View {
     /// The Call It card: theater wallpaper (aspect-fill, clipped to the card's corners), the round velvet stage across
     /// ~90% of the width at the bottom, and the coin centered over the stage's top with headroom above it.
     private func stagedCard(backdrop: String, stage: String, landed: CoinFace) -> some View {
-        let cardHeight: CGFloat = 256
+        // Phones: the fixed 256 pt card (unchanged). Tablets (founder 10-14: "the coin looked blocked by Your turn" and the
+        // waiting line's mascot): the stage spans ~90% of a ~1000 pt page, so the card is sized from it — the stage, the coin
+        // (1.6x) resting on its top surface, and the same share of headroom the phone card has above the coin.
+        let tablet = widthClass != .compact
+        let coinScale: CGFloat = tablet ? 0.76 * 1.6 : 0.76
+        let pageW = min(tabletPageMaxWidth, UIScreen.main.bounds.width)
+        let tabletStageH = pageW * 0.9 * PocketBoard.coinStagePixels.height / PocketBoard.coinStagePixels.width
+        let cardHeight: CGFloat = tablet ? (8 + tabletStageH * 0.6 + 160 * coinScale + 64) : 256
         return GeometryReader { geo in
             let w = geo.size.width
             let stageW = w * 0.9
@@ -2156,7 +2165,7 @@ private struct SpinningCoin: View {
                 // The coin rests on the stage's top surface (about a third of the way down the stage art).
                 coinStack(landed: landed)
                     .frame(width: 150, height: 160)
-                    .scaleEffect(0.76, anchor: .bottom)
+                    .scaleEffect(coinScale, anchor: .bottom)
                     .padding(.bottom, 8 + stageH * 0.6)
             }
             .frame(width: w, height: cardHeight, alignment: .bottom)
