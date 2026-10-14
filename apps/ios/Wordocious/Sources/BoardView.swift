@@ -942,6 +942,6 @@ struct BoardLayout: View {
         return CGFloat(BoardSizing.squareTile(columns: vm.wordLength, rows: rowsPerBoard,
                                               width: Double(availableWidth - pad / CGFloat(BoardSizing.widthFill)),
                                               height: fitHeight.map { Double($0 - (pad + lip) / CGFloat(BoardSizing.heightFill)) },
-                                              maxTile: widthClass == .compact ? 84 : 120))
+                                              maxTile: widthClass == .compact ? 84 : 160))
     }
 }

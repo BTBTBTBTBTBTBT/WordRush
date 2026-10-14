@@ -198,6 +198,7 @@ struct LadderView: View {
     var onPlayAgain: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.widthClass) private var widthClass
     @State private var adShown = false
     @State private var showOverlay = false
     @State private var showGuide = false
@@ -237,7 +238,7 @@ struct LadderView: View {
                     // the height left, and an over-long ladder scrolls only its climbed rungs.
                     GeometryReader { geo in
                         LadderPlayBoard(vm: vm, height: geo.size.height)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: widthClass == .compact ? .top : .center)
                     }
                     .padding(.horizontal, 6).padding(.vertical, 4)
                     // // §BI9: the feedback popup hangs from the line under the board — never over the title art or the board.
@@ -533,12 +534,12 @@ enum LadderFit {
 
     /// `rungs` climbed words (START included) + the typing row (+ the REACH label of
     /// `labelLine` pt and the target when `showEnd`) inside the tray's chrome, in `height`.
-    static func fit(height: CGFloat, rungs: Int, showEnd: Bool, labelLine: CGFloat) -> Fit {
+    static func fit(height: CGFloat, rungs: Int, showEnd: Bool, labelLine: CGFloat, cap: CGFloat = LadderFit.maxTile) -> Fit {
         let rows = CGFloat(rungs + 1 + (showEnd ? 1 : 0))
         let chrome = GameTray.padding * 2 + GameTray.lip
         for (gap, floor) in [(CGFloat(6), CGFloat(36)), (4, minTile)] {
             let fixed = chrome + (showEnd ? labelLine + gap : 0)
-            let t = min(maxTile, (height - fixed - gap * (rows - 1)) / rows)
+            let t = min(cap, (height - fixed - gap * (rows - 1)) / rows)
             if t >= floor { return Fit(tile: t.rounded(.down), gap: gap, scrolls: false) }
         }
         return Fit(tile: minTile, gap: 4, scrolls: true)
@@ -551,13 +552,15 @@ enum LadderFit {
 private struct LadderPlayBoard: View {
     @ObservedObject var vm: LadderVM
     let height: CGFloat
+    @Environment(\.widthClass) private var widthClass
 
     var body: some View {
         let s = vm.state
         let hints = Array(s.hintMask)
         let showEnd = s.current != s.end
         let label = ceil(min(UIFontMetrics.default.scaledValue(for: 10), 20) * 1.3)
-        let f = LadderFit.fit(height: height, rungs: s.words.count, showEnd: showEnd, labelLine: label)
+        let f = LadderFit.fit(height: height, rungs: s.words.count, showEnd: showEnd, labelLine: label,
+                               cap: widthClass == .compact ? LadderFit.maxTile : LadderFit.maxTile * 2.75)
         let rungs = VStack(spacing: f.gap) {
             ForEach(Array(s.words.enumerated()), id: \.offset) { i, w in
                 LadderRowView(word: w, prev: i > 0 ? s.words[i - 1] : nil,

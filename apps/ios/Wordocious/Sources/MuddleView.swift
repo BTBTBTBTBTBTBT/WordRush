@@ -538,7 +538,7 @@ struct MuddleView: View {
     /// in lowercase purple once solved. At most two lines; its height is reported
     /// up so the cartoon can take exactly what remains.
     private func caption(finished: Bool) -> some View {
-        muddleCaption(vm.state, solved: finished || vm.state.solved[SCRAMBLE_FINAL])
+        muddleCaption(vm.state, solved: finished || vm.state.solved[SCRAMBLE_FINAL], scale: widthClass == .compact ? 1 : 1.3)
             .background(GeometryReader { g in Color.clear.preference(key: MdHeightKey.self, value: g.size.height) })
     }
 
@@ -563,7 +563,7 @@ struct MuddleView: View {
                     BubbleLabel("MUDDLE", color: muddleAccent, size: 23, minScale: 0.5, alignment: .center)
                 }
             }
-            .frame(height: GameCornerButton.headerRowHeight(widthClass) - GameCornerButton.topInset)
+            .frame(height: max(GameCornerButton.headerRowHeight(widthClass) - GameCornerButton.topInset, (MdSize.titleCap - 4) * tabletTitleScale(widthClass)))
             .padding(.horizontal, 2 * 44 * tabletChromeScale(widthClass) + GameCornerButton.sideInset - MdSize.columnPad + 2)
             metaLine
         }
@@ -679,7 +679,7 @@ struct MuddleView: View {
 // MARK: - Board pieces
 
 /// The caption with the blank as an accent underline; once solved the punchline fills it in lowercase purple. At most two lines.
-private func muddleCaption(_ s: ScrambleState, solved: Bool) -> some View {
+private func muddleCaption(_ s: ScrambleState, solved: Bool, scale: CGFloat = 1) -> some View {
     let parts = s.caption.components(separatedBy: "____")
     // BI8: the blank never wraps onto a line by itself (it rode the last word as
     // bare underlined spaces, which a line break swallowed): the word before it
@@ -692,7 +692,7 @@ private func muddleCaption(_ s: ScrambleState, solved: Bool) -> some View {
     return (Text(lead)
             + blankText
             + Text(parts.count > 1 ? parts[1...].joined(separator: "____") : ""))
-        .font(Brand.font(MdSize.captionFont, .heavy)).foregroundStyle(Theme.textPrimary)
+        .font(Brand.font(MdSize.captionFont * scale, .heavy)).foregroundStyle(Theme.textPrimary)
         .multilineTextAlignment(.center)
         .lineLimit(2).minimumScaleFactor(0.8)
         .fixedSize(horizontal: false, vertical: true)
@@ -803,13 +803,15 @@ private func muddleColumnWidth(wide: Bool = false) -> CGFloat {
 private func mdColumnMax(wide: Bool) -> CGFloat { wide ? tabletPageMaxWidth : 420 }
 
 /// §AG tablet slice 5: the scrambled-letter chips and the Letter · Solve circles grow ×1.4 on medium/expanded.
-private func mdScaled(_ base: CGFloat, wide: Bool) -> CGFloat { wide ? (base * 1.6).rounded(.down) : base }
+private func mdCompactTile(_ wide: Bool) -> CGFloat { mdScaled(MdSize.compactTile, wide: wide) }
+
+private func mdScaled(_ base: CGFloat, wide: Bool) -> CGFloat { wide ? (base * 2.2).rounded(.down) : base }
 
 /// The tile side on the fixed six-column grid: 36 pt, or less only on a phone
 /// narrower than the grid plus the hint buttons.
 private func muddleTileSide(wide: Bool = false) -> CGFloat {
     // §AG tablet slice 4: the answer boxes grow ×1.4 on tablet (44 pt, not 32).
-    let cap = wide ? (MdSize.tile * 1.6).rounded(.down) : MdSize.tile
+    let cap = wide ? 96 : MdSize.tile
     return min(cap, floor((muddleColumnWidth(wide: wide) - MdSize.tileGap * CGFloat(mdCols - 1)) / CGFloat(mdCols)))
 }
 
@@ -1049,9 +1051,9 @@ struct MuddleCompactRow: View {
                         let ch: String = i < entry.count ? String(entry[i]) : ""
                         let pinned = i < revealed.count && revealed[i] != "_"
                         MuddleTile(letter: ch, look: ch.isEmpty ? .empty : (pinned ? .pinned : .typed),
-                                   ring: circled.contains(i), side: MdSize.compactTile)
+                                   ring: circled.contains(i), side: mdCompactTile(widthClass != .compact))
                     } else {
-                        Color.clear.frame(width: MdSize.compactTile, height: MdSize.compactTile)
+                        Color.clear.frame(width: mdCompactTile(widthClass != .compact), height: mdCompactTile(widthClass != .compact))
                     }
                 }
             }
@@ -1072,6 +1074,7 @@ struct MuddleSolvedLine: View {
     @ObservedObject var vm: MuddleVM
     let row: Int
     let cell: Bool
+    @Environment(\.widthClass) private var widthClass
 
     var body: some View {
         let w = vm.state.words[row]
@@ -1079,7 +1082,7 @@ struct MuddleSolvedLine: View {
         let circled = Set(w.circled)
         HStack(spacing: MdSize.compactGap) {
             ForEach(0..<answer.count, id: \.self) { i in
-                MuddleTile(letter: String(answer[i]), look: .solved, ring: circled.contains(i), side: MdSize.compactTile)
+                MuddleTile(letter: String(answer[i]), look: .solved, ring: circled.contains(i), side: mdCompactTile(widthClass != .compact))
             }
             if !cell {
                 Spacer(minLength: 0)
