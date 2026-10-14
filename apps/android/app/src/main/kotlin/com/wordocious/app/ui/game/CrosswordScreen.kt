@@ -3,6 +3,7 @@ package com.wordocious.app.ui.game
 import com.wordocious.app.ui.WidthClass
 import com.wordocious.app.ui.gameBackground
 import com.wordocious.app.ui.rememberWidthClass
+import com.wordocious.app.ui.gamePageFor
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -508,7 +509,7 @@ fun CrosswordScreen(
             // height for its real cols × rows, the clue bar and the keyboard pinned. The clue list
             // sits behind the Clues toggle beside the clue bar (it scrolls inside the band).
             val shortScreen = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 700
-            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.fillMaxSize().gamePageFor(rememberWidthClass()), verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 CrosswordPlayHeader(session)
                 if (session.showClues) {
                     Column(
@@ -662,7 +663,7 @@ internal fun CrosswordGrid(
     val wrongCells = s.lastWrong.toSet()
     val small = maxCell < 42.dp
     // Tablet slice 2: the play cell grows to 72 dp on MEDIUM/EXPANDED (iOS parity); phones keep 42.
-    val cellCap = if (maxCell >= 42.dp && rememberWidthClass() != WidthClass.COMPACT) 72.dp else maxCell
+    val cellCap = if (maxCell >= 42.dp && rememberWidthClass() != WidthClass.COMPACT) (if (rememberWidthClass() == WidthClass.EXPANDED) 96.dp else 84.dp) else maxCell
     val gap = if (small) 2.dp else 3.dp
     val trayPad = if (small) 7.dp else 10.dp
     val dark = WTheme.isDark

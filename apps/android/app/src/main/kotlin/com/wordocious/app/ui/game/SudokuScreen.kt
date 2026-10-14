@@ -3,6 +3,7 @@ package com.wordocious.app.ui.game
 import com.wordocious.app.ui.WidthClass
 import com.wordocious.app.ui.gameBackground
 import com.wordocious.app.ui.rememberWidthClass
+import com.wordocious.app.ui.gamePageFor
 import com.wordocious.app.ui.cardShadow
 import android.app.Activity
 import androidx.compose.foundation.Canvas
@@ -349,7 +350,7 @@ fun SudokuScreen(
             // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
             SudokuFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
-            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.fillMaxSize().gamePageFor(rememberWidthClass()), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 SudokuHeader(session)
                 if (!isDaily && isPro && onPlayAgain != null) DifficultyPicker(session.state.difficulty) { onPlayAgain(it) }
                 Spacer(Modifier.weight(1f))
@@ -378,13 +379,15 @@ private fun SudokuHeader(session: SudokuSession) {
         while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ }
     }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
+        val cs = com.wordocious.app.ui.chromeScale(rememberWidthClass())
+        val meta = (12f * cs).sp
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("SUDOKU") { Text(SUDOKU_TITLE, fontSize = 24.sp, fontWeight = FontWeight.Black, color = SUDOKU_ACCENT, fontFamily = Nunito) }
         Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Text(DIFFICULTY_LABEL[session.state.difficulty] ?: "Medium", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = meta, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text(DIFFICULTY_LABEL[session.state.difficulty] ?: "Medium", fontSize = meta, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Mistakes", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Text("Mistakes", fontSize = meta, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 repeat(SUDOKU_MAX_MISTAKES) { i ->
                     Box(Modifier.size(8.dp).clip(CircleShape).background(if (i < session.state.mistakes) Color(0xFFDC2626) else WTheme.borderLight))
                 }
@@ -392,9 +395,9 @@ private fun SudokuHeader(session: SudokuSession) {
             if (!session.isFinished) {
                 @Suppress("UNUSED_EXPRESSION") tick
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
+                    Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp * cs))
                     val s = session.elapsed
-                    Text("${s / 60}:${"%02d".format(s % 60)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    Text("${s / 60}:${"%02d".format(s % 60)}", fontSize = meta, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
             }
         }
@@ -444,7 +447,7 @@ fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, dig
     // Tablet slice 2: the grid grows to the 640 dp column on MEDIUM/EXPANDED (phones keep 420).
     val sudokuTablet = rememberWidthClass() != WidthClass.COMPACT
     androidx.compose.foundation.layout.BoxWithConstraints(
-        Modifier.fillMaxWidth().widthIn(max = if (sudokuTablet) 640.dp else 420.dp).aspectRatio(1f)
+        Modifier.fillMaxWidth().widthIn(max = if (sudokuTablet) com.wordocious.app.ui.tabletPageMaxWidth else 420.dp).aspectRatio(1f)
             .gameTray(SUDOKU_ACCENT, trayState, padding = androidx.compose.foundation.layout.PaddingValues(8.dp)),
     ) {
         val boxGap = maxOf(5f, (maxWidth.value - 16f) / 9f * 0.16f).dp
@@ -612,16 +615,20 @@ private fun SudokuCell(
 @Composable
 private fun SudokuPad(session: SudokuSession, onFinished: () -> Unit) {
     val s = session.state
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)) {
+    // Tablet: the pill row grows 1.2-1.3x, the digit keys 1.3x tall, and the keypad caps at 820 dp (phones unchanged).
+    val wc = rememberWidthClass()
+    val tablet = wc != com.wordocious.app.ui.WidthClass.COMPACT
+    val ps = com.wordocious.app.ui.chromeScale(wc)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally, modifier = (if (tablet) Modifier.widthIn(max = 820.dp) else Modifier).fillMaxWidth().padding(horizontal = 2.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            PadAction("Undo", Icons.AutoMirrored.Filled.Undo, onClick = { session.undo(onFinished) }, dim = s.history.isEmpty())
-            PadAction("Erase", Icons.AutoMirrored.Filled.Backspace, onClick = { session.erase(onFinished) })
-            PadAction("Notes", Icons.Filled.Edit, onClick = { session.toggleNotes(onFinished) }, active = s.notesMode)
+            PadAction("Undo", Icons.AutoMirrored.Filled.Undo, onClick = { session.undo(onFinished) }, dim = s.history.isEmpty(), scale = ps)
+            PadAction("Erase", Icons.AutoMirrored.Filled.Backspace, onClick = { session.erase(onFinished) }, scale = ps)
+            PadAction("Notes", Icons.Filled.Edit, onClick = { session.toggleNotes(onFinished) }, active = s.notesMode, scale = ps)
             // BI22: a fixed "Hint" label; the used count is the corner badge (an overlay).
             PadAction(
                 "Hint", Icons.Filled.Lightbulb,
                 onClick = { session.hint(onFinished) }, color = com.wordocious.app.ui.CandyColor.AMBER,
-                count = s.hintsUsed,
+                count = s.hintsUsed, scale = ps,
             )
         }
         val done = session.completeDigits
@@ -629,7 +636,7 @@ private fun SudokuPad(session: SudokuSession, onFinished: () -> Unit) {
             for (d in 1..9) {
                 PadKey(
                     "$d", onClick = { session.place(d, onFinished) },
-                    modifier = Modifier.weight(1f).height(50.dp),
+                    modifier = Modifier.weight(1f).height(if (tablet) 65.dp else 50.dp),
                     notes = s.notesMode, faded = d in done,
                     contentDescription = if (s.notesMode) "Note $d" else "$d",
                 )

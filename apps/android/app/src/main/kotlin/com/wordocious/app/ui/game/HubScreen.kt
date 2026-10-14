@@ -582,7 +582,7 @@ private fun HubBoard(session: HubSession) {
         val trayW = HUB_TRAY_PAD * 2
         val trayH = HUB_TRAY_PAD * 2 + GameTrayStyle.LIP
         // Tablet slice 2: the hive may grow past the phone's 112 dp cell cap on MEDIUM/EXPANDED.
-        val hubMaxSide = if (wide) 160.dp else 112.dp
+        val hubMaxSide = if (wide) (if (rememberWidthClass() == WidthClass.EXPANDED) 300.dp else 230.dp) else 112.dp
         val side = Honeycomb.sideFor((maxWidth - trayW).value, (maxHeight - fixed - trayH).value).dp.coerceIn(60.dp, hubMaxSide)
         val band = side * Honeycomb.height() + trayH
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(HUB_ROW_GAP)) {
