@@ -263,6 +263,8 @@ struct HelperButtonStyle: ButtonStyle {
     /// The "selected" look (an on state: Notes on, the active tool): the solid tint, white ink. Inside a game
     /// every helper shares the game color, so an on state reads by this, never by a hue change.
     var selected = false
+    /// §AG tablet: the pill's height, font and icon scale together (1 = the phone size).
+    var scale: CGFloat = 1
 
     func makeBody(configuration: Configuration) -> some View {
         HelperBody(configuration: configuration, style: self)
@@ -284,13 +286,13 @@ struct HelperButtonStyle: ButtonStyle {
             let dark = scheme == .dark
             // Season preview: in season every helper takes the season's button tint (registry palette).
             let tint = style.tint ?? SeasonKit.buttonTint ?? page.gameAccent ?? style.fallback ?? Color(hex: 0x7C3AED)
-            let h = FamilyMetrics.helperHeight
+            let h = FamilyMetrics.helperHeight * style.scale
             let ink = style.selected ? FamilyInk.selectedInk(tint) : FamilyInk.helperInk(tint, dark: dark)
             let fill = style.selected ? (pressed ? Color.black.mixed(over: tint, 0.12) : tint)
                                       : FamilyInk.helperFill(tint, dark: dark, pressed: pressed)
             let dim = style.used || !enabled
             configuration.label
-                .environment(\.familyInk, FamilyLabelInk(ink: ink, size: FamilyMetrics.helperFont, icon: FamilyMetrics.helperIcon))
+                .environment(\.familyInk, FamilyLabelInk(ink: ink, size: FamilyMetrics.helperFont * style.scale, icon: FamilyMetrics.helperIcon * style.scale))
                 .environment(\.castInk, nil)
                 .foregroundStyle(ink)
                 .offset(y: pressed ? 1 : 0)
@@ -314,6 +316,8 @@ struct HelperButtonStyle: ButtonStyle {
 struct QuietButtonStyle: ButtonStyle {
     var size: CandyButtonStyle.Size = .medium
     var fullWidth = false
+    /// §AG tablet: the pill's height, font and icon scale together (1 = the phone size).
+    var scale: CGFloat = 1
 
     func makeBody(configuration: Configuration) -> some View {
         QuietBody(configuration: configuration, style: self)
@@ -332,12 +336,12 @@ struct QuietButtonStyle: ButtonStyle {
             let still = envReduce || Theme.reduceMotion
             let pressed = configuration.isPressed
             let dark = scheme == .dark
-            let h = FamilyMetrics.quietHeight(style.size)
+            let h = FamilyMetrics.quietHeight(style.size) * style.scale
             // Season preview: the quiet pill takes the season's quiet tint (registry palette).
             let season = SeasonKit.quietTint
             let ink = season.map { FamilyInk.helperInk($0, dark: dark) } ?? FamilyInk.quietInk(dark: dark)
             configuration.label
-                .environment(\.familyInk, FamilyLabelInk(ink: ink, size: style.size == .small ? 12.5 : 13.5, icon: style.size == .small ? 17 : 19))
+                .environment(\.familyInk, FamilyLabelInk(ink: ink, size: (style.size == .small ? 12.5 : 13.5) * style.scale, icon: (style.size == .small ? 17 : 19) * style.scale))
                 .environment(\.castInk, nil)
                 .foregroundStyle(ink)
                 .offset(y: pressed ? 1 : 0)
