@@ -63,6 +63,7 @@ struct VSLobbyView: View {
     @ObservedObject private var auth = AuthService.shared
     @StateObject private var model = VSLobbyModel()
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.widthClass) private var widthClass
 
     struct PendingInvite: Identifiable { let id = UUID(); let mode: GameMode; let code: String }
 
@@ -94,6 +95,9 @@ struct VSLobbyView: View {
     var body: some View {
         VStack(spacing: 0) {
             nav
+            // Slice 5 (iPad): the lobby sits on the tablet page, and a short lobby is centered in the screen (equal wallpaper
+            // above and below) instead of leaving a barren band at the bottom. Phones: the stack is as tall as its content.
+            GeometryReader { geo in
             ScrollView {
                 // BJ7: 12 between sections, a shorter title art.
                 VStack(alignment: .leading, spacing: 12) {
@@ -130,6 +134,9 @@ struct VSLobbyView: View {
                 // Generous bottom inset so the code row clears the tab bar (the
                 // lobby is pushed inside the Home tab's nav stack) and the ad banner.
                 .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 100)
+                .tabletPage()
+                .frame(minHeight: widthClass == .compact ? 0 : geo.size.height, alignment: .center)
+            }
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: kbInset) }
