@@ -111,7 +111,7 @@ struct HowToPlayView: View {
         .softSheet(item: $sheet) { item in
             switch item {
             case .guide(let mode, let expanded): GuideSheet(mode: mode, startExpanded: expanded)
-            case .pocket(let kind): PocketHelpSheet(kind: kind)
+            case .pocket(let kind): PocketHelpSheet(kind: kind).tabletSheet()
             }
         }
     }

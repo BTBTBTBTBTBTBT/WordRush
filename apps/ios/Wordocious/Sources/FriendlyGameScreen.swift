@@ -163,7 +163,7 @@ struct FriendlyGameScreen: View {
         // Wave 3 (item 9): ONE themed button. Resign lives in the Friends tab's more menu now.
         .overlay { if confirmClose { leaveCard } }
         .animation(Theme.reduceMotion ? nil : .easeOut(duration: 0.18), value: confirmClose)
-        .softSheet(isPresented: $showHelp) { if let kind { PocketHelpSheet(kind: kind) } }
+        .softSheet(isPresented: $showHelp) { if let kind { PocketHelpSheet(kind: kind).tabletSheet() } }
         .firstPlayPocket(kind: kind, show: $showHelp)
         #if DEBUG
         // Perf harness (PocketDemo): a local game the tour plays through this screen's own input path.
@@ -779,8 +779,9 @@ struct FriendlyGameScreen: View {
         let me = g.me
         let mine = r.picks[me]?.pick
         let theirs = r.picks[me.other]
-        // Slice 5 (iPad): the arena band, the hands and the pick cards grow 1.6x so the page is filled, not sparse.
-        let s: CGFloat = widthClass == .compact ? 1 : 1.6
+        // Slice 5 (iPad): the arena band, the hands and the pick cards grow so the page is filled, not sparse
+        // (2x EXPANDED, 1.6x MEDIUM; phones 1).
+        let s: CGFloat = widthClass == .compact ? 1 : (widthClass == .expanded ? 2 : 1.6)
         VStack(spacing: 14) {
             if let last = r.rounds.last {
                 let reveal = RpsReveal(round: r.rounds.count, mine: last[me], theirs: last[me.other],
@@ -1813,7 +1814,7 @@ struct RpsReveal: View {
     let accent: Color
     let myColor: Color
     let themColor: Color
-    /// Slice 5 (iPad): 1.6 on tablets, 1 on phones; scales the arena band, the hands, the labels and the burst.
+    /// Slice 5 (iPad): 2 EXPANDED, 1.6 MEDIUM, 1 on phones; scales the arena band, the hands, the labels and the burst.
     var scale: CGFloat = 1
     @State private var flipped = Theme.reduceMotion
     /// Founder 10-10 (suspense): the "ROCK, PAPER, SCISSORS, SHOOT!" beat before the reveal — both fists pump three

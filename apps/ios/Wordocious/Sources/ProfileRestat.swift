@@ -18,6 +18,9 @@ struct SnapshotHero: View {
     let gamesThisWeek: Int
     let isPro: Bool
     @State private var showPro = false
+    /// Slice 5 (iPad): the "This week" strip and the Pro button scale with the page (1.3x EXPANDED, 1.15x MEDIUM).
+    @Environment(\.widthClass) private var widthClass
+    private var ts: CGFloat { tabletChromeScale(widthClass) }
 
     var body: some View {
         let totalGames = profile.totalWins + profile.totalLosses
@@ -43,26 +46,26 @@ struct SnapshotHero: View {
                           countUp: profile.dailyLoginStreak) { Icon3D(.flame, size: 22) }
             }
             HStack(spacing: 6) {
-                Image(systemName: "sparkles").font(.system(size: 13)).foregroundStyle(Theme.primary)
+                Image(systemName: "sparkles").font(.system(size: 13 * ts)).foregroundStyle(Theme.primary)
                 FinishLabel("This week")
                 Text("\(gamesThisWeek) \(gamesThisWeek == 1 ? "game" : "games")")
-                    .font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.heading).lineLimit(1)
+                    .font(Brand.font(12 * ts, .heavy)).foregroundStyle(FinishInk.heading).lineLimit(1)
                     .minimumScaleFactor(0.7)
                 Spacer(minLength: 8)
-                Image(systemName: "chart.line.uptrend.xyaxis").font(.system(size: 13)).foregroundStyle(Color(hex: 0x2563EB))
-                (Text("\(xpToNext) XP ").font(Brand.font(12, .heavy)).foregroundColor(FinishInk.heading)
-                 + Text("to Lvl \(profile.level + 1)").font(Brand.font(12, .heavy)).foregroundColor(FinishInk.secondary))
+                Image(systemName: "chart.line.uptrend.xyaxis").font(.system(size: 13 * ts)).foregroundStyle(Color(hex: 0x2563EB))
+                (Text("\(xpToNext) XP ").font(Brand.font(12 * ts, .heavy)).foregroundColor(FinishInk.heading)
+                 + Text("to Lvl \(profile.level + 1)").font(Brand.font(12 * ts, .heavy)).foregroundColor(FinishInk.secondary))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
-            .padding(.horizontal, 14).padding(.vertical, 11)
+            .padding(.horizontal, 14 * ts).padding(.vertical, 11 * ts)
             .statsCard()
             if !isPro {
                 // §A8: the Pro upsell is an amber candy button.
                 Button { showPro = true } label: {
                     CandyLabel(title: "Unlock your full insights with Pro")
                 }
-                .buttonStyle(CandyButtonStyle(variant: .amber, size: .small))
+                .buttonStyle(CandyButtonStyle(variant: .amber, size: widthClass == .compact ? .small : .large))
             }
         }
         .softSheet(isPresented: $showPro) { ProView(reason: "Extended stats") }
