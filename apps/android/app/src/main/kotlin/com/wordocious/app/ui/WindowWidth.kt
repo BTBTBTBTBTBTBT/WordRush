@@ -91,3 +91,10 @@ fun chromeScale(widthClass: WidthClass): Float = when (widthClass) {
     WidthClass.MEDIUM -> 1.2f
     WidthClass.COMPACT -> 1f
 }
+
+// Tablet slice 5 (Half A part 4): a finished-screen card's width cap. A phone keeps its own cap
+// (400 / 440 dp, unchanged); MEDIUM / EXPANDED text cards use up to [tabletMax] (760 dp, the
+// reading column) so they fill the page instead of floating at phone width.
+@Composable
+fun textCardMax(phoneMax: Dp, tabletMax: Dp = 760.dp): Dp =
+    if (rememberWidthClass() == WidthClass.COMPACT) phoneMax else tabletMax

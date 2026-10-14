@@ -90,28 +90,33 @@ fun InfoPage(
         InfoRouteScreen(route, onDone = { nested = null })
         return
     }
+    // Tablet slice 5 (Half A part 4): the page scrolls full width; the side margin sits INSIDE the
+    // scroll (a swipe in the margin scrolls), and the reading column is capped at 760 dp on tablets.
+    // A phone: tabletPageInset is 0 and tabletColumnFor is a no-op, so the layout is unchanged.
+    val widthClass = rememberWidthClass()
     Column(
         modifier.fillMaxSize().pageBackground(PageTint.HOME)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = INFO_PAGE_PAD).padding(bottom = 24.dp),
-        // BJ7: 8 between cards (was 10).
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = INFO_PAGE_PAD + tabletPageInset(widthClass)).padding(bottom = 24.dp),
     ) {
-        Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-            SoftControl(Icon3DName.BACK, backLabel, onBack)
-            Spacer(Modifier.weight(1f))
-            SoftControl(Icon3DName.HELP, "Help", { menuOpen = true })
-        }
-        when {
-            heading != null -> HeadingArt(heading, Modifier.padding(vertical = 4.dp), height = 52.dp, contentDescription = title)
-            art != null && pageHeadline -> PageHeadline(art)
-            art != null -> FooterHeadline(art)
-            else -> Box(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
-                PageTitleText(title, fontSize = 24.sp, maxLines = 3)
+        // BJ7: 8 between cards (was 10).
+        Column(Modifier.tabletColumnFor(widthClass, tabletPageMaxWidth), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                SoftControl(Icon3DName.BACK, backLabel, onBack)
+                Spacer(Modifier.weight(1f))
+                SoftControl(Icon3DName.HELP, "Help", { menuOpen = true })
             }
+            when {
+                heading != null -> HeadingArt(heading, Modifier.padding(vertical = 4.dp), height = 52.dp, contentDescription = title)
+                art != null && pageHeadline -> PageHeadline(art)
+                art != null -> FooterHeadline(art)
+                else -> Box(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
+                    PageTitleText(title, fontSize = 24.sp, maxLines = 3)
+                }
+            }
+            if (intro != null) InfoIntroCard(intro.first, intro.second)
+            content()
         }
-        if (intro != null) InfoIntroCard(intro.first, intro.second)
-        content()
     }
     if (menuOpen) InfoMenuSheet(onNav = { menuOpen = false; nested = it }, onDismiss = { menuOpen = false })
 }
