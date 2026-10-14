@@ -316,6 +316,12 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   }, []);
   const hintStart = useCallback(() => dispatch({ type: 'HINT_START' }), [dispatch]);
   const hintReveal = useCallback(() => dispatch({ type: 'HINT_REVEAL' }), [dispatch]);
+  const [revealArmed, setRevealArmed] = useState(false);
+  useEffect(() => {
+    if (!revealArmed) return;
+    const t = setTimeout(() => setRevealArmed(false), 3000);
+    return () => clearTimeout(t);
+  }, [revealArmed]);
   const endPuzzle = useCallback(() => { dispatch({ type: 'END' }); setView('results'); }, [dispatch]);
   // "I'm done" / Finish after a win: same END as before, results show the recorded time.
   const finish = useCallback(() => { setShowVictory(false); endPuzzle(); }, [endPuzzle]);
@@ -515,7 +521,9 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       </div>
       <div className="flex justify-center gap-2" role="group" aria-label="Hints">
         <HelperButton tint="#f5a524" icon="hint" onClick={hintStart} aria-label="Starts with">Starts with…</HelperButton>
-        <HelperButton tint="#f5a524" icon="eye" onClick={hintReveal} aria-label="Reveal a word">Reveal a word</HelperButton>
+        {/* Johnny 10-14: Reveal sits right above the found-words list, where a thumb starts a scroll — one stray tap cost points.
+            The first tap only arms it ("Tap again to reveal", 3 s); the second spends the hint. */}
+        <HelperButton tint="#f5a524" icon="eye" onClick={() => { if (revealArmed) { setRevealArmed(false); hintReveal(); } else setRevealArmed(true); }} aria-label={revealArmed ? 'Tap again to reveal a word' : 'Reveal a word'}>{revealArmed ? 'Tap again to reveal' : 'Reveal a word'}</HelperButton>
       </div>
     </div>
   );

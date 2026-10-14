@@ -596,9 +596,17 @@ private fun HubBoard(session: HubSession) {
                 )
             }
             // The hint pair: smaller game-tinted helpers (30 dp) with the 3D hint / eye art.
+            // Johnny 10-14: Reveal sits right above the found-words list, where a thumb starts a scroll — one stray tap cost
+            // points. The first tap only arms it ("Tap again to reveal", 3 s); the second spends the hint.
+            var revealArmed by remember { mutableStateOf(false) }
+            LaunchedEffect(revealArmed) { if (revealArmed) { kotlinx.coroutines.delay(3000); revealArmed = false } }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 com.wordocious.app.ui.HelperButton("Starts with…", onClick = { session.hintStart() }, icon = com.wordocious.app.ui.FamIcon.HINT, height = 30.dp)
-                com.wordocious.app.ui.HelperButton("Reveal a word", onClick = { session.hintReveal() }, icon = com.wordocious.app.ui.FamIcon.EYE, height = 30.dp)
+                com.wordocious.app.ui.HelperButton(
+                    if (revealArmed) "Tap again to reveal" else "Reveal a word",
+                    onClick = { if (revealArmed) { revealArmed = false; session.hintReveal() } else revealArmed = true },
+                    icon = com.wordocious.app.ui.FamIcon.EYE, height = 30.dp,
+                )
             }
             // BI22: the pending "Starts with…" hints are NOT a row in this column any more (that row
             // appearing moved everything under the hint capsules): they lead the found-words flow
