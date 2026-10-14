@@ -5,14 +5,12 @@ require "jwt"; require "json"; require "net/http"; require "openssl"
 # disk and never printed.
 APP = "6775966055"; VERSION = ENV.fetch("VER", "2.3"); BUILD = ENV.fetch("BUILD", "204")
 WHATS_NEW = <<~TXT.strip
-  More Halloween fun and a round of fixes:
-  • Play a song on the cast: finish a tune and the whole gang sings it back.
-  • Rock Paper Scissors moves into a wrestling ring, with your friend's hand cycling while they pick.
-  • Call It always shows the side the coin really landed on.
-  • Word pages and the Words list are much easier to read.
-  • Leaderboard podiums show every stat in full.
-  • Spyglass forgives a drag that's one letter off.
-  • Smoother app launch, plus pocket-game and sign-in fixes.
+  What's new in 2.8.2:
+  • Pocket games got a makeover: a real tic-tac-toe board, a spotlight stage for Call It, a wrestling ring with a cheering crowd for Rock Paper Scissors, and new boards for Pass the Puzzle, Ghost and Word Chain.
+  • Word Chain now takes long words, anything from 5 to 15 letters, and the race is first to 50.
+  • Hubbub accepts hundreds more real words.
+  • Steadier, easier-to-read pocket games: no more jumping boards, clearer labels.
+  • Fixes, including points that now match between your share card and the leaderboard.
 TXT
 kid = "C8FRS9T697"; iss = "8bdd3f73-0d8b-427d-95c7-8097b77dfb7a"
 p8 = File.join(Dir.home, ".appstoreconnect/private_keys/AuthKey_#{kid}.p8")
