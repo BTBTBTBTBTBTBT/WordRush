@@ -113,7 +113,23 @@ struct VSMatchIntroView: View {
     /// The versus card (§D3): you (your avatar / letter tile) vs them (a bot in its
     /// "ready" pose, or the person's avatar), names, the candy VS lettering, and the
     /// bot's hello line or the head-to-head.
+    /// Phones: the card is capped at 420 and tinted as before. iPad: the tint sits on the 760 content itself
+    /// (tinting the capped frame let the greedy top bar paint the full page width).
     private var window: some View {
+        let bar = purple ? VsLobbyKit.purpleBar : VsLobbyKit.tealBar
+        return Group {
+            if widthClass == .compact {
+                windowBody.frame(maxWidth: 420)
+                    .vsTinted(accent, bar: bar, tint: 0.10, line: 0.3)
+            } else {
+                windowBody
+                    .vsTinted(accent, bar: bar, tint: 0.10, line: 0.3)
+                    .frame(maxWidth: 760)
+            }
+        }
+    }
+
+    private var windowBody: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 HeadingArtView(.matchfound, height: 30 * k, maxWidth: 200 * k, alignment: .leading)   // BJ16
@@ -150,8 +166,6 @@ struct VSMatchIntroView: View {
             }
             .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 18)
         }
-        .frame(maxWidth: widthClass == .compact ? 420 : 760)
-        .vsTinted(accent, bar: purple ? VsLobbyKit.purpleBar : VsLobbyKit.tealBar, tint: 0.10, line: 0.3)
     }
 
     /// The opponent's own color (a cast bot's), else the window accent.

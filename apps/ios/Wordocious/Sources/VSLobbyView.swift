@@ -64,6 +64,8 @@ struct VSLobbyView: View {
     @StateObject private var model = VSLobbyModel()
     @Environment(\.dismiss) private var dismiss
     @Environment(\.widthClass) private var widthClass
+    /// Slice 5 (iPad): the PLAY tiles and RIVALS rows grow 1.3x on the wide page; phones stay 1.
+    private var ts: CGFloat { tabletChromeScale(widthClass) }
 
     struct PendingInvite: Identifiable { let id = UUID(); let mode: GameMode; let code: String }
 
@@ -307,21 +309,21 @@ struct VSLobbyView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .top) {
                 if art {
-                    icon.frame(height: 36)
+                    icon.frame(height: 36 * ts)
                 } else {
                     icon
-                        .frame(width: 30, height: 30)
-                        .background(RoundedRectangle(cornerRadius: 9).fill(accent.vsWash(0.24)))
+                        .frame(width: 30 * ts, height: 30 * ts)
+                        .background(RoundedRectangle(cornerRadius: 9 * ts).fill(accent.vsWash(0.24)))
                 }
                 Spacer(minLength: 0)
                 if locked { VSLockBadge() }
             }
-            BubbleLabel(title, color: VsLobbyKit.ink, size: 14, minScale: 0.5)
-            Text(sub).font(Brand.font(10.5, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
+            BubbleLabel(title, color: VsLobbyKit.ink, size: 14 * ts, minScale: 0.5)
+            Text(sub).font(Brand.font(10.5 * ts, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
-        .padding(10)
+        .padding(10 * ts)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .vsTinted(accent, bar: [accent.vsWash(0.7), accent], radius: 16, barHeight: 5, tint: 0.10, line: 0.32)
     }
@@ -332,7 +334,7 @@ struct VSLobbyView: View {
             ? "\(waiting) waiting now in \(VsLobbyKit.modeName(mode))."
             : "0 waiting now. A bot steps in at 0:15."
         return NavigationLink { VSGameView(mode: mode, intent: .live) } label: {
-            playTile(icon: Image(systemName: "dot.radiowaves.left.and.right").font(.system(size: 13, weight: .bold)).foregroundStyle(VsLobbyKit.ink),
+            playTile(icon: Image(systemName: "dot.radiowaves.left.and.right").font(.system(size: 13 * ts, weight: .bold)).foregroundStyle(VsLobbyKit.ink),
                      title: "LIVE", sub: sub, accent: VsLobbyKit.ink)
         }
         .buttonStyle(.squish)
@@ -344,7 +346,7 @@ struct VSLobbyView: View {
             if model.dailyUsed { showVSLimit = true } else { launch = Launch(mode: .duel, isDaily: true, intent: .live) }
         } label: {
             playTile(icon: Image("swords").renderingMode(.template).resizable().scaledToFit()
-                        .frame(width: 14, height: 14).foregroundStyle(VsLobbyKit.ink),
+                        .frame(width: 14 * ts, height: 14 * ts).foregroundStyle(VsLobbyKit.ink),
                      title: "DAILY",
                      sub: model.dailyUsed ? "Played today. Pro plays live any time." : "Today’s battle. A bot steps in if nobody is on.",
                      accent: VsLobbyKit.ink)
@@ -356,7 +358,7 @@ struct VSLobbyView: View {
         NavigationLink {
             if isPro { VSFriendPage(mode: mode) } else { ProView() }
         } label: {
-            playTile(icon: Image(systemName: "person.2.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Color(hex: 0xEC4899)),
+            playTile(icon: Image(systemName: "person.2.fill").font(.system(size: 12 * ts, weight: .bold)).foregroundStyle(Color(hex: 0xEC4899)),
                      title: "FRIEND",
                      sub: isPro ? "You play first. They race your run." : "Send with Pro. Answering is free.",
                      accent: Color(hex: 0xEC4899), locked: free)
@@ -379,9 +381,9 @@ struct VSLobbyView: View {
         return NavigationLink { VSBotsView(mode: free ? .duel : mode) } label: {
             playTile(icon: Group {
                         if allClear && ArtAsset.exists("art-medal-trophy") {
-                            VSArt("art-medal-trophy", height: 40)
+                            VSArt("art-medal-trophy", height: 40 * ts)
                         } else {
-                            PoseImage(next.mascot, "ready", height: 40)
+                            PoseImage(next.mascot, "ready", height: 40 * ts)
                         }
                      },
                      title: "BOTS", sub: sub, accent: allClear ? VsLobbyKit.gold : Color(hex: UInt(next.color)), art: true)
@@ -416,22 +418,22 @@ struct VSLobbyView: View {
 
     private func rivalRow(_ r: StatsDeepService.Rivalry) -> some View {
         // BJ7: top-aligned row, detail 4 under the name.
-        HStack(alignment: .top, spacing: 10) {
-            VSInitialAvatar(name: r.username, size: 36)
-            VStack(alignment: .leading, spacing: 4) {
-                BubbleLabel(r.username, color: VsLobbyKit.ink, size: 15, minScale: 0.45)
+        HStack(alignment: .top, spacing: 10 * ts) {
+            VSInitialAvatar(name: r.username, size: 36 * ts)
+            VStack(alignment: .leading, spacing: 4 * ts) {
+                BubbleLabel(r.username, color: VsLobbyKit.ink, size: 15 * ts, minScale: 0.45)
                 Text(VsLobbyKit.rivalLine(wins: r.wins, losses: r.losses, lastMode: r.lastMode))
-                    .font(Brand.font(11, .heavy))
+                    .font(Brand.font(11 * ts, .heavy))
                     .foregroundStyle(r.wins == r.losses ? VsLobbyKit.mutedInk : VsLobbyKit.ink)
                     .lineLimit(1).minimumScaleFactor(0.8)
             }
-            Spacer(minLength: 4)
+            Spacer(minLength: 4 * ts)
             NavigationLink { VSFriendPage(mode: mode, preselected: [r.opponentId]) } label: {
                 CandyLabel(title: "Challenge")
             }
             .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
         }
-        .padding(.horizontal, 12).padding(.vertical, 7)
+        .padding(.horizontal, 12 * ts).padding(.vertical, 7 * ts)
     }
 
     /// Go Pro (free): the gold card family (§G1) with the trophy and an amber candy CTA.

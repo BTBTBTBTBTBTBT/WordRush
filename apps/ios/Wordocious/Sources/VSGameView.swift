@@ -10,6 +10,8 @@ struct VSGameView: View {
     @StateObject private var vm: VSMatchViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    /// Slice 5 (iPad): the race strip and the VS chip grow 1.3x on the wide page; phones stay 1.
+    @Environment(\.widthClass) private var widthClass
     @State private var adShown = false
 
     let mode: GameMode
@@ -558,6 +560,7 @@ struct VSGameView: View {
                             avatarUrl: vm.opponentInfo?.avatarUrl,
                             botArt: vm.opponentInfo?.botArt,
                             accent: oppAccent,
+                            scale: tabletChromeScale(widthClass),
                             opponent: vm.opponent,
                             totalBoards: vm.totalBoards,
                             maxGuesses: maxGuesses,
@@ -615,7 +618,7 @@ struct VSGameView: View {
             Spacer()
             Image(systemName: "paperplane.fill").font(.system(size: 14, weight: .bold)).foregroundStyle(VsLobbyKit.purple)
         }
-        .padding(.horizontal, 12).frame(height: VSOpponentStrip.height)
+        .padding(.horizontal, 12 * tabletChromeScale(widthClass)).frame(height: VSOpponentStrip.height * tabletChromeScale(widthClass))
         .vsTinted(VsLobbyKit.purple, radius: 16, tint: 0.10, line: 0.32)
     }
 
@@ -1297,6 +1300,7 @@ struct VSMatchHeader: View {
     @ObservedObject var game: GameViewModel
     let mode: GameMode
     let onHome: () -> Void
+    @Environment(\.widthClass) private var widthClass
 
     var body: some View {
         HStack(alignment: .top, spacing: 4) {
@@ -1321,7 +1325,7 @@ struct VSMatchHeader: View {
                     .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                     .lineLimit(1).minimumScaleFactor(0.6)
                     .gameTitleArt(mode)
-                VSTagPill()
+                VSTagPill(size: 11 * tabletChromeScale(widthClass))
             }
             HStack(spacing: 12) {
                 Text(progressLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
@@ -1342,7 +1346,7 @@ struct VSMatchHeader: View {
                     .foregroundStyle(LinearGradient(colors: GameScreen.gauntletStageGradient(game.gauntletStageName),
                                                     startPoint: .leading, endPoint: .trailing))
                     .lineLimit(1).minimumScaleFactor(0.7)
-                VSTagPill(size: 10)
+                VSTagPill(size: 10 * tabletChromeScale(widthClass))
                 if !game.stageCleared {
                     if game.boardCount > 1 {
                         HStack(spacing: 3) {
@@ -1404,6 +1408,8 @@ struct VSOpponentStrip: View {
     let botArt: String?
     /// The strip's tint: a cast bot's own color, else VS teal.
     var accent: Color = VsLobbyKit.ink
+    /// Slice 5 (iPad): the strip's height and content grow with the page (1.3x EXPANDED, 1 on phones).
+    var scale: CGFloat = 1
     let opponent: VSMatchViewModel.OpponentProgress
     /// The MODE's board count, known from match start (opponent.totalBoards is
     /// 0 until their first progress event).
@@ -1419,27 +1425,28 @@ struct VSOpponentStrip: View {
 
     var body: some View {
         let progress = min(1, max(0, stageProgress ?? Double(opponent.boardsSolved) / Double(max(1, total))))
-        HStack(spacing: 10) {
+        let s = scale
+        HStack(spacing: 10 * s) {
             // §D3: a cast bot is its own character (a little larger, no circle).
             if let m = VsLobbyKit.mascot(fromArt: botArt) {
                 Image(m.assetName).resizable().interpolation(.high).scaledToFit()
-                    .frame(width: 42, height: 42)
+                    .frame(width: 42 * s, height: 42 * s)
                     .accessibilityHidden(true)
             } else {
-                VSPlayerAvatar(url: avatarUrl, username: name, botArt: botArt, size: 34)
+                VSPlayerAvatar(url: avatarUrl, username: name, botArt: botArt, size: 34 * s)
             }
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 6) {
-                    Text(name).font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.titleInk)
+            VStack(alignment: .leading, spacing: 6 * s) {
+                HStack(spacing: 6 * s) {
+                    Text(name).font(Brand.font(13 * s, .black)).foregroundStyle(VsLobbyKit.titleInk)
                         .lineLimit(1).minimumScaleFactor(0.7)
                     // Reserved slot: the dots fade, they never shift the row.
-                    TypingDots(dotSize: 4).opacity(typing ? 1 : 0)
+                    TypingDots(dotSize: 4 * s).opacity(typing ? 1 : 0)
                         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: typing)
-                    Spacer(minLength: 4)
-                    HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text("\(opponent.attempts)").vsNumber(15)
+                    Spacer(minLength: 4 * s)
+                    HStack(alignment: .firstTextBaseline, spacing: 3 * s) {
+                        Text("\(opponent.attempts)").vsNumber(15 * s)
                         Text(opponent.attempts == 1 ? "guess" : "guesses")
-                            .font(Brand.font(10.5, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
+                            .font(Brand.font(10.5 * s, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
                     }
                     .lineLimit(1).fixedSize()
                 }
@@ -1450,13 +1457,13 @@ struct VSOpponentStrip: View {
                             .frame(width: geo.size.width * progress)
                     }
                 }
-                .frame(height: 5)
+                .frame(height: 5 * s)
                 .animation(Theme.animation(.easeInOut(duration: 0.4)), value: progress)
             }
             trailing
         }
-        .padding(.horizontal, 12)
-        .frame(height: Self.height)
+        .padding(.horizontal, 12 * s)
+        .frame(height: Self.height * s)
         .frame(maxWidth: .infinity)
         .vsTinted(accent, radius: 16, tint: 0.11, line: 0.34)
         .accessibilityElement(children: .ignore)
@@ -1465,19 +1472,19 @@ struct VSOpponentStrip: View {
 
     @ViewBuilder private var trailing: some View {
         if let stageLine {
-            Text(stageLine).font(Brand.font(11, .black)).foregroundStyle(accent)
+            Text(stageLine).font(Brand.font(11 * scale, .black)).foregroundStyle(accent)
                 .lineLimit(1).minimumScaleFactor(0.7)
-                .frame(maxWidth: 110, alignment: .trailing)
+                .frame(maxWidth: 110 * scale, alignment: .trailing)
         } else if total > 1 {
-            HStack(alignment: .firstTextBaseline, spacing: 3) {
-                Text("\(opponent.boardsSolved)/\(total)").vsNumber(16)
-                Text("boards").font(Brand.font(10.5, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
+            HStack(alignment: .firstTextBaseline, spacing: 3 * scale) {
+                Text("\(opponent.boardsSolved)/\(total)").vsNumber(16 * scale)
+                Text("boards").font(Brand.font(10.5 * scale, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
             }
             .fixedSize()
         } else {
-            // Tiny color-only board (≤ 44 pt tall, ≤ 72 pt wide).
+            // Tiny color-only board (≤ 44 pt tall, ≤ 72 pt wide; scaled with the strip on tablets).
             let rows = CGFloat(max(1, maxGuesses)), cols = CGFloat(max(1, wordLength))
-            let cell = max(3, min(7, floor((44 - (rows - 1)) / rows), floor((72 - (cols - 1)) / cols)))
+            let cell = max(3, min(7 * scale, floor((44 * scale - (rows - 1)) / rows), floor((72 * scale - (cols - 1)) / cols)))
             OpponentMiniBoard(tiles: opponent.tiles[0] ?? [], maxGuesses: maxGuesses, wordLength: wordLength, cell: cell)
         }
     }

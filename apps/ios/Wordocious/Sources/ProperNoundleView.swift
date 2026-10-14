@@ -967,6 +967,8 @@ struct ProperNoundleVSBoard<Strip: View>: View {
     @ViewBuilder var strip: () -> Strip
     /// The whole clue's soft-pop card (opens when the clue lands; "Read clue" reopens it).
     @State private var showFullClue = false
+    /// Slice 5 (iPad): the VS chip beside the title grows with the page (1.3x EXPANDED); phones stay 1.
+    @Environment(\.widthClass) private var widthClass
 
     var body: some View {
         VStack(spacing: 8) {
@@ -1004,7 +1006,7 @@ struct ProperNoundleVSBoard<Strip: View>: View {
             HStack(spacing: 8) {
                 BubbleLabel("PROPERNOUNDLE", color: pnAccent, size: 27, minScale: 0.5, alignment: .center)
                     .gameTitleArt(.propernoundle)
-                VSTagPill()
+                VSTagPill(size: 11 * tabletChromeScale(widthClass))
             }
             HStack(spacing: 8) {
                 if let p = vm.puzzle {
