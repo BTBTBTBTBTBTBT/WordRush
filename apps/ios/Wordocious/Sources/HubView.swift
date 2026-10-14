@@ -223,6 +223,10 @@ struct HubView: View {
     @State private var showGuide = false
     /// Item 32: End puzzle asks first (a designed card, not a system dialog).
     @State private var confirmEnd = false
+    /// Johnny 10-14: Reveal sits right above the found-words list, where a thumb starts a scroll — one stray tap cost points.
+    /// The first tap only arms it ("Tap again to reveal", 3 s); the second spends the hint.
+    @State private var revealArmed = false
+    @State private var revealArmSeq = 0
     /// Item 32: the shuffle tile flip. `shownOuter` holds the OLD letters until each hex is edge-on, `flip` is each
     /// outer hex's rotation about Y (degrees), `flipToken` drops a stale flip when a second shuffle starts.
     @State private var shownOuter: [Character]?
@@ -554,7 +558,15 @@ struct HubView: View {
                 }
                 HStack(spacing: 8) {
                     helper("Starts with…", "lightbulb", tint: Self.hintAmber) { vm.hintStart() }
-                    helper("Reveal a word", "eye", tint: Self.hintAmber) { vm.hintReveal() }
+                    helper(revealArmed ? "Tap again to reveal" : "Reveal a word", "eye", tint: Self.hintAmber) {
+                        if revealArmed { revealArmed = false; vm.hintReveal(); return }
+                        revealArmed = true; revealArmSeq += 1
+                        let seq = revealArmSeq
+                        Task { @MainActor in
+                            try? await Task.sleep(nanoseconds: 3_000_000_000)
+                            if revealArmSeq == seq { revealArmed = false }
+                        }
+                    }
                 }
                 // A label, never a second count: the header's hubWordsLabel is the one word count (Doug 10-05: 8 vs 18).
                 // Item 32: it is the bubble lettering in the game's color (web: BubbleText), not small caps.
