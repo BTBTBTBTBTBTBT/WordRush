@@ -306,16 +306,16 @@ struct SpyglassView: View {
                 .soloGameTitle(.wordsearch)
             BubbleOneLine(text: vm.state.title.uppercased(), palette: .accent(spyglassAccent), size: 15, minScale: 0.5)
             HStack(spacing: 8) {
-                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-                Text("\(vm.state.found.count)/\(vm.state.words.count) found").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                Text("\(vm.state.misses) miss\(vm.state.misses == 1 ? "" : "es")").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted) }
+                Text("\(vm.state.found.count)/\(vm.state.words.count) found").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
+                Text("\(vm.state.misses) miss\(vm.state.misses == 1 ? "" : "es")").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                 if !vm.isFinished {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
                             Image(systemName: "clock").font(.system(size: 9))
                             Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").monospacedDigit()
                         }
-                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                        .font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                     }
                 }
             }
@@ -535,7 +535,7 @@ struct SpyglassGridView: View {
                                     if i == anchor || i == pendingTap { Circle().fill(spyglassAccent.opacity(0.24)).padding(cell * 0.08) }
                                     else if previewSet.contains(i) { Circle().fill(spyglassAccent.opacity(0.10)).padding(cell * 0.08) }
                                     if hintCells.contains(i) { Circle().stroke(Color(hex: 0xF5C542), lineWidth: 2).padding(cell * 0.08) }
-                                    Text(String(chars[i])).font(Brand.font(min(20, cell * 0.5), .black))
+                                    Text(String(chars[i])).font(Brand.font(widthClass == .compact ? min(20, cell * 0.5) : min(44, cell * 0.56), .black))
                                         .foregroundStyle(foundCells.contains(i) ? Color.white : PuzKit.ink)
                                         .shadow(color: foundCells.contains(i) ? Color(hex: 0x1A2E05).opacity(0.5) : .clear, radius: 0.5, x: 0, y: 1)
                                 }

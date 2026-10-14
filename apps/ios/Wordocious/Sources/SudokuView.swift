@@ -194,6 +194,7 @@ struct SudokuView: View {
                     result
                 }
                 .padding(.horizontal, 10)
+                .environment(\.helperScale, tabletChromeScale(widthClass))
                 .tabletPage()
             } else {
                 VStack(spacing: 8) {
@@ -220,6 +221,7 @@ struct SudokuView: View {
                     }
                 }
                 .padding(.horizontal, 10)
+                .environment(\.helperScale, tabletChromeScale(widthClass))
                 .tabletPage()
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
@@ -274,10 +276,10 @@ struct SudokuView: View {
             BubbleLabel(ModeStyle.title(.sudoku), color: sudokuAccent, size: 27, minScale: 0.5, alignment: .center)
                 .soloGameTitle(.sudoku)
             HStack(spacing: 8) {
-                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-                Text(difficultyLabel[vm.state.difficulty] ?? "Medium").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted) }
+                Text(difficultyLabel[vm.state.difficulty] ?? "Medium").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                 HStack(spacing: 3) {
-                    Text("Mistakes").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                    Text("Mistakes").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                     ForEach(0..<SUDOKU_MAX_MISTAKES, id: \.self) { i in
                         Circle().fill(i < vm.mistakes ? Color(hex: 0xDC2626) : Theme.borderLight).frame(width: 8, height: 8)
                     }
@@ -290,7 +292,7 @@ struct SudokuView: View {
                             Image(systemName: "clock").font(.system(size: 9))
                             Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").monospacedDigit()
                         }
-                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                        .font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                     }
                 }
             }

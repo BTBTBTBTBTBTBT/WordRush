@@ -495,17 +495,17 @@ struct CrosswordView: View {
 
     private var metaLine: some View {
         HStack(spacing: 8) {
-            if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-            if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(crosswordAccent) }
-            Text("\(vm.filled)/\(vm.total) letters").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-            Text(vm.checksLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+            if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted) }
+            if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(crosswordAccent) }
+            Text("\(vm.filled)/\(vm.total) letters").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
+            Text(vm.checksLabel).font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
             if !vm.isFinished {
                 TimelineView(.periodic(from: .now, by: 1)) { _ in
                     HStack(spacing: 2) {
                         Image(systemName: "clock").font(.system(size: 9))
                         Text(timeText(vm.elapsed, clock: true))
                     }
-                    .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                    .font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                 }
             }
         }

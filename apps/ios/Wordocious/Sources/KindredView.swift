@@ -412,17 +412,17 @@ struct KindredView: View {
             BubbleLabel("KINDRED", color: kindredAccent, size: 27, minScale: 0.5, alignment: .center)
                 .soloGameTitle(.groups)
             HStack(spacing: 8) {
-                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-                if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(kindredAccent) }
-                Text("\(vm.state.solved.count)/\(GROUPS_TOTAL_BOARDS) groups").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                Text(vm.mistakesLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted) }
+                if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(kindredAccent) }
+                Text("\(vm.state.solved.count)/\(GROUPS_TOTAL_BOARDS) groups").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
+                Text(vm.mistakesLabel).font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                 if !vm.isFinished {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
                             Image(systemName: "clock").font(.system(size: 9))
                             Text(timeText(vm.elapsed, clock: true))
                         }
-                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                        .font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                     }
                 }
             }
@@ -547,12 +547,15 @@ struct KindredTileGrid: View {
     @ObservedObject var vm: KindredVM
     /// Scaled by the board to fill its band (founder, 2026-09-28); 56 was the fixed height before.
     var tileHeight: CGFloat = 56
+    @Environment(\.widthClass) private var widthClass
 
     var body: some View {
         let s = vm.state
         let ringed = vm.ringed
-        let fontNormal = min(15, max(12, (tileHeight * 0.22).rounded()))
-        let fontLong = min(13, max(10, (tileHeight * 0.18).rounded()))
+        // Slice 5 (R3, Half B): the words read big on tablets (1.8x EXPANDED, 1.4x MEDIUM); long words still autoshrink.
+        let wordScale: CGFloat = widthClass == .expanded ? 1.8 : (widthClass == .medium ? 1.4 : 1)
+        let fontNormal = min(15, max(12, (tileHeight * 0.22).rounded())) * wordScale
+        let fontLong = min(13, max(10, (tileHeight * 0.18).rounded())) * wordScale
         // Founder (2026-09-25, on build 191): the pair ring was cut off at the screen edge.
         // A lazy grid clips to its own bounds, and the ring is drawn 3 pt OUTSIDE the tile, so
         // the outer columns lost it. Every cell now carries a 3 pt transparent margin (the grid

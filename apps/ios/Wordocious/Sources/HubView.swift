@@ -372,20 +372,20 @@ struct HubView: View {
             BubbleLabel("HUBBUB", color: hubAccent, size: 27, minScale: 0.5, alignment: .center)
                 .soloGameTitle(.hub)
             HStack(spacing: 8) {
-                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
+                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted) }
                 // The one "N/M words · pts" line (hubWordsLabel); results say it in the result line instead.
                 if counts {
-                    Text(hubWordsLabel(vm.state)).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                    Text("\(vm.state.points)/\(vm.state.max) pts").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                    Text(hubWordsLabel(vm.state)).font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
+                    Text("\(vm.state.points)/\(vm.state.max) pts").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                 }
                 if !vm.state.ended {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
                             Image(systemName: "clock").font(.system(size: 9)); Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").monospacedDigit()
                             // The clock keeps counting the hunt after Hubbub; say so (founder, 2026-09-28).
-                            if vm.state.status == .won { Text("· playing on").font(Brand.caption(10)) }
+                            if vm.state.status == .won { Text("· playing on").font(Brand.caption(10 * tabletChromeScale(widthClass))) }
                         }
-                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                        .font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                     }
                 }
             }

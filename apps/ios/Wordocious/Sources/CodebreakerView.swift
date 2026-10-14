@@ -434,17 +434,17 @@ struct CodebreakerView: View {
             BubbleLabel("CODEBREAKER", color: codebreakerAccent, size: 27, minScale: 0.5, alignment: .center)
                 .soloGameTitle(.cryptogram)
             HStack(spacing: 8) {
-                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-                if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(codebreakerAccent) }
-                Text("\(vm.resolved)/\(vm.codes.count) letters").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                Text(vm.checksLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted) }
+                if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(codebreakerAccent) }
+                Text("\(vm.resolved)/\(vm.codes.count) letters").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
+                Text(vm.checksLabel).font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                 if !vm.isFinished {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
                             Image(systemName: "clock").font(.system(size: 9))
                             Text(timeText(vm.elapsed, clock: true))
                         }
-                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                        .font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                     }
                 }
             }

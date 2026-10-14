@@ -251,6 +251,19 @@ struct FamilyLabelView<Icon: View>: View {
 
 // MARK: - Styles
 
+/// Slice 5 (R3, Half B): a game screen's helper pills scale on tablets (its pill rows: tools, hints, pads).
+/// Multiplies each HelperButtonStyle's own scale; 1 on phones and wherever it is not set.
+private struct HelperScaleKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 1
+}
+
+extension EnvironmentValues {
+    var helperScale: CGFloat {
+        get { self[HelperScaleKey.self] }
+        set { self[HelperScaleKey.self] = newValue }
+    }
+}
+
 /// README §1: the game helper pill (34 pt), tinted by the screen's game color (or `tint`).
 struct HelperButtonStyle: ButtonStyle {
     /// An explicit tint (overrides the game color).
@@ -274,6 +287,7 @@ struct HelperButtonStyle: ButtonStyle {
     private struct HelperBody: View {
         let configuration: Configuration
         let style: HelperButtonStyle
+        @Environment(\.helperScale) private var helperScale
         @Environment(\.accessibilityReduceMotion) private var envReduce
         @Environment(\.isEnabled) private var enabled
         @Environment(\.colorScheme) private var scheme
@@ -287,13 +301,14 @@ struct HelperButtonStyle: ButtonStyle {
             let dark = scheme == .dark
             // Season preview: in season every helper takes the season's button tint (registry palette).
             let tint = style.tint ?? SeasonKit.buttonTint ?? page.gameAccent ?? style.fallback ?? Color(hex: 0x7C3AED)
-            let h = FamilyMetrics.helperHeight * style.scale
+            let k = style.scale * helperScale
+            let h = FamilyMetrics.helperHeight * k
             let ink = style.selected ? FamilyInk.selectedInk(tint) : FamilyInk.helperInk(tint, dark: dark)
             let fill = style.selected ? (pressed ? Color.black.mixed(over: tint, 0.12) : tint)
                                       : FamilyInk.helperFill(tint, dark: dark, pressed: pressed)
             let dim = style.used || !enabled
             configuration.label
-                .environment(\.familyInk, FamilyLabelInk(ink: ink, size: FamilyMetrics.helperFont * style.scale, icon: FamilyMetrics.helperIcon * style.scale))
+                .environment(\.familyInk, FamilyLabelInk(ink: ink, size: FamilyMetrics.helperFont * k, icon: FamilyMetrics.helperIcon * k))
                 .environment(\.castInk, nil)
                 .foregroundStyle(ink)
                 .offset(y: pressed ? 1 : 0)

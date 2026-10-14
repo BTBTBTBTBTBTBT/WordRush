@@ -298,10 +298,10 @@ struct RegionsView: View {
             // FINISH_SPEC §B4: the status line under the title; numbers are soft numbers (§A2).
             HStack(spacing: 10) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").softNumber(13) }
-                Text(vm.sizeLabel).font(Brand.font(12, .heavy)).foregroundStyle(Self.statusInk)
+                Text(vm.sizeLabel).font(Brand.font(12 * tabletChromeScale(widthClass), .heavy)).foregroundStyle(Self.statusInk)
                 if !vm.isFinished {
                     HStack(spacing: 4) {
-                        Text("Mistakes").font(Brand.font(12, .heavy)).foregroundStyle(Self.statusInk)
+                        Text("Mistakes").font(Brand.font(12 * tabletChromeScale(widthClass), .heavy)).foregroundStyle(Self.statusInk)
                         StarsweepMistakeDots(used: vm.mistakes, total: REGIONS_MAX_MISTAKES)
                     }
                     .accessibilityElement(children: .ignore)
@@ -321,11 +321,11 @@ struct RegionsView: View {
     @ViewBuilder private var starsLeft: some View {
         if vm.remaining == vm.n && vm.state.history.isEmpty {
             Text("Tap for a black star · double-tap to play it")
-                .font(Brand.font(11, .heavy)).foregroundStyle(Self.statusInk)
+                .font(Brand.font(11 * tabletChromeScale(widthClass), .heavy)).foregroundStyle(Self.statusInk)
         } else {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("\(vm.remaining)").softNumber(15)
-                Text("star\(vm.remaining == 1 ? "" : "s") left").font(Brand.font(11, .heavy)).foregroundStyle(Self.statusInk)
+                Text("star\(vm.remaining == 1 ? "" : "s") left").font(Brand.font(11 * tabletChromeScale(widthClass), .heavy)).foregroundStyle(Self.statusInk)
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(vm.remaining) star\(vm.remaining == 1 ? "" : "s") left")
