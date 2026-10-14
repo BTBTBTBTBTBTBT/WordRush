@@ -534,10 +534,12 @@ fun GameHeaderTitle(dbKey: String, modifier: Modifier = Modifier, maxHeight: Dp?
         return
     }
     val screenHeight = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp
+    // Tablet slice 5 (R4): the title art is 2x its phone height on EXPANDED (1.6x MEDIUM), the corner row grows with it.
+    val k = titleArtScale(rememberWidthClass())
     FittedGameTitleArt(
         res, gameTitleLabelForKey(dbKey),
-        modifier.fillMaxWidth().padding(top = GAME_CORNER_ROW).padding(horizontal = GAME_TITLE_ART_SIDE_INSET),
-        maxHeight = minOf(gameHeaderTitleMax(screenHeight), maxHeight ?: GAME_TITLE_ART_HEADER_MAX), minHeight = GAME_TITLE_ART_HEADER_MIN,
+        modifier.fillMaxWidth().padding(top = GAME_CORNER_ROW * chromeScale(rememberWidthClass())).padding(horizontal = GAME_TITLE_ART_SIDE_INSET),
+        maxHeight = minOf(gameHeaderTitleMax(screenHeight), maxHeight ?: GAME_TITLE_ART_HEADER_MAX) * k, minHeight = GAME_TITLE_ART_HEADER_MIN * k,
     )
 }
 

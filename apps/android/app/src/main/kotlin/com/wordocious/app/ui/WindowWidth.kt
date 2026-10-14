@@ -61,3 +61,24 @@ fun Modifier.tabletPageFor(widthClass: WidthClass): Modifier =
         .padding(horizontal = tabletPageMargin(widthClass))
         .wrapContentWidth(Alignment.CenterHorizontally)
         .widthIn(max = tabletPageMaxWidth)
+
+// Tablet slice 5: the game screens use the same page as the top-level tabs (min(width - 2 x margin,
+// tabletPageMaxWidth)). A phone keeps its 10 dp side padding, byte for byte.
+
+/** A game screen's page: the phone's 10 dp padding, or the tablet page on MEDIUM / EXPANDED. */
+fun Modifier.gamePageFor(widthClass: WidthClass): Modifier =
+    if (widthClass == WidthClass.COMPACT) this.padding(horizontal = 10.dp) else this.tabletPageFor(widthClass)
+
+/** Game header title art scale (R4): 2x its phone height on EXPANDED, 1.6x on MEDIUM, 1 on a phone. */
+fun titleArtScale(widthClass: WidthClass): Float = when (widthClass) {
+    WidthClass.EXPANDED -> 2f
+    WidthClass.MEDIUM -> 1.6f
+    WidthClass.COMPACT -> 1f
+}
+
+/** Game header chrome scale (R4): the status line and the home / sound / help buttons, 1.3x on EXPANDED, 1.2x on MEDIUM. */
+fun chromeScale(widthClass: WidthClass): Float = when (widthClass) {
+    WidthClass.EXPANDED -> 1.3f
+    WidthClass.MEDIUM -> 1.2f
+    WidthClass.COMPACT -> 1f
+}

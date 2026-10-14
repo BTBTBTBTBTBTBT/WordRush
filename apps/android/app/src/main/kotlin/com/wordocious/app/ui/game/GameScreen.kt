@@ -2,6 +2,8 @@ package com.wordocious.app.ui.game
 
 import androidx.compose.ui.graphics.drawscope.inset
 import com.wordocious.app.ui.gameBackground
+import com.wordocious.app.ui.gamePageFor
+import com.wordocious.app.ui.rememberWidthClass
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -826,7 +828,8 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             // on Android 15+ exactly as it does under the nav bar.
             .statusBarsPadding(),
     ) {
-        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp)) {
+        // Tablet slice 5 (R1): the game page is the tablet page (phones keep their 10 dp padding).
+        Column(modifier = Modifier.fillMaxSize().gamePageFor(rememberWidthClass())) {
             // Centered gradient mode title + progress + live clock (spec Part 2 Headers)
             val board0 = state.boards[0]
             // §19.3 header: the corner buttons keep their own top row and the title art
@@ -878,11 +881,13 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 // Gauntlet = trophy solved-count + guesses at 11pt; other
                 // multi-board modes = ONE "x/n solved · u/m guesses" line (no
                 // trophy — iOS reserves the amber trophy for Gauntlet).
-                val statSp = if (mode == GameMode.GAUNTLET) 11.sp else 12.sp
+                // Tablet slice 5 (R4): the status line is 1.3x on EXPANDED (1.2x MEDIUM).
+                val chrome = com.wordocious.app.ui.chromeScale(rememberWidthClass())
+                val statSp = ((if (mode == GameMode.GAUNTLET) 11f else 12f) * chrome).sp
                 // iOS sizes the header glyphs a step below the text: 10pt in the
                 // Gauntlet header, 11pt in the standard one. A flat 12dp made
                 // both read a size larger than iOS next to the same numbers.
-                val statIcon = if (mode == GameMode.GAUNTLET) 10.dp else 11.dp
+                val statIcon = (if (mode == GameMode.GAUNTLET) 10.dp else 11.dp) * chrome
                 Row(Modifier.feedbackAnchor(feedbackAnchor), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     val used = state.boards.maxOf { it.guesses.size }
                     if (mode == GameMode.PROPERNOUNDLE) {
@@ -1085,11 +1090,11 @@ internal fun SoundToggleButton(@Suppress("UNUSED_PARAMETER") accent: Color, modi
         },
         contentDescription = if (enabled) "Mute sounds" else "Unmute sounds",
         modifier = modifier,
-        size = GAME_CORNER,
+        size = GAME_CORNER * com.wordocious.app.ui.chromeScale(rememberWidthClass()),
     ) {
         // Muted = faded + desaturated.
         com.wordocious.app.ui.Icon3D(
-            com.wordocious.app.ui.Icon3DName.SOUND, GAME_CORNER_ICON,
+            com.wordocious.app.ui.Icon3DName.SOUND, GAME_CORNER_ICON * com.wordocious.app.ui.chromeScale(rememberWidthClass()),
             alpha = if (enabled) 1f else 0.4f,
             colorFilter = if (enabled) null else com.wordocious.app.ui.Icon3DMuted,
         )
@@ -1115,8 +1120,9 @@ internal fun CornerHomeButton(@Suppress("UNUSED_PARAMETER") accent: Color, onCli
     // AY: inside an app layer the home button goes to the Home ROOT (MainScreen's router),
     // single-fire; elsewhere it falls back to the screen's own action.
     val goHome = com.wordocious.app.ui.LocalGoHome.current ?: onClick
-    com.wordocious.app.ui.HeaderCircle(goHome, "Home", modifier, size = GAME_CORNER) {
-        com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TAB_HOME, GAME_CORNER_ICON)
+    val cs = com.wordocious.app.ui.chromeScale(rememberWidthClass())
+    com.wordocious.app.ui.HeaderCircle(goHome, "Home", modifier, size = GAME_CORNER * cs) {
+        com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TAB_HOME, GAME_CORNER_ICON * cs)
     }
 }
 
@@ -1129,7 +1135,7 @@ internal fun CornerHelpButton(@Suppress("UNUSED_PARAMETER") accent: Color, onCli
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         SoundToggleButton(accent)
         com.wordocious.app.ui.HeaderIconButton(
-            com.wordocious.app.ui.Icon3DName.HELP, "How to play", onClick, size = GAME_CORNER, iconSize = GAME_CORNER_ICON,
+            com.wordocious.app.ui.Icon3DName.HELP, "How to play", onClick, size = GAME_CORNER * com.wordocious.app.ui.chromeScale(rememberWidthClass()), iconSize = GAME_CORNER_ICON * com.wordocious.app.ui.chromeScale(rememberWidthClass()),
         )
     }
 }

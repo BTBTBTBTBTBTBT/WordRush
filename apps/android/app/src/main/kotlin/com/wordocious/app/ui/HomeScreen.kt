@@ -890,6 +890,11 @@ private fun ModeCardGrid(
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(HomeCardSpec.GAP.dp)) {
     cards.chunked(columns).forEach { rowCards ->
         Row(horizontalArrangement = Arrangement.spacedBy(HomeCardSpec.GAP.dp), modifier = Modifier.fillMaxWidth()) {
+            // Tablet slice 5: a short trailing row is centered (the free slots split evenly on both sides; the card width
+            // stays the full row's). A phone keeps the cards at the start of the row.
+            val missing = columns - rowCards.size
+            val centerRow = rememberWidthClass() != WidthClass.COMPACT && missing > 0
+            if (centerRow) Spacer(Modifier.weight(missing / 2f))
             rowCards.forEach { card ->
                 val completion = card.dbKey?.let { completions[it] }
                 val shownCompletion = if (unlimitedMode) null else completion
@@ -900,7 +905,8 @@ private fun ModeCardGrid(
                     unlimited = unlimitedMode, onVs = {},
                 ) { onOpen(card) }
             }
-            repeat(columns - rowCards.size) { Spacer(Modifier.weight(1f)) }
+            if (centerRow) Spacer(Modifier.weight(missing / 2f))
+            else repeat(columns - rowCards.size) { Spacer(Modifier.weight(1f)) }
         }
     }
     }

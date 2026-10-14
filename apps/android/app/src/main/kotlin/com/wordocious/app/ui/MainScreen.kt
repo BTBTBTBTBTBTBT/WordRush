@@ -152,6 +152,8 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
     // color by MainScreen (dockedTabBarExtension), so it reads as part of the bar. Each
     // tab icon squishes on tap.
     val look = tabBarLook(selected)
+    // Tablet slice 5: icons, labels and the active underline grow 1.3x on EXPANDED (1.2x MEDIUM) so the full-width bar isn't thin.
+    val tk = chromeScale(rememberWidthClass())
     // Tablet slice 4: the bar spans the whole window on every width class (the same bar as a phone).
     Row(
         Modifier.fillMaxWidth()
@@ -164,7 +166,7 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
             }
             .background(Brush.verticalGradient(listOf(look.top, look.bottom)))
             .drawBehind { drawRect(look.line, size = Size(size.width, 1.dp.toPx())) }
-            .padding(top = 8.dp, start = 6.dp, end = 6.dp, bottom = 4.dp),
+            .padding(top = 8.dp * tk, start = 6.dp, end = 6.dp, bottom = 4.dp * tk),
     ) {
         TABS.forEachIndexed { i, tab ->
             val active = selected == i
@@ -190,7 +192,7 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                     // Selected = full color; unselected = the same icon at 55% opacity and
                     // 60% saturation (game-kit.html `.tab img`).
                     Icon3D(
-                        tab.icon, 29.dp,
+                        tab.icon, 29.dp * tk,
                         alpha = if (active) 1f else 0.55f,
                         colorFilter = if (active) null else Icon3DMuted,
                     )
@@ -205,14 +207,14 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                 }
                 // Founder 10-10 (readability): "Leaderboard" lost its "d" at a 1.3x font scale on a narrow phone; it now steps down to fit.
                 FitText(
-                    tab.label, fontSize = 11.sp, modifier = Modifier.clearAndSetSemantics { }, minScale = 0.7f,
+                    tab.label, fontSize = (11f * tk).sp, modifier = Modifier.clearAndSetSemantics { }, minScale = 0.7f,
                     fontWeight = if (active) FontWeight.Black else FontWeight.ExtraBold,
                     color = if (active) (if (WTheme.season?.card != null) Color(0xFFFDBA74) else Color(0xFF6D28D9))
                         else if (WTheme.isDark) WTheme.textMuted else Color(0xFF8A78AD),
                 )
                 // The selected tab's 3 dp purple underline pill under its label.
                 Box(
-                    Modifier.size(width = 22.dp, height = 3.dp).clip(CircleShape)
+                    Modifier.size(width = 22.dp * tk, height = 3.dp * tk).clip(CircleShape)
                         .background(if (!active) Color.Transparent else if (WTheme.season?.card != null) Color(0xFFF97316) else HeaderInk.tabSelected),
                 )
             }
