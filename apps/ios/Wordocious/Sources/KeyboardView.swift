@@ -18,7 +18,9 @@ struct KeyboardView: View {
 
     /// Michael Keyboard is a row taller — shorter keys keep total height
     /// close to the 3-row layouts so tight boards (OctoWord) don't squeeze.
-    private var keyHeight: CGFloat { layout == "michael" ? 44 : 52 }
+    /// §AG tablet slice 3: keys are 1.2x on medium/expanded; phones unchanged.
+    @Environment(\.widthClass) private var widthClass
+    private var keyHeight: CGFloat { (layout == "michael" ? 44 : 52) * (widthClass == .compact ? 1 : 1.2) }
 
     /// FINISH_SPEC §B2 + §AQ1: a key takes its new color the moment ITS tile lands
     /// (tile by tile, never after the whole row), so the reveal stays a surprise

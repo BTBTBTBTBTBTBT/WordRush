@@ -583,17 +583,21 @@ struct CrosswordGridView: View {
     var minCell: CGFloat = 8
 
     private let gap: CGFloat = 3
+    /// §AG tablet slice 3: on medium/expanded the grid grows to the 640 pt column (cap 72 pt a cell); phones keep 42.
+    @Environment(\.widthClass) private var widthClass
 
     /// Cell side that fits the grid's columns AND (when given) rows, capped like the
     /// web (42 pt) — BI18 / FINISH_SPEC §B5 (CrosswordFit, unit-tested; fixed 3-pt
     /// gaps). The tray's padding comes off the width; its padding + lip and the
     /// selection ring's room off the height.
     private var cell: CGFloat {
-        CGFloat(CrosswordFit.cell(columns: vm.state.w, rows: vm.state.h,
-                                  width: Double(width ?? UIScreen.main.bounds.width - 40), height: maxHeight.map(Double.init),
+        let offered = width ?? UIScreen.main.bounds.width - 40
+        let tablet = widthClass != .compact
+        return CGFloat(CrosswordFit.cell(columns: vm.state.w, rows: vm.state.h,
+                                  width: Double(tablet ? min(offered, tabletColumnMaxWidth) : offered), height: maxHeight.map(Double.init),
                                   chromeX: Double(tray ? GameTray.padding * 2 : 0),
                                   chromeY: Double((tray ? GameTray.padding * 2 + GameTray.lip : 0) + 6),
-                                  gap: Double(gap), minCell: Double(minCell)))
+                                  gap: Double(gap), maxCell: tablet ? 72 : CrosswordFit.maxCell, minCell: Double(minCell)))
     }
 
     var body: some View {

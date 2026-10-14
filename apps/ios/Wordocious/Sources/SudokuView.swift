@@ -381,6 +381,8 @@ struct SudokuBoardView: View {
     var tray = false
     let onSelect: (Int) -> Void
 
+    /// §AG tablet slice 3: the grid grows to the 640 pt column on medium/expanded ("boards fill the screen").
+    @Environment(\.widthClass) private var widthClass
     private let rule = Color(hex: 0xC4B5FD), heavy = Color(hex: 0x4C1D95)
     private let selectedFill = Color(hex: 0xDDD6FE), sameFill = Color(hex: 0xEDE9FE)
     private let player = Color(hex: 0x7C3AED), hint = Color(hex: 0x8B5CF6), wrong = Color(hex: 0xDC2626)
@@ -397,7 +399,7 @@ struct SudokuBoardView: View {
             let cell = CGFloat(BoardSizing.fitTile(widthUnits: 9, heightUnits: 9,
                                                    width: Double(geo.size.width - pad / CGFloat(BoardSizing.widthFill)),
                                                    height: Double(geo.size.height - (pad + lip) / CGFloat(BoardSizing.heightFill)),
-                                                   maxTile: 420 / 9, minTile: 10))
+                                                   maxTile: (widthClass == .compact ? 420 : 640) / 9, minTile: 10))
             let side = cell * 9
             // Founder 10-10 ("hard to see the separation of the 9 boards"): real gaps between the 3 × 3 boxes; the cells
             // shrink to make room so the board keeps its size.

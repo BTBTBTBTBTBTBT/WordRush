@@ -158,7 +158,7 @@ struct GameScreen: View {
                 }
             }
             .padding(.horizontal, 10)
-            .wideColumn(.game)   // §AG: iPad keeps the phone column, centered on the wallpaper
+            .tabletColumn()   // §AG: iPad game column (640 pt, same as the keyboards), centered on the wallpaper
 
             // FINISH_SPEC §B4: the controls row tucked right under the status bar —
             // Home on the left; sound + help on the right (every game, Gauntlet too).
