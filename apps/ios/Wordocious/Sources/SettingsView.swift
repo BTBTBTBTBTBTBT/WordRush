@@ -103,7 +103,8 @@ struct SettingsView: View {
                             // signed in, like the bell was.
                             if auth.profile != nil {
                                 G5Divider(accent: G5Accent.pink)
-                                FinishLabel("Friends notifications")
+                                Text("FRIENDS NOTIFICATIONS").font(Brand.font(12, .black)).tracking(1.2).foregroundStyle(FinishInk.secondary)
+                                    .accessibilityAddTraits(.isHeader)
                                 NotificationPrefsToggles()
                                 Text("Friend requests always come through.")
                                     .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
@@ -147,7 +148,7 @@ struct SettingsView: View {
                                 Icon3D(.crown, size: 40)
                                     .accessibilityHidden(true)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    BubbleLabel("Wordocious Pro", color: G5Accent.gold.bubbleInk, size: 15)
+                                    PlainCapsLabel("Wordocious Pro", color: G5Accent.gold)
                                     Text(SubscriptionCopy.handoff(.apple).line)
                                         .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
                                         .fixedSize(horizontal: false, vertical: true)
@@ -347,7 +348,7 @@ struct SettingsView: View {
     private func toggleRow(_ title: String, _ sub: String, _ binding: Binding<Bool>, accent: Color) -> some View {
         Toggle(isOn: binding) {
             VStack(alignment: .leading, spacing: 2) {
-                BubbleLabel(title, color: accent.bubbleInk, size: 15)
+                PlainCapsLabel(title, color: accent)
                 Text(sub).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
                     .lineLimit(1).minimumScaleFactor(0.8)
             }
@@ -358,7 +359,7 @@ struct SettingsView: View {
 
     private func linkRow(_ title: String, accent: Color = G5Accent.purple) -> some View {
         HStack {
-            BubbleLabel(title, color: accent.bubbleInk, size: 15)
+            PlainCapsLabel(title, color: accent)
             Spacer()
             Image(systemName: "chevron.right").font(.system(size: 12, weight: .heavy))
                 .foregroundStyle(accent.opacity(0.7)).accessibilityHidden(true)
@@ -389,7 +390,12 @@ struct SettingsOptionTile<Preview: View>: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
-                    BubbleLabel(label, color: active ? Color.white : accent.bubbleInk, size: 15)
+                    if active {
+                        Text(label.uppercased()).font(Brand.font(15, .black)).tracking(0.4).foregroundStyle(Color.white)
+                            .lineLimit(1).minimumScaleFactor(0.75)
+                    } else {
+                        PlainCapsLabel(label, color: accent)
+                    }
                     Text(desc).font(Brand.font(10, .bold))
                         .foregroundStyle(active ? Color.white.opacity(0.88) : FinishInk.secondary)
                         .lineLimit(1).minimumScaleFactor(0.75)
