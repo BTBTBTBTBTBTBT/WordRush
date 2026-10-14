@@ -310,8 +310,9 @@ async function fitCheck(k) {
 if (wanted('fit')) {
   for (const k of ['pass', 'chain', 'ghost']) {
     const f = await fitCheck(k);
-    console.log(`fit ${k} ${tag}`, JSON.stringify(f));
-    await shot(`web-${tag}-${k}-fit`);
+    console.log(`fit ${k} ${tag} ${VW}x${VH}`, JSON.stringify(f), f.kbBottom !== null ? (f.kbBottom <= f.vh ? 'FITS above the keyboard' : 'does NOT fit') : '');
+    await closeHelp(k);
+    await shot(`web-${tag}-${VW}x${VH}-${k}-fit`, true);
     findings.push({ name: `fit.${k}`, ok: true, text: JSON.stringify(f) });
   }
 }

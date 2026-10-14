@@ -186,6 +186,65 @@ if wanted crossword; then
   measure "crossword.close" 1.5 back
 fi
 
+# ── Pocket games + musical cast (founder 10-13) ────────────────────────────────────────────────────────────
+# DEBUG / benchmarkRelease builds only (BuildConfig.POCKET_DEMO; the shipping release has none of it): each pocket game plays
+# itself, both sides, against a scripted Doug with no network (data/PocketDemo.kt), to its finished screen. Steps:
+#   pocket.<rps|ttt|coin|pass|passfull|ghost|chain>   ONLY="pocket" runs all of them
+#   musical.<everyday|halloween>                      (debug build only: the Halloween tunes need the season preview)
+# Each game is measured from launch to the end (gfxinfo over the whole play); screenshots every ~3 s go to $SHOTS, plus two
+# after the finish. The musical steps read the PASS/FAIL lines MusicalDemo prints to logcat.
+SHOTS="${SHOTS:-$ROOT/apps/android/build/perf/shots}"
+mkdir -p "$SHOTS"
+PACE="${PERF_PACE:-2500}"
+shot() { $ADB exec-out screencap -p > "$SHOTS/android-$1.png" 2>/dev/null; }
+
+wait_log() {  # pattern timeout-seconds [shot-prefix]
+  local pat="$1" max="$2" pre="${3:-}" n=0 t=0
+  while [ "$t" -lt "$max" ]; do
+    if $ADB logcat -d -s PocketDemo:I MusicalDemo:I 2>/dev/null | grep -q -- "$pat"; then return 0; fi
+    [ -n "$pre" ] && { n=$(( n + 1 )); shot "$pre-mid$(printf %02d $n)"; }
+    sleep 2.5; t=$(( t + 3 ))
+  done
+  return 1
+}
+
+pocket_game() {
+  local kind="$1" name="pocket.$1"
+  wanted "$name" || return 0
+  $ADB shell am force-stop "$PKG"; $ADB logcat -c; sleep 1
+  $ADB shell am start -n "$PKG/.MainActivity" --es dressDemo "pocket-$kind" --ez autoplay true --el pace "$PACE" >/dev/null 2>&1
+  sleep 1
+  $ADB shell dumpsys gfxinfo "$PKG" reset >/dev/null
+  measure "$name.play" 1 wait_log "done kind=" 240 "pocket-$kind"
+  local done_line; done_line=$($ADB logcat -d -s PocketDemo:I | grep "done kind=" | tail -1)
+  echo "  [$name] ${done_line:-(no finish within 240 s)}"
+  # No screen shifting: the app logs board / keyboard / entry-row bounds (dp) whenever one moves; after the first 6 s of settling (the first layout),
+  # any logged change is a shift. Report the max |dy| / |dh| per element (> 1 dp = FAIL).
+  $ADB logcat -d -s PocketDemo:I | grep " bounds " | sed -E 's/.*bounds ([a-z]+) y=([-0-9.]+) h=([-0-9.]+) dy=([-0-9.]+) dh=([-0-9.]+) t=([0-9]+).*/\1 \4 \5 \6/' | awk -v n="$name" '
+    $4 > 6000 && ($2 != 0 || $3 != 0) { dy = ($2 < 0 ? -$2 : $2); dh = ($3 < 0 ? -$3 : $3); m = (dy > dh ? dy : dh); if (m > mx[$1]) mx[$1] = m; ev[$1]++ }
+    END { out = ""; worst = 0; for (k in mx) { out = out k "=" mx[k] "dp(" ev[k] " moves) "; if (mx[k] > worst) worst = mx[k] }
+          printf "  [%s] max shift: %s -> %s\n", n, (out == "" ? "none logged" : out), (worst > 1 ? "FAIL" : "ok") }' 
+  sleep 2; shot "pocket-$kind-finished"; sleep 3; shot "pocket-$kind-finished2"
+}
+for k in rps ttt coin pass passfull ghost chain; do pocket_game "$k"; done
+
+musical_set() {
+  local set="$1" name="musical.$1" extra=""
+  wanted "$name" || return 0
+  [ "$set" = halloween ] && extra="--es dressSeason halloween"
+  $ADB shell am force-stop "$PKG"; $ADB logcat -c; sleep 1
+  $ADB shell am start -n "$PKG/.MainActivity" --es musicalDemo "$set" $extra >/dev/null 2>&1
+  # A fresh install lands on the sign-in screen: the guest door (never a real account).
+  for i in 1 2 3 4 5 6; do sleep 3; if xy=$(find_xy "Play without an account"); then tap_xy $xy; break; fi; done
+  sleep 3
+  $ADB shell dumpsys gfxinfo "$PKG" reset >/dev/null
+  measure "$name.play" 1 wait_log "SUMMARY" 600 "musical-$set"
+  $ADB logcat -d -s MusicalDemo:I | grep -E "PASS|FAIL|SUMMARY|unlock CALLED|unlock-after" | sed 's/^/  /'
+  [ "$set" = halloween ] && { $ADB shell am force-stop "$PKG"; $ADB shell am start -n "$PKG/.MainActivity" --es dressSeason off >/dev/null 2>&1; sleep 3; }
+}
+musical_set everyday
+musical_set halloween
+
 {
   echo "# Android perf tour $LABEL"
   echo

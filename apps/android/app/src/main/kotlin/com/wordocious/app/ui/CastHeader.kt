@@ -208,24 +208,29 @@ fun LivingCastHeader(
     fun playNote(id: MascotId, fromPlayback: Boolean = false) {
         val now = System.nanoTime() / 1_000_000
         com.wordocious.app.data.SoundManager.castNote(id.key)
+        if (com.wordocious.app.data.PocketDemo.enabled) MusicalDemo.noted(id.key, fromPlayback)
         if (!fromPlayback) com.wordocious.app.data.Haptics.selection(view)
         musicalFx.note(id.key, now, still = still)
         wake++
         if (fromPlayback) return
         MusicalCastState.tap(id.key, SeasonSkins.current())?.let { tune ->
             // The unlock card waits for the playback to finish (it would cover the cast singing).
+            if (com.wordocious.app.data.PocketDemo.enabled) MusicalDemo.matched(tune)
             scope.launch {
                 delay(com.wordocious.core.MusicalCast.replayDuration(tune) + 250)
+                if (com.wordocious.app.data.PocketDemo.enabled) MusicalDemo.unlockCalled(tune.achievement)
                 com.wordocious.app.data.AchievementService.unlockTune(tune.achievement)
             }
             // Founder 10-12: the cast sings the completed tune back once, cleanly (each note on its figure),
             // every time; founder 10-13: they finish the jingle in its own rhythm — the achievement itself unlocks once. Taps wait while it plays.
             playback?.cancel()
             playback = scope.launch {
-                var at = 0L
+                // Each note is scheduled against the playback's own start time (not chained from the last delay), so scheduling
+                // overshoot never accumulates into drift over a 26-note tune.
+                val t0 = android.os.SystemClock.uptimeMillis()
                 for ((castId, atMs) in com.wordocious.core.MusicalCast.replay(tune)) {
-                    delay(atMs - at)
-                    at = atMs
+                    val wait = atMs - (android.os.SystemClock.uptimeMillis() - t0)
+                    if (wait > 0) delay(wait)
                     if (!MusicalCastState.on) break
                     MascotId.entries.firstOrNull { it.key == castId }?.let { playNote(it, fromPlayback = true) }
                 }
@@ -238,6 +243,12 @@ fun LivingCastHeader(
         MusicalCastState.toggle(id.key, System.nanoTime() / 1_000_000, reduceMotion = WTheme.reducedMotion)
         com.wordocious.app.data.Haptics.medium(view)
         wake++
+    }
+    // DEBUG / benchmark musical playthrough (ui/MusicalDemo): the driver's taps go through playNote, the path a finger takes.
+    if (com.wordocious.app.data.PocketDemo.enabled) {
+        LaunchedEffect(live, hidden) {
+            if (live && !hidden) MusicalDemo.taps.collect { castId -> MascotId.entries.firstOrNull { it.key == castId }?.let { playNote(it) } }
+        }
     }
     LaunchedEffect(calm, hidden, scrolling, flourishKey, puppetsOn) {
         acting = null

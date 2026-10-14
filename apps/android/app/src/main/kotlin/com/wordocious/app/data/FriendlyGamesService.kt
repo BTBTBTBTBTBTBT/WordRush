@@ -103,26 +103,18 @@ object FriendlyGamesService {
     }
 
     /**
-     * DEBUG only (`--es dressDemo pocket-rps|pocket-ghost|pocket-chain`): one local game against "Doug" on my turn, so a pocket
-     * board can be checked on the emulator with no session. Returns its id; the screen finds it in [active].
+     * DEBUG / benchmark only (`--es dressDemo pocket-<kind>`, data/PocketDemo.kt): one LOCAL game against "Doug" played through the real
+     * core rules with no network, so a pocket board can be checked and perf-measured on the emulator with no session. Returns its id.
      */
-    fun debugSeed(kind: FriendlyKind): String {
-        if (!com.wordocious.app.BuildConfig.DEBUG) return ""
-        val state: FriendlyState = when (kind) {
-            FriendlyKind.GHOST -> com.wordocious.core.GhostState(fragment = "ST", letters = listOf(Side.B, Side.A), turn = Side.A)
-            FriendlyKind.CHAIN -> com.wordocious.core.ChainState(
-                words = listOf(com.wordocious.core.ChainWord(Side.A, "CRANE", 5), com.wordocious.core.ChainWord(Side.B, "EAGLE", 5)), turn = Side.A,
-            )
-            else -> com.wordocious.core.RpsState()
-        }
-        val now = java.time.Instant.now().toString()
-        val g = GameView(
-            id = "debug-pocket-${kind.raw}", kind = kind, title = kind.name, me = Side.A,
-            opponent = Opponent("5d0e0000-0000-4000-8000-000000000013", "Doug", null, null), state = state,
-            status = "active", yourTurn = true, result = null, line = "", answer = null, createdAt = now, updatedAt = now,
-        )
+    fun debugSeed(kind: FriendlyKind, name: String = "pocket-${kind.raw}", autoplay: Boolean = false, paceMs: Long = 3500): String {
+        if (!PocketDemo.enabled) return ""
+        return PocketDemo.start(kind, name, autoplay, paceMs)
+    }
+
+    /** The demo game's newest copy (PocketDemo): the screen collects [active], so a scripted move shows at once. */
+    internal fun demoPublish(g: GameView) {
+        if (!PocketDemo.enabled) return
         _active.value = listOf(g)
-        return g.id
     }
 
     /** Fold a fresh copy of one game into the cached lists (badge + YOUR TURN stay current). */
@@ -158,6 +150,7 @@ object FriendlyGamesService {
 
     /** GET /api/friends/games/<id> — the game screen polls this every 2 s (it also marks me as watching). */
     suspend fun get(id: String): GameView? {
+        if (PocketDemo.isDemo(id)) return PocketDemo.current()
         val resp = FriendsService.api("GET", "/api/friends/games/$id") ?: return null
         if (resp.first != 200) return null
         return decodeGame(parse(resp.second)?.get("game"))?.also { fold(it) }
@@ -174,6 +167,7 @@ object FriendlyGamesService {
 
     /** POST /api/friends/games/<id>/move {move}. */
     suspend fun move(id: String, move: FriendlyMove): MoveOutcome {
+        if (PocketDemo.isDemo(id)) return PocketDemo.move(move)
         val body = buildJsonObject { put("move", move.toJson()) }.toString()
         val resp = FriendsService.api("POST", "/api/friends/games/$id/move", body) ?: return MoveOutcome.Failed("Network error — try again")
         val o = parse(resp.second)

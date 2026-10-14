@@ -57,6 +57,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -274,6 +280,13 @@ fun FriendlyGameScreen(
         }
     }
 
+    // DEBUG / benchmark demo (data/PocketDemo): a scripted move shows the moment it lands, no 2 s poll.
+    LaunchedEffect(gameId) {
+        if (com.wordocious.app.data.PocketDemo.isDemo(gameId)) {
+            FriendlyGamesService.active.collect { list -> list.firstOrNull { it.id == gameId }?.let { accept(it) } }
+        }
+    }
+
     fun send(move: FriendlyMove) {
         if (busy) return
         busy = true
@@ -338,7 +351,7 @@ fun FriendlyGameScreen(
     val kind = game?.kind ?: FriendlyKind.RPS
     // Finished games of this kind in the recent list = an existing player: no card, the key is recorded quietly.
     val recentGames by FriendlyGamesService.recent.collectAsState()
-    val firstPlay = rememberFirstPlayAutoShow(PocketHelp.pocketTutorialKey(kind), recentGames.any { it.kind == kind }) && game != null
+    val firstPlay = rememberFirstPlayAutoShow(PocketHelp.pocketTutorialKey(kind), recentGames.any { it.kind == kind }) && game != null && !com.wordocious.app.data.PocketDemo.isDemo(gameId) // the demo harness opens the card only on a tap of the ?
     LaunchedEffect(firstPlay) { if (firstPlay) showHelp = true }
     // A1: the Friends wallpaper (fixed light), never a flat white page.
     Column(Modifier.fillMaxSize().pageBackground(com.wordocious.app.ui.PageTint.FRIENDS, alwaysLight = true)) {
@@ -346,8 +359,11 @@ fun FriendlyGameScreen(
         Box(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
             // The shared white close circle (HEADER_SPEC §4).
             com.wordocious.app.ui.HeaderBackButton({ requestClose() }, Modifier.align(Alignment.CenterStart), close = true)
+            // The title shrinks to fit between the buttons (it used to clip: "PASS THE" for PASS THE PUZZLE).
+            var titleSp by remember(kind) { mutableStateOf(19f) }
             Text(
-                (game?.title ?: kind.title).uppercase(), fontSize = 19.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, maxLines = 1,
+                (game?.title ?: kind.title).uppercase(), fontSize = titleSp.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, maxLines = 1, softWrap = false,
+                onTextLayout = { if (it.hasVisualOverflow && titleSp > 11f) titleSp -= 1f },
                 style = TextStyle(brush = Brush.horizontalGradient(PocketNight.title(kind.gradient)), fontFamily = Nunito),
                 modifier = Modifier.align(Alignment.Center).padding(horizontal = 92.dp),
             )
@@ -375,8 +391,23 @@ fun FriendlyGameScreen(
         val them = g.opponent.username
         val theyOn = FriendsService.friends.firstOrNull { it.id == g.opponent.id }?.isOnline() == true
         val myTurn = g.active && whoseTurn(g.state)?.includes(g.me) == true
+        // Pass the Puzzle / Word Chain / Ghost keep their keyboard pinned under the scrolling page (iOS parity): the boards register it here.
+        val kbSlot = remember(gameId) {
+            // Seeded with the keyboard's height (3 rows of 40 dp; Ghost adds its ADD button) so the board is sized for it from the very
+            // first frame, never re-fitted when the keyboard registers a frame later.
+            KbSlot().also { it.heightDp = when (game?.kind) { FriendlyKind.PASS, FriendlyKind.CHAIN -> 146f; FriendlyKind.GHOST -> 194f; else -> 0f } }
+        }
+        val dens = androidx.compose.ui.platform.LocalDensity.current
+        var viewportPx by remember { mutableIntStateOf(0) }
+        var boardTopPx by remember { mutableIntStateOf(0) }
+        val boardMaxH = with(dens) { (viewportPx - boardTopPx).toDp() }
+        androidx.compose.runtime.CompositionLocalProvider(
+            LocalPinnedKeyboard provides kbSlot,
+            LocalBoardMaxH provides (if (viewportPx > 0) boardMaxH else Dp.Unspecified),
+        ) {
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Modifier.weight(1f).fillMaxWidth().onSizeChanged { viewportPx = it.height }
+                .verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             // 9b presence: the friend's mascot is "here now" (alive ring) while they are in the channel,
@@ -385,16 +416,13 @@ fun FriendlyGameScreen(
                 FriendlyLive.presenceLabel(peerPresent, peerEverSeen, theirTurn = whoseTurn(g.state)?.includes(g.me.other) == true && !myTurn)
             else null
             ScoreWindow(g, if (presence != null) peerPresent else theyOn, presence)
-            // 22: their turn = a compact stage strip above the board (the board stays visible): "Waiting for <name>…",
-            // how long they have had it, their face, and the keepy-uppy tile behind one small tap.
-            if (g.active && !myTurn && whoseTurn(g.state)?.includes(g.me.other) == true) {
-                com.wordocious.app.ui.vs.PocketWaitStrip(
-                    name = them, sinceMs = g.updatedMs,
-                    avatar = { FriendFace(them, g.opponent.avatarUrl, g.opponent.avatarEmoji, 32.dp, online = theyOn) },
-                )
+            // Founder 10-13 (no screen shifting): ONE fixed-height pill slot above the board. YOUR TURN (founder 10-10: a small gold
+            // capsule) or WAITING FOR <name> take it in turn; it is empty (not collapsed) when the game is over.
+            val theirTurn = g.active && !myTurn && whoseTurn(g.state)?.includes(g.me.other) == true
+            Box(Modifier.fillMaxWidth().height(30.dp), contentAlignment = Alignment.Center) {
+                if (g.active && myTurn) YourTurnLabel()
+                else if (theirTurn) TurnPill("WAITING FOR ${them.uppercase()}")
             }
-            // 9d: YOUR TURN (founder 10-10: the blank lavender flag art read as a stray icon): a small gold capsule label.
-            if (g.active && myTurn) YourTurnLabel()
             // L: every pocket board sits in the shared game tray in the game's color (won = purple, lost = slate).
             val tray = when (g.result) { "win" -> TrayState.WON; "loss" -> TrayState.LOST; else -> TrayState.PLAYING }
             val reduce = WTheme.reducedMotion
@@ -411,8 +439,11 @@ fun FriendlyGameScreen(
                 if (pulseTick > 0 && !reduce) { ring.animateTo(1f, tween(450)); ring.animateTo(0f, tween(500)) }
             }
             Box(
-                Modifier.fillMaxWidth().graphicsLayer {
-                    scaleX = boardScale.value; scaleY = boardScale.value; translationX = shakeX.value * density
+                Modifier.fillMaxWidth().onGloballyPositioned {
+                    boardTopPx = it.positionInParent().y.toInt()
+                    com.wordocious.app.data.PocketDemo.bounds("board", it.positionInRoot().y, it.size.height.toFloat(), dens.density)
+                }.graphicsLayer {
+                    scaleX = boardScale.value; scaleY = boardScale.value; translationX = shakeX.value * this.density
                 },
             ) {
                 GameTray(g.kind.color, Modifier.fillMaxWidth(), state = tray) {
@@ -433,6 +464,14 @@ fun FriendlyGameScreen(
                 Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(0.dp)) {
                     floaters.forEach { f -> key(f.id) { LiveFloat(f, onDone = { floaters.remove(f) }) } }
                 }
+            }
+            // 22: their turn = "Waiting for <name>…", how long they have had it, their face and the keepy-uppy tile, under the board
+            // (it used to sit above it and push the board down every turn).
+            if (theirTurn) {
+                com.wordocious.app.ui.vs.PocketWaitStrip(
+                    name = them, sinceMs = g.updatedMs,
+                    avatar = { FriendFace(them, g.opponent.avatarUrl, g.opponent.avatarEmoji, 32.dp, online = theyOn) },
+                )
             }
             if (g.active && liveOn && socketUp) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
@@ -467,6 +506,17 @@ fun FriendlyGameScreen(
                 PinkButton("FRIENDS", modifier = Modifier.fillMaxWidth(), solid = false, onClick = onFriends)
             }
             Spacer(Modifier.height(28.dp))
+        }
+        // The pinned keyboard (Pass / Chain on my turn): always on screen, never scrolled away.
+        // Its height is kept once seen, so the board above never resizes when the keyboard goes quiet (their turn, game over).
+        if (kbSlot.heightDp > 0f || kbSlot.content != null) {
+            Box(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 6.dp, bottom = 8.dp)
+                    .defaultMinSize(minHeight = (kbSlot.heightDp - 14f).dp)
+                    .onSizeChanged { val h = it.height / dens.density + 14f; if (kbSlot.content != null && kotlin.math.abs(h - kbSlot.heightDp) > 0.5f) kbSlot.heightDp = maxOf(h, kbSlot.heightDp) }
+                    .onGloballyPositioned { com.wordocious.app.data.PocketDemo.bounds("keyboard", it.positionInRoot().y, it.size.height.toFloat(), dens.density) },
+            ) { kbSlot.content?.invoke() }
+        }
         }
     }
 
@@ -558,7 +608,7 @@ private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean, prese
     val me = AuthService.profile.value
     // The result's host (MASCOT_SPEC §3): O3, the prankster, pops on a win; R on a loss.
     val host = if (won) com.wordocious.app.ui.Mascots.pocketWin else if (lost) com.wordocious.app.ui.Mascots.loss else null
-    Box(Modifier.fillMaxWidth().padding(top = if (host != null) com.wordocious.app.ui.BANNER_HOST_PEEK else 0.dp)) {
+    Box(Modifier.fillMaxWidth().padding(top = com.wordocious.app.ui.BANNER_HOST_PEEK)) {
         Column(
             Modifier.fillMaxWidth()
                 .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x144C1D95), spotColor = Color(0x144C1D95))
@@ -580,13 +630,15 @@ private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean, prese
                 Modifier.fillMaxWidth().background(friendsWash(g.kind.color, 0.10f)).padding(start = 12.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Row(Modifier.padding(end = if (host != null) com.wordocious.app.ui.BANNER_HOST_CLEAR else 0.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.height(26.dp).padding(end = if (host != null) com.wordocious.app.ui.BANNER_HOST_CLEAR else 0.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FriendlyGameIcon(g.kind, 24.dp)
-                    Text(headlineFor(g), fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, lineHeight = 1.2.em, color = DEEP, maxLines = 2)
+                    FitLine(headlineFor(g), 16f, 11f, Modifier.weight(1f), FontWeight.Black, DEEP, 0.4.sp)
                 }
                 // Founder 10-10 (the tiny line was hard to read): plain 12 sp heavy text, pink on the night card / raspberry on the day one.
-                Text(subLineFor(g, theyOn), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.3.sp,
-                    color = if (FriendsPink.dark) Color(0xFFF9A8D4) else Color(0xFFB0306F), maxLines = 2)
+                Box(Modifier.fillMaxWidth().height(18.dp), Alignment.CenterStart) {
+                    FitLine(subLineFor(g, theyOn), 12f, 8.5f, Modifier.fillMaxWidth(), FontWeight.ExtraBold,
+                        if (FriendsPink.dark) Color(0xFFF9A8D4) else Color(0xFFB0306F), 0.3.sp)
+                }
             }
             val turn = if (g.active) whoseTurn(g.state) else null
             Row(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
@@ -655,6 +707,65 @@ private fun YourTurnLabel() {
     }
 }
 
+/** The quiet twin of YOUR TURN: a frosted capsule saying whose move it is while the friend has it. Same size slot, so nothing moves. */
+@Composable
+private fun TurnPill(text: String) {
+    val shape = RoundedCornerShape(50)
+    Row(
+        Modifier.clip(shape).background(Color.White.copy(alpha = 0.16f)).border(1.dp, Color.White.copy(alpha = 0.3f), shape)
+            .padding(horizontal = 12.dp, vertical = 5.dp).semantics(mergeDescendants = true) { contentDescription = text },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, fontFamily = Nunito, color = FriendsPink.sub, maxLines = 1)
+    }
+}
+
+// ── Pinned keyboard (founder 10-13, iOS parity) ─────────────────────────────────────────────────────────────
+
+/** Where a board hands its keyboard so the screen pins it to the bottom (outside the scroll); null = draw it inline. */
+private val LocalPinnedKeyboard = androidx.compose.runtime.staticCompositionLocalOf<KbSlot?> { null }
+
+/** The pinned keyboard's slot: the content, and the tallest it has been (kept as a minimum so nothing moves when it goes quiet). */
+@androidx.compose.runtime.Stable
+private class KbSlot {
+    var content by mutableStateOf<(@Composable () -> Unit)?>(null)
+    var heightDp by androidx.compose.runtime.mutableFloatStateOf(0f)
+}
+
+/** How tall the board may be: the scroll viewport (already net of the pinned keyboard) below the board's top. Unspecified = no cap. */
+/** A key's height: 46 dp inline, 40 dp in the pinned keyboard (more room for the board above it). */
+private val LocalKeyH = androidx.compose.runtime.compositionLocalOf { 46.dp }
+
+private val LocalBoardMaxH = androidx.compose.runtime.compositionLocalOf { Dp.Unspecified }
+
+/** Draw [content] pinned at the bottom of the screen while this is composed (inline when there is no slot). */
+@Composable
+private fun PinKeyboard(content: @Composable () -> Unit) {
+    val slot = LocalPinnedKeyboard.current
+    if (slot == null) { content(); return }
+    val latest = androidx.compose.runtime.rememberUpdatedState(content)
+    androidx.compose.runtime.DisposableEffect(slot) {
+        slot.content = { androidx.compose.runtime.CompositionLocalProvider(LocalKeyH provides 40.dp) { latest.value() } }
+        onDispose { slot.content = null }
+    }
+}
+
+/** One line of text that shrinks (down to [minSp]) instead of wrapping, so a header strip never changes height. */
+@Composable
+private fun FitLine(
+    text: String, sp: Float, minSp: Float, modifier: Modifier = Modifier, weight: FontWeight, color: Color,
+    letterSpacing: androidx.compose.ui.unit.TextUnit = androidx.compose.ui.unit.TextUnit.Unspecified, center: Boolean = false, shadow: Boolean = false,
+) {
+    var size by remember(text) { mutableStateOf(sp) }
+    Text(
+        text, fontSize = size.sp, fontWeight = weight, letterSpacing = letterSpacing, color = color, maxLines = 1, softWrap = false, modifier = modifier,
+        textAlign = if (center) TextAlign.Center else null,
+        style = if (shadow) TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color(0xCC1E0A3C), Offset(0f, 2f), 6f)) else TextStyle.Default,
+        overflow = TextOverflow.Ellipsis,
+        onTextLayout = { if (it.hasVisualOverflow && size > minSp) size -= 0.5f },
+    )
+}
+
 // ── Rock Paper Scissors ─────────────────────────────────────────────────────
 
 @Composable
@@ -674,29 +785,36 @@ private fun RpsBoard(s: RpsState, me: Side, them: String, enabled: Boolean, onPi
                 modifier = Modifier.size(80.dp).alpha(if (still) 0.6f else 0.75f).clearAndSetSemantics { },
             )
         } else {
-            Box(Modifier.size(92.dp, 74.dp).clipToBounds().clearAndSetSemantics { }, contentAlignment = Alignment.BottomCenter) {
+            Box(Modifier.size(92.dp, 80.dp).clearAndSetSemantics { }, contentAlignment = Alignment.BottomCenter) {
+              Box(Modifier.size(92.dp, 66.dp).clipToBounds(), contentAlignment = Alignment.BottomCenter) {
                 Image(
                     painterResource(R.drawable.art_pocket_rps_hidden), null, contentScale = ContentScale.Crop, alignment = Alignment.BottomCenter,
                     modifier = Modifier.requiredSize(92.dp, 116.dp),
                 )
+              }
             }
         }
         if (theirs == RpsPick.HIDDEN) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, 14.dp)
-                Text("${them.uppercase()} PICKED", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.green)
+                Text("${them.uppercase()} PICKED", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.green, style = captionHalo())
             }
         } else {
-            Text("${them.uppercase()} HASN'T PICKED", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.label)
+            Text("${them.uppercase()} HASN'T PICKED", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.label, style = captionHalo())
         }
 
         // The last round, revealed: ROCK... PAPER... SCISSORS... SHOOT! (both fists pump), then both cards turn over together to
         // the picks, and only then the winner glows (founder 10-10, iOS RpsReveal).
-        s.rounds.lastOrNull()?.let { r ->
+        // The arena is there from the first frame (two face-down fists on the mat), so round 1's reveal fills it instead of pushing
+        // the picks down (founder 10-13: no screen shifting).
+        val r = s.rounds.lastOrNull()
+        if (r != null) {
             RpsRevealCard(
                 round = s.rounds.size, mine = if (me == Side.A) r.a else r.b, theirs = if (me == Side.A) r.b else r.a,
                 winner = r.winner, me = me, them = them,
             )
+        } else {
+            RpsRevealCard(round = 0, mine = RpsPick.HIDDEN, theirs = RpsPick.HIDDEN, winner = null, me = me, them = them, static = true)
         }
 
         FriendsLabel("YOUR PICK", modifier = Modifier.fillMaxWidth())
@@ -720,7 +838,7 @@ private fun RpsBoard(s: RpsState, me: Side, them: String, enabled: Boolean, onPi
                 }
             }
         }
-        Text("Both picks flip at once.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label)
+        Text("Both picks flip at once.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, style = captionHalo())
     }
 }
 
@@ -766,8 +884,8 @@ private val RPS_WORDS = listOf("ROCK...", "PAPER...", "SCISSORS...", "SHOOT!")
  * the winner's glow. Reduce Motion: the cards simply show the result.
  */
 @Composable
-private fun RpsRevealCard(round: Int, mine: RpsPick, theirs: RpsPick, winner: Side?, me: Side, them: String) {
-    val still = WTheme.reducedMotion
+private fun RpsRevealCard(round: Int, mine: RpsPick, theirs: RpsPick, winner: Side?, me: Side, them: String, static: Boolean = false) {
+    val still = WTheme.reducedMotion || static
     var beat by remember(round) { mutableIntStateOf(-1) }
     var flipped by remember(round) { mutableStateOf(still) }
     val bob = remember(round) { Animatable(0f) }
@@ -805,7 +923,7 @@ private fun RpsRevealCard(round: Int, mine: RpsPick, theirs: RpsPick, winner: Si
         )
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                "ROUND $round", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = Color.White,
+                "ROUND ${maxOf(round, 1)}", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = Color.White,
                 style = TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color(0xCC1E0A3C), Offset(0f, 2f), 6f)),
                 modifier = Modifier.padding(top = 10.dp, bottom = 6.dp),
             )
@@ -835,11 +953,17 @@ private fun RpsRevealCard(round: Int, mine: RpsPick, theirs: RpsPick, winner: Si
                                 },
                                 label = "rpsWord",
                             ) { b ->
-                                com.wordocious.app.ui.BubbleOneLine(
-                                    RPS_WORDS[b.coerceIn(0, 3)],
-                                    if (b == 3) com.wordocious.app.ui.HeadlinePalette.LEADERBOARD else com.wordocious.app.ui.HeadlinePalette.FRIENDS,
-                                    if (b == 3) 17f else 13f, minScale = 0.5f,
-                                )
+                                if (b == 3) {
+                                    // SHOOT! is big lettering: it keeps the bubble style.
+                                    com.wordocious.app.ui.BubbleOneLine(RPS_WORDS[3], com.wordocious.app.ui.HeadlinePalette.LEADERBOARD, 17f, minScale = 0.5f)
+                                } else {
+                                    // The small count-in words are plain caps (founder 10-10: clean capitals, no outline), one line, same
+                                    // slot height; white with the arena's soft shadow so they read on the mat.
+                                    FitLine(
+                                        RPS_WORDS[b.coerceIn(0, 2)], 13f, 6.5f, Modifier.fillMaxWidth().wrapContentHeight(), FontWeight.Black, Color.White, 0.6.sp,
+                                        center = true, shadow = true,
+                                    )
+                                }
                             }
                         }
                     }
@@ -885,7 +1009,7 @@ private fun RevealArt(label: String, pick: RpsPick, glow: Boolean, angle: Float 
                 },
             )
         }
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (glow) FriendsTiles.purple else FriendsPink.label, maxLines = 1)
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFF3B0F75), maxLines = 1)
     }
 }
 
@@ -1022,7 +1146,7 @@ private val TTT_PINK = Color(0xFFF59E0B)
 private fun LegendDot(color: Color, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         Box(Modifier.size(10.dp).clip(RoundedCornerShape(3.dp)).background(color))
-        Text(text, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.sub, maxLines = 1)
+        Text(text, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.sub, maxLines = 1, style = captionHalo())
     }
 }
 
@@ -1175,24 +1299,30 @@ private fun CoinBoard(gameId: String, s: CoinState, me: Side, them: String, myTu
                 }
             }
         }
-        last?.let { r ->
-            // The result line appears only once the coin has landed (no spoiler mid-flip); its space is held.
-            val lineAlpha by androidx.compose.animation.core.animateFloatAsState(if (settled) 1f else 0f, tween(if (still) 0 else 250), label = "coinLine")
-            Text(
-                "${r.flip.raw.uppercase()} · ${if (r.winner == me) "YOU TAKE ROUND ${s.rounds.size}" else "${them.uppercase()} TAKES ROUND ${s.rounds.size}"}",
-                fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, color = DEEP,
-                modifier = Modifier.alpha(lineAlpha),
-            )
-        }
-        if (myTurn) {
-            FriendsLabel("YOUR CALL")
-            // A8: the two calls as candy buttons.
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                CandyButton("HEADS", onClick = { onCall(CoinFace.HEADS) }, color = CandyColor.PURPLE, size = CandySize.LARGE, modifier = Modifier.weight(1f), fill = true)
-                CandyButton("TAILS", onClick = { onCall(CoinFace.TAILS) }, color = CandyColor.PINK, size = CandySize.LARGE, modifier = Modifier.weight(1f), fill = true)
+        // The result line's slot is held from the start (empty before round 1), and the call slot is one fixed band in both turns,
+        // so the stage, the buttons and the stake never move (founder 10-13: no screen shifting).
+        Box(Modifier.fillMaxWidth().height(18.dp), Alignment.Center) {
+            last?.let { r ->
+                // The result line appears only once the coin has landed (no spoiler mid-flip).
+                val lineAlpha by androidx.compose.animation.core.animateFloatAsState(if (settled) 1f else 0f, tween(if (still) 0 else 250), label = "coinLine")
+                Text(
+                    "${r.flip.raw.uppercase()} · ${if (r.winner == me) "YOU TAKE ROUND ${s.rounds.size}" else "${them.uppercase()} TAKES ROUND ${s.rounds.size}"}",
+                    fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, color = DEEP, maxLines = 1,
+                    modifier = Modifier.alpha(lineAlpha),
+                )
             }
-        } else if (whoseTurn(s) != null) {
-            FriendsLabel("${them.uppercase()} CALLS")
+        }
+        Column(Modifier.fillMaxWidth().height(96.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (myTurn) {
+                FriendsLabel("YOUR CALL")
+                // A8: the two calls as candy buttons.
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                    CandyButton("HEADS", onClick = { onCall(CoinFace.HEADS) }, color = CandyColor.PURPLE, size = CandySize.LARGE, modifier = Modifier.weight(1f), fill = true)
+                    CandyButton("TAILS", onClick = { onCall(CoinFace.TAILS) }, color = CandyColor.PINK, size = CandySize.LARGE, modifier = Modifier.weight(1f), fill = true)
+                }
+            } else if (whoseTurn(s) != null) {
+                FriendsLabel("${them.uppercase()} CALLS")
+            }
         }
         FriendsLabel("WHAT'S ON THE LINE")
         Text(
@@ -1239,7 +1369,11 @@ private fun PassBoard(
         // body, the marker close to the tiles (gap ~12% of a tile). Tile size comes from the body width (marker 0.6 + gap 0.12 +
         // 5 tiles + 4 gaps of 0.1) and the body height (6 tiles + 5 gaps), whichever binds.
         BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
-            val trayW: Dp = min(maxWidth, 340.dp)
+            // The whole tray stays on screen above the pinned keyboard: width capped so its height fits the room left under the
+            // turn pill (less the tray's padding and the line under it); aspect kept, so it narrows on short phones.
+            val room = LocalBoardMaxH.current
+            val capW: Dp = if (room == Dp.Unspecified) 340.dp else maxOf(120.dp, (room - 22.dp - 4.dp) * (770f / 914f))
+            val trayW: Dp = min(min(maxWidth, 340.dp), capW)
             val k = trayW / 770f
             val trayH = 914f * k
             val bodyW = (620f - 62f) * k
@@ -1297,17 +1431,20 @@ private fun PassBoard(
                 }
             }
         }
-        if (answer != null) {
-            Text("THE WORD WAS ${answer.uppercase()}", fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = DEEP, modifier = Modifier.padding(top = 4.dp))
-        } else if (whoseTurn(s) != null && !myTurn) {
-            FriendsLabel("${opp.username.uppercase()} IS GUESSING", modifier = Modifier.padding(top = 4.dp))
+        Box(Modifier.fillMaxWidth().height(24.dp), Alignment.Center) {
+            if (answer != null) {
+                Text("THE WORD WAS ${answer.uppercase()}", fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = DEEP, maxLines = 1, style = captionHalo())
+            } else if (whoseTurn(s) != null && !myTurn) {
+                FriendsLabel("${opp.username.uppercase()} IS GUESSING")
+            }
         }
-        if (myTurn) {
-            Spacer(Modifier.height(4.dp))
+        // The keyboard stays put (quiet on their turn, gone only when the game is over) so the tray above never resizes.
+        if (whoseTurn(s) != null) PinKeyboard {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             KEY_ROWS.forEachIndexed { r, keys ->
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
                     if (r == 2) {
-                        KeyCap("ENTER", Modifier.weight(1.6f), bg = FriendsPink.solid, ink = Color.White, enabled = !busy && typed.length == 5) { onGuess(typed) }
+                        KeyCap("ENTER", Modifier.weight(1.6f), bg = FriendsPink.solid, ink = Color.White, enabled = myTurn && !busy && typed.length == 5) { onGuess(typed) }
                     }
                     keys.forEach { k ->
                         val st = best[k]
@@ -1315,13 +1452,14 @@ private fun PassBoard(
                             k.toString(), Modifier.weight(1f),
                             bg = st?.let { tileColor(it) } ?: KEY_FACE,
                             ink = if (st == null) DEEP else Color.White,
-                            enabled = !busy,
+                            enabled = myTurn && !busy,
                         ) { if (typed.length < 5) typed += k }
                     }
                     if (r == 2) {
                         DeleteKey(Modifier.weight(1.6f)) { if (typed.isNotEmpty()) typed = typed.dropLast(1) }
                     }
                 }
+            }
             }
         }
     }
@@ -1332,7 +1470,7 @@ private fun PassBoard(
 private fun KeyCap(label: String, modifier: Modifier, bg: Color, ink: Color, enabled: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(8.dp)
     Box(
-        modifier.height(46.dp)
+        modifier.height(LocalKeyH.current)
             .squishClickable(label = label, enabled = enabled, onClick = onClick)
             .alpha(if (enabled) 1f else 0.5f)
             .clip(shape).background(keyLip(bg))
@@ -1347,7 +1485,7 @@ private fun KeyCap(label: String, modifier: Modifier, bg: Color, ink: Color, ena
 private fun DeleteKey(modifier: Modifier, onClick: () -> Unit) {
     val shape = RoundedCornerShape(8.dp)
     Box(
-        modifier.height(46.dp)
+        modifier.height(LocalKeyH.current)
             .squishClickable(label = "Delete", onClick = onClick)
             .clip(shape).background(keyLip(KEY_FACE))
             .padding(bottom = 3.dp)
@@ -1390,15 +1528,15 @@ private fun GhostBoard(s: GhostState, me: Side, them: String, myTurn: Boolean, b
         // Founder 10-13: the fragment sits on the ghost tray (art_pocket_ghost_tray, 1200 x 307, the face on the left). Its plum panel
         // is x 256-1078, y 101-226; the letter tiles are centered in it. Every letter is purple, the newest gold; on your turn a
         // dashed gold outline marks the next slot (it shows the picked letter).
-        val count = s.fragment.length + if (myTurn) 1 else 0
+        val count = s.fragment.length + 1 // the next slot's room is always counted, so the tiles keep their size from turn to turn
         BoxWithConstraints(Modifier.fillMaxWidth().padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
             val trayW: Dp = maxWidth
             val k = trayW / 1200f
             val trayH = 307f * k
             val panelW = (1078f - 256f) * k
             val panelH = (226f - 101f) * k
-            // tiles: up to the panel's height (less a little air), shrinking so `count` tiles + 12% gaps fit its width
-            val tile: Dp = if (count == 0) panelH * 0.9f else min(panelH * 0.9f, panelW * 0.94f / (count + 0.12f * (count - 1)))
+            // tiles: ~82% of the panel's height (founder 10-13: 80-85%), shrinking so `count` tiles + 12% gaps fit its width
+            val tile: Dp = min(panelH * 0.82f, panelW * 0.94f / (count + 0.12f * (count - 1)))
             val gap = tile * 0.12f
             Box(Modifier.size(trayW, trayH)) {
                 Image(
@@ -1406,7 +1544,7 @@ private fun GhostBoard(s: GhostState, me: Side, them: String, myTurn: Boolean, b
                     modifier = Modifier.matchParentSize().clearAndSetSemantics { },
                 )
                 Box(Modifier.offset(x = 256f * k, y = 101f * k).size(panelW, panelH), Alignment.Center) {
-                    if (count == 0) {
+                    if (s.fragment.isEmpty() && !myTurn) {
                         Text(
                             if (whoseTurn(s) != null) "${them.uppercase()} STARTS THE WORD" else "THE ROUNDS ARE IN",
                             fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color.White.copy(alpha = 0.9f), maxLines = 1,
@@ -1426,32 +1564,45 @@ private fun GhostBoard(s: GhostState, me: Side, them: String, myTurn: Boolean, b
                 }
             }
         }
-        if (whoseTurn(s) != null && !myTurn) FriendsLabel("${them.uppercase()} IS PICKING A LETTER")
+        Box(Modifier.fillMaxWidth().height(18.dp), Alignment.Center) {
+            if (whoseTurn(s) != null && !myTurn) FriendsLabel("${them.uppercase()} IS PICKING A LETTER")
+        }
 
-        // The last round's result: "GHOST — Doug spelled a word" / "QZ — no word starts with that".
-        s.rounds.lastOrNull()?.let { r ->
-            val youLost = r.loser == me
-            val text = if (r.reason == GhostReason.WORD) "${if (youLost) "you" else them} spelled a word" else "no word starts with that"
-            Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (youLost) THEM_TINT else YOU_TINT).padding(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Image(painterResource(R.drawable.art_pocket_ghost_marker), null, contentScale = ContentScale.Fit, modifier = Modifier.size(34.dp).clearAndSetSemantics { })
-                FriendsLabel("ROUND ${s.rounds.size} · ${if (youLost) "${them.uppercase()} TAKES IT" else "YOU TAKE IT"}")
+        // The last round's result ("GHOST - Doug spelled a word" / "QZ - no word starts with that") REPLACES the hint in ONE fixed
+        // slot, so a finished round never pushes the board (founder 10-13: no screen shifting).
+        Box(Modifier.fillMaxWidth().height(112.dp), Alignment.Center) {
+            val r = s.rounds.lastOrNull()
+            if (r == null) {
                 Text(
-                    "${r.fragment} — $text", fontSize = 15.sp, fontWeight = FontWeight.Black, color = DEEP,
-                    textAlign = TextAlign.Center,
+                    "Spell a word and you lose the round. Leave a dead end and you lose it too.",
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center, style = captionHalo(),
+                    modifier = Modifier.fillMaxWidth(),
                 )
+            } else {
+                val youLost = r.loser == me
+                val text = if (r.reason == GhostReason.WORD) "${if (youLost) "you" else them} spelled a word" else "no word starts with that"
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (youLost) THEM_TINT else YOU_TINT).padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Image(painterResource(R.drawable.art_pocket_ghost_marker), null, contentScale = ContentScale.Fit, modifier = Modifier.size(34.dp).clearAndSetSemantics { })
+                    FriendsLabel("ROUND ${s.rounds.size} · ${if (youLost) "${them.uppercase()} TAKES IT" else "YOU TAKE IT"}")
+                    Text(
+                        "${r.fragment} — $text", fontSize = 15.sp, fontWeight = FontWeight.Black, color = DEEP,
+                        textAlign = TextAlign.Center, maxLines = 1,
+                    )
+                }
             }
         }
 
-        if (myTurn) {
+        if (whoseTurn(s) != null) PinKeyboard {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             KEY_ROWS.forEach { keys ->
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
                     if (keys.length < 10) Spacer(Modifier.weight((10 - keys.length) / 2f))
                     keys.forEach { k ->
                         val on = picked == k
-                        KeyCap(k.toString(), Modifier.weight(1f), bg = if (on) FriendsTiles.purple else KEY_FACE, ink = if (on) Color.White else DEEP, enabled = !busy) { picked = k }
+                        KeyCap(k.toString(), Modifier.weight(1f), bg = if (on) FriendsTiles.purple else KEY_FACE, ink = if (on) Color.White else DEEP, enabled = myTurn && !busy) { picked = k }
                     }
                     if (keys.length < 10) Spacer(Modifier.weight((10 - keys.length) / 2f))
                 }
@@ -1461,14 +1612,10 @@ private fun GhostBoard(s: GhostState, me: Side, them: String, myTurn: Boolean, b
                 if (letter != null) "ADD $letter" else "PICK A LETTER",
                 onClick = { if (letter != null && !busy) onLetter(letter) },
                 color = CandyColor.PURPLE, size = CandySize.LARGE,
-                enabled = letter != null && !busy, modifier = Modifier.fillMaxWidth(), fill = true,
+                enabled = myTurn && letter != null && !busy, modifier = Modifier.fillMaxWidth(), fill = true,
             )
+            }
         }
-        Text(
-            "Spell a word and you lose the round. Leave a dead end and you lose it too.",
-            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
     }
 }
 
@@ -1486,22 +1633,23 @@ private fun ChainBoard(
     onWord: (String) -> Unit,
 ) {
     val needed = s.needed
+    val dens = androidx.compose.ui.platform.LocalDensity.current
     // The needed first letter is pre-filled and locked; a landed word resets the row.
     var typed by remember(gameId, s.words.size) { mutableStateOf(needed?.toString() ?: "") }
     val locked = if (needed != null) 1 else 0
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         // Founder 10-13: the chain hangs on the gold chain board (art_pocket_chain_board, 1100 x 581; interior x 110-985, y 206-462).
         ChainStairs(s, me)
-        if (whoseTurn(s) != null && !myTurn) {
-            FriendsLabel(
-                if (needed != null) "${them.uppercase()} NEEDS A WORD WITH $needed" else "${them.uppercase()} IS THINKING",
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        }
-        if (myTurn) {
-            // Your word (5-15 letters): the typed letters plus ONE empty next slot (dashed once the word is long enough to send); the
-            // locked first letter stays in its soft purple tile; the tiles shrink smoothly as the word grows so it always fits one row.
-            BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 6.dp), contentAlignment = Alignment.Center) {
+        // The entry row's slot is ONE fixed 40 dp band in both turns (the tiles shrink inside it, in place; on their turn it holds the
+        // "needs a word" line), so neither the row nor anything under it ever moves.
+        BoxWithConstraints(
+            Modifier.fillMaxWidth().height(40.dp)
+                .onGloballyPositioned { com.wordocious.app.data.PocketDemo.bounds("entry", it.positionInRoot().y, it.size.height.toFloat(), dens.density) },
+            contentAlignment = Alignment.Center,
+        ) {
+            if (myTurn) {
+                // Your word (5-15 letters): the typed letters plus ONE empty next slot (dashed once the word is long enough to send); the
+                // locked first letter stays in its soft purple tile; the tiles shrink smoothly as the word grows so it always fits one row.
                 val slots = typed.length + if (typed.length < CHAIN_WORD_MAX) 1 else 0
                 val fit = maxWidth / (slots + 0.12f * (slots - 1))
                 val target = min(40.dp, fit)
@@ -1523,12 +1671,18 @@ private fun ChainBoard(
                         ) { Text(ch?.toString() ?: "", fontSize = (tile.value * 0.45f).sp, fontWeight = FontWeight.Black, color = if (isLocked) PocketNight.purpleInk() else DEEP, maxLines = 1) }
                     }
                 }
+            } else if (whoseTurn(s) != null) {
+                FriendsLabel(if (needed != null) "${them.uppercase()} NEEDS A WORD WITH $needed" else "${them.uppercase()} IS THINKING")
             }
-            Spacer(Modifier.height(2.dp))
+        }
+        // The keyboard stays put (quiet on their turn, gone only when the game is over), so the board above never resizes.
+        if (whoseTurn(s) != null) {
+            PinKeyboard {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             KEY_ROWS.forEachIndexed { r, keys ->
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
                     if (r == 2) {
-                        KeyCap("ENTER", Modifier.weight(1.6f), bg = FriendsPink.solid, ink = Color.White, enabled = !busy && typed.length >= WORD_MIN) {
+                        KeyCap("ENTER", Modifier.weight(1.6f), bg = FriendsPink.solid, ink = Color.White, enabled = myTurn && !busy && typed.length >= WORD_MIN) {
                             // The core's own checks first (length, first letter, repeat); the word list is the server's.
                             when (val res = applyFriendlyMove(s, me, FriendlyMove.Chain(typed))) {
                                 is MoveResult.Err -> onError(res.error)
@@ -1537,17 +1691,19 @@ private fun ChainBoard(
                         }
                     }
                     keys.forEach { k ->
-                        KeyCap(k.toString(), Modifier.weight(1f), bg = KEY_FACE, ink = DEEP, enabled = !busy) { if (typed.length < CHAIN_WORD_MAX) typed += k }
+                        KeyCap(k.toString(), Modifier.weight(1f), bg = KEY_FACE, ink = DEEP, enabled = myTurn && !busy) { if (typed.length < CHAIN_WORD_MAX) typed += k }
                     }
                     if (r == 2) {
                         DeleteKey(Modifier.weight(1.6f)) { if (typed.length > locked) typed = typed.dropLast(1) }
                     }
                 }
             }
+            }
+            }
         }
         Text(
             "Start with the last letter. No repeats. Each letter scores a point; first to $CHAIN_TARGET wins.",
-            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center,
+            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center, style = captionHalo(),
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         )
     }
@@ -1564,14 +1720,22 @@ private fun ChainBoard(
 @Composable
 private fun ChainStairs(s: ChainState, me: Side) {
     BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        val boardW: Dp = min(maxWidth, 400.dp)
+        // Board + entry row + keyboard all fit above the fold: the board's width is capped so its height leaves room for the entry
+        // row, the "needs a word" line and the hint under it (aspect kept; it narrows on short phones).
+        val room = LocalBoardMaxH.current
+        // Full content width (like the Ghost tray); only if the height doesn't fit does it narrow, never below 85% of the width.
+        val capW: Dp = if (room == Dp.Unspecified) maxWidth else maxOf(maxWidth * 0.85f, (room - 22.dp - 58.dp) * (1100f / 581f))
+        val boardW: Dp = min(maxWidth, capW)
         val k = boardW.value / 1100f
         val boardH = 581f * k
         val iw = (985f - 110f) * k
         val ih = (462f - 206f) * k
         val live = whoseTurn(s) != null
         // how many words, and how big the tiles are
-        val g = 0.16f
+        // Long words (either visible word over 10 letters): no staircase. The two rows stack left-aligned across the whole interior,
+        // with tighter gaps, so a 15-letter word still gets big tiles; the link runs from the previous last letter to the new first one.
+        val longMode = s.words.size >= 2 && s.words.takeLast(2).any { it.word.length > 10 }
+        val g = if (longMode) 0.04f else 0.16f
         fun tNatural(n: Int): Float {
             val ws = s.words.takeLast(n)
             val steps = ws.sumOf { it.word.length - 1 }
@@ -1579,7 +1743,12 @@ private fun ChainStairs(s: ChainState, me: Side) {
         }
         val n: Int
         val t: Float
-        if (s.words.size >= 3 && tNatural(3) >= 18f) { n = 3; t = tNatural(3) }
+        if (longMode) {
+            n = 2
+            val longest = s.words.takeLast(2).maxOf { it.word.length }
+            t = minOf(iw / ((longest - 1) * (1f + g) + 1f), ih / 2.4f, 36f)
+        }
+        else if (s.words.size >= 3 && tNatural(3) >= 18f) { n = 3; t = tNatural(3) }
         else if (s.words.size >= 2) {
             n = 2
             val nat = tNatural(2)
@@ -1596,7 +1765,7 @@ private fun ChainStairs(s: ChainState, me: Side) {
         for (i in 1 until n) natural[i] = natural[i - 1] + (shown[i - 1].word.length - 1) * step
         val groupW = if (n == 0) 0f else natural[n - 1] + (shown[n - 1].word.length - 1) * step + t
         val offset = maxOf(0f, (iw - groupW) / 2f)
-        val xs = FloatArray(n) { i -> (offset + natural[i]).coerceIn(0f, maxOf(0f, iw - ((shown[i].word.length - 1) * step + t))) }
+        val xs = FloatArray(n) { i -> if (longMode) 0f else (offset + natural[i]).coerceIn(0f, maxOf(0f, iw - ((shown[i].word.length - 1) * step + t))) }
         val pitch = t * 1.4f
         val totalH = if (n == 0) 0f else t + pitch * (n - 1) / 1f
         val y0 = (ih - totalH) / 2f

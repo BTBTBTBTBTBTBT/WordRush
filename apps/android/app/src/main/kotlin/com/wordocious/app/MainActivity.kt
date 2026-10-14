@@ -106,12 +106,15 @@ class MainActivity : ComponentActivity() {
             } })
             return
         }
-        // DEBUG only: `--es dressDemo pocket-rps|pocket-ghost|pocket-chain` shows that pocket game's board (local seed, my turn vs Doug).
-        intent?.getStringExtra("dressDemo")?.takeIf { com.wordocious.app.BuildConfig.DEBUG && it.startsWith("pocket-") }?.let { demo ->
-            val kind = com.wordocious.core.FriendlyKind.entries.firstOrNull { it.raw == demo.removePrefix("pocket-") } ?: com.wordocious.core.FriendlyKind.RPS
+        // DEBUG / benchmark only: `--es dressDemo pocket-rps|ttt|coin|pass|passfull|ghost|chain [--ez autoplay true] [--el pace 3500]`
+        // plays that pocket game locally against a scripted Doug (data/PocketDemo.kt); autoplay also plays my side.
+        intent?.getStringExtra("dressDemo")?.takeIf { com.wordocious.app.data.PocketDemo.enabled && it.startsWith("pocket-") }?.let { demo ->
+            val kind = com.wordocious.app.data.PocketDemo.parse(demo) ?: com.wordocious.core.FriendlyKind.RPS
             com.wordocious.app.ui.DressDemo.start(com.wordocious.app.ui.DressDoor.Stage)
             com.wordocious.app.data.ThemePref.load()
-            val id = com.wordocious.app.data.FriendlyGamesService.debugSeed(kind)
+            val id = com.wordocious.app.data.FriendlyGamesService.debugSeed(
+                kind, demo, intent?.getBooleanExtra("autoplay", false) == true, intent?.getLongExtra("pace", 3500L) ?: 3500L,
+            )
             setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent {
                 WordociousTheme {
                     Surface(modifier = Modifier.fillMaxSize(), color = WTheme.bg) {
@@ -149,6 +152,11 @@ class MainActivity : ComponentActivity() {
                 }
             } })
             return
+        }
+        // DEBUG / benchmark only: `--es musicalDemo everyday|halloween|<tune id>` plays the cast's tunes on Home and checks the
+        // sung-back playback + the unlock call (ui/MusicalDemo; results in logcat, tag MusicalDemo).
+        intent?.getStringExtra("musicalDemo")?.takeIf { com.wordocious.app.data.PocketDemo.enabled && it.isNotBlank() }?.let { which ->
+            com.wordocious.app.ui.MusicalDemo.start(which, intent?.getStringExtra("dressSeason"))
         }
         // App links (wordocious.com/vs/join/*) — cold-start delivery. Warm
         // starts arrive via onNewIntent below. Before this, the intent-filter

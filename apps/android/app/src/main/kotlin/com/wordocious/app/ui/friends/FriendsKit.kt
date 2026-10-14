@@ -146,8 +146,19 @@ fun coinArt(face: CoinFace): Int = if (face == CoinFace.HEADS) R.drawable.friend
 fun FriendsLabel(text: String, modifier: Modifier = Modifier, color: Color = FriendsPink.labelInk) {
     Text(
         text, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.12.em, color = color,
-        modifier = modifier, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        modifier = modifier, maxLines = 1, overflow = TextOverflow.Ellipsis, style = captionHalo(),
     )
+}
+
+/**
+ * Plain-caps captions over the night art (founder 10-13): in the dark / Halloween look a soft dark halo (black ~55%, ~2 dp blur,
+ * 1 dp down) keeps them legible over hills and stars; none in the light look.
+ */
+@Composable
+fun captionHalo(): androidx.compose.ui.text.TextStyle {
+    if (!FriendsPink.dark) return androidx.compose.ui.text.TextStyle.Default
+    val d = androidx.compose.ui.platform.LocalDensity.current.density
+    return androidx.compose.ui.text.TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color(0x8C000000), Offset(0f, d), 2f * d))
 }
 
 /**

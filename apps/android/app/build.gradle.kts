@@ -31,6 +31,9 @@ android {
         versionCode = 223
         versionName = "2.8.2"
         vectorDrawables { useSupportLibrary = true }
+        // Perf/playthrough demo harness (data/PocketDemo.kt): compiled in ONLY for debug and the debug-signed
+        // benchmarkRelease build; the shipping release build gets a constant false, so R8 strips it.
+        buildConfigField("boolean", "POCKET_DEMO", "false")
     }
 
     // Release signing — reads apps/android/key.properties (gitignored; keystore
@@ -52,6 +55,9 @@ android {
     }
 
     buildTypes {
+        debug { buildConfigField("boolean", "POCKET_DEMO", "true") }
+        // The baseline-profile plugin's release-like, debug-signed variant (perf measuring): never shipped.
+        matching { it.name == "benchmarkRelease" }.configureEach { buildConfigField("boolean", "POCKET_DEMO", "true") }
         release {
             // R8 shrink + optimize, no renaming (-dontobfuscate in proguard-rules.pro keeps
             // Sentry traces readable); unused resources dropped (founder, 2026-09-29).

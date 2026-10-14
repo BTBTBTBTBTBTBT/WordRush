@@ -200,7 +200,7 @@ private fun PocketPicture(p: PocketHelpPicture, piece: Dp = 44.dp) {
         p.art.forEachIndexed { i, name ->
             val res = remember(name) { pocketPieceRes(context, name) }
             // Founder 10-13: a one-piece picture is a whole board (ring, # grid, trays): shown big, aspect kept.
-            if (res != 0) Image(artPainter(res, if (big) 220.dp else piece), null, contentScale = ContentScale.Fit, modifier = if (big) Modifier.width(220.dp).height(64.dp) else Modifier.size(piece))
+            if (res != 0) Image(artPainter(res, if (big) 220.dp else piece), null, contentScale = ContentScale.Fit, modifier = if (big) Modifier.width(220.dp).height(96.dp) else Modifier.size(piece))
             p.joiners.getOrNull(i)?.let {
                 Text(it, fontSize = 11.sp, fontWeight = FontWeight.Black, color = FriendsPink.muted, maxLines = 1)
             }
