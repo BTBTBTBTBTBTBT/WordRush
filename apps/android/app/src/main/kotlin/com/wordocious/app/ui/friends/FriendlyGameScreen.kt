@@ -379,14 +379,15 @@ fun FriendlyGameScreen(
             // (one line, fits between the X and the ?). Tablets scale the icon and the lettering with titleArtScale.
             val tt = titleArtScale(wc)
             Row(
-                Modifier.align(Alignment.Center).fillMaxWidth().padding(horizontal = 52.dp * chromeScale(wc)),
+                // Symmetric room for the right corner's TWO buttons (sound + ?), so the centered title never runs under the speaker.
+                Modifier.align(Alignment.Center).fillMaxWidth().padding(horizontal = 92.dp * chromeScale(wc)),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp * tt, Alignment.CenterHorizontally),
             ) {
                 FriendlyGameIcon(kind, 28.dp * tt)
                 BubbleText(
                     (game?.title ?: kind.title).uppercase(), com.wordocious.app.ui.ThemeKit.accentPalette(kind.color),
-                    Modifier.weight(1f), maxSize = (32f * tt).roundToInt(), minSize = (18f * tt).roundToInt(), align = TextAlign.Center,
+                    Modifier.weight(1f), maxSize = (32f * tt).roundToInt(), minSize = (14f * tt).roundToInt(), align = TextAlign.Center,
                 )
             }
             // 9c: the same "?" the other games wear in the top-right corner.
