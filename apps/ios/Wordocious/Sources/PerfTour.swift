@@ -56,7 +56,7 @@ enum PerfTour {
     }
 
     enum Sheet: String, Identifiable { case settings, help, strategy, words, quickPlay; var id: String { rawValue } }
-    enum Cover: String, Identifiable { case vsBot, vsLobby; var id: String { rawValue } }
+    enum Cover: String, Identifiable { case vsBot, vsLobby, pocket; var id: String { rawValue } }
 
     static let commands = PassthroughSubject<Command, Never>()
     static func send(_ c: Command) { commands.send(c) }
@@ -457,6 +457,7 @@ enum PerfTourDriver {
             else { UserDefaults.standard.removeObject(forKey: CastSkin.debugKey) }
             CastSkin.invalidate()
         }
+        await musicalTour()
 
         // MARK: Dress-up (the Stage, the Dressing Room, the Title Shelves; signed-in only: `--demo`)
         if AuthService.shared.profile != nil, !AuthService.shared.isGuest {
@@ -635,6 +636,46 @@ enum PerfTourDriver {
         }
         await step("pocket.open", hold: 1.2) { PerfTour.send(.sheet(.quickPlay)) }
         await step("pocket.close", hold: 0.9) { PerfTour.send(.sheet(nil)) }
+
+        // MARK: Pocket games played through (founder 10-13): a local game (PocketDemo, no network) in the real screen, my side
+        // typed / tapped through its own input path, a scripted Doug answering; each game runs to its finished screen.
+        for kind in FriendlyKind.allCases where wanted("pocket.\(kind.rawValue)") || wanted("pocket") {
+            let k = kind.rawValue
+            await step("pocket.\(k).open", hold: 1.6, always: true) { PocketDemo.begin(kind); PerfTour.send(.cover(.pocket)) }
+            await step("pocket.\(k).play", hold: 0.4, rest: 0, always: true) { await PocketDemo.autoplay() }
+            await step("pocket.\(k).over", hold: 2.2) { PocketDemo.snap("\(k)-over") }
+            await step("pocket.\(k).help", hold: 1.6) {
+                NotificationCenter.default.post(name: PocketDemo.helpNote, object: true)
+                await PerfDrive.sleep(1.0); PocketDemo.snap("\(k)-help")
+            }
+            await step("pocket.\(k).helpClose", hold: 0.9) { NotificationCenter.default.post(name: PocketDemo.helpNote, object: false) }
+            await step("pocket.\(k).close", hold: 1.0, always: true) { PerfTour.send(.cover(nil)) }
+        }
+    }
+
+    /// The musical cast: musical mode on, every tune played on the header (everyday five, then the Halloween seven with the season
+    /// preview on), the sung-back playback and the unlock call checked (MusicalDemo).
+    private static func musicalTour() async {
+        guard wanted("musical") else { return }
+        PerfTour.send(.selectTab(.home))
+        await PerfDrive.sleep(0.8)
+        let launchSeason = UserDefaults.standard.string(forKey: CastSkin.debugKey)
+        await step("musical.on", hold: 1.4) { MusicalDemo.setMode(true) }
+        for tune in MusicalCast.melodies {
+            await step("musical.\(tune.id)", hold: 0.3) { _ = await MusicalDemo.play(tune) }
+        }
+        await step("musical.season", hold: 1.2) {
+            UserDefaults.standard.set("halloween", forKey: CastSkin.debugKey); CastSkin.invalidate()
+        }
+        for tune in MusicalCast.halloweenMelodies {
+            await step("musical.\(tune.id)", hold: 0.3) { _ = await MusicalDemo.play(tune) }
+        }
+        await step("musical.seasonOff", hold: 1.2) {
+            if let launchSeason { UserDefaults.standard.set(launchSeason, forKey: CastSkin.debugKey) }
+            else { UserDefaults.standard.removeObject(forKey: CastSkin.debugKey) }
+            CastSkin.invalidate()
+        }
+        await step("musical.off", hold: 1.2) { MusicalDemo.setMode(false) }
     }
 }
 
@@ -728,6 +769,7 @@ struct PerfTourHost: View {
                     switch c {
                     case .vsBot: NavigationStack { VSGameView(mode: .duel, intent: .bot(.opal)) }
                     case .vsLobby: NavigationStack { VSLobbyView() }
+                    case .pocket: NavigationStack { FriendlyGameScreen(gameId: PocketDemo.gameId, initial: PocketDemo.last) }
                     }
                 }
         }

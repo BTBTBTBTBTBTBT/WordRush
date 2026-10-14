@@ -35,7 +35,7 @@ final class AgeCheckStore: ObservableObject {
         stored = Self.read()
         #if DEBUG
         // Store shots: the demo player has passed the 13+ check (in memory only, never stored).
-        if StoreDemo.active { stored = AgeCheck.Stored(state: .ok, year: 1990) }
+        if StoreDemo.active || ProcessInfo.processInfo.arguments.contains("-perfTour") { stored = AgeCheck.Stored(state: .ok, year: 1990) }   // the perf tour never answers the gate
         // QA: `-ageCheckUnder` shows the under-13 lockout (in memory; the device's real answer is untouched until a recovery unlocks).
         if ProcessInfo.processInfo.arguments.contains("-ageCheckUnder") {
             stored = AgeCheck.Stored(state: .under, year: Calendar.current.component(.year, from: Date()) - 3)

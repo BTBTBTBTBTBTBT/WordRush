@@ -50,7 +50,12 @@ enum AchievementService {
     @MainActor
     static func unlockTune(_ key: String) async {
         let client = AuthService.shared.client
-        guard let uid = try? await client.auth.session.user.id.uuidString.lowercased() else { return }
+        guard let uid = try? await client.auth.session.user.id.uuidString.lowercased() else {
+            #if DEBUG
+            fputs("MUSICAL|unlock-skipped|\(key)|no session (guest or demo: nothing to store)\n", stderr)
+            #endif
+            return
+        }
         // Only one of the cast's own tune keys (built in, Android parity). The catalog is refreshed for the unlock
         // card's name/art, but a stale or unreachable catalog must never drop the unlock (10-12: /api/achievements
         // 500'd and a cached pre-tunes catalog silently swallowed "Little Lamb").

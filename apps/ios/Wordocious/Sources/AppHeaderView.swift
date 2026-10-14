@@ -414,6 +414,13 @@ struct LivingCastHeader: View {
         .onAppear { onScreen = true }
         .onDisappear { onScreen = false; playback?.cancel(); playback = nil }
         .task { await runMoves() }
+        #if DEBUG
+        // Perf harness (MusicalDemo): a tap on a figure, through the same path a finger's touch-down takes.
+        .onReceive(NotificationCenter.default.publisher(for: MusicalDemo.tapNote)) { n in
+            guard onScreen, let id = n.object as? String, let m = MascotID(rawValue: id), MusicalDemo.claim(n) else { return }
+            musicalPressing(m, true)
+        }
+        #endif
         // 2.8 item 13: when your mascot celebrates a Sweep / Flawless the whole cast hops with it (the living mascot switch gates
         // the post itself; Reduce Motion / Low Power: nothing).
         .onReceive(NotificationCenter.default.publisher(for: .mascotMoment)) { note in
@@ -649,10 +656,11 @@ struct LivingCastHeader: View {
         playback?.cancel()
         let steps = MusicalCast.replay(tune)
         playback = Task { @MainActor in
-            var at = 0
+            // Each note is scheduled against the playback's START (not "the last note + a delta"), so the time spent playing a
+            // note never accumulates: the song keeps its rhythm to the last note (10-13: 26 notes had drifted ~450 ms).
+            let start = ContinuousClock.now
             for step in steps {
-                try? await Task.sleep(nanoseconds: UInt64(max(0, step.atMs - at)) * 1_000_000)
-                at = step.atMs
+                try? await Task.sleep(until: start + .milliseconds(step.atMs), clock: .continuous)
                 if Task.isCancelled || !musical { break }
                 if let m = MascotID(rawValue: step.castId) { playNote(m, fromPlayback: true) }
             }
@@ -664,6 +672,9 @@ struct LivingCastHeader: View {
     /// melody matcher — a finished tune unlocks its secret achievement (signed-in players; guests nothing).
     private func playNote(_ m: MascotID, fromPlayback: Bool = false) {
         SoundManager.shared.castNote(m.rawValue)
+        #if DEBUG
+        MusicalDemo.noted(m.rawValue, fromPlayback: fromPlayback)
+        #endif
         if !fromPlayback { Haptics.selection() }
         let now = Date()
         if !still {
@@ -692,10 +703,21 @@ struct LivingCastHeader: View {
         musicalStore.melody = r.state
         if let tune = r.matched {
             let key = tune.achievement
+            #if DEBUG
+            MusicalDemo.matched(tune)
+            #endif
             playBack(tune)
             // The unlock card waits for the playback to finish (it dims the screen, which would hide the cast singing).
             let wait = UInt64(MusicalCast.replayDuration(tune) + 250) * 1_000_000
-            Task { try? await Task.sleep(nanoseconds: wait); await AchievementService.unlockTune(key) }
+            Task {
+                try? await Task.sleep(nanoseconds: wait)
+                #if DEBUG
+                await MusicalDemo.unlockCalled(key)
+                // The perf tour never touches an account: the call is confirmed here and not made.
+                if PerfTour.requested { return }
+                #endif
+                await AchievementService.unlockTune(key)
+            }
         }
     }
 

@@ -92,12 +92,18 @@ enum FriendlyGamesService {
 
     /// GET /api/friends/games/<id> — polled every 2 s while the game screen is open.
     static func get(_ id: String) async -> Result<FriendlyGameView, Failure> {
+        #if DEBUG
+        if PocketDemo.isDemo(id) { return await PocketDemo.get(id) }   // DEBUG perf harness: a local game, no network
+        #endif
         guard let (status, data) = await request("/\(id)") else { return .failure(.network) }
         return decodeGame(status, data)
     }
 
     /// POST /api/friends/games/<id>/move {move}.
     static func move(_ id: String, _ move: FriendlyMove) async -> Result<FriendlyGameView, Failure> {
+        #if DEBUG
+        if PocketDemo.isDemo(id) { return await PocketDemo.move(id, move) }
+        #endif
         guard let encoded = try? JSONEncoder().encode(move),
               let obj = try? JSONSerialization.jsonObject(with: encoded) else { return .failure(.network) }
         guard let (status, data) = await request("/\(id)/move", method: "POST", body: ["move": obj]) else { return .failure(.network) }
@@ -106,6 +112,9 @@ enum FriendlyGamesService {
 
     /// POST /api/friends/games/<id>/resign — the friend wins it.
     static func resign(_ id: String) async -> Result<FriendlyGameView, Failure> {
+        #if DEBUG
+        if PocketDemo.isDemo(id) { return await PocketDemo.resign(id) }
+        #endif
         guard let (status, data) = await request("/\(id)/resign", method: "POST", body: [:]) else { return .failure(.network) }
         return decodeGame(status, data)
     }

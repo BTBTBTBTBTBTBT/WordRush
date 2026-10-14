@@ -78,12 +78,24 @@ struct FriendlyGameScreen: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 16) {
-                            scoreWindow(g)
+                            Group {
+                                #if DEBUG
+                                if PerfTour.flag("noScore") { Color.clear.frame(height: 200) } else { scoreWindow(g) }
+                                #else
+                                scoreWindow(g)
+                                #endif
+                            }
                                 .layoutLog("score")
                             // Founder 10-13 (no screen shifting): ONE fixed-height slot under the score window holds, in turn, the
                             // YOUR TURN flag, their lobby strip, or (game over: a win → O3 pops in; a loss → R, MASCOT_SPEC §3)
                             // the result mascot, so a turn change or the finish never pushes the board.
-                            turnSlot(g)
+                            Group {
+                                #if DEBUG
+                                if PerfTour.flag("noSlot") { Color.clear.frame(height: Self.turnSlotHeight) } else { turnSlot(g) }
+                                #else
+                                turnSlot(g)
+                                #endif
+                            }
                                 .layoutLog("slot")
                             board(g, room: boardRoom(g))
                                 .opacity((g.kind == .pass || g.kind == .chain) && !fitSettled && g.isActive ? 0 : 1)
@@ -92,7 +104,7 @@ struct FriendlyGameScreen: View {
                                     Color.clear.preference(key: BoardTopKey.self, value: b.frame(in: .named("fgsScroll")).minY)
                                 })
                                 .modifier(ShakeEffect(animatableData: shakeCount))
-                                .scaleEffect(arrived ? 1.014 : 1)
+                                .brightness(arrived ? 0.05 : 0)   // founder 10-13 (no screen shifting): a light pulse, not a scale (the board never changes size)
                                 .overlay { if turnPulse > 0 && !Theme.reduceMotion { LiveTurnRing(color: FriendsKit.tileAccent(g.kind)).id(turnPulse) } }
                                 .overlay(alignment: .bottom) { liveFloaters }
                             if g.isActive && liveOn && live.socketUp { reactionBar }
@@ -105,6 +117,9 @@ struct FriendlyGameScreen: View {
                     .onPreferenceChange(BoardTopKey.self) { if !fitSettled, $0.isFinite, $0 > 0 { boardTop = $0 } }
                     // Word Chain: keep the newest word in view.
                     .onChange(of: chainCount(g)) { _ in
+                        #if DEBUG
+                        if PerfTour.flag("noScrollTo") { return }
+                        #endif
                         withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo("chain-end", anchor: .bottom) }
                     }
                 }
@@ -145,7 +160,59 @@ struct FriendlyGameScreen: View {
         .animation(Theme.reduceMotion ? nil : .easeOut(duration: 0.18), value: confirmClose)
         .softSheet(isPresented: $showHelp) { if let kind { PocketHelpSheet(kind: kind) } }
         .firstPlayPocket(kind: kind, show: $showHelp)
+        #if DEBUG
+        // Perf harness (PocketDemo): a local game the tour plays through this screen's own input path.
+        .onReceive(NotificationCenter.default.publisher(for: PocketDemo.changedNote)) { _ in Task { await refresh() } }
+        .onReceive(NotificationCenter.default.publisher(for: PocketDemo.myMoveNote)) { n in
+            if let m = n.object as? FriendlyMove { Task { await demoPlay(m) } }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: PocketDemo.helpNote)) { n in showHelp = (n.object as? Bool) ?? false }
+        #endif
     }
+
+    #if DEBUG
+    /// DEBUG perf harness: plays my scripted move the way a finger would (letters one at a time into the entry row / pass row,
+    /// a pending ghost letter, taps), so the entry row, board and keyboard are exercised exactly as in a real game.
+    private func demoPlay(_ m: FriendlyMove) async {
+        guard let g = game, g.isActive, g.yourTurn else { return }
+        moveError = nil
+        switch (g.state, m) {
+        case (.chain(let c), .chain(let w)):
+            let rest = c.nextLetter == nil ? w : String(w.dropFirst())   // the needed first letter is pre-filled and locked
+            chainTyped = ""
+            for (i, ch) in rest.enumerated() {
+                chainTyped.append(ch)
+                Feedback.keyTap()
+                try? await Task.sleep(nanoseconds: 70_000_000)
+                // The first word: try ENTER too early once ("5 to 15 letters, please" floats above the keyboard, nothing moves).
+                if c.nextLetter == nil && i == 2 {
+                    moveError = "\(FriendlyGames.wordMin) to \(FriendlyGames.chainWordMax) letters, please"
+                    try? await Task.sleep(nanoseconds: 1_300_000_000)
+                    moveError = nil
+                }
+            }
+            if w.count == FriendlyGames.chainWordMax {
+                // The 16-letter attempt: the server says no (inline error), the typed row stays, then the real word goes in.
+                send(.chain(w + "S"))
+                try? await Task.sleep(nanoseconds: 1_400_000_000)
+                moveError = nil
+            }
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            send(m)
+        case (.pass, .pass(let w)):
+            passInput = ""
+            for ch in w { passInput.append(ch); Feedback.keyTap(); try? await Task.sleep(nanoseconds: 70_000_000) }
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            send(m)
+        case (.ghost, .ghost(let l)):
+            ghostPending = l
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            send(m)
+        default:
+            send(m)
+        }
+    }
+    #endif
 
     /// The Leave dialog: the game's art, "Your game waits for you", and one button back to Friends.
     /// A tap on the dimmed screen keeps playing.
@@ -245,8 +312,19 @@ struct FriendlyGameScreen: View {
         showSnapshot()
     }
 
+    private var chainAnimOff: Bool {
+        #if DEBUG
+        return PerfTour.flag("noChainAnim")
+        #else
+        return false
+        #endif
+    }
+
     private func showSnapshot() {
         let d = snap.displayed
+        #if DEBUG
+        if PerfTour.flag("noSpring") { if game != d { game = d }; return }
+        #endif
         if game != d { withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { game = d } }
     }
 
@@ -962,17 +1040,23 @@ struct FriendlyGameScreen: View {
                 .frame(maxWidth: .infinity)
                 .gameTray(accent: FriendsKit.tileAccent(.coin), state: trayState(g))
             }
-            if g.isActive {
-                if myCall {
+            // Founder 10-13 (no screen shifting): the call slot is ALWAYS laid out (the HEADS / TAILS buttons are invisible on
+            // their call and once it is over), so the stake line never moves between states.
+            VStack(spacing: 14) {
+                if myCall || !g.isActive {
                     heading("Your call").layoutLog("heading")
-                    HStack(spacing: 10) {
-                        callButton("HEADS", solid: true) { send(.coin(.heads)) }
-                        callButton("TAILS", solid: false) { send(.coin(.tails)) }
-                    }
                 } else {
                     heading("\(themName) calls", names: [themName], nameColor: themColor).layoutLog("heading")
                 }
+                HStack(spacing: 10) {
+                    callButton("HEADS", solid: true) { send(.coin(.heads)) }
+                    callButton("TAILS", solid: false) { send(.coin(.tails)) }
+                }
+                .opacity(myCall ? 1 : 0)
+                .allowsHitTesting(myCall)
+                .accessibilityHidden(!myCall)
             }
+            .opacity(g.isActive ? 1 : 0)
             VStack(spacing: 6) {
                 heading("What's on the line")
                 PocketBubble(text: c.stake, color: FriendsKit.purple, size: 14, palette: PlayerTint.platePalette(lightInk: FriendsInk.dark))
@@ -1047,14 +1131,17 @@ struct FriendlyGameScreen: View {
                 PocketBubble(text: "The word was", color: gameAccent, size: 16)
                 PocketBubble(text: answer, color: Color(hex: 0xF59E0B), size: 20)
             }
-            .padding(.top, 4)
-        } else if g.isActive && !g.yourTurn {
+            .frame(height: 28)
+        } else {
+            // A fixed-height status slot (blank on my turn): the tray above never moves between turns.
             HStack(spacing: 6) {
                 PocketMarker(art: PocketArt.puzzlePiece, size: 22)
                 PocketBubble(text: "\(themName)'s guess - you'll see it land here.", color: FriendsInk.muted, size: 13,
                              names: [themName], nameColor: themColor, minScale: 0.4)
             }
-            .padding(.top, 2)
+            .opacity(g.isActive && !g.yourTurn ? 1 : 0)
+            .accessibilityHidden(!(g.isActive && !g.yourTurn))
+            .frame(height: 28)
         }
     }
 
@@ -1145,7 +1232,7 @@ struct FriendlyGameScreen: View {
         let me = g.me
         let myLetter = g.isActive && g.yourTurn
         let letters = Array(s.fragment).map(String.init)
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             // The match is over: how the last round went (in play it sits UNDER the tray, so the tray never moves).
             if !g.isActive, let last = s.rounds.last, s.fragment.isEmpty {
                 ghostRoundCard(last, round: s.rounds.count, me: me)
@@ -1158,7 +1245,7 @@ struct FriendlyGameScreen: View {
                 if let tray = PocketArt.ghostTray {
                     // Founder 10-13: the ghost-shaped tray. The fragment's tiles sit centered in its plum panel, the newest
                     // letter gold, a dashed outline marking the next slot. Tiles shrink only if a long fragment needs it.
-                    PocketBoardArt(art: tray, pixels: PocketBoard.ghostPixels, maxWidth: 560) { scale in
+                    PocketBoardArt(art: tray, pixels: PocketBoard.ghostPixels, maxWidth: 340) { scale in
                         let panel = PocketBoard.ghostPanel
                         let slots = letters.count + ((myLetter || letters.isEmpty) ? 1 : 0)
                         // Founder 10-13: tiles ~83% of the plum panel's height, shrinking only when the fragment and the
@@ -1201,28 +1288,37 @@ struct FriendlyGameScreen: View {
                     .gameTray(accent: FriendsKit.tileAccent(.ghost))
                     .animation(Theme.reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75), value: s.fragment)
                 }
-                // A round just ended: what happened (below the tray, never above it).
-                if let last = s.rounds.last, s.fragment.isEmpty {
-                    ghostRoundCard(last, round: s.rounds.count, me: me)
-                        .id("ghost-round-\(s.rounds.count)")
-                        .transition(.scale(scale: 0.95).combined(with: .opacity))
-                }
-                if !myLetter {
-                    HStack(spacing: 6) {
-                        PocketMarker(art: PocketArt.ghostMarker, size: 22)
-                        PocketBubble(text: "\(themName) is adding a letter...", color: FriendsInk.muted, size: 13,
-                                     names: [themName], nameColor: themColor, minScale: 0.4)
+                // Founder 10-13 (no screen shifting): ONE fixed-height slot under the tray. In play it holds "<friend> is adding a
+                // letter..." (invisible on my turn) and the rules line; a round that just ended COVERS it with what happened.
+                let roundOver = s.rounds.last != nil && s.fragment.isEmpty
+                ZStack(alignment: .top) {
+                    VStack(spacing: 6) {
+                        HStack(spacing: 6) {
+                            PocketMarker(art: PocketArt.ghostMarker, size: 22)
+                            PocketBubble(text: "\(themName) is adding a letter...", color: FriendsInk.muted, size: 13,
+                                         names: [themName], nameColor: themColor, minScale: 0.4)
+                        }
+                        .opacity(myLetter ? 0 : 1)
+                        .accessibilityHidden(myLetter)
+                        Text("Spell a word and you lose the round. Leave a dead end and you lose it too.")
+                            .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                            .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                        if PocketArt.ghostTray == nil {
+                            HStack(spacing: 16) {
+                                legend("YOU", TilePalette.correct.base, ink: myColor)
+                                legend(themName.uppercased(), TilePalette.present.base, ink: themColor)
+                            }
+                        }
+                    }
+                    .opacity(roundOver ? 0 : 1)
+                    if roundOver, let last = s.rounds.last {
+                        ghostRoundCard(last, round: s.rounds.count, me: me)
+                            .id("ghost-round-\(s.rounds.count)")
+                            .transition(.opacity)
                     }
                 }
-                Text("Spell a word and you lose the round. Leave a dead end and you lose it too.")
-                    .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
-                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-                if PocketArt.ghostTray == nil {
-                    HStack(spacing: 16) {
-                        legend("YOU", TilePalette.correct.base, ink: myColor)
-                        legend(themName.uppercased(), TilePalette.present.base, ink: themColor)
-                    }
-                }
+                .frame(minHeight: 100, alignment: .top)
+                .layoutLog("ghostslot")
             }
         }
     }
@@ -1349,14 +1445,16 @@ struct FriendlyGameScreen: View {
                                      color: Color(hex: 0xFDE68A), size: 13, names: [themName], nameColor: themColor, minScale: 0.4)
                             .padding(.horizontal, 6)
                     } else {
+                        if chainNoStairs { Color.clear } else {
                         ChainStairs(words: c.words, me: me, active: g.isActive, link: link, themName: themName,
                                     green: FriendsKit.tileAccent(.chain), size: CGSize(width: w, height: h))
+                        }
                     }
                 }
                 .frame(width: w, height: h)
                 .position(x: inner.midX * scale, y: inner.midY * scale)
             }
-            .animation(Theme.reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: c.words.count)
+            .animation(Theme.reduceMotion || chainAnimOff ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: c.words.count)
             .id("chain-end")
         } else {
             VStack(spacing: 8) {
@@ -1402,7 +1500,7 @@ struct FriendlyGameScreen: View {
                 // §B1 glossy tiles in the player's color (purple yours, gold theirs);
                 // the newest word's last letter glows green (the next word starts with it).
                 PocketTile(face: mine ? .correct : .present, letter: letters[i], width: 30,
-                           glow: green, glowAmount: glow ? 1 : 0, pop: newest)
+                           glow: glow ? green : .clear, glowAmount: glow ? 1 : 0, pop: newest && !chainNoPop)
                     .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .stroke(glow ? green : .clear, lineWidth: 2.5).padding(.bottom, 2))
                     .scaleEffect(glow ? 1.08 : 1)
@@ -1648,7 +1746,7 @@ private struct ChainStairs: View {
                         // §B1 glossy tiles in the player's color (purple yours, gold theirs); the newest word's last letter
                         // glows green (the next word starts with it).
                         PocketTile(face: mine ? .correct : .present, letter: letters[i], width: l.t,
-                                   glow: green, glowAmount: glow ? 1 : 0, pop: newest)
+                                   glow: glow ? green : .clear, glowAmount: glow ? 1 : 0, pop: newest && !chainNoPop)
                     }
                 }
                 .fixedSize()
@@ -2124,6 +2222,14 @@ private struct CoinFlipFace: View, Animatable {
 }
 
 
+#if DEBUG
+private let chainNoPop = PerfTour.flag("noTilePop")   // perf A/B switch
+private let chainNoStairs = PerfTour.flag("noStairs")
+#else
+private let chainNoPop = false
+private let chainNoStairs = false
+#endif
+
 /// Where the board starts inside the game screen's scroll content.
 private struct BoardTopKey: PreferenceKey {
     static var defaultValue: CGFloat = .infinity
@@ -2139,8 +2245,8 @@ extension View {
             background(GeometryReader { geo in
                 let f = geo.frame(in: .global)
                 Color.clear
-                    .onAppear { fputs(String(format: "LAYOUT|%@|%.1f|%.1f\n", name, f.minY, f.height), stderr) }
-                    .onChange(of: f) { n in fputs(String(format: "LAYOUT|%@|%.1f|%.1f\n", name, n.minY, n.height), stderr) }
+                    .onAppear { plog(String(format: "LAYOUT|%@|%.1f|%.1f\n", name, f.minY, f.height)) }
+                    .onChange(of: f) { n in plog(String(format: "LAYOUT|%@|%.1f|%.1f\n", name, n.minY, n.height)) }
             })
         } else { self }
     }
