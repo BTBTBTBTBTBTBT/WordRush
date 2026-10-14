@@ -217,6 +217,7 @@ final class KindredVM: ObservableObject {
 }
 
 struct KindredView: View {
+    @Environment(\.widthClass) private var widthClass
     @StateObject private var vm: KindredVM
     /// Pro Unlimited "Play Again" — HomeView swaps in a fresh seed.
     var onPlayAgain: (() -> Void)? = nil
@@ -244,6 +245,11 @@ struct KindredView: View {
         CGFloat(HintLayout.kindredTileHeight(band: Double(band), tiles: tiles, solvedBars: bars,
                                              revealedCategories: named, trayLip: Double(GameTray.lip)))
     }
+    /// Half B (tablets): the tiles grow to the band. The rail, the chip slot and room for four solved bars
+    /// stay reserved below the grid, so the tiles never move as groups are solved (phones keep the Core cap).
+    private static func tabletTileHeight(band: CGFloat) -> CGFloat {
+        max(56, ((band - 300) / 4).rounded(.down) - 6)
+    }
 
     var body: some View {
         ZStack {
@@ -261,7 +267,7 @@ struct KindredView: View {
                         }
                         // §L: the finished groups on the tray (won purple / lost slate).
                         .gameTray(accent: kindredAccent, state: vm.state.status == .won ? .won : .lost, padding: 8)
-                        .frame(maxWidth: 420)
+                        .frame(maxWidth: widthClass == .compact ? 420 : tabletPageMaxWidth)
                         .frame(maxWidth: .infinity, minHeight: size.height)
                     }
                 } dock: {
@@ -271,6 +277,7 @@ struct KindredView: View {
                     result
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             } else {
                 VStack(spacing: 8) {
                     header
@@ -282,7 +289,7 @@ struct KindredView: View {
                     // the first layout pass — same approach as Hubbub's cluster.
                     GeometryReader { geo in
                         let revealed = vm.revealedLabels
-                        let tileH = Self.tileHeight(band: geo.size.height, tiles: vm.state.tiles.count, bars: vm.state.solved.count, named: revealed.count)
+                        let tileH = widthClass == .compact ? Self.tileHeight(band: geo.size.height, tiles: vm.state.tiles.count, bars: vm.state.solved.count, named: revealed.count) : Self.tabletTileHeight(band: geo.size.height)
                         ScrollView {
                             VStack(spacing: 8) {
                                 // §BI22: the named categories' slot is always there (one line,
@@ -310,7 +317,7 @@ struct KindredView: View {
                                     }
                                 }
                             }
-                            .frame(maxWidth: 420)
+                            .frame(maxWidth: widthClass == .compact ? 420 : tabletPageMaxWidth)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 4)
                         }
@@ -328,13 +335,14 @@ struct KindredView: View {
                             PuzCandyAction(title: "Name a category", symbol: "tag", variant: .amber, fullWidth: true) { SoundManager.shared.playKeyTap(); vm.hintLabel() }
                             PuzCandyAction(title: "Show a pair", symbol: "link", variant: .pink, fullWidth: true, count: vm.state.hintsUsed) { SoundManager.shared.playKeyTap(); vm.hintPair() }
                         }
-                        .frame(maxWidth: 420)
+                        .frame(maxWidth: widthClass == .compact ? 420 : tabletKeyboardMaxWidth)
                     }
                     // §BI9: the feedback popup hangs from the controls under the board — never over the title art or the board.
                     .gameFeedbackToast(vm.toast, alignment: .top)
                     .padding(.bottom, 10)
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {

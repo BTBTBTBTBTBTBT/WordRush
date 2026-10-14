@@ -176,6 +176,7 @@ final class RegionsVM: ObservableObject {
 }
 
 struct RegionsView: View {
+    @Environment(\.widthClass) private var widthClass
     @StateObject private var vm: RegionsVM
     /// Pro Unlimited "Play Again" / size switch — HomeView swaps in a fresh seed.
     var onPlayAgain: ((Int) -> Void)? = nil
@@ -213,6 +214,7 @@ struct RegionsView: View {
                     }
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             } else {
                 VStack(spacing: 8) {
                     header
@@ -226,9 +228,11 @@ struct RegionsView: View {
                             .allowsHitTesting(slots.showsPicker)
                             .accessibilityHidden(!slots.showsPicker)
                     }
-                    Spacer(minLength: 4)
+                    // Half B (tablets): the board takes the leftover height; the phone spacers are unchanged.
+                    if widthClass == .compact { Spacer(minLength: 4) }
                     board.padding(.horizontal, 6)
-                    Spacer(minLength: 4)
+                        .frame(maxHeight: widthClass == .compact ? nil : .infinity)
+                    if widthClass == .compact { Spacer(minLength: 4) }
                     // // §BI9: the feedback popup hangs from the line under the board — never over the title art or the board.
                     // §BI22: one fixed-height status line — the first move (or a hint)
                     // swaps the 11-pt tip for the 15-pt count without nudging the board.
@@ -236,6 +240,7 @@ struct RegionsView: View {
                     RegionsPad(vm: vm).padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {
@@ -427,6 +432,7 @@ let regionsTints: [Color] = [
 /// ~78% of a cell. The focused cell wears a purple ring. Solved: the tray takes the
 /// won (purple) / lost (slate) wash.
 struct RegionsBoardView: View {
+    @Environment(\.widthClass) private var widthClass
     let state: RegionsState
     let focused: Int?
     var revealSolution = false
@@ -483,7 +489,7 @@ struct RegionsBoardView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
-        .frame(maxWidth: 420 + GameTray.padding * 2)
+        .frame(maxWidth: widthClass == .compact ? 420 + GameTray.padding * 2 : tabletPageMaxWidth)
         .accessibilityLabel("Starsweep board")
     }
 

@@ -194,6 +194,7 @@ struct SudokuView: View {
                     result
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             } else {
                 VStack(spacing: 8) {
                     header
@@ -219,6 +220,7 @@ struct SudokuView: View {
                     }
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {
@@ -404,7 +406,7 @@ struct SudokuBoardView: View {
             let cell = CGFloat(BoardSizing.fitTile(widthUnits: 9, heightUnits: 9,
                                                    width: Double(geo.size.width - pad / CGFloat(BoardSizing.widthFill)),
                                                    height: Double(geo.size.height - (pad + lip) / CGFloat(BoardSizing.heightFill)),
-                                                   maxTile: (widthClass == .compact ? 420 : 640) / 9, minTile: 10))
+                                                   maxTile: Double(widthClass == .compact ? 420 : tabletPageMaxWidth) / 9, minTile: 10))
             let side = cell * 9
             // Founder 10-10 ("hard to see the separation of the 9 boards"): real gaps between the 3 × 3 boxes; the cells
             // shrink to make room so the board keeps its size.
@@ -447,7 +449,7 @@ struct SudokuBoardView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
-        .frame(maxWidth: widthClass == .compact ? 420 : 640)   // §AG tablet slice 3: the board fills the 640 pt column
+        .frame(maxWidth: widthClass == .compact ? 420 : tabletPageMaxWidth)   // §AG tablet slice 3 (Half B): the board fills the tablet page
         .accessibilityLabel("\(sudokuTitle) board")
     }
 
@@ -560,7 +562,7 @@ struct SudokuPad: View {
             }
         }
         .padding(.horizontal, 2)
-        .tabletColumn()   // §AG tablet slice 2: tool bar + digit pad cap at the 640 pt column on iPad
+        .tabletColumn(max: tabletKeyboardMaxWidth)   // §AG tablet slice 2: tool bar + digit pad cap at the 640 pt column on iPad
         // Hardware keys (founder, 2026-09-30): web sudoku-game keydown — 1–9
         // place, Delete / 0 erase, N notes, H hint, ⌘Z undo, arrows move.
         .hardwareKeyboard(enabled: !vm.isFinished) { key in

@@ -286,6 +286,7 @@ final class CrosswordVM: ObservableObject {
 }
 
 struct CrosswordView: View {
+    @Environment(\.widthClass) private var widthClass
     @StateObject private var vm: CrosswordVM
     /// Pro Unlimited "Play Again" — HomeView swaps in a fresh seed.
     var onPlayAgain: (() -> Void)? = nil
@@ -354,7 +355,7 @@ struct CrosswordView: View {
                             CrosswordActiveClueBar(entry: vm.activeEntry) { vm.toggleDirection() }
                             CrosswordCluesToggle(showing: vm.showClues) { SoundManager.shared.playKeyTap(); vm.showClues.toggle() }
                         }
-                        .frame(maxWidth: 700)
+                        .frame(maxWidth: widthClass == .compact ? 700 : tabletKeyboardMaxWidth)
                         // §A8: candy pills — purple Check, amber Letter, pink Word, peach
                         // Reveal all (pink once armed). §BI22: one row of equal quarters on the
                         // widest phones, else two rows of halves — chosen by the SCREEN, never
@@ -478,13 +479,14 @@ struct CrosswordView: View {
         VStack(spacing: 2) {
             Group {
                 if let art = GameTitleArt.forMode(.crossword) {
-                    GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 44, minHeight: 0)
+                    GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 44 * tabletTitleScale(widthClass), minHeight: 0)
                 } else {
                     BubbleLabel("CROSSWORDOCIOUS", color: crosswordAccent, size: 23, minScale: 0.5, alignment: .center)
                 }
             }
-            .frame(height: GameCornerButton.rowHeight - GameCornerButton.topInset)
-            .padding(.horizontal, 44 + GameCornerButton.sideInset + 4)
+            // Half B (R4): the title art and the controls row scale on tablets (phones unchanged: 44 pt art, 48 pt row).
+            .frame(height: max(GameCornerButton.headerRowHeight(widthClass) - GameCornerButton.topInset, 44 * tabletTitleScale(widthClass)))
+            .padding(.horizontal, 44 * tabletChromeScale(widthClass) + GameCornerButton.sideInset + 4)
             BubbleOneLine(text: vm.state.title.uppercased(), palette: .accent(crosswordAccent), size: 15, minScale: 0.5)
                 .lineLimit(1).minimumScaleFactor(0.7).padding(.horizontal, 12)
             metaLine

@@ -178,6 +178,7 @@ final class SpyglassVM: ObservableObject {
 }
 
 struct SpyglassView: View {
+    @Environment(\.widthClass) private var widthClass
     @StateObject private var vm: SpyglassVM
     var onPlayAgain: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
@@ -210,12 +211,15 @@ struct SpyglassView: View {
                     VStack(spacing: 10) { wordChips; result }.padding(.top, 8)
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             } else {
                 VStack(spacing: 8) {
                     header
                     // Grid, word chips and the two capsules are one centered block (founder, 2026-09-24).
-                    Spacer(minLength: 6)
+                    // Half B (tablets): the grid takes the leftover height; the phone spacers are unchanged.
+                    if widthClass == .compact { Spacer(minLength: 6) }
                     SpyglassGridView(vm: vm, revealMissing: false, tray: true).padding(.horizontal, 6)
+                        .frame(maxHeight: widthClass == .compact ? nil : .infinity)
                     // §BI9: the feedback popup hangs from the word list under the grid — never over the title art or the board.
                     wordChips.padding(.top, 4).gameFeedbackToast(vm.toast, alignment: .top)
                     // §A8: candy pills — amber Hint, teal Show words, peach Reveal
@@ -224,12 +228,13 @@ struct SpyglassView: View {
                     // shown", the Reveal countdown) used to flip ViewThatFits between one and
                     // two rows, which moved the grid.
                     HStack(spacing: 8) { hintPill; showPill; revealPill }
-                        .frame(maxWidth: 420)
+                        .frame(maxWidth: widthClass == .compact ? 420 : 560)
                         .padding(.top, 6)
-                    Spacer(minLength: 6)
+                    if widthClass == .compact { Spacer(minLength: 6) }
                     Spacer().frame(height: 4)
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {
@@ -453,6 +458,7 @@ private struct WrapLayout: Layout {
 /// tap-start / tap-end OR a drag — both end in one select. A hinted word's first
 /// letter is ringed.
 struct SpyglassGridView: View {
+    @Environment(\.widthClass) private var widthClass
     @ObservedObject var vm: SpyglassVM
     let revealMissing: Bool
     /// §L: sit the letters on the shared game tray (the live game; recaps tray at
@@ -559,7 +565,7 @@ struct SpyglassGridView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
-        .frame(maxWidth: 440)
+        .frame(maxWidth: widthClass == .compact ? 440 : tabletPageMaxWidth)
         .accessibilityLabel("Spyglass grid: \(vm.state.title)")
     }
 

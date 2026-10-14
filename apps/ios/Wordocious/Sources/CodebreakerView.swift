@@ -276,7 +276,7 @@ struct CodebreakerView: View {
                     let trayW = GameTray.padding * 2, trayH = GameTray.padding * 2 + GameTray.lip
                     let cell = CodebreakerSizing.cell(for: vm.state.cipher, width: size.width - 12 - trayW,
                                                       height: size.height - 8 - trayH, withStrip: false,
-                                                      maxCell: widthClass == .compact ? CodebreakerSizing.maxCell : 90)
+                                                      maxCell: widthClass == .compact ? CodebreakerSizing.maxCell : 130)
                     // A saying too long even at the floor size scrolls inside its area.
                     ScrollView(showsIndicators: false) {
                         CipherBoardView(vm: vm, finished: true, cell: cell, tray: true)
@@ -300,6 +300,7 @@ struct CodebreakerView: View {
                     .padding(.top, 8)
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             } else {
                 VStack(spacing: 8) {
                     header
@@ -317,7 +318,7 @@ struct CodebreakerView: View {
                         // §L: the board's tray (padding both sides + the lip) comes out of the band first.
                         let trayW = GameTray.padding * 2, trayH = GameTray.padding * 2 + GameTray.lip
                         let cell = CodebreakerSizing.cell(for: vm.state.cipher, width: geo.size.width - 12 - trayW, height: geo.size.height - 8 - trayH, withStrip: false,
-                                                          maxCell: widthClass == .compact ? CodebreakerSizing.maxCell : 90)
+                                                          maxCell: widthClass == .compact ? CodebreakerSizing.maxCell : 130)
                         ScrollView {
                             VStack(spacing: 8) {
                                 CipherBoardView(vm: vm, finished: false, cell: cell, tray: true).padding(.horizontal, 6)
@@ -372,6 +373,7 @@ struct CodebreakerView: View {
                         .padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {

@@ -244,13 +244,14 @@ struct HubView: View {
         ZStack {
             PageBackground(tint: .forGame(.hub))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.showResults {
-                results.padding(.horizontal, 10)
+                results.padding(.horizontal, 10).tabletPage()
             } else {
                 VStack(spacing: 8) {
                     header()
                     board
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if confirmEnd {
@@ -484,7 +485,7 @@ struct HubView: View {
     private static let boardFixedRows = 7               // rows around the cluster band
     private static let tileMin: CGFloat = 64, tileMax: CGFloat = 100
     /// §AG tablet slice 4: the honeycomb's cap on medium/expanded, and the control scale that goes with it.
-    private static let tileMaxTablet: CGFloat = 160
+    private static let tileMaxTablet: CGFloat = 240
     static let tabletControlScale: CGFloat = 1.4
     /// The hint pair's tint (web: #f5a524).
     private static let hintAmber = Color(hex: 0xF5A524)
