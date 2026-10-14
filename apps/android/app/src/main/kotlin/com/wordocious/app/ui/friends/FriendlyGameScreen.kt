@@ -82,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.ui.unit.times
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -427,13 +428,13 @@ fun FriendlyGameScreen(
             val presence = if (liveOn && socketUp && g.active)
                 FriendlyLive.presenceLabel(peerPresent, peerEverSeen, theirTurn = whoseTurn(g.state)?.includes(g.me.other) == true && !myTurn)
             else null
-            ScoreWindow(g, if (presence != null) peerPresent else theyOn, presence)
+            ScaledChrome(chromeScale(wc)) { ScoreWindow(g, if (presence != null) peerPresent else theyOn, presence) }
             // Founder 10-13 (no screen shifting): ONE fixed-height pill slot above the board. YOUR TURN (founder 10-10: a small gold
             // capsule) or WAITING FOR <name> take it in turn; it is empty (not collapsed) when the game is over.
             val theirTurn = g.active && !myTurn && whoseTurn(g.state)?.includes(g.me.other) == true
-            Box(Modifier.fillMaxWidth().height(30.dp), contentAlignment = Alignment.Center) {
-                if (g.active && myTurn) YourTurnLabel()
-                else if (theirTurn) TurnPill("WAITING FOR ${them.uppercase()}")
+            Box(Modifier.fillMaxWidth().height(30.dp * chromeScale(wc)), contentAlignment = Alignment.Center) {
+                if (g.active && myTurn) ScaledChrome(chromeScale(wc)) { YourTurnLabel() }
+                else if (theirTurn) ScaledChrome(chromeScale(wc)) { TurnPill("WAITING FOR ${them.uppercase()}") }
             }
             // L: every pocket board sits in the shared game tray in the game's color (won = purple, lost = slate).
             val tray = when (g.result) { "win" -> TrayState.WON; "loss" -> TrayState.LOST; else -> TrayState.PLAYING }
@@ -523,7 +524,8 @@ fun FriendlyGameScreen(
         // Its height is kept once seen, so the board above never resizes when the keyboard goes quiet (their turn, game over).
         if (kbSlot.heightDp > 0f || kbSlot.content != null) {
             Box(
-                Modifier.fillMaxWidth().padding(horizontal = if (wc == WidthClass.COMPACT) 16.dp else side).padding(top = 6.dp, bottom = 8.dp)
+                Modifier.fillMaxWidth().padding(horizontal = if (wc == WidthClass.COMPACT) 16.dp else side)
+                    .then(if (wc == WidthClass.COMPACT) Modifier else Modifier.navigationBarsPadding()).padding(top = 6.dp, bottom = 8.dp)
                     .then(if (wc == WidthClass.COMPACT) Modifier else Modifier.wrapContentWidth(Alignment.CenterHorizontally).widthIn(max = 820.dp))
                     .defaultMinSize(minHeight = (kbSlot.heightDp - 14f).dp)
                     .onSizeChanged { val h = it.height / dens.density + 14f; if (kbSlot.content != null && kotlin.math.abs(h - kbSlot.heightDp) > 0.5f) kbSlot.heightDp = maxOf(h, kbSlot.heightDp) }
@@ -607,6 +609,16 @@ private fun subLineFor(g: FriendlyGamesService.GameView, theyOn: Boolean): Strin
     }
     if (theyOn && whoseTurn(g.state) != null) parts.add(1, "LIVE, $them IS ON")
     return parts.joinToString(" · ")
+}
+
+/** Tablet pocket chrome (founder 10-14): draws [content] at [k] x its phone size (dp and sp) by scaling the density. k = 1 is a no-op. */
+@Composable
+private fun ScaledChrome(k: Float, content: @Composable () -> Unit) {
+    if (k == 1f) { content(); return }
+    val d = androidx.compose.ui.platform.LocalDensity.current
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density * k, d.fontScale * k),
+    ) { content() }
 }
 
 @Composable
@@ -1566,7 +1578,7 @@ private fun GhostBoard(s: GhostState, me: Side, them: String, myTurn: Boolean, b
                     if (s.fragment.isEmpty() && !myTurn) {
                         Text(
                             if (whoseTurn(s) != null) "${them.uppercase()} STARTS THE WORD" else "THE ROUNDS ARE IN",
-                            fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color.White.copy(alpha = 0.9f), maxLines = 1,
+                            fontSize = (11f * pocketScale(rememberWidthClass())).sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color.White.copy(alpha = 0.9f), maxLines = 1,
                         )
                     } else {
                         Row(horizontalArrangement = Arrangement.spacedBy(gap), verticalAlignment = Alignment.CenterVertically) {
@@ -1594,7 +1606,7 @@ private fun GhostBoard(s: GhostState, me: Side, them: String, myTurn: Boolean, b
             if (r == null) {
                 Text(
                     "Spell a word and you lose the round. Leave a dead end and you lose it too.",
-                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center, style = captionHalo(),
+                    fontSize = (12f * pocketScale(rememberWidthClass())).sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center, style = captionHalo(),
                     modifier = Modifier.fillMaxWidth(),
                 )
             } else {
@@ -1652,6 +1664,7 @@ private fun ChainBoard(
     onWord: (String) -> Unit,
 ) {
     val needed = s.needed
+    val pk = pocketScale(rememberWidthClass())
     val dens = androidx.compose.ui.platform.LocalDensity.current
     // The needed first letter is pre-filled and locked; a landed word resets the row.
     var typed by remember(gameId, s.words.size) { mutableStateOf(needed?.toString() ?: "") }
@@ -1662,7 +1675,7 @@ private fun ChainBoard(
         // The entry row's slot is ONE fixed 40 dp band in both turns (the tiles shrink inside it, in place; on their turn it holds the
         // "needs a word" line), so neither the row nor anything under it ever moves.
         BoxWithConstraints(
-            Modifier.fillMaxWidth().height(40.dp)
+            Modifier.fillMaxWidth().height(40.dp * pk)
                 .onGloballyPositioned { com.wordocious.app.data.PocketDemo.bounds("entry", it.positionInRoot().y, it.size.height.toFloat(), dens.density) },
             contentAlignment = Alignment.Center,
         ) {
@@ -1671,7 +1684,7 @@ private fun ChainBoard(
                 // locked first letter stays in its soft purple tile; the tiles shrink smoothly as the word grows so it always fits one row.
                 val slots = typed.length + if (typed.length < CHAIN_WORD_MAX) 1 else 0
                 val fit = maxWidth / (slots + 0.12f * (slots - 1))
-                val target = min(40.dp, fit)
+                val target = min(40.dp * pk, fit)
                 val tile by androidx.compose.animation.core.animateDpAsState(target, tween(if (WTheme.reducedMotion) 0 else 120), label = "chainEntry")
                 val gap = tile * 0.12f
                 val shape = RoundedCornerShape(tile * 0.2f)
@@ -1722,7 +1735,7 @@ private fun ChainBoard(
         }
         Text(
             "Start with the last letter. No repeats. Each letter scores a point; first to $CHAIN_TARGET wins.",
-            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center, style = captionHalo(),
+            fontSize = (12f * pocketScale(rememberWidthClass())).sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center, style = captionHalo(),
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         )
     }
@@ -1738,6 +1751,7 @@ private fun ChainBoard(
  */
 @Composable
 private fun ChainStairs(s: ChainState, me: Side) {
+    val tMax = 36f * pocketScale(rememberWidthClass())
     BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         // Board + entry row + keyboard all fit above the fold: the board's width is capped so its height leaves room for the entry
         // row, the "needs a word" line and the hint under it (aspect kept; it narrows on short phones).
@@ -1758,21 +1772,21 @@ private fun ChainStairs(s: ChainState, me: Side) {
         fun tNatural(n: Int): Float {
             val ws = s.words.takeLast(n)
             val steps = ws.sumOf { it.word.length - 1 }
-            return minOf(iw / (steps * (1f + g) + 1f), ih / (1f + 1.4f * (n - 1)), 36f)
+            return minOf(iw / (steps * (1f + g) + 1f), ih / (1f + 1.4f * (n - 1)), tMax)
         }
         val n: Int
         val t: Float
         if (longMode) {
             n = 2
             val longest = s.words.takeLast(2).maxOf { it.word.length }
-            t = minOf(iw / ((longest - 1) * (1f + g) + 1f), ih / 2.4f, 36f)
+            t = minOf(iw / ((longest - 1) * (1f + g) + 1f), ih / 2.4f, tMax)
         }
         else if (s.words.size >= 3 && tNatural(3) >= 18f) { n = 3; t = tNatural(3) }
         else if (s.words.size >= 2) {
             n = 2
             val nat = tNatural(2)
             val longest = s.words.takeLast(2).maxOf { it.word.length }
-            t = if (nat >= 18f) nat else maxOf(13f, minOf(ih / 2.4f, iw / ((longest - 1) * (1f + g) + 1f), 36f))
+            t = if (nat >= 18f) nat else maxOf(13f, minOf(ih / 2.4f, iw / ((longest - 1) * (1f + g) + 1f), tMax))
         } else {
             n = s.words.size
             t = if (n == 0) 30f else maxOf(13f, tNatural(1))
