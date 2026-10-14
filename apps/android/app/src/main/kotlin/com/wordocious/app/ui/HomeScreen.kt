@@ -883,10 +883,12 @@ private fun ModeCardGrid(
     section: com.wordocious.core.GameOrderSection = com.wordocious.core.GameOrderSection.DAILIES,
 ) {
     val ids = cards.map { it.id }
+    // Tablet slice 4: three across on EXPANDED (the wider page); two on MEDIUM and phones.
+    val columns = if (rememberWidthClass() == WidthClass.EXPANDED) 3 else 2
     // FINISH_SPEC BH2: 10 dp gaps both ways between the compact cards. BJ18: one name size per grid.
-    CardNameSizeScope(cards.map { it.title }) {
+    CardNameSizeScope(cards.map { it.title }, columns = columns) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(HomeCardSpec.GAP.dp)) {
-    cards.chunked(2).forEach { rowCards ->
+    cards.chunked(columns).forEach { rowCards ->
         Row(horizontalArrangement = Arrangement.spacedBy(HomeCardSpec.GAP.dp), modifier = Modifier.fillMaxWidth()) {
             rowCards.forEach { card ->
                 val completion = card.dbKey?.let { completions[it] }
@@ -898,7 +900,7 @@ private fun ModeCardGrid(
                     unlimited = unlimitedMode, onVs = {},
                 ) { onOpen(card) }
             }
-            if (rowCards.size == 1) Spacer(Modifier.weight(1f))
+            repeat(columns - rowCards.size) { Spacer(Modifier.weight(1f)) }
         }
     }
     }

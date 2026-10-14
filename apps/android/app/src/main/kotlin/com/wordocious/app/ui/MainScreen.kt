@@ -152,11 +152,9 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
     // color by MainScreen (dockedTabBarExtension), so it reads as part of the bar. Each
     // tab icon squishes on tap.
     val look = tabBarLook(selected)
-    // Tablet slice 1: on MEDIUM/EXPANDED the bar is a centered column (max 640 dp) with rounded top ends.
-    val tablet = rememberWidthClass() != WidthClass.COMPACT
+    // Tablet slice 4: the bar spans the whole window on every width class (the same bar as a phone).
     Row(
         Modifier.fillMaxWidth()
-            .then(if (tablet) Modifier.clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)) else Modifier)
             .drawBehind {
                 // Soft upward shadow (0 -6 16 rgba(76,29,149,.08)) and the faint top line.
                 drawRect(
@@ -626,7 +624,7 @@ fun MainScreen() {
                     // §252: the ad banner that used to sit above the nav is gone. Banner
                     // RPM is pennies and it taxed every screen of a daily-habit game;
                     // the game-start interstitial carries the free tier instead.
-                    Column(Modifier.fillMaxWidth().tabletColumnFor(widthClass)) {
+                    Column(Modifier.fillMaxWidth()) {
                         // Switching tabs pops the public-profile push, mirroring iOS's
                         // per-tab path reset (RootTabView.swift:38-47).
                         // FINISH_SPEC AJ: a tab tap lands on that tab's root from any depth (every push,
@@ -640,8 +638,8 @@ fun MainScreen() {
                 val headerScrolls = remember { List(4) { HeaderScrollState() } }
                 androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                     // Shared header on EVERY tab (wordmark + PRO + Help + Settings + streak/shield).
-                    // FINISH_SPEC AG: inside the page column on a tablet (the cast stays 90% of it).
-                    Box(Modifier.fillMaxWidth().tabletColumnFor(widthClass)) {
+                    // FINISH_SPEC AG: inside the page on a tablet (the cast stays 90% of it, capped at 820 dp).
+                    Box(Modifier.fillMaxWidth().tabletPageFor(widthClass)) {
                         AppHeader(
                             onSettings = { showSettings = true },
                             onNav = { infoRoute = it },
@@ -665,13 +663,13 @@ fun MainScreen() {
                         visitedTabs.forEach { tab ->
                             val activeTab = tab == selectedTab
                             val tabHidden = remember(tab) { androidx.compose.runtime.derivedStateOf { coveredState.value || selectedTab != tab } }
-                            // Tablet slice 1: one centered page column (max 640 dp) on MEDIUM/EXPANDED; phones untouched.
+                            // Tablet slice 4: the tabs fill a wider page (min(width - margins, 1000 dp)) on MEDIUM/EXPANDED; phones untouched.
                             // AQ2: one scroll watcher per tab — ambient loops hold still while any list in it moves.
                             val scrollWatch = remember(tab) { ScrollActivity() }
                             val headerScroll = headerScrolls[tab.coerceIn(0, 3)]
                             // A re-tap scrolls the tab to the top: the header expands again.
                             androidx.compose.runtime.LaunchedEffect(tabReselect.getOrElse(tab) { 0 }) { headerScroll.reset() }
-                            Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab()).tabletColumnFor(widthClass)
+                            Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab()).tabletPageFor(widthClass)
                                 .nestedScroll(scrollWatch).nestedScroll(headerScroll)
                                 .then(if (activeTab) Modifier.headerScrollFade(headerScroll) else Modifier)) {
                               androidx.compose.runtime.CompositionLocalProvider(LocalTabHidden provides tabHidden, LocalScrollActive provides scrollWatch.active, LocalPageTint provides tabPageTint(tab), LocalTabReselect provides tabReselect.getOrElse(tab) { 0 }) {
