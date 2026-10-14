@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import com.wordocious.app.ui.BubbleText
+import com.wordocious.app.ui.ScaledChrome
 import com.wordocious.app.ui.WidthClass
 import com.wordocious.app.ui.chromeScale
 import com.wordocious.app.ui.pocketBoardScale
@@ -112,6 +114,7 @@ import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import com.wordocious.app.ui.game.GameTray
 import com.wordocious.app.ui.game.TrayState
@@ -372,14 +375,20 @@ fun FriendlyGameScreen(
         Box(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = side, vertical = 8.dp)) {
             // The shared white close circle (HEADER_SPEC §4).
             com.wordocious.app.ui.HeaderBackButton({ requestClose() }, Modifier.align(Alignment.CenterStart), close = true, size = 38.dp * chromeScale(wc))
-            // The title shrinks to fit between the buttons (it used to clip: "PASS THE" for PASS THE PUZZLE).
-            var titleSp by remember(kind, wc) { mutableStateOf(19f * titleArtScale(wc)) }
-            Text(
-                (game?.title ?: kind.title).uppercase(), fontSize = titleSp.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, maxLines = 1, softWrap = false,
-                onTextLayout = { if (it.hasVisualOverflow && titleSp > 11f) titleSp -= 1f },
-                style = TextStyle(brush = Brush.horizontalGradient(PocketNight.title(kind.gradient)), fontFamily = Nunito),
-                modifier = Modifier.align(Alignment.Center).padding(horizontal = 92.dp * chromeScale(wc)),
-            )
+            // Founder 10-14 (iOS parity): the title is the game's BIG bubble lettering in its accent, beside its 3D icon
+            // (one line, fits between the X and the ?). Tablets scale the icon and the lettering with titleArtScale.
+            val tt = titleArtScale(wc)
+            Row(
+                Modifier.align(Alignment.Center).fillMaxWidth().padding(horizontal = 52.dp * chromeScale(wc)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp * tt, Alignment.CenterHorizontally),
+            ) {
+                FriendlyGameIcon(kind, 28.dp * tt)
+                BubbleText(
+                    (game?.title ?: kind.title).uppercase(), com.wordocious.app.ui.ThemeKit.accentPalette(kind.color),
+                    Modifier.weight(1f), maxSize = (32f * tt).roundToInt(), minSize = (18f * tt).roundToInt(), align = TextAlign.Center,
+                )
+            }
             // 9c: the same "?" the other games wear in the top-right corner.
             CornerHelpButton(kind.color, onClick = { showHelp = true }, modifier = Modifier.align(Alignment.CenterEnd))
         }
@@ -408,7 +417,9 @@ fun FriendlyGameScreen(
         val kbSlot = remember(gameId) {
             // Seeded with the keyboard's height (3 rows of 40 dp; Ghost adds its ADD button) so the board is sized for it from the very
             // first frame, never re-fitted when the keyboard registers a frame later.
-            KbSlot().also { it.heightDp = when (game?.kind) { FriendlyKind.PASS, FriendlyKind.CHAIN -> 146f; FriendlyKind.GHOST -> 194f; else -> 0f } }
+            // Tablets: the keys are 68 dp (the solo keyboard's tablet key), so the seed grows by three rows of 28 dp.
+            val keyGrow = if (wc == WidthClass.COMPACT) 0f else 3f * (PINNED_KEY_TABLET_DP - PINNED_KEY_PHONE_DP)
+            KbSlot().also { it.heightDp = when (game?.kind) { FriendlyKind.PASS, FriendlyKind.CHAIN -> 146f + keyGrow; FriendlyKind.GHOST -> 194f + keyGrow; else -> 0f } }
         }
         val dens = androidx.compose.ui.platform.LocalDensity.current
         var viewportPx by remember { mutableIntStateOf(0) }
@@ -611,16 +622,6 @@ private fun subLineFor(g: FriendlyGamesService.GameView, theyOn: Boolean): Strin
     return parts.joinToString(" · ")
 }
 
-/** Tablet pocket chrome (founder 10-14): draws [content] at [k] x its phone size (dp and sp) by scaling the density. k = 1 is a no-op. */
-@Composable
-private fun ScaledChrome(k: Float, content: @Composable () -> Unit) {
-    if (k == 1f) { content(); return }
-    val d = androidx.compose.ui.platform.LocalDensity.current
-    androidx.compose.runtime.CompositionLocalProvider(
-        androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density * k, d.fontScale * k),
-    ) { content() }
-}
-
 @Composable
 private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean, presence: FriendlyLive.PresenceLabel? = null) {
     val won = g.result == "win"
@@ -758,6 +759,10 @@ private class KbSlot {
 }
 
 /** How tall the board may be: the scroll viewport (already net of the pinned keyboard) below the board's top. Unspecified = no cap. */
+/** The pinned keyboard's key height: 40 dp on a phone, 68 dp on a tablet (the solo keyboard's tablet key). */
+private const val PINNED_KEY_PHONE_DP = 40f
+private const val PINNED_KEY_TABLET_DP = 68f
+
 /** A key's height: 46 dp inline, 40 dp in the pinned keyboard (more room for the board above it). */
 private val LocalKeyH = androidx.compose.runtime.compositionLocalOf { 46.dp }
 
@@ -768,7 +773,8 @@ private val LocalBoardMaxH = androidx.compose.runtime.compositionLocalOf { Dp.Un
 private fun PinKeyboard(content: @Composable () -> Unit) {
     val slot = LocalPinnedKeyboard.current
     if (slot == null) { content(); return }
-    val keyH = 40.dp * chromeScale(rememberWidthClass())
+    // Tablets (MEDIUM / EXPANDED): 68 dp keys, the solo KeyboardView's tablet key (52 x 1.3), inside the 820 dp keyboard column.
+    val keyH = if (rememberWidthClass() == WidthClass.COMPACT) PINNED_KEY_PHONE_DP.dp else PINNED_KEY_TABLET_DP.dp
     val latest = androidx.compose.runtime.rememberUpdatedState(content)
     androidx.compose.runtime.DisposableEffect(slot, keyH) {
         slot.content = { androidx.compose.runtime.CompositionLocalProvider(LocalKeyH provides keyH) { latest.value() } }

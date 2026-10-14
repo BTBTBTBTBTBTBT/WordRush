@@ -113,3 +113,18 @@ fun pocketBoardScale(widthClass: WidthClass): Float = when (widthClass) {
     WidthClass.MEDIUM -> 1.5f
     WidthClass.COMPACT -> 1f
 }
+
+// Tablet VS pages (slice 5, founder 10-14): the Bots ladder and the Challenge page draw at 1.3x on MEDIUM / EXPANDED.
+// A phone is 1 (no-op). Pages inside [ScaledChrome] pad their scroll container by tabletPageInset / k so the page stays
+// the tablet page width in physical dp, while everything in it is drawn k x its phone size.
+fun tabletPageScale(widthClass: WidthClass): Float = if (widthClass == WidthClass.COMPACT) 1f else 1.3f
+
+/** Draws [content] at [k] x its phone size (dp and sp) by scaling the density. k = 1 is a no-op. */
+@Composable
+fun ScaledChrome(k: Float, content: @Composable () -> Unit) {
+    if (k == 1f) { content(); return }
+    val d = androidx.compose.ui.platform.LocalDensity.current
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density * k, d.fontScale * k),
+    ) { content() }
+}

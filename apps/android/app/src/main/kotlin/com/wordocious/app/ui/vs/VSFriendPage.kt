@@ -85,8 +85,13 @@ fun VsFriendPage(
     if (showInvite) InviteSheet { showInvite = false }
     Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
         VsNavBar("CHALLENGE", onBack = onBack, heading = com.wordocious.app.ui.Heading.CHALLENGE) { VsModeChip(mode) }
+        // Tablet (slice 5): the challenge page is the tablet page (tabletPageInset, inside the scroll) at 1.3x; a phone keeps 16 dp at 1x.
+        val wc = com.wordocious.app.ui.rememberWidthClass()
+        val k = com.wordocious.app.ui.tabletPageScale(wc)
+        com.wordocious.app.ui.ScaledChrome(k) {
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(horizontal = if (wc == com.wordocious.app.ui.WidthClass.COMPACT) 16.dp else com.wordocious.app.ui.tabletPageInset(wc) / k),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Segmented control (A1 tinted track; the picked option = the stronger tint + ring; A9 squish).
@@ -187,6 +192,7 @@ fun VsFriendPage(
                 )
             }
             Spacer(Modifier.height(24.dp))
+        }
         }
     }
 }
