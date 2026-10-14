@@ -341,6 +341,9 @@ internal fun FamLabel(text: String, fontSize: Float, ink: Color) {
  * deep tint. Inside a game the tint is always the game's accent ([LocalGameTint]); off a game [tint] (null = purple). [circle] = the icon-only 34 × 34 helper.
  * [selected] = a toggle that is on: the solid tint with white ink (dark on a bright tint, [InkContrast.onSolid]). [used] = the spent / disabled look.
  */
+/** Set by ShrinkToFitRow: its pills' labels take their natural width (a weighted label gets no room in an unbounded row). */
+val LocalNaturalLabels = androidx.compose.runtime.compositionLocalOf { false }
+
 @Composable
 fun HelperButton(
     text: String?,
@@ -384,7 +387,10 @@ fun HelperButton(
                 vector != null -> Icon(vector, null, tint = c.ink, modifier = Modifier.size((if (circle) 18.dp else 15.dp) * scale))
             }
             leading?.invoke()
-            if (!circle && !text.isNullOrEmpty()) Box(Modifier.weight(1f, fill = false)) { FamLabel(text, 12.5f * scale, c.ink) }
+            if (!circle && !text.isNullOrEmpty()) {
+                if (LocalNaturalLabels.current) FamLabel(text, 12.5f * scale, c.ink)
+                else Box(Modifier.weight(1f, fill = false)) { FamLabel(text, 12.5f * scale, c.ink) }
+            }
             if (!circle && trailing != null) FamLabel(trailing, 12.5f * scale, c.ink)
         }
     }

@@ -248,7 +248,8 @@ fun HintCandy(
  *  screen is narrower — founder 10-14 bug: Starsweep's fourth pill ("Hint") was cut to "H" on a 411 dp Android phone. */
 @Composable
 fun ShrinkToFitRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Layout(content, modifier) { measurables, c ->
+    // The pills' labels take their natural width here (LocalNaturalLabels), so the row is measured unbounded and never loses its text.
+    Layout({ androidx.compose.runtime.CompositionLocalProvider(com.wordocious.app.ui.LocalNaturalLabels provides true) { content() } }, modifier) { measurables, c ->
         val p = measurables.first().measure(Constraints(maxHeight = c.maxHeight))
         val k = if (c.hasBoundedWidth && p.width > c.maxWidth) c.maxWidth.toFloat() / p.width else 1f
         val w = (p.width * k).roundToInt()

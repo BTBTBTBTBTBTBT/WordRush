@@ -198,6 +198,8 @@ private fun LobbyMain(
         if (isPro) launch { rivals = StatsDeepService.rivalries(uid, 3) }
     }
 
+    // Tablet (founder 10-14): the lobby sits on the tablet page, and a short stack is centred vertically (no empty band under it).
+    val wc = com.wordocious.app.ui.rememberWidthClass()
     Box(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
         Column(Modifier.fillMaxSize()) {
             // HEADER_SPEC §5: the VS banner's S is the page host; the top row doesn't repeat it.
@@ -217,8 +219,9 @@ private fun LobbyMain(
                 }
             }
             Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .padding(horizontal = if (wc == com.wordocious.app.ui.WidthClass.COMPACT) 16.dp else com.wordocious.app.ui.tabletPageInset(wc)),
+                verticalArrangement = if (wc == com.wordocious.app.ui.WidthClass.COMPACT) Arrangement.spacedBy(12.dp) else Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
             ) {
                 com.wordocious.app.ui.PageHeadline(com.wordocious.app.ui.TitleArt.VS, bleed = 16.dp)
                 if (profile == null) {

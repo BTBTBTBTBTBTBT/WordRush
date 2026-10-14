@@ -98,3 +98,18 @@ fun chromeScale(widthClass: WidthClass): Float = when (widthClass) {
 @Composable
 fun textCardMax(phoneMax: Dp, tabletMax: Dp = 760.dp): Dp =
     if (rememberWidthClass() == WidthClass.COMPACT) phoneMax else tabletMax
+
+// Tablet pocket games (founder 10-14, iPad parity): the pocket game's own scale. A phone keeps 1 everywhere.
+// [pocketScale]: the RPS arena, hands, pick cards, Call It card and the keyboard's chips (1.3x MEDIUM, 1.6x EXPANDED).
+fun pocketScale(widthClass: WidthClass): Float = when (widthClass) {
+    WidthClass.EXPANDED -> 1.6f
+    WidthClass.MEDIUM -> 1.3f
+    WidthClass.COMPACT -> 1f
+}
+
+// [pocketBoardScale]: the pocket boards (Tic-Tac-Tile ~2x, the Pass tray, the Ghost tray, the Word Chain frame).
+fun pocketBoardScale(widthClass: WidthClass): Float = when (widthClass) {
+    WidthClass.EXPANDED -> 2f
+    WidthClass.MEDIUM -> 1.5f
+    WidthClass.COMPACT -> 1f
+}

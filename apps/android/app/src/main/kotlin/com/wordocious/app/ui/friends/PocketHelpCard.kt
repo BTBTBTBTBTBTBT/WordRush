@@ -65,6 +65,8 @@ import com.wordocious.app.ui.EdgeToEdgeDialogWindow
 import com.wordocious.app.ui.PopupScrim
 import com.wordocious.app.ui.SoftNumber
 import com.wordocious.app.ui.WideLayout
+import com.wordocious.app.ui.WidthClass
+import com.wordocious.app.ui.rememberWidthClass
 import com.wordocious.app.ui.artPainter
 import com.wordocious.app.ui.game.firstPlayButtonLabel
 import com.wordocious.app.ui.theme.Nunito
@@ -118,8 +120,11 @@ private fun PocketHelpBody(kind: FriendlyKind, buttonLabel: String, onClose: () 
     val dark = WTheme.isDark
     val shape = RoundedCornerShape(28.dp)
     val accent = kind.color
+    // Tablet (founder 10-14): the card caps at 560 dp with its content 1.3x; a phone keeps 400 dp and 1x.
+    val wc = rememberWidthClass()
+    val k = if (wc == WidthClass.COMPACT) 1f else 1.3f
     Box(
-        Modifier.widthIn(max = WideLayout.POPUP_CARD_DP.dp).fillMaxWidth()
+        Modifier.widthIn(max = if (wc == WidthClass.COMPACT) WideLayout.POPUP_CARD_DP.dp else 560.dp).fillMaxWidth()
             .graphicsLayer { scaleX = scale; scaleY = scale; this.alpha = alpha; transformOrigin = TransformOrigin(0.5f, 1f) }
             .semantics { paneTitle = "How to play ${help.title}" }
             .pointerInput(Unit) { detectTapGestures { } },
@@ -137,16 +142,16 @@ private fun PocketHelpBody(kind: FriendlyKind, buttonLabel: String, onClose: () 
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FriendlyGameIcon(kind, 40.dp)
+                    FriendlyGameIcon(kind, 40.dp * k)
                     Text(
-                        help.title.uppercase(), fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
+                        help.title.uppercase(), fontSize = (24f * k).sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
                         textAlign = TextAlign.Center, maxLines = 1,
                         modifier = Modifier.semantics { heading() },
                         style = TextStyle(fontFamily = Nunito, brush = Brush.horizontalGradient(PocketNight.title(kind.gradient))),
                     )
                 }
                 Text(
-                    "HOW TO PLAY", fontFamily = Nunito, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.12.em,
+                    "HOW TO PLAY", fontFamily = Nunito, fontSize = (11f * k).sp, fontWeight = FontWeight.Black, letterSpacing = 0.12.em,
                     color = if (dark) WTheme.textMuted else FriendsPink.labelInk,
                 )
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -156,13 +161,13 @@ private fun PocketHelpBody(kind: FriendlyKind, buttonLabel: String, onClose: () 
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             // The step number on the shipped gold coin.
-                            Box(Modifier.size(30.dp).clearAndSetSemantics { }, Alignment.Center) {
-                                Image(painterResource(R.drawable.art_tut_step_badge), null, contentScale = ContentScale.Fit, modifier = Modifier.size(30.dp))
+                            Box(Modifier.size(30.dp * k).clearAndSetSemantics { }, Alignment.Center) {
+                                Image(painterResource(R.drawable.art_tut_step_badge), null, contentScale = ContentScale.Fit, modifier = Modifier.size(30.dp * k))
                                 SoftNumber("${i + 1}", 14.sp, color = Color.White)
                             }
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(
-                                    step.text, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 19.sp,
+                                    step.text, fontSize = (14f * k).sp, fontWeight = FontWeight.ExtraBold, lineHeight = 19.sp,
                                     color = if (dark) WTheme.text else FriendsPink.heading,
                                 )
                                 PocketPicture(step.picture)
@@ -172,11 +177,11 @@ private fun PocketHelpBody(kind: FriendlyKind, buttonLabel: String, onClose: () 
                 }
                 // The win line, then how turns work with a friend (the same promise on every game).
                 Text(
-                    help.win, fontSize = 14.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center,
+                    help.win, fontSize = (14f * k).sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center,
                     color = if (dark) WTheme.text else FriendsPink.heading, modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
                 )
                 Text(
-                    help.turns, fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, lineHeight = 16.sp,
+                    help.turns, fontSize = (12f * k).sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, lineHeight = 16.sp,
                     color = if (dark) WTheme.textMuted else FriendsPink.muted, modifier = Modifier.fillMaxWidth(),
                 )
                 CandyButton(
