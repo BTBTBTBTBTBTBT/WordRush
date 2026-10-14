@@ -132,6 +132,8 @@ fun PadAction(
     reserveLabel: String? = null,
     /** BI22: hints / checks used, shown as the corner badge (0 = none). */
     count: Int = 0,
+    /** Tablet: the helper pill grows by this factor (1 = the phone size). */
+    scale: Float = 1f,
 ) {
     // The button family: a HELPER pill in the game's accent (off a game a non-purple [color]'s tint); [active] =
     // the selected helper (solid tint, white ink); the icon is its 3D family art when it has one.
@@ -141,13 +143,13 @@ fun PadAction(
         if (reserveLabel == null) {
             HelperButton(
                 label, onClick = { if (!dim) onClick() }, tint = tint, vector = icon, selected = active,
-                enabled = !dim, contentDescription = description,
+                enabled = !dim, contentDescription = description, scale = scale,
             )
         } else {
-            ReservedWidth(reserve = { HelperButton(reserveLabel, onClick = {}, tint = tint, vector = icon, selected = active, enabled = false) }) {
+            ReservedWidth(reserve = { HelperButton(reserveLabel, onClick = {}, tint = tint, vector = icon, selected = active, enabled = false, scale = scale) }) {
                 HelperButton(
                     label, onClick = { if (!dim) onClick() }, tint = tint, vector = icon, selected = active, fill = true,
-                    enabled = !dim, contentDescription = description,
+                    enabled = !dim, contentDescription = description, scale = scale,
                 )
             }
         }

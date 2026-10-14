@@ -80,6 +80,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import com.wordocious.app.ui.WidthClass
+import com.wordocious.app.ui.rememberWidthClass
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -188,10 +190,22 @@ private data class MuddleSizes(
     val captionSp: androidx.compose.ui.unit.TextUnit, val captionLine: androidx.compose.ui.unit.TextUnit,
     /** Short phones: the locked punchline is ONE line (label left, pattern rings right). */
     val lockedOneLine: Boolean = false,
+    /** Tablet: the in-row hint circle's diameter (34 dp on a phone). */
+    val hintBtn: Dp = 34.dp,
 )
 private val MUDDLE_REGULAR = MuddleSizes(34.dp, 24.dp, 22.dp, 20.dp, 28.dp, 18.dp, 30.dp, 22.dp, 44.dp, 30.dp, 28.dp, 14.sp, 18.sp)
 private val MUDDLE_SHORT = MuddleSizes(32.dp, 22.dp, 22.dp, 20.dp, 24.dp, 18.dp, 28.dp, 22.dp, 40.dp, 28.dp, 26.dp, 13.sp, 16.sp, lockedOneLine = true)
-private fun muddleSizesFor(screenHeightDp: Int) = if (screenHeightDp < SHORT_SCREEN_DP) MUDDLE_SHORT else MUDDLE_REGULAR
+/** Tablet slice 4 (iOS 352d03e95 + d4d56caba): the answer boxes, punchline coins, scrambled chips and hint circles grow x1.4 on MEDIUM/EXPANDED. */
+private const val MUDDLE_TABLET_SCALE = 1.4f
+private fun muddleSizesFor(screenHeightDp: Int, tablet: Boolean = false): MuddleSizes {
+    val base = if (screenHeightDp < SHORT_SCREEN_DP) MUDDLE_SHORT else MUDDLE_REGULAR
+    if (!tablet) return base
+    val k = MUDDLE_TABLET_SCALE
+    return base.copy(
+        tile = base.tile * k, chip = base.chip * k, coin = base.coin * k, trayChip = base.trayChip * k,
+        hintRow = base.hintRow * k, hintBtn = base.hintBtn * k,
+    )
+}
 private val LocalMuddleSizes = androidx.compose.runtime.compositionLocalOf { MUDDLE_REGULAR }
 @Composable private fun wordTile(): Dp = LocalMuddleSizes.current.tile
 /** Gap between the active word's tiles. */
@@ -441,6 +455,8 @@ fun MuddleScreen(
     onOpenLeaderboard: ((GameMode) -> Unit)? = null,
 ) {
     val session = remember(seed) { MuddleSession(seed, isDaily) }
+    // Tablet slice 4: the play column is 640 dp on MEDIUM/EXPANDED (phones 420 dp, unchanged).
+    val tablet = rememberWidthClass() != WidthClass.COMPACT
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val isPro = AuthService.isProActive
@@ -499,14 +515,14 @@ fun MuddleScreen(
             // compact header · the stage (cartoon + caption ALWAYS shown at the top, the rows
             // under them, scrolling internally only if they must) · Delete · Clear · keyboard.
             val screenH = LocalConfiguration.current.screenHeightDp
-            val sizes = muddleSizesFor(screenH)
+            val sizes = muddleSizesFor(screenH, tablet)
             androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides sizes) {
                 Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     MuddleHeader(session, compact = true)
                     val puzzle = session.puzzle
                     MuddleStage(
-                        Modifier.weight(1f).fillMaxWidth().widthIn(max = 420.dp),
-                        cap = screenH.dp * CARTOON_SCREEN_FRACTION, fill = true,
+                        Modifier.weight(1f).fillMaxWidth().widthIn(max = if (tablet) 640.dp else 420.dp),
+                        cap = screenH.dp * CARTOON_SCREEN_FRACTION, fill = true, centerCartoon = tablet,
                         cartoon = { h -> CartoonPanel(puzzle?.cartoon, puzzle?.altText ?: "Cartoon", height = h) },
                         caption = { Caption(session.state, finished = false) },
                         rows = { MuddlePuzzle(session, finished = false, onFinished) },
@@ -592,6 +608,8 @@ private fun MuddleStage(
     cap: Dp,
     fill: Boolean,
     gap: Dp = 4.dp,
+    /** Tablet: the cartoon + caption block sits centered in the free height above the rows (no dead band above the rows). */
+    centerCartoon: Boolean = false,
     cartoon: @Composable (Dp) -> Unit,
     caption: @Composable () -> Unit,
     rows: @Composable () -> Unit,
@@ -617,11 +635,15 @@ private fun MuddleStage(
         val cartoonH = cartoonP.maxOfOrNull { it.height } ?: 0
         val used = cartoonH + gapPx + captionH + gapPx + rowsH
         val height = if (fill) total else minOf(used, total)
+        // The free height (play only): phones center the rows below the caption; tablets split it, half above the cartoon
+        // and half between the caption and the rows, so the cartoon block sits in the middle of the space above the rows.
+        val free = if (fill) (height - used).coerceAtLeast(0) else 0
+        val lead = if (fill && centerCartoon) free / 2 else 0
+        val slack = when { !fill -> 0; centerCartoon -> free - lead; else -> free / 2 }
         layout(w, height) {
-            cartoonP.forEach { it.place(0, 0) }
-            captionP.forEach { it.place(0, cartoonH + gapPx) }
-            val top = cartoonH + gapPx + captionH + gapPx
-            val slack = if (fill) ((height - top - rowsH) / 2).coerceAtLeast(0) else 0
+            cartoonP.forEach { it.place(0, lead) }
+            captionP.forEach { it.place(0, lead + cartoonH + gapPx) }
+            val top = lead + cartoonH + gapPx + captionH + gapPx
             rowsP.forEach { it.place(0, top + slack) }
         }
     }
@@ -646,7 +668,7 @@ private fun MuddlePuzzle(session: MuddleSession, finished: Boolean, onFinished: 
     // The expanded word: the selected row while it is an open word, else the game's next open word.
     val expanded = if (session.row in 0 until SCRAMBLE_FINAL && !s.solved[session.row]) session.row
         else scrambleActiveRow(s)?.takeIf { it < SCRAMBLE_FINAL && !s.solved[it] }
-    Box(Modifier.fillMaxWidth().widthIn(max = 420.dp)) {
+    Box(Modifier.fillMaxWidth().widthIn(max = if (rememberWidthClass() != WidthClass.COMPACT) 640.dp else 420.dp)) {
     Column(
         Modifier.fillMaxWidth().gameTray(MUDDLE_ACCENT, trayState, padding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 4.dp)),
         verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -858,7 +880,7 @@ private fun Caption(s: ScrambleState, finished: Boolean) {
         ),
         fontSize = LocalMuddleSizes.current.captionSp, lineHeight = LocalMuddleSizes.current.captionLine, fontWeight = FontWeight.ExtraBold, color = WTheme.text, fontFamily = Nunito, textAlign = TextAlign.Center,
         maxLines = 4, overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.widthIn(max = 420.dp).padding(horizontal = 6.dp),
+        modifier = Modifier.widthIn(max = if (rememberWidthClass() != WidthClass.COMPACT) 640.dp else 420.dp).padding(horizontal = 6.dp),
     )
 }
 
@@ -1127,10 +1149,11 @@ private fun FinalRow(
 private fun HintCircle(icon: ImageVector, description: String, onClick: () -> Unit) {
     // Founder 10-10: gold outlines (the gold letter tiles' color), not candy fills; 34 dp, the 2 dp ring may overhang the
     // slim hint row by a dp or two.
-    Box(Modifier.size(width = 40.dp, height = LocalMuddleSizes.current.hintRow), contentAlignment = Alignment.Center) {
+    val hb = LocalMuddleSizes.current.hintBtn
+    Box(Modifier.size(width = hb + 6.dp, height = LocalMuddleSizes.current.hintRow), contentAlignment = Alignment.Center) {
         com.wordocious.app.ui.GoldOutlineIconButton(
             icon = com.wordocious.app.ui.FamIcon.of(icon), fallback = icon,
-            contentDescription = description, onClick = onClick, size = 34.dp,
+            contentDescription = description, onClick = onClick, size = hb,
         )
     }
 }
