@@ -446,7 +446,7 @@ private fun RegionsPad(session: RegionsSession, onFinished: () -> Unit) {
     val s = session.state
     // Tablet: the four helper pills grow 1.3x (chromeScale; 1 on a phone), spacing with them.
     val k = chromeScale(rememberWidthClass())
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp * k), modifier = Modifier.padding(horizontal = 2.dp)) {
+    ShrinkToFitRow(Modifier.padding(horizontal = 2.dp)) { Row(horizontalArrangement = Arrangement.spacedBy(6.dp * k)) {
         PadAction("Undo", Icons.AutoMirrored.Filled.Undo, onClick = { session.undo(onFinished) }, dim = s.history.isEmpty(), scale = k)
         PadAction("Erase", Icons.AutoMirrored.Filled.Backspace, onClick = { session.erase(onFinished) }, dim = !session.canErase, scale = k)
         PadAction("Auto-cross", Icons.Filled.Close, onClick = { session.toggleAutoCross(onFinished) }, active = s.autoCross, scale = k)
@@ -456,7 +456,7 @@ private fun RegionsPad(session: RegionsSession, onFinished: () -> Unit) {
             onClick = { session.hint(onFinished) }, color = com.wordocious.app.ui.CandyColor.AMBER,
             count = s.hintsUsed, scale = k,
         )
-    }
+    } }
 }
 
 // ── Result + overlay ────────────────────────────────────────────────────────
