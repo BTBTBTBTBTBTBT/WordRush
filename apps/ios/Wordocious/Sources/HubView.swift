@@ -218,6 +218,8 @@ struct HubView: View {
     var onPlayAgain: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    /// §AG tablet slice 3: the honeycomb grows on medium/expanded.
+    @Environment(\.widthClass) private var widthClass
     @State private var adShown = false
     @State private var showOverlay = false
     @State private var showGuide = false
@@ -481,13 +483,13 @@ struct HubView: View {
     /// The hint pair's tint (web: #f5a524).
     private static let hintAmber = Color(hex: 0xF5A524)
 
-    private static func tileSide(boardHeight h: CGFloat) -> CGFloat {
+    private static func tileSide(boardHeight h: CGFloat, maxTile: CGFloat = HubView.tileMax) -> CGFloat {
         let reserved = rankBarHeight + entryLineHeight + controlRowHeight * 2 + foundHeaderHeight + endLinkHeight + trayHeight + boardRowSpacing * CGFloat(boardFixedRows)
         // FINISH_SPEC §B5: the shared sizing rule over the honeycomb's height
         // (three hexes tall plus gaps ≈ 2.9 pieces; 3.3 leaves the found-words room).
         return CGFloat(BoardSizing.fitTile(widthUnits: 1, heightUnits: 3.3, fixedHeight: Double(reserved),
                                            width: .infinity, height: Double(h), heightFill: 1,
-                                           maxTile: Double(tileMax), minTile: Double(tileMin))).rounded(.down)
+                                           maxTile: Double(maxTile), minTile: Double(tileMin))).rounded(.down)
     }
 
     /// The word in progress: 28 pt bold, center letter in the accent, placeholder when
@@ -539,7 +541,9 @@ struct HubView: View {
     private var board: some View {
         let s = vm.state
         return GeometryReader { geo in
-            let side = Self.tileSide(boardHeight: geo.size.height)
+            // §AG tablet slice 3: the honeycomb grows ~1.4x on medium/expanded (phones keep the 100 pt cap).
+            let side = Self.tileSide(boardHeight: geo.size.height,
+                                     maxTile: widthClass == .compact ? Self.tileMax : Self.tileMax * 1.4)
             let pending = s.hinted.filter { !s.found.contains($0) }
             VStack(spacing: Self.boardRowSpacing) {
                 rankBar(points: false)  // the header already says "N/M pts"

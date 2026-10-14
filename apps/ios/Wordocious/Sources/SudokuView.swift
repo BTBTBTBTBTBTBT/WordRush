@@ -160,6 +160,8 @@ final class SudokuVM: ObservableObject {
 
 struct SudokuView: View {
     @StateObject private var vm: SudokuVM
+    /// §AG tablet slice 3: the board takes the leftover height on medium/expanded.
+    @Environment(\.widthClass) private var widthClass
     /// Pro Unlimited "Play Again" / difficulty switch — HomeView swaps in a fresh seed.
     var onPlayAgain: ((SudokuDifficulty) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
@@ -205,9 +207,12 @@ struct SudokuView: View {
                             .allowsHitTesting(slots.showsPicker)
                             .accessibilityHidden(!slots.showsPicker)
                     }
-                    Spacer(minLength: 4)
+                    // §AG tablet slice 3: on medium/expanded the board is the only flexible child (the Spacers would
+                    // split the band and leave the grid ~1/3 of it); phones keep the Spacers unchanged.
+                    if widthClass == .compact { Spacer(minLength: 4) }
                     board.padding(.horizontal, 6)
-                    Spacer(minLength: 4)
+                        .frame(maxHeight: widthClass == .compact ? nil : .infinity)
+                    if widthClass == .compact { Spacer(minLength: 4) }
                     // // §BI9: the feedback popup hangs from the line under the board — never over the title art or the board.
                     StagedSlot(key: "sudokuPad", estimate: 180) {   // BJ14
                         SudokuPad(vm: vm).padding(.bottom, 6).gameFeedbackToast(vm.toast, alignment: .top)
@@ -442,7 +447,7 @@ struct SudokuBoardView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
-        .frame(maxWidth: 420)
+        .frame(maxWidth: widthClass == .compact ? 420 : 640)   // §AG tablet slice 3: the board fills the 640 pt column
         .accessibilityLabel("\(sudokuTitle) board")
     }
 

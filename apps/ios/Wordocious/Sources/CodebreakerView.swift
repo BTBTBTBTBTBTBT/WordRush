@@ -246,6 +246,8 @@ final class CodebreakerVM: ObservableObject {
 
 struct CodebreakerView: View {
     @StateObject private var vm: CodebreakerVM
+    /// §AG tablet slice 3: the cipher grid grows on medium/expanded.
+    @Environment(\.widthClass) private var widthClass
     /// Pro Unlimited "Play Again" — HomeView swaps in a fresh seed.
     var onPlayAgain: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
@@ -273,7 +275,8 @@ struct CodebreakerView: View {
                 } board: { size in
                     let trayW = GameTray.padding * 2, trayH = GameTray.padding * 2 + GameTray.lip
                     let cell = CodebreakerSizing.cell(for: vm.state.cipher, width: size.width - 12 - trayW,
-                                                      height: size.height - 8 - trayH, withStrip: false)
+                                                      height: size.height - 8 - trayH, withStrip: false,
+                                                      maxCell: widthClass == .compact ? CodebreakerSizing.maxCell : 90)
                     // A saying too long even at the floor size scrolls inside its area.
                     ScrollView(showsIndicators: false) {
                         CipherBoardView(vm: vm, finished: true, cell: cell, tray: true)
@@ -313,7 +316,8 @@ struct CodebreakerView: View {
                     GeometryReader { geo in
                         // §L: the board's tray (padding both sides + the lip) comes out of the band first.
                         let trayW = GameTray.padding * 2, trayH = GameTray.padding * 2 + GameTray.lip
-                        let cell = CodebreakerSizing.cell(for: vm.state.cipher, width: geo.size.width - 12 - trayW, height: geo.size.height - 8 - trayH, withStrip: false)
+                        let cell = CodebreakerSizing.cell(for: vm.state.cipher, width: geo.size.width - 12 - trayW, height: geo.size.height - 8 - trayH, withStrip: false,
+                                                          maxCell: widthClass == .compact ? CodebreakerSizing.maxCell : 90)
                         ScrollView {
                             VStack(spacing: 8) {
                                 CipherBoardView(vm: vm, finished: false, cell: cell, tray: true).padding(.horizontal, 6)
@@ -581,7 +585,8 @@ enum CodebreakerSizing {
     /// page, which scrolls) gives the compact floor size. Below the floor the cell
     /// only shrinks when the longest word would not fit the width otherwise —
     /// words never break across lines and never run off the screen.
-    static func cell(for cipher: String, width: CGFloat, height: CGFloat?, withStrip: Bool = true) -> CGFloat {
+    static func cell(for cipher: String, width: CGFloat, height: CGFloat?, withStrip: Bool = true,
+                     maxCell: CGFloat = CodebreakerSizing.maxCell) -> CGFloat {
         var cell = height == nil ? fontFloor : maxCell
         if let height {
             // Board (+ 10 gap + strip when the strip shares the band), with room for the one-line conflict notice.
