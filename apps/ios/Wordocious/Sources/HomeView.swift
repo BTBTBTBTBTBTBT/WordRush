@@ -468,7 +468,7 @@ struct HomeView: View {
                     }
                     }
                 }
-                .wideColumn(.page)   // §AG: iPad column, centered on the wallpaper
+                .tabletColumn()   // §AG: iPad column, centered on the wallpaper
 
                 if let m = limitModal {
                     ModeLimitModal(mode: m,

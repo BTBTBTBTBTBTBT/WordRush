@@ -231,6 +231,7 @@ struct SettingsView: View {
                     .padding(.horizontal, 16).padding(.vertical, 12)
                 }
                 }
+                .tabletColumn()   // §AG: iPad column (header + rows), wallpaper stays full-bleed
             }
             .toolbar(.hidden, for: .navigationBar)
             .onChange(of: dailyReminder) { on in

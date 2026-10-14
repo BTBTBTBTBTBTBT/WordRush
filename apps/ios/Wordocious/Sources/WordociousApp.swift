@@ -43,7 +43,10 @@ struct WordociousApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            // §AG tablet slice 1: publishes the window's WidthClass (compact/medium/expanded) to the whole tree.
+            WidthClassReader {
+                ContentView()
+            }
                 .environmentObject(auth)
                 .environmentObject(themeManager)
                 // Recolor the whole app when the theme changes: preferredColorScheme

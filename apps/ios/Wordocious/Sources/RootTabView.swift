@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WordociousCore
 
 /// 4-tab shell with a custom bottom nav that matches the web BottomNav
@@ -177,6 +178,12 @@ struct RootTabView: View {
             .tag(Tab.friends).tabItem { Label("Friends", systemImage: "person.2") }
         }
         .toolbar(.hidden, for: .tabBar)
+        // §AG tablet slice 1: iPadOS 18+ draws a top tab strip for a TabView unless the
+        // tab style is forced to the bar style; the custom BottomNav stays the only nav.
+        .modifier(BarOnlyTabStyle())
+        // §AG tablet slice 1: the system's own tab bar (iPad draws it at the top) is hidden
+        // through UIKit; the custom BottomNav stays the only navigation. Zero-size, no input.
+        .background(HideSystemTabBar().frame(width: 0, height: 0).allowsHitTesting(false))
         #if DEBUG
         // FINISH_SPEC BJ3: the perf tour's presenter (idle unless `-perfTour`).
         .background { PerfTourHost { tabSelection.wrappedValue = Self.tab($0) } }
@@ -515,6 +522,55 @@ extension View {
 /// it), a soft page-tinted gradient (lilac Home, warm Leaderboard, blue Stats, pink
 /// Friends) with a faint top line, and the home-indicator area is part of the bar.
 /// Each tab icon squishes on tap.
+/// Invisible UIKit hook: finds the UITabBarController that backs the TabView and hides
+/// its own bar (iPad's top strip). iOS 18+ uses `isTabBarHidden`; older systems hide the bar view.
+private struct HideSystemTabBar: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> HideVC { HideVC() }
+    func updateUIViewController(_ vc: HideVC, context: Context) { vc.hideSystemBar() }
+
+    final class HideVC: UIViewController {
+        override func loadView() { view = UIView(); view.isUserInteractionEnabled = false }
+        override func viewDidAppear(_ animated: Bool) { super.viewDidAppear(animated); hideSystemBar() }
+        override func didMove(toParent parent: UIViewController?) { super.didMove(toParent: parent); hideSystemBar() }
+
+        func hideSystemBar() {
+            var current: UIViewController? = self
+            while let c = current {
+                if let tbc = c as? UITabBarController { apply(tbc); return }
+                current = c.parent
+            }
+            if let root = view.window?.rootViewController, let tbc = Self.findTabBarController(root) { apply(tbc) }
+        }
+
+        private static func findTabBarController(_ vc: UIViewController) -> UITabBarController? {
+            if let t = vc as? UITabBarController { return t }
+            for child in vc.children { if let t = findTabBarController(child) { return t } }
+            if let presented = vc.presentedViewController { return findTabBarController(presented) }
+            return nil
+        }
+
+        private func apply(_ tbc: UITabBarController) {
+            if #available(iOS 18.0, *) {
+                tbc.isTabBarHidden = true
+            } else {
+                tbc.tabBar.isHidden = true
+            }
+        }
+    }
+}
+
+/// iOS 18+ `.tabBarOnly` keeps iPad's TabView from switching to its top tab strip.
+/// Earlier systems and iPhone already use the bar style, so they pass through.
+private struct BarOnlyTabStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.tabViewStyle(.tabBarOnly)
+        } else {
+            content
+        }
+    }
+}
+
 private struct BottomNav: View {
     @Binding var selection: RootTabView.Tab
     // Pending friend-request badge on Friends (Tier 1, Aug 11; moved from Profile
@@ -524,6 +580,8 @@ private struct BottomNav: View {
     // minus what they've already seen (FriendsBadgeStore); opening Friends clears it.
     @ObservedObject private var badge = FriendsBadgeStore.shared
     @Environment(\.accessibilityReduceMotion) private var envReduce
+    /// §AG tablet slice 1: centered column bar on MEDIUM/EXPANDED.
+    @Environment(\.widthClass) private var widthClass
     /// The Friends icon's happy wiggle when a new item arrives (±8°, 2 swings).
     @State private var wiggle: Double = 0
     /// The badge's spring-in (scale 0 → 1.15 → 1).
@@ -537,15 +595,22 @@ private struct BottomNav: View {
         #if DEBUG
         let _ = PerfTour.flag("printChanges") ? Self._printChanges() : ()
         #endif
+        // §AG tablet slice 1: on MEDIUM/EXPANDED the bar is centered at the tablet column
+        // width (640) with rounded top ends, not stretched edge to edge. COMPACT is unchanged.
+        let tablet = widthClass != .compact
         HStack(spacing: 0) {
-            item(.home, .tabHome, "Home")
-            item(.leaderboard, .tabLeaderboard, "Leaderboard")
-            item(.stats, .tabStats, "Stats")
-            item(.friends, .tabFriends, "Friends", badge: badge.count)
+            if tablet { Spacer(minLength: 0) }
+            HStack(spacing: 0) {
+                item(.home, .tabHome, "Home")
+                item(.leaderboard, .tabLeaderboard, "Leaderboard")
+                item(.stats, .tabStats, "Stats")
+                item(.friends, .tabFriends, "Friends", badge: badge.count)
+            }
+            .padding(.top, 8).padding(.bottom, 2)
+            .frame(maxWidth: tablet ? tabletColumnMaxWidth : .infinity)
+            .background(bar(tablet: tablet).ignoresSafeArea(edges: .bottom))
+            if tablet { Spacer(minLength: 0) }
         }
-        .padding(.top, 8).padding(.bottom, 2)
-        .frame(maxWidth: .infinity)
-        .background(bar.ignoresSafeArea(edges: .bottom))
         .task {
             await LaunchGate.wait()   // §AU5: after the cold-start intro lands
             await FriendsService.load()
@@ -590,11 +655,16 @@ private struct BottomNav: View {
     }
 
     /// Opaque, page-tinted, a faint top line and a soft upward shadow.
-    private var bar: some View {
-        LinearGradient(colors: tint, startPoint: .top, endPoint: .bottom)
+    /// `tablet`: the bar is the centered column, so its top ends are rounded (phones: square).
+    private func bar(tablet: Bool) -> some View {
+        let radius: CGFloat = tablet ? 22 : 0
+        return LinearGradient(colors: tint, startPoint: .top, endPoint: .bottom)
             .overlay(alignment: .top) {
                 Rectangle().fill(SeasonKit.surfaces?.card != nil ? Color(hex: 0xF97316).opacity(0.22) : (ThemeKit.tabEdge ?? Color(hex: 0x7C3AED).opacity(0.14))).frame(height: 1)
             }
+            .clipShape(UnevenRoundedRectangle(topLeadingRadius: radius, bottomLeadingRadius: 0,
+                                              bottomTrailingRadius: 0, topTrailingRadius: radius,
+                                              style: .continuous))
             .shadow(color: Color(hex: 0x4C1D95).opacity(0.08), radius: 8, x: 0, y: -6)
             .animation(Theme.animation(.easeInOut(duration: 0.2)), value: selection)
     }

@@ -324,8 +324,11 @@ struct LivingCastHeader: View {
     static let stagger: CGFloat = 7
     /// FINISH_SPEC §N3: the row spans ≈90% of the screen width, centered (not edge to edge).
     static let widthShare: CGFloat = 0.90
+    /// The width the cast row is laid out in: the screen on phones (unchanged), and the
+    /// 640 pt tablet column on iPad, so the row fits the column instead of overflowing it.
+    static var layoutWidth: CGFloat { min(UIScreen.main.bounds.width, tabletColumnMaxWidth) }
     /// The row's side inset (the 5% each side left by the 90% row).
-    static var inset: CGFloat { UIScreen.main.bounds.width * (1 - widthShare) / 2 }
+    static var inset: CGFloat { layoutWidth * (1 - widthShare) / 2 }
     /// §N3: breathing room under the status bar.
     static let topMargin: CGFloat = 9
 
@@ -333,7 +336,7 @@ struct LivingCastHeader: View {
     static var figure: CGFloat {
         let units = Mascots.cast.reduce(CGFloat(0)) { $0 + (visibleWidth[$1] ?? 1) }
             - CGFloat(Mascots.cast.count - 1) * overlap
-        return max(28, (UIScreen.main.bounds.width - inset * 2) / units)
+        return max(28, (layoutWidth - inset * 2) / units)
     }
 
     /// The header's height: the top margin, the figures, the stagger and the crown's room. Founder 10-09: the crown's
