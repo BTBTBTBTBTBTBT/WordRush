@@ -456,7 +456,12 @@ private struct SoloGameTitleArt: View {
 
     var body: some View {
         let scale = tabletTitleScale(widthClass)
-        GameTitleArtView(asset: asset, label: label, maxHeight: GameTitleArtView.soloCap * scale, minHeight: 44 * scale,
+        let tablet = widthClass != .compact
+        // Tablets: 2x/1.6x the phone height, but never over 110 pt tall or 60% of the page wide (wide wordmarks).
+        GameTitleArtView(asset: asset, label: label,
+                         maxHeight: tablet ? min(GameTitleArtView.soloCap * scale, tabletSoloTitleMaxHeight) : GameTitleArtView.soloCap,
+                         minHeight: 44 * scale,
+                         maxWidthFraction: tablet ? tabletSoloTitleMaxWidthFraction : 1,
                          headerOf: isHeader ? mode : nil)
             .padding(.horizontal, 16)
             .padding(.top, GameCornerButton.headerRowHeight(widthClass))

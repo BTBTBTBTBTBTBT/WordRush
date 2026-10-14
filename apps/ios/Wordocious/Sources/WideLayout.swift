@@ -121,6 +121,11 @@ func tabletTitleScale(_ widthClass: WidthClass) -> CGFloat {
     }
 }
 
+/// Slice 5 (R4): the solo game title's height cap on tablets (long wordmarks like LETTER LADDER would otherwise fill the page).
+let tabletSoloTitleMaxHeight: CGFloat = 110
+/// Slice 5 (R4): the solo game title takes at most this share of the page width on tablets.
+let tabletSoloTitleMaxWidthFraction: CGFloat = 0.6
+
 /// Slice 5 (R4): the game header's chrome (corner circles, status line, tab bar) scale on tablets: 1.15x MEDIUM, 1.3x EXPANDED.
 func tabletChromeScale(_ widthClass: WidthClass) -> CGFloat {
     switch widthClass {
