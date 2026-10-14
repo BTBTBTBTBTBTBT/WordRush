@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +32,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.wordocious.app.R
 import com.wordocious.app.ui.TintMath
@@ -138,6 +140,8 @@ fun StarsweepBoard(
     revealSolution: Boolean,
     trayState: TrayState,
     onTap: (Int) -> Unit,
+    /** Tablet: the board's square side (the phone uses the 420 dp cap). */
+    side: Dp? = null,
 ) {
     val n = state.n
     val dark = WTheme.isDark
@@ -145,7 +149,7 @@ fun StarsweepBoard(
     val slots = remember(state.regions) { regionColorSlots(n, state.regions) }
     val seam = if (dark) Color(0xFF120D1F) else GameTrayStyle.seam(GameTrayStyle.tint(STAR_ACCENT, trayState))
     Box(
-        Modifier.fillMaxWidth().widthIn(max = 420.dp).aspectRatio(1f)
+        (if (side != null) Modifier.size(side) else Modifier.fillMaxWidth().widthIn(max = 420.dp).aspectRatio(1f))
             .gameTray(STAR_ACCENT, trayState, padding = androidx.compose.foundation.layout.PaddingValues(8.dp)),
     ) {
         Column(

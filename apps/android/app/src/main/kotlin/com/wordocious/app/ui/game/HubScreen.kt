@@ -2,6 +2,8 @@ package com.wordocious.app.ui.game
 
 import com.wordocious.app.ui.WidthClass
 import com.wordocious.app.ui.gameBackground
+import com.wordocious.app.ui.gamePageFor
+import com.wordocious.app.ui.chromeScale
 import com.wordocious.app.ui.rememberWidthClass
 import android.app.Activity
 import androidx.compose.foundation.background
@@ -383,7 +385,7 @@ fun HubScreen(
             // FINISH_SPEC R2: the one-screen results screen (header · strip · words · dock).
             HubFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
-            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.fillMaxSize().gamePageFor(rememberWidthClass()), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 HubHeader(session)
                 HubBoard(session)
             }
@@ -405,20 +407,22 @@ private fun HubHeader(session: HubSession, counts: Boolean = true) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("HUB") { Text("HUBBUB", fontSize = 24.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT, fontFamily = Nunito) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        // Tablet: the meta line grows with the page (chromeScale; 1 on a phone).
+        val mk = chromeScale(rememberWidthClass())
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp * mk), verticalAlignment = Alignment.CenterVertically) {
+            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = (12f * mk).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             // The one "N/M words · pts" line (hubWordsLabel). On results the strip carries the
             // word count, so the header drops both rather than say them twice.
             if (counts) {
-                Text(hubWordsLabel(session.state), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                Text("${session.state.points}/${session.state.max} pts", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Text(hubWordsLabel(session.state), fontSize = (12f * mk).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Text("${session.state.points}/${session.state.max} pts", fontSize = (12f * mk).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
             if (!session.state.ended) {
                 @Suppress("UNUSED_EXPRESSION") tick
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp * mk)) {
+                    Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp * mk))
                     val s = session.elapsed
-                    Text("${s / 60}:${"%02d".format(s % 60)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    Text("${s / 60}:${"%02d".format(s % 60)}", fontSize = (12f * mk).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     // After the win the clock keeps moving while the player chases a higher rank — say so.
                     if (session.state.status == HubStatus.WON) Text("· playing on", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted.copy(alpha = 0.8f))
                 }
@@ -572,7 +576,8 @@ private fun HubBoard(session: HubSession) {
     // Tablet slice 4 (iOS d4d56caba): on MEDIUM/EXPANDED the helper pills, End puzzle and the rank bar grow x1.4 and the
     // hive may grow to 160 dp; the reserved heights of those rows scale with them. Phones (COMPACT) are unchanged.
     val wide = rememberWidthClass() != WidthClass.COMPACT
-    val k = if (wide) 1.4f else 1f
+    // Tablet: the controls grow 1.3x on EXPANDED (chromeScale; 1.2x on MEDIUM), 1 on a phone.
+    val k = if (wide) chromeScale(rememberWidthClass()) else 1f
     BoxWithConstraints(Modifier.fillMaxSize().navigationBarsPadding()) {
         // Seven gaps: rank→entry→cluster→controls→hints→header→chips→end. The found-word
         // header and at least two chip rows are reserved BEFORE the hive is sized, so the
@@ -582,7 +587,9 @@ private fun HubBoard(session: HubSession) {
         val trayW = HUB_TRAY_PAD * 2
         val trayH = HUB_TRAY_PAD * 2 + GameTrayStyle.LIP
         // Tablet slice 2: the hive may grow past the phone's 112 dp cell cap on MEDIUM/EXPANDED.
-        val hubMaxSide = if (wide) (if (rememberWidthClass() == WidthClass.EXPANDED) 300.dp else 230.dp) else 112.dp
+        // Tablet: the hive's width is about 80% of the page (the hex side ~ 0.32 x the page width, 2.52 sides wide); the height
+        // left over still wins when the window is short, so a bigger cap never pushes the controls off.
+        val hubMaxSide = if (wide) (if (rememberWidthClass() == WidthClass.EXPANDED) 320.dp else 240.dp) else 112.dp
         val side = Honeycomb.sideFor((maxWidth - trayW).value, (maxHeight - fixed - trayH).value).dp.coerceIn(60.dp, hubMaxSide)
         val band = side * Honeycomb.height() + trayH
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(HUB_ROW_GAP)) {

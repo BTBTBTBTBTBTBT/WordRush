@@ -78,6 +78,12 @@ import com.wordocious.app.ui.squishClickable
 import com.wordocious.app.ui.formatGuessStat
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.app.ui.WidthClass
+import com.wordocious.app.ui.chromeScale
+import com.wordocious.app.ui.gamePageFor
+import com.wordocious.app.ui.rememberWidthClass
+import com.wordocious.app.ui.tabletPageMaxWidth
+import androidx.compose.foundation.layout.BoxWithConstraints
 import com.wordocious.core.GameMode
 import com.wordocious.core.WORDSEARCH_DAILY_EPOCH
 import com.wordocious.core.WORDSEARCH_DIRS
@@ -317,15 +323,28 @@ fun SpyglassScreen(
             // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
             SpyglassFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
-            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            val wc = rememberWidthClass()
+            Column(Modifier.fillMaxSize().gamePageFor(wc), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 SpyglassHeader(session)
-                // Grid, word chips and the two capsules are one centered block (founder, 2026-09-24).
-                Spacer(Modifier.weight(1f))
-                SpyglassGrid(session, revealMissing = false) { from, to -> session.select(from, to, onFinished) }
-                WordChips(session)
-                SpyglassCapsules(session, onFinished)
-                Spacer(Modifier.weight(1f))
-                Spacer(Modifier.height(4.dp))
+                if (wc == WidthClass.COMPACT) {
+                    // Grid, word chips and the two capsules are one centered block (founder, 2026-09-24).
+                    Spacer(Modifier.weight(1f))
+                    SpyglassGrid(session, revealMissing = false) { from, to -> session.select(from, to, onFinished) }
+                    WordChips(session)
+                    SpyglassCapsules(session, onFinished)
+                    Spacer(Modifier.weight(1f))
+                    Spacer(Modifier.height(4.dp))
+                } else {
+                    // Tablet: the grid grows to the page width (1000 dp cap) or the height left after the header, chips and
+                    // capsules, whichever is smaller; its letters scale with the cell (18 sp at the 324 dp phone grid).
+                    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        val side = minOf(maxWidth, maxHeight, tabletPageMaxWidth)
+                        SpyglassGrid(session, revealMissing = false, letterSize = side * (18f / 324f), side = side) { from, to -> session.select(from, to, onFinished) }
+                    }
+                    WordChips(session)
+                    SpyglassCapsules(session, onFinished)
+                    Spacer(Modifier.height(4.dp))
+                }
             }
         }
         // G5 a toast is a tinted pill (no dark slab, no white).
@@ -345,7 +364,8 @@ fun SpyglassScreen(
 private fun SpyglassCapsules(session: SpyglassSession, onFinished: () -> Unit) {
     val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     @Suppress("UNUSED_EXPRESSION") tick
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    val k = chromeScale(rememberWidthClass())
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp * k)) {
         // BI22: "Hint" is a fixed label (the used count is a corner badge, an overlay); "Show words"
         // and the ticking Reveal countdown keep their widest width, so nothing nudges the row.
         Capsule("Hint", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER, count = session.state.hintsUsed) { session.hint(onFinished) }
@@ -358,20 +378,21 @@ private fun SpyglassCapsules(session: SpyglassSession, onFinished: () -> Unit) {
 @Composable
 private fun SpyglassHeader(session: SpyglassSession) {
     val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
+    val k = chromeScale(rememberWidthClass())
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.padding(top = 6.dp)) {
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("WORDSEARCH") { Text("SPYGLASS", fontSize = 24.sp, fontWeight = FontWeight.Black, color = SPY_ACCENT, fontFamily = Nunito) }
-        Text(session.state.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
-        Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Text("${session.state.found.size}/${session.state.words.size} found", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Text("${session.state.misses} miss${if (session.state.misses == 1) "" else "es"}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        Text(session.state.title, fontSize = (14f * k).sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
+        Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp * k), verticalAlignment = Alignment.CenterVertically) {
+            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = (12f * k).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text("${session.state.found.size}/${session.state.words.size} found", fontSize = (12f * k).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text("${session.state.misses} miss${if (session.state.misses == 1) "" else "es"}", fontSize = (12f * k).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             if (!session.isFinished) {
                 @Suppress("UNUSED_EXPRESSION") tick
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp * k)) {
+                    Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp * k))
                     val s = session.elapsed
-                    Text("${s / 60}:${"%02d".format(s % 60)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    Text("${s / 60}:${"%02d".format(s % 60)}", fontSize = (12f * k).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
             }
         }
@@ -382,11 +403,13 @@ private fun SpyglassHeader(session: SpyglassSession) {
 @Composable
 private fun WordChips(session: SpyglassSession) {
     val s = session.state
+    // Tablet: the pills grow with the page (chromeScale: 1.3x on EXPANDED, 1.2x on MEDIUM; 1 on a phone).
+    val k = chromeScale(rememberWidthClass())
     // Chips flow by width and never break inside a word (WOODPECKER used to wrap
     // to "WOODPECKE / R" in fixed rows of five).
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp * k, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(8.dp * k),
         modifier = Modifier.fillMaxWidth(),
     ) {
         for (w in s.words.map { it.w }) {
@@ -399,15 +422,15 @@ private fun WordChips(session: SpyglassSession) {
             Box(
                 Modifier
                     .then(if (found) Modifier.glossyCapsule(SPY_ACCENT, glow = 0.8f) else Modifier.softChip(SPY_ACCENT, selected = hinted))
-                    .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = if (found) 8.5.dp else 6.dp),
+                    .padding(start = 12.dp * k, end = 12.dp * k, top = 6.dp * k, bottom = if (found) 8.5.dp * k else 6.dp * k),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(Modifier.alpha(0f).clearAndSetSemantics { }) {
-                    Text(w, fontSize = 14.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
-                    Text("•".repeat(w.length), fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, maxLines = 1, softWrap = false)
+                    Text(w, fontSize = (14f * k).sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
+                    Text("•".repeat(w.length), fontSize = (14f * k).sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, maxLines = 1, softWrap = false)
                 }
                 Text(
-                    if (visible) w else "•".repeat(w.length), fontSize = 14.sp, fontWeight = if (found) FontWeight.Black else FontWeight.Bold,
+                    if (visible) w else "•".repeat(w.length), fontSize = (14f * k).sp, fontWeight = if (found) FontWeight.Black else FontWeight.Bold,
                     letterSpacing = if (visible) 0.sp else 2.sp,
                     color = if (found) Color.White else if (visible) (if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading) else (if (WTheme.isDark) WTheme.text else WTheme.textMuted),
                     maxLines = 1, softWrap = false,
@@ -420,13 +443,13 @@ private fun WordChips(session: SpyglassSession) {
 // ── Grid ────────────────────────────────────────────────────────────────────
 
 @Composable
-fun SpyglassGrid(session: SpyglassSession, revealMissing: Boolean, onSelect: (Int, Int) -> Unit) =
-    SpyglassGrid(session.state, session.isFinished, revealMissing, onSelect = onSelect)
+fun SpyglassGrid(session: SpyglassSession, revealMissing: Boolean, letterSize: Dp = 18.dp, side: Dp? = null, onSelect: (Int, Int) -> Unit) =
+    SpyglassGrid(session.state, session.isFinished, revealMissing, letterSize = letterSize, side = side, onSelect = onSelect)
 
 /** The grid from a state alone: the game above, and the finished grid in the
  *  Completed-Today card at a smaller [letterSize] (founder, 2026-09-29). */
 @Composable
-fun SpyglassGrid(s: WordsearchState, finished: Boolean, revealMissing: Boolean, letterSize: Dp = 18.dp, onSelect: (Int, Int) -> Unit) {
+fun SpyglassGrid(s: WordsearchState, finished: Boolean, revealMissing: Boolean, letterSize: Dp = 18.dp, side: Dp? = null, onSelect: (Int, Int) -> Unit) {
     val n = s.n
     val dark = WTheme.isDark
     var anchor by remember { mutableStateOf<Int?>(null) }
@@ -448,7 +471,7 @@ fun SpyglassGrid(s: WordsearchState, finished: Boolean, revealMissing: Boolean, 
     // words lie on the grid as glossy capsules in the accent with a soft glow.
     val small = letterSize < 18.dp
     Box(
-        Modifier.fillMaxWidth().widthIn(max = 440.dp)
+        (if (side != null) Modifier.size(side) else Modifier.fillMaxWidth().widthIn(max = 440.dp))
             .gameTray(
                 SPY_ACCENT, finishTray(finished, s.status == WordsearchStatus.WON), corner = if (small) 14.dp else GameTrayStyle.CORNER,
                 padding = androidx.compose.foundation.layout.PaddingValues(if (small) 6.dp else 8.dp),
@@ -526,7 +549,7 @@ fun SpyglassGrid(s: WordsearchState, finished: Boolean, revealMissing: Boolean, 
  *  still reaches the game (Reveal answers "unlocks at 5:00"), as before. */
 @Composable
 private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, reserve: String? = null, count: Int = 0, onClick: () -> Unit) =
-    PieceAction(label, icon, onClick = onClick, color = color, faded = dim, reserveLabel = reserve, count = count)
+    PieceAction(label, icon, onClick = onClick, color = color, faded = dim, reserveLabel = reserve, count = count, scale = chromeScale(rememberWidthClass()))
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 

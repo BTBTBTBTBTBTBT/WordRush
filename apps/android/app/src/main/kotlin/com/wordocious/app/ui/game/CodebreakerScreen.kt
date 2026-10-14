@@ -617,8 +617,8 @@ private fun cipherBoardMax(): Dp = if (rememberWidthClass() == com.wordocious.ap
 
 @Composable
 private fun cipherMaxCell(): Float = when (rememberWidthClass()) {
-    com.wordocious.app.ui.WidthClass.EXPANDED -> 100f
-    com.wordocious.app.ui.WidthClass.MEDIUM -> 84f
+    com.wordocious.app.ui.WidthClass.EXPANDED -> 150f
+    com.wordocious.app.ui.WidthClass.MEDIUM -> 120f
     else -> CIPHER_CELL_MAX
 }
 
