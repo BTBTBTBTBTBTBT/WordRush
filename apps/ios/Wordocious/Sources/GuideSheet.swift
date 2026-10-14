@@ -81,6 +81,7 @@ struct GuideSheet: View {
     let mode: GameMode
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
+    @Environment(\.widthClass) private var widthClass
     @ObservedObject private var service = GuideService.shared
     @State private var showFull: Bool
     @State private var heroIn = false
@@ -96,6 +97,13 @@ struct GuideSheet: View {
     }
 
     private var still: Bool { Mascots.reduceMotion(envReduceMotion) }
+    /// Item 1: the card's type, icons and button scale 1.3x on tablets (phones 1).
+    private var k: CGFloat { widthClass == .compact ? 1 : 1.3 }
+    /// Item 1 / item 2: the card column is <= 560 wide on tablets (form sheet); the full guide
+    /// opened on a page sheet takes the 760 sheet column. Phones keep 520.
+    private var guideColumn: CGFloat {
+        widthClass == .compact ? 520 : (showFull ? tabletSheetMaxWidth + 32 : 592)
+    }
     /// Continuous motion (the example loops) also rests in Low Power Mode (§AD).
     private var restful: Bool { still || ProcessInfo.processInfo.isLowPowerModeEnabled }
 
@@ -116,6 +124,7 @@ struct GuideSheet: View {
                 }
             }
         }
+        .tabletSheet(page: showFull)   // item 2: the full guide opens as a page on iPad; the card stays a form sheet
         .task { await service.load() }
         .onDisappear { if firstPlay { TutorialsSeen.shared.mark(GuideService.slug(for: mode)) } }
         .onAppear {
@@ -142,7 +151,7 @@ struct GuideSheet: View {
                 }
             }
             .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
-            .frame(maxWidth: 520)
+            .frame(maxWidth: guideColumn)
             .frame(maxWidth: .infinity)
         }
     }
@@ -160,16 +169,16 @@ struct GuideSheet: View {
             // The game's title art (labeled with the game's name + header trait);
             // without the art, the title as text.
             if let art = GameTitleArt.forMode(mode) {
-                GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 64, alignment: .center)
+                GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 64 * k, alignment: .center)
                     .frame(maxWidth: .infinity)
             } else {
-                Text(g.title.uppercased()).font(Brand.font(26, .black))
+                Text(g.title.uppercased()).font(Brand.font(26 * k, .black))
                     .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                     .lineLimit(1).minimumScaleFactor(0.6)
                     .accessibilityLabel(g.title)
                     .accessibilityAddTraits(.isHeader)
             }
-            Text(g.tagline).font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
+            Text(g.tagline).font(Brand.font(13 * k, .bold)).foregroundStyle(FinishInk.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 4)
@@ -186,7 +195,7 @@ struct GuideSheet: View {
                 .fill(dark ? accent.opacity(0.12) : accent.wash(0.08)))
 
             Button { dismiss() } label: { CandyLabel(title: firstPlay ? PocketHelp.buttonFirst : PocketHelp.buttonAgain, symbol: "checkmark") }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: widthClass == .compact ? .large : .hero))
                 .padding(.top, 2)
         }
         .padding(.horizontal, 18).padding(.top, 20).padding(.bottom, 18)
@@ -219,32 +228,32 @@ struct GuideSheet: View {
         let host = Mascots.host(mode) ?? .w
         return ZStack(alignment: .bottom) {
             RadialGradient(colors: [accent.opacity(Theme.isDark ? 0.42 : 0.30), accent.opacity(0)],
-                           center: .center, startRadius: 4, endRadius: 96)
-                .frame(width: 220, height: 150)
+                           center: .center, startRadius: 4, endRadius: 96 * k)
+                .frame(width: 220 * k, height: 150 * k)
                 .allowsHitTesting(false)
             Ellipse().fill(Color(hex: 0x3C1E6E).opacity(Theme.isDark ? 0.35 : 0.14))
-                .frame(width: 84, height: 12).blur(radius: 3)
+                .frame(width: 84 * k, height: 12 * k).blur(radius: 3)
                 .offset(y: -2)
-            PoseImage(host, "ready", height: 118)
+            PoseImage(host, "ready", height: 118 * k)
                 .padding(.bottom, 6)
                 .scaleEffect(heroIn ? 1 : 0.82, anchor: .bottom)
                 .opacity(heroIn ? 1 : 0)
         }
-        .frame(height: 140)
+        .frame(height: 140 * k)
         .frame(maxWidth: .infinity)
         .accessibilityHidden(true)
     }
 
     private func stepRow(_ n: Int, _ step: GuideStep, accent: Color) -> some View {
         HStack(alignment: .top, spacing: 10) {
-            Text("\(n)").softNumber(15)
-                .frame(width: 28, height: 28)
+            Text("\(n)").softNumber(15 * k)
+                .frame(width: 28 * k, height: 28 * k)
                 .background(Circle().fill(Theme.isDark ? accent.opacity(0.22) : accent.wash(0.16)))
                 .overlay(Circle().stroke(Theme.isDark ? accent.opacity(0.45) : accent.wash(0.34), lineWidth: 1.5))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 8) {
                 Text(GuideQuickSteps.render(step.text))
-                    .font(Brand.font(14, .bold)).foregroundStyle(FinishInk.heading)
+                    .font(Brand.font(14 * k, .bold)).foregroundStyle(FinishInk.heading)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityLabel("Step \(n). \(GuideQuickSteps.render(step.text))")
                 if let ex = step.example {

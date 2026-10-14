@@ -169,6 +169,7 @@ struct MenuScaffold<Content: View>: View {
                 if help == .faq { HelpView(initialTab: .faq, showTabs: false) } else { HowToPlayView() }
             }
             .presentationDetents([.large])
+            .tabletSheet()
         }
     }
 }
@@ -217,6 +218,7 @@ struct MenuSheet: View {
                     }
                 }
                 .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
+                .sheetColumn(phoneMax: nil)
             }
         }
     }
@@ -367,7 +369,7 @@ struct StrategyView: View {
                     ScrollView {
                         StrategyReaderBody(article: a, all: service.articles) { selected = $0 }
                             .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 28)
-                            .frame(maxWidth: 560).frame(maxWidth: .infinity)
+                            .sheetColumn(phoneMax: 560)
                     }
                     // A new article starts at its top.
                     .id(a.slug)
@@ -398,7 +400,7 @@ struct StrategyView: View {
                 }
             }
             .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
-            .frame(maxWidth: 560).frame(maxWidth: .infinity)
+            .sheetColumn(phoneMax: 560)
         }
     }
 }
@@ -499,6 +501,7 @@ struct WordsView: View {
                 }
             }
             .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
+            .sheetColumn(phoneMax: nil)
         }
     }
 
@@ -571,7 +574,7 @@ struct WordDetailBody: View {
                 }
             }
             .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 28)
-            .frame(maxWidth: 560).frame(maxWidth: .infinity)
+            .sheetColumn(phoneMax: 560)
         }
     }
 
@@ -650,7 +653,7 @@ struct InfoFooterLinks: View {
             line(Array(order.suffix(order.count - half)))
         }
         .padding(.vertical, 12)
-        .softSheet(item: $dest) { infoMenuDestinationView($0).presentationDetents([.large]) }
+        .softSheet(item: $dest) { infoMenuDestinationView($0).presentationDetents([.large]).tabletSheet() }
     }
 
     private func line(_ row: [InfoMenuDestination]) -> some View {

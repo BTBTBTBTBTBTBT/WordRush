@@ -470,7 +470,7 @@ struct ScoreBreakdownView: View {
         .padding(.horizontal, 14).padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .tintedCard(accent: Color(hex: 0x7C3AED), bar: [Color(hex: 0x7C3AED), Color(hex: 0xA855F7)])
-        .frame(maxWidth: 400)
+        .finishCardWidth()
     }
 
     private static var valueInk: Color { Theme.isDark ? Color(hex: 0xC4B5FD) : Color(hex: 0x6D28D9) }
@@ -640,7 +640,7 @@ struct NextDailyCTA: View {
                         keepPlayingUnlimited()
                     }
                 }
-                .frame(maxWidth: 400)
+                .finishCardWidth(wide: true)
                 .padding(.top, compact ? 0 : 4)
             } else {
                 // FINISH_SPEC §R3 (founder 10-02): guests see the Unlimited card too —
@@ -652,7 +652,7 @@ struct NextDailyCTA: View {
                     } else if let share { share }
                     keepPlayingUnlimited(mini: compact && FinishLayoutMetrics.isShort)
                 }
-                .frame(maxWidth: 400)
+                .finishCardWidth(wide: true)
             }
         }
         .task { await completions.load() }
@@ -777,7 +777,7 @@ struct DefinitionCard: View {
                 .padding(.horizontal, 14).padding(.vertical, 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .tintedCard(accent: Self.green, bar: [Self.green, Color(hex: 0x5ED59A)])
-                .frame(maxWidth: 400)
+                .finishCardWidth()
             } else if loaded && def != nil {
                 // No definition and no word card: nothing to show (the empty line only lives inside the word card).
                 details

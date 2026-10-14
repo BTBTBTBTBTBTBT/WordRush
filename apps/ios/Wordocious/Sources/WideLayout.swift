@@ -160,17 +160,73 @@ private struct TabletColumn: ViewModifier {
 
 private struct TabletPage: ViewModifier {
     @Environment(\.widthClass) private var widthClass
+    let max: CGFloat
 
     func body(content: Content) -> some View {
-        // COMPACT (phones): untouched. Otherwise the page is min(width - 2 x margin, 1000), centered.
+        // COMPACT (phones): untouched. Otherwise the page is min(width - 2 x margin, max), centered.
         if widthClass == .compact {
             content
         } else {
             let margin = tabletPageMargin(widthClass)
             content
-                .frame(maxWidth: tabletPageMaxWidth)
+                .frame(maxWidth: max)
                 .padding(.horizontal, margin)
                 .frame(maxWidth: .infinity)
+        }
+    }
+}
+
+/// Item 2: an app sheet's content column on tablets (sheets present as full pages, so the
+/// column is the sheet column, not the 1000 pt tab page).
+let tabletSheetMaxWidth: CGFloat = 760
+/// Item 3: the classic finished screen's text cards on tablets (phones keep 400).
+let tabletFinishTextMaxWidth: CGFloat = 760
+
+/// Item 2: presents an app sheet as a full page on iPad (`.presentationSizing(.page)`, iOS 18+)
+/// instead of the ~580 pt form sheet. `page: false` keeps the form sheet (used while a card is
+/// showing). COMPACT and iOS 16/17 are untouched.
+private struct TabletSheetSizing: ViewModifier {
+    @Environment(\.widthClass) private var widthClass
+    let page: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *), widthClass != .compact {
+            if page { content.presentationSizing(.page) } else { content.presentationSizing(.form) }
+        } else {
+            content
+        }
+    }
+}
+
+/// Item 2: a sheet's content column. Phones keep their own cap (`phoneMax`), or no cap when nil.
+private struct SheetColumn: ViewModifier {
+    @Environment(\.widthClass) private var widthClass
+    let phoneMax: CGFloat?
+
+    func body(content: Content) -> some View {
+        if widthClass == .compact {
+            if let phoneMax {
+                content.frame(maxWidth: phoneMax).frame(maxWidth: .infinity)
+            } else {
+                content
+            }
+        } else {
+            content.frame(maxWidth: tabletSheetMaxWidth).frame(maxWidth: .infinity)
+        }
+    }
+}
+
+/// Item 3: a finished-screen card's width. Phones keep 400; tablets use the text column (760)
+/// or, for share / stat rows (`wide`), the page (1000).
+private struct FinishCardWidth: ViewModifier {
+    @Environment(\.widthClass) private var widthClass
+    let wide: Bool
+
+    func body(content: Content) -> some View {
+        if widthClass == .compact {
+            content.frame(maxWidth: 400)
+        } else {
+            content.frame(maxWidth: wide ? tabletPageMaxWidth : tabletFinishTextMaxWidth)
         }
     }
 }
@@ -185,8 +241,24 @@ extension View {
 
     /// Slice 4: the top-level tab pages use the page width (1000 pt max, 32 / 24 pt side
     /// margins). Apply to the CONTENT, not the wallpaper. COMPACT is a no-op.
-    func tabletPage() -> some View {
-        modifier(TabletPage())
+    func tabletPage(max: CGFloat = tabletPageMaxWidth) -> some View {
+        modifier(TabletPage(max: max))
+    }
+
+    /// Item 2: present this sheet as a full page on iPad (iOS 18+). Apply to the sheet's content.
+    func tabletSheet(page: Bool = true) -> some View {
+        modifier(TabletSheetSizing(page: page))
+    }
+
+    /// Item 2: cap a sheet's content at the sheet column (760 on tablets). `phoneMax` keeps the
+    /// phone cap the view already had (nil = no cap on phones). Apply to the CONTENT inside the scroll view.
+    func sheetColumn(phoneMax: CGFloat?) -> some View {
+        modifier(SheetColumn(phoneMax: phoneMax))
+    }
+
+    /// Item 3: a finished-screen card's width (phones 400, tablets 760 text / 1000 rows).
+    func finishCardWidth(wide: Bool = false) -> some View {
+        modifier(FinishCardWidth(wide: wide))
     }
 
     /// §AG: cap this content at the column's max width, centered in the space it is

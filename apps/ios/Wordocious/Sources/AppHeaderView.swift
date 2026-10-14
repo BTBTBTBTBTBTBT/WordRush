@@ -109,10 +109,10 @@ struct AppHeaderView: View {
         .padding(.bottom, 2)
         .streakBumpFeedback(auth.headerStreak)                      // §U: streak +1
         .softSheet(isPresented: $showMenu, onDismiss: { if let s = menuSelection { menuDest = s; menuSelection = nil } }) {
-            MenuSheet(selection: $menuSelection).presentationDetents([.large])
+            MenuSheet(selection: $menuSelection).presentationDetents([.large]).tabletSheet()
         }
-        .softSheet(item: $menuDest) { infoMenuDestinationView($0).presentationDetents([.large]) }
-        .softSheet(isPresented: $showSettings) { SettingsView() }
+        .softSheet(item: $menuDest) { infoMenuDestinationView($0).presentationDetents([.large]).tabletSheet() }
+        .softSheet(isPresented: $showSettings) { SettingsView().tabletSheet() }
         .softSheet(isPresented: $showAuth) { AuthView() }
     }
 

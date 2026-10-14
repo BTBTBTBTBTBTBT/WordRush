@@ -22,6 +22,7 @@ enum FamilyMetrics {
     static let helperIcon: CGFloat = 18
     static func quietHeight(_ s: CandyButtonStyle.Size) -> CGFloat {
         switch s {
+        case .hero: return 57
         case .large: return 44
         case .medium: return 40
         case .small: return 34

@@ -104,7 +104,7 @@ struct HowToPlayView: View {
                     }
                 }
                 .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 28)
-                .frame(maxWidth: 560).frame(maxWidth: .infinity)
+                .sheetColumn(phoneMax: 560)
             }
         }
         .task { await service.load() }
