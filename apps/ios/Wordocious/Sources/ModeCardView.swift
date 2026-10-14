@@ -253,13 +253,14 @@ extension EnvironmentValues {
 /// only the last resort. Android CardNameSizeScope, web FitName's shared size.
 private struct HomeCardNameFit: ViewModifier {
     let titles: [String]
+    var columns: Int = 2
     @State private var width: CGFloat = 0
 
     func body(content: Content) -> some View {
         // Founder 10-10 (Crosswordocious set every puzzle's name to ~12 pt): ONE size per grid ROW, so the two cards side
         // by side still match (BJ18's even look) while a short-named row keeps the full size.
         content
-            .environment(\.homeCardNameSizes, Self.rowSizes(titles, width: width))
+            .environment(\.homeCardNameSizes, Self.rowSizes(titles, width: width, columns: columns))
             .background(GeometryReader { g in
                 Color.clear
                     .onAppear { width = g.size.width }
@@ -269,11 +270,11 @@ private struct HomeCardNameFit: ViewModifier {
 }
 
 extension HomeCardNameFit {
-    static func rowSizes(_ titles: [String], width: CGFloat) -> [String: CGFloat] {
-        let slot = HomeCardSpec.nameSlot(gridWidth: width)
+    static func rowSizes(_ titles: [String], width: CGFloat, columns: Int = 2) -> [String: CGFloat] {
+        let slot = HomeCardSpec.nameSlot(gridWidth: width, columns: columns)
         var sizes: [String: CGFloat] = [:]
-        for row in stride(from: 0, to: titles.count, by: 2) {
-            let pair = Array(titles[row..<min(row + 2, titles.count)])
+        for row in stride(from: 0, to: titles.count, by: columns) {
+            let pair = Array(titles[row..<min(row + columns, titles.count)])
             let widths = pair.map { Brand.textWidth($0.uppercased(), HomeCardSpec.name, .black) * HomeCardSpec.bubbleWidth }
             let size = width > 0 ? HomeCardSpec.uniformNameSize(widths: widths, slot: slot) : HomeCardSpec.name
             for t in pair { sizes[t] = size }
@@ -284,7 +285,7 @@ extension HomeCardNameFit {
 
 extension View {
     /// BJ18: one card-name size across this grid of Home cards.
-    func homeCardNames(_ titles: [String]) -> some View { modifier(HomeCardNameFit(titles: titles)) }
+    func homeCardNames(_ titles: [String], columns: Int = 2) -> some View { modifier(HomeCardNameFit(titles: titles, columns: columns)) }
 }
 
 /// The Home tile name style. Founder 10-10 picked B (`plainCaps`) on the simulator; DEBUG `-tileTitleStyle` still flips it.

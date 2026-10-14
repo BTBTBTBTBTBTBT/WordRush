@@ -237,6 +237,7 @@ struct CandySegmented<Key: Hashable>: View {
 /// tile selected — e.g. Stats' "today" / "all"). `results` optionally marks tiles
 /// with today's W / L badge (true = won).
 struct GamePickerCard<Header: View>: View {
+    @Environment(\.widthClass) private var widthClass
     let selection: String
     /// The window's page accent (Leaderboard warm gold, Stats blue).
     var accent: Color = Color(hex: 0xF59E0B)
@@ -287,14 +288,14 @@ struct GamePickerCard<Header: View>: View {
                 // Founder 10-09: exactly Home's banner rows — one tile size (max 40) for both rows, each row spread edge
                 // to edge with even gaps (BannerSpreadRow), on Stats and the Leaderboard alike.
                 let slots = max(10, words.count + (showSweep ? 1 : 0), puzzles.count)
-                BannerSpreadRow(slots: slots, maxTile: 40, minGap: 4) {
+                BannerSpreadRow(slots: slots, maxTile: 40, minGap: 4, proportional: widthClass != .compact) {
                     ForEach(words) { m in tile(m) }
                     if showSweep { sweepTile }
                 }
                 .frame(maxWidth: .infinity)
                 if !puzzles.isEmpty {
                     FinishLabel("Puzzles", color: ink).padding(.top, compact ? 1 : 4)
-                    BannerSpreadRow(slots: slots, maxTile: 40, minGap: 4) {
+                    BannerSpreadRow(slots: slots, maxTile: 40, minGap: 4, proportional: widthClass != .compact) {
                         ForEach(puzzles) { m in tile(m) }
                     }
                     .frame(maxWidth: .infinity)
@@ -308,14 +309,16 @@ struct GamePickerCard<Header: View>: View {
     private func tile(_ m: HomeMode) -> some View {
         let key = m.dbKey ?? m.id
         return EquatablePickerTile(key: key, title: m.title, accent: m.accent, icon: m.icon,
-                                   selected: selection == key, result: results[key], announcesResult: true, onSelect: onSelect)
+                                   selected: selection == key, result: results[key], announcesResult: true,
+                                   proportional: widthClass != .compact, onSelect: onSelect)
             .equatable()
     }
 
     /// §C2b: the Daily Sweep as the 9th WORDOCIOUS tile (the glossy 3D broom).
     private var sweepTile: some View {
         EquatablePickerTile(key: GamePicker.sweep, title: "Daily Sweep", accent: GamePicker.sweepAccent, icon: nil,
-                            selected: selection == GamePicker.sweep, result: sweepResult, announcesResult: false, onSelect: onSelect)
+                            selected: selection == GamePicker.sweep, result: sweepResult, announcesResult: false,
+                            proportional: widthClass != .compact, onSelect: onSelect)
             .equatable()
     }
 }
@@ -333,16 +336,20 @@ struct EquatablePickerTile: View, Equatable {
     let result: Bool?
     /// The game tiles announce "Won / Lost today"; the Sweep tile never did.
     let announcesResult: Bool
+    /// Tablet add-on: the tile scales with its row (see BannerSpreadRow.proportional).
+    var proportional: Bool = false
     let onSelect: (String) -> Void
     @ObservedObject private var theme = ThemeManager.shared
 
     static func == (a: EquatablePickerTile, b: EquatablePickerTile) -> Bool {
         a.key == b.key && a.title == b.title && a.accent == b.accent && a.selected == b.selected && a.result == b.result
+            && a.proportional == b.proportional
     }
 
     var body: some View {
         Button { Haptics.tap(); onSelect(key) } label: {
-            PickerTile(accent: accent, selected: selected, result: result) { side in
+            PickerTile(accent: accent, selected: selected, result: result, radius: proportional ? 20 : 12,
+                       bar: 4, badgeRatio: proportional ? PickerTile<EmptyView>.tabletBadgeRatio : nil) { side in
                 if let icon {
                     if let art = icon.gameArt {
                         GameArtImage(asset: art, size: side * 0.74)
@@ -383,6 +390,8 @@ struct PickerTile<Icon: View>: View {
     var radius: CGFloat = 12
     var bar: CGFloat = 4
     var badge: CGFloat = 15
+    /// Tablet add-on: the badge is this share of the tile's side (nil = the fixed `badge` size).
+    var badgeRatio: CGFloat? = nil
     @ViewBuilder var icon: (CGFloat) -> Icon
 
     var body: some View {
@@ -396,11 +405,19 @@ struct PickerTile<Icon: View>: View {
         .gameTile(accent: accent, selected: selected, radius: radius, bar: bar)
         .overlay(alignment: .topTrailing) {
             if let won = result {
-                RowResultBadge(won: won, size: badge, label: won ? "Won today" : "Lost today")
-                    .offset(x: 4, y: -4)
+                GeometryReader { g in
+                    let side = min(g.size.width, g.size.height)
+                    RowResultBadge(won: won, size: badgeRatio.map { floor(side * $0) } ?? badge,
+                                   label: won ? "Won today" : "Lost today")
+                        .offset(x: 4, y: -4)
+                        .frame(width: g.size.width, height: g.size.height, alignment: .topTrailing)
+                }
             }
         }
     }
+
+    /// The tablet badge: 13 / 33 of a phone tile's side, so it grows with the tile.
+    static var tabletBadgeRatio: CGFloat { 0.39 }
 }
 
 /// One row of equal squares sized to the row's width (minus the gaps), at most

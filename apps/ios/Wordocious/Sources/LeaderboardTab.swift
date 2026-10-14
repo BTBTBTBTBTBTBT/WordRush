@@ -118,7 +118,7 @@ struct LeaderboardTab: View {
                     if !auth.isAuthenticated { signedOut } else { content }
                 }
                 .frame(maxHeight: .infinity, alignment: .top)   // BI23: header pinned
-                .tabletColumn()   // §AG: iPad column, centered on the wallpaper
+                .tabletPage()   // slice 4: the tab page width, centered on the wallpaper
             }
             .environment(\.pageTint, .leaderboard)
             // Founder 10-12: Yesterday's podium (no tap handler of its own) opens a player's profile from its Stage card too.

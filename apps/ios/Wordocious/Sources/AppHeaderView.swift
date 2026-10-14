@@ -324,9 +324,12 @@ struct LivingCastHeader: View {
     static let stagger: CGFloat = 7
     /// FINISH_SPEC §N3: the row spans ≈90% of the screen width, centered (not edge to edge).
     static let widthShare: CGFloat = 0.90
-    /// The width the cast row is laid out in: the screen on phones (unchanged), and the
-    /// 640 pt tablet column on iPad, so the row fits the column instead of overflowing it.
-    static var layoutWidth: CGFloat { min(UIScreen.main.bounds.width, tabletColumnMaxWidth) }
+    /// The width the cast row is laid out in: the screen on phones (unchanged). On iPad it is the
+    /// tab page's width (screen less the page margins) capped at 820 pt, so the row grows with the page.
+    static var layoutWidth: CGFloat {
+        let screen = UIScreen.main.bounds.width
+        return min(screen - 2 * tabletPageMargin(WidthClass(width: screen)), tabletCastMaxWidth)
+    }
     /// The row's side inset (the 5% each side left by the 90% row).
     static var inset: CGFloat { layoutWidth * (1 - widthShare) / 2 }
     /// §N3: breathing room under the status bar.

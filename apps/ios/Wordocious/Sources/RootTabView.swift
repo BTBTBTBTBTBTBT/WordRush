@@ -580,8 +580,6 @@ private struct BottomNav: View {
     // minus what they've already seen (FriendsBadgeStore); opening Friends clears it.
     @ObservedObject private var badge = FriendsBadgeStore.shared
     @Environment(\.accessibilityReduceMotion) private var envReduce
-    /// §AG tablet slice 1: centered column bar on MEDIUM/EXPANDED.
-    @Environment(\.widthClass) private var widthClass
     /// The Friends icon's happy wiggle when a new item arrives (±8°, 2 swings).
     @State private var wiggle: Double = 0
     /// The badge's spring-in (scale 0 → 1.15 → 1).
@@ -595,22 +593,17 @@ private struct BottomNav: View {
         #if DEBUG
         let _ = PerfTour.flag("printChanges") ? Self._printChanges() : ()
         #endif
-        // §AG tablet slice 1: on MEDIUM/EXPANDED the bar is centered at the tablet column
-        // width (640) with rounded top ends, not stretched edge to edge. COMPACT is unchanged.
-        let tablet = widthClass != .compact
+        // Slice 4: the bar runs edge to edge on every size class (phones and tablets alike);
+        // the four items share the width evenly.
         HStack(spacing: 0) {
-            if tablet { Spacer(minLength: 0) }
-            HStack(spacing: 0) {
-                item(.home, .tabHome, "Home")
-                item(.leaderboard, .tabLeaderboard, "Leaderboard")
-                item(.stats, .tabStats, "Stats")
-                item(.friends, .tabFriends, "Friends", badge: badge.count)
-            }
-            .padding(.top, 8).padding(.bottom, 2)
-            .frame(maxWidth: tablet ? tabletColumnMaxWidth : .infinity)
-            .background(bar(tablet: tablet).ignoresSafeArea(edges: .bottom))
-            if tablet { Spacer(minLength: 0) }
+            item(.home, .tabHome, "Home")
+            item(.leaderboard, .tabLeaderboard, "Leaderboard")
+            item(.stats, .tabStats, "Stats")
+            item(.friends, .tabFriends, "Friends", badge: badge.count)
         }
+        .padding(.top, 8).padding(.bottom, 2)
+        .frame(maxWidth: .infinity)
+        .background(bar.ignoresSafeArea(edges: .bottom))
         .task {
             await LaunchGate.wait()   // §AU5: after the cold-start intro lands
             await FriendsService.load()
@@ -654,17 +647,12 @@ private struct BottomNav: View {
         }
     }
 
-    /// Opaque, page-tinted, a faint top line and a soft upward shadow.
-    /// `tablet`: the bar is the centered column, so its top ends are rounded (phones: square).
-    private func bar(tablet: Bool) -> some View {
-        let radius: CGFloat = tablet ? 22 : 0
-        return LinearGradient(colors: tint, startPoint: .top, endPoint: .bottom)
+    /// Opaque, page-tinted, a faint top line and a soft upward shadow. Square edge to edge.
+    private var bar: some View {
+        LinearGradient(colors: tint, startPoint: .top, endPoint: .bottom)
             .overlay(alignment: .top) {
                 Rectangle().fill(SeasonKit.surfaces?.card != nil ? Color(hex: 0xF97316).opacity(0.22) : (ThemeKit.tabEdge ?? Color(hex: 0x7C3AED).opacity(0.14))).frame(height: 1)
             }
-            .clipShape(UnevenRoundedRectangle(topLeadingRadius: radius, bottomLeadingRadius: 0,
-                                              bottomTrailingRadius: 0, topTrailingRadius: radius,
-                                              style: .continuous))
             .shadow(color: Color(hex: 0x4C1D95).opacity(0.08), radius: 8, x: 0, y: -6)
             .animation(Theme.animation(.easeInOut(duration: 0.2)), value: selection)
     }

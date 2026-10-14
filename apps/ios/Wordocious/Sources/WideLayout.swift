@@ -63,8 +63,21 @@ enum WideColumn {
     }
 }
 
-/// Max width of the one centered column every top-level screen uses on tablets.
+/// Max width of the one centered column used by game screens, popups and pages on tablets.
 let tabletColumnMaxWidth: CGFloat = 640
+/// Max width of the top-level tab pages (Home, Leaderboard, Stats, Friends) on tablets.
+let tabletPageMaxWidth: CGFloat = 1000
+/// Max width of the cast title row on tablets, so it grows with the page without getting huge.
+let tabletCastMaxWidth: CGFloat = 820
+
+/// Side margin of a top-level tab page on tablets: 32 on EXPANDED, 24 on MEDIUM, none on phones.
+func tabletPageMargin(_ widthClass: WidthClass) -> CGFloat {
+    switch widthClass {
+    case .compact: return 0
+    case .medium: return 24
+    case .expanded: return 32
+    }
+}
 
 private struct TabletColumn: ViewModifier {
     let max: CGFloat
@@ -80,12 +93,35 @@ private struct TabletColumn: ViewModifier {
     }
 }
 
+private struct TabletPage: ViewModifier {
+    @Environment(\.widthClass) private var widthClass
+
+    func body(content: Content) -> some View {
+        // COMPACT (phones): untouched. Otherwise the page is min(width - 2 x margin, 1000), centered.
+        if widthClass == .compact {
+            content
+        } else {
+            let margin = tabletPageMargin(widthClass)
+            content
+                .frame(maxWidth: tabletPageMaxWidth)
+                .padding(.horizontal, margin)
+                .frame(maxWidth: .infinity)
+        }
+    }
+}
+
 extension View {
     /// §AG: cap this content at the single tablet column (640 pt), centered in the
     /// space it is offered. Apply to the CONTENT (header + scroll), not the wallpaper.
     /// COMPACT is a no-op.
     func tabletColumn(max: CGFloat = tabletColumnMaxWidth) -> some View {
         modifier(TabletColumn(max: max))
+    }
+
+    /// Slice 4: the top-level tab pages use the page width (1000 pt max, 32 / 24 pt side
+    /// margins). Apply to the CONTENT, not the wallpaper. COMPACT is a no-op.
+    func tabletPage() -> some View {
+        modifier(TabletPage())
     }
 
     /// §AG: cap this content at the column's max width, centered in the space it is

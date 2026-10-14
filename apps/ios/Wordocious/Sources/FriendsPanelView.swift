@@ -1488,7 +1488,7 @@ struct FriendsScreenView: View {
                             .softSheet(isPresented: $showAuth) { AuthView() }
                     }
                 }
-                .tabletColumn()   // §AG: iPad column (header + content), wallpaper stays full-bleed
+                .tabletPage()   // slice 4: the tab page width (header + content), wallpaper stays full-bleed
                 .frame(maxHeight: .infinity, alignment: .top)
                 .pageBackground(.friends, lightOnly: true)
                 // navigationTitle stays for the next push's back label.
