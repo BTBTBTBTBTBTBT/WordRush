@@ -5,7 +5,7 @@ import { CandySwitch } from '@/components/ui/candy-switch';
 import { softRow } from '@/components/ui/soft-popup';
 import { BubbleText } from '@/components/ui/bubble-text';
 import { themeLook, type SeasonalEntry } from '@/lib/theme-kit';
-import { alphaHex, cardBarStyle, softBackground } from '@/lib/soft-surface';
+import { accentInk, alphaHex, cardBarStyle, softBackground } from '@/lib/soft-surface';
 import { KEY_DELETE, KEY_ENTER, KEY_SPACE, keyRows, themePreview } from '@/lib/settings-previews';
 
 // The Settings + Edit profile kit (docs/FINISH_SPEC.md C4b / G5; A1 no plain
@@ -92,7 +92,9 @@ export function SettingsOption({ selected, accent, label, description, onClick, 
         }}
       />
       <span className="relative flex-1 min-w-0">
-        <span className="block font-black text-sm" style={{ color: selected ? '#ffffff' : 'var(--color-text)' }}>{label}</span>
+        {selected
+          ? <span className="block font-black text-sm uppercase tracking-[0.4px] truncate" style={{ color: '#ffffff' }}>{label}</span>
+          : <PlainCapsLabel accent={accent}>{label}</PlainCapsLabel>}
         <span className="block text-[10px] font-bold truncate" style={{ color: selected ? 'rgba(255,255,255,0.94)' : 'var(--color-text-muted)' }}>{description}</span>
       </span>
       {preview && <span className="relative shrink-0">{preview}</span>}
@@ -228,7 +230,7 @@ export function SettingsToggle({ label, description, checked, onCheckedChange, a
     // FINISH_SPEC AK: the whole row squishes (a <label> without `for` isn't otherwise tappable to the SquishHost).
     <label data-squish="" className="flex items-center justify-between gap-3 px-3 py-2 cursor-pointer" style={{ ...softRow(accent, { radius: 14 }), opacity: dim ? 0.55 : 1, minHeight: 44 }}>
       <span className="min-w-0">
-        <span className="block text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>{label}</span>
+        <PlainCapsLabel accent={accent}>{label}</PlainCapsLabel>
         <span className="block text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{description}</span>
       </span>
       <SoftSwitch checked={checked} onCheckedChange={onCheckedChange} accent={accent} disabled={disabled} label={label} />
@@ -239,4 +241,11 @@ export function SettingsToggle({ label, description, checked, onCheckedChange, a
 /** A plain tinted row body (links and actions that read as list rows). */
 export function settingsRowStyle(accent: string): React.CSSProperties {
   return softRow(accent, { radius: 14 });
+}
+
+/** Founder 10-14 (readability, the Home tile-name rule of 10-10): a Settings item name is clean heavy CAPITALS in its
+ *  section's accent (lifted on dark), no outline. Bubble lettering stays for the section titles. */
+export function PlainCapsLabel({ accent, children }: { accent: string; children: React.ReactNode }) {
+  const ink = accentInk(accent, accent);
+  return <span className={`block font-black text-sm uppercase tracking-[0.4px] truncate ${ink.className}`} style={ink.style}>{children}</span>;
 }

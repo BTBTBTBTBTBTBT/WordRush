@@ -224,6 +224,27 @@ struct BubbleOneLine: View {
     }
 }
 
+/// Founder 10-14 (readability, same rule as the Home tile names 10-10): an item name in a list or menu — a Settings row,
+/// a ? menu row — is clean heavy CAPITALS in its accent color (lifted on dark seasons), no outline. Bubble lettering stays
+/// for section titles.
+struct PlainCapsLabel: View {
+    let text: String
+    var color: Color
+    var size: CGFloat = 15
+
+    init(_ text: String, color: Color, size: CGFloat = 15) {
+        self.text = text
+        self.color = color
+        self.size = size
+    }
+
+    var body: some View {
+        Text(text.uppercased()).font(Brand.font(size, .black)).tracking(0.4)
+            .foregroundStyle(color.onSeasonCard.bubbleInk)
+            .lineLimit(1).minimumScaleFactor(0.75)
+    }
+}
+
 /// A short label, name or number in bubble lettering that HUGS its text like a `Text` does (so it sits in an HStack, beside a
 /// Spacer, or under `.fixedSize()` without grabbing the row), and shrinks (down to `minScale`) only when the row is narrower
 /// than its natural width. Uppercased. Never wraps, never clips. Use this where a plain label used to be.

@@ -198,12 +198,12 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
 
             // SOUND & FEEDBACK
             Section("SOUND & FEEDBACK", SettingsAccent.sound, icon = R.drawable.set_sound) {
-                ToggleRow("Sound Effects", "Key taps, win/loss jingles", sound) {
+                ToggleRow("Sound Effects", "Key taps, win/loss jingles", sound, SettingsAccent.sound) {
                     sound = it; SettingsPref.set(SettingsPref.SOUND, it)
                 }
                 Divider(SettingsAccent.sound)
                 // FINISH_SPEC U: a separate Haptics switch (default on).
-                ToggleRow("Haptics", "Taps and buzzes as you play", haptics) {
+                ToggleRow("Haptics", "Taps and buzzes as you play", haptics, SettingsAccent.sound) {
                     haptics = it; SettingsPref.set(com.wordocious.app.data.Haptics.PREF, it)
                     if (it) com.wordocious.app.data.Haptics.light(hapticsView)
                 }
@@ -212,7 +212,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             // NOTIFICATIONS — the daily reminder, then (signed in) the Friends push
             // categories that used to sit behind the Friends header bell (C4b).
             Section("NOTIFICATIONS", SettingsAccent.notifications, icon = R.drawable.set_notifications) {
-                ToggleRow("Daily Reminders", "A nudge to play today's puzzles", dailyReminder) {
+                ToggleRow("Daily Reminders", "A nudge to play today's puzzles", dailyReminder, SettingsAccent.notifications) {
                     dailyReminder = it; SettingsPref.set(SettingsPref.DAILY_REMINDER, it)
                     if (it) {
                         // API 33+: ask for POST_NOTIFICATIONS before scheduling.
@@ -238,11 +238,11 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 profile?.let { p ->
                     val push = rememberFriendsPushPrefs(p)
                     Divider(SettingsAccent.notifications)
-                    FinishLabel("FRIENDS", Modifier.padding(start = 12.dp, top = 10.dp, bottom = 2.dp), color = darkenInk(SettingsAccent.notifications))
+                    Text("FRIENDS NOTIFICATIONS", Modifier.padding(start = 12.dp, top = 10.dp, bottom = 2.dp), fontSize = 12.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, letterSpacing = 1.2.sp, color = WTheme.textMuted)
                     PUSH_CATEGORIES.forEachIndexed { i, c ->
                         if (i > 0) Divider(SettingsAccent.notifications)
                         ToggleRow(
-                            c.label, c.hint, push.isOn(c.key),
+                            c.label, c.hint, push.isOn(c.key), SettingsAccent.notifications,
                             dimmed = push.saving == c.key,
                         ) { push.toggle(c.key) }
                     }
@@ -255,11 +255,11 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
 
             // ACCESSIBILITY
             Section("ACCESSIBILITY", SettingsAccent.access) {
-                ToggleRow("Colorblind Mode", "High contrast colors", colorblind) {
+                ToggleRow("Colorblind Mode", "High contrast colors", colorblind, SettingsAccent.access) {
                     colorblind = it; SettingsPref.set(SettingsPref.COLORBLIND, it); WTheme.colorblind = it
                 }
                 Divider(SettingsAccent.access)
-                ToggleRow("Reduced Motion", "Minimize animations", reducedMotion) {
+                ToggleRow("Reduced Motion", "Minimize animations", reducedMotion, SettingsAccent.access) {
                     reducedMotion = it; SettingsPref.set(SettingsPref.REDUCED_MOTION, it); WTheme.reducedMotionPref = it
                 }
             }
@@ -606,7 +606,7 @@ private fun ChoiceTile(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(label, fontSize = 14.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, color = if (active) onFace else WTheme.text)
+                PlainCapsText(label, if (active) onFace else settingsInk(accent))
                 Text(desc, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito, color = if (active) onFace.copy(alpha = 0.88f) else WTheme.textMuted) // Founder 10-10 (readability): the description wraps, never "…"
             }
             preview()
@@ -683,7 +683,7 @@ private fun settingsSwitchColors() = SwitchDefaults.colors(
 )
 
 @Composable
-private fun ToggleRow(title: String, sub: String, checked: Boolean, dimmed: Boolean = false, onChange: (Boolean) -> Unit) {
+private fun ToggleRow(title: String, sub: String, checked: Boolean, accent: Color, dimmed: Boolean = false, onChange: (Boolean) -> Unit) {
     // SwiftUI's Toggle makes label + switch one tap target; mirror that here so
     // tapping the title flips the switch (the Switch itself no longer handles it).
     val interaction = remember { MutableInteractionSource() }
@@ -703,7 +703,7 @@ private fun ToggleRow(title: String, sub: String, checked: Boolean, dimmed: Bool
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
+            PlainCapsText(title, settingsInk(accent))
             Text(sub, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted)
         }
         // The candy on/off switch (night art 10-03 sprites); the row owns the Switch role + tap.
@@ -712,12 +712,12 @@ private fun ToggleRow(title: String, sub: String, checked: Boolean, dimmed: Bool
 }
 
 @Composable
-private fun LinkRow(title: String, onClick: () -> Unit = {}) {
+private fun LinkRow(title: String, accent: Color = SettingsAccent.about, onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier.fillMaxWidth().squishClickable(label = title, role = Role.Button, onClick = onClick).heightIn(min = 44.dp).padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text, modifier = Modifier.weight(1f))
+        PlainCapsText(title, settingsInk(accent), Modifier.weight(1f))
     }
 }
 
@@ -869,4 +869,16 @@ private fun SeasonalPreview(entry: ThemeKit.Seasonal) {
             }
         }
     }
+}
+
+/** Founder 10-14 (readability, the Home tile-name rule of 10-10): a Settings item name is clean heavy CAPITALS in its
+ *  section's accent (lifted on dark seasons), no outline. Bubble lettering stays for the section titles. */
+internal fun settingsInk(accent: Color): Color = SurfaceInk.lift(WTheme.season?.onCard(accent) ?: accent)
+
+@Composable
+internal fun PlainCapsText(text: String, color: Color, modifier: Modifier = Modifier, fontSize: Int = 15) {
+    FitText(
+        text.uppercase(), fontSize = fontSize.sp, modifier = modifier, color = color, fontWeight = FontWeight.Black,
+        fontFamily = Nunito, minScale = 0.75f, letterSpacing = 0.4.sp,
+    )
 }

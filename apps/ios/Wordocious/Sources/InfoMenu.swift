@@ -228,7 +228,7 @@ struct MenuSheet: View {
                 .frame(width: 40, height: 40)
                 .background(RoundedRectangle(cornerRadius: 11).fill(d.accent.opacity(0.14)))
             VStack(alignment: .leading, spacing: 4) {
-                BubbleLabel(d.title, color: d.accent.bubbleInk, size: 16)
+                PlainCapsLabel(d.title, color: d.accent, size: 16)
                 Text(d.subtitle).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
                     .lineLimit(1).minimumScaleFactor(0.8)
             }
@@ -287,7 +287,7 @@ struct GuidesIndexView: View {
                     .frame(width: 40, height: 40).background(RoundedRectangle(cornerRadius: 11).fill(accent.opacity(0.12)))
             }
             VStack(alignment: .leading, spacing: 4) {
-                BubbleLabel(g?.title ?? GuideService.slug(for: mode).capitalized, color: accent.bubbleInk, size: 16)
+                PlainCapsLabel(g?.title ?? GuideService.slug(for: mode).capitalized, color: accent, size: 16)
                 if let tagline = g?.tagline {
                     Text(tagline).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(2).multilineTextAlignment(.leading)
                 }

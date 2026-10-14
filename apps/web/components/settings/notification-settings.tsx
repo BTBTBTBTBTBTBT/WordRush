@@ -34,7 +34,7 @@ export function NotificationSettings() {
   const accent = SETTINGS_ACCENT.notifications;
   return (
     <SettingsSection title="Notifications" accent={accent}>
-      <p className="text-[10px] font-bold px-1" style={{ color: 'var(--color-text-muted)' }}>Friends notifications</p>
+      <p className="text-[11px] font-black uppercase tracking-[1.2px] px-1" style={{ color: 'var(--color-text-muted)' }}>Friends notifications</p>
       <div className="space-y-1.5">
         {PUSH_CATEGORIES.map((c) => (
           <SettingsToggle
