@@ -13,6 +13,7 @@ struct FriendlyGameScreen: View {
     @State private var gameId: String
     @State private var game: FriendlyGameView?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.widthClass) private var widthClass
 
     @State private var loadError: String?
     @State private var sending = false
@@ -130,9 +131,10 @@ struct FriendlyGameScreen: View {
                 }
                 .onChange(of: vp.size.height) { h in if !fitSettled { viewportH = h } }
                 }
-                if g.isActive, case .pass(let p) = g.state { passKeyboard(g, p).layoutLog("pinned") }
-                if g.isActive, case .ghost(let gs) = g.state { ghostKeyboard(g, gs).layoutLog("pinned") }
-                if g.isActive, case .chain(let c) = g.state { chainInputArea(g, c).layoutLog("pinned") }
+                // Slice 5: the pinned letter keyboards cap at the 820 keyboard width on tablets (keys grow, the page does not).
+                if g.isActive, case .pass(let p) = g.state { passKeyboard(g, p).tabletColumn(max: tabletKeyboardMaxWidth).layoutLog("pinned") }
+                if g.isActive, case .ghost(let gs) = g.state { ghostKeyboard(g, gs).tabletColumn(max: tabletKeyboardMaxWidth).layoutLog("pinned") }
+                if g.isActive, case .chain(let c) = g.state { chainInputArea(g, c).tabletColumn(max: tabletKeyboardMaxWidth).layoutLog("pinned") }
             } else if let loadError {
                 Spacer()
                 // O3 when the game is gone, R unplugged for any other error
@@ -150,6 +152,9 @@ struct FriendlyGameScreen: View {
                 Spacer()
             }
         }
+        // Slice 5 (R1/R2, iPad): the whole pocket screen (header, game, pinned keyboard) sits on the tablet page; the wallpaper
+        // below stays full-bleed. COMPACT is a no-op.
+        .tabletPage()
         // §A1: the Friends wallpaper (light, like the Friends tab), never plain white.
         .background(PageBackground(tint: .friends, lightOnly: true).ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
@@ -434,30 +439,33 @@ struct FriendlyGameScreen: View {
     // MARK: Top bar
 
     private var topBar: some View {
-        ZStack {
-            HStack(spacing: 6) {
+        // Slice 5 (R4, iPad): the title art is ~2x its phone height on EXPANDED (1.6x MEDIUM), the corner buttons 1.3x.
+        let tt = tabletTitleScale(widthClass)
+        let ch = tabletChromeScale(widthClass)
+        return ZStack {
+            HStack(spacing: 6 * tt) {
                 // ART_SPEC §9: the pocket game's 3D icon beside its title.
-                if let kind, kind.pocketArt != nil { FriendlyGameIcon(kind: kind, size: 28, glow: false) }
+                if let kind, kind.pocketArt != nil { FriendlyGameIcon(kind: kind, size: 28 * tt, glow: false) }
                 // Founder 10-10: the title is BIG custom lettering in the game's own accent (one line, shrinks between the X and the ?).
                 BubbleTextView(text: (game?.title ?? "").uppercased(), palette: .accent(gameAccent),
-                               maxSize: 32, minSize: 18, animated: true)
-                    .frame(height: 44)
+                               maxSize: 32 * tt, minSize: 18 * tt, animated: true)
+                    .frame(height: 44 * tt)
             }
-            .padding(.horizontal, 52)
+            .padding(.horizontal, 52 * ch)
             HStack {
-                HeaderCircleButton(.symbol("xmark"), label: "Close") {
+                HeaderCircleButton(.symbol("xmark"), size: PageHeaderStyle.circle * ch, label: "Close") {
                     if game?.isActive == true { confirmClose = true } else { dismiss() }
                 }
                 Spacer()
                 // Wave 3 (9c): the "?" in the top-right corner, same control as every other game's header.
                 if kind != nil {
-                    HeaderCircleButton(.icon(.help), size: 44, iconSize: HeaderControl.gameIcon, label: "How to play") {
+                    HeaderCircleButton(.icon(.help), size: 44 * ch, iconSize: HeaderControl.gameIcon * ch, label: "How to play") {
                         showHelp = true
                     }
                 }
             }
         }
-        .padding(.horizontal, 8).padding(.top, 4).frame(height: 48)
+        .padding(.horizontal, 8).padding(.top, 4).frame(height: 48 * tt)
     }
 
     /// The fixed-height slot under the score window (see `body`).

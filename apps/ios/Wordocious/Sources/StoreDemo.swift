@@ -734,7 +734,7 @@ enum StoreDemoDriver {
         guard var top = scene?.windows.first(where: \.isKeyWindow)?.rootViewController ?? scene?.windows.first?.rootViewController
         else { return }
         while let next = top.presentedViewController { top = next }
-        let host = UIHostingController(rootView: root)
+        let host = UIHostingController(rootView: AnyView(WidthClassReader { root }))
         host.view.backgroundColor = .clear
         host.modalPresentationStyle = .overFullScreen
         top.present(host, animated: false)
@@ -746,7 +746,7 @@ enum StoreDemoDriver {
         guard var top = scene?.windows.first(where: \.isKeyWindow)?.rootViewController ?? scene?.windows.first?.rootViewController
         else { return }
         while let next = top.presentedViewController { top = next }
-        let host = UIHostingController(rootView: root)
+        let host = UIHostingController(rootView: AnyView(WidthClassReader { root }))
         host.modalPresentationStyle = .pageSheet
         host.sheetPresentationController?.detents = [.custom { _ in 412 }, .large()]
         top.present(host, animated: false)
@@ -757,7 +757,8 @@ enum StoreDemoDriver {
         guard var top = scene?.windows.first(where: \.isKeyWindow)?.rootViewController ?? scene?.windows.first?.rootViewController
         else { return }
         while let next = top.presentedViewController { top = next }
-        let host = UIHostingController(rootView: root)
+        // Slice 5: a UIKit-hosted root has no inherited widthClass, so the harness reads it here (as RootTabView does).
+        let host = UIHostingController(rootView: AnyView(WidthClassReader { root }))
         host.modalPresentationStyle = full ? .fullScreen : .pageSheet
         top.present(host, animated: false)
     }
