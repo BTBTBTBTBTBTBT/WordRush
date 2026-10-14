@@ -13,13 +13,36 @@ import WordociousCore
 struct LeaderboardStageCard<Content: View>: View {
     let accent: Color
     @ViewBuilder var content: () -> Content
+    /// §AG tablet slice 1: on medium/expanded the stage sits in the 640 column, so its wash and clouds fade at the
+    /// column's side edges instead of ending in a hard box. Phones keep the edge-to-edge stage unchanged.
+    @Environment(\.widthClass) private var widthClass
 
     var body: some View {
         // Founder 10-09: no card edge at all — the stage's wash runs edge to edge (past the page gutters), fading in at
         // the top and out at the bottom, and the cloud bank spans the full screen width, drifting slowly.
+        let fade = widthClass != .compact
         VStack(spacing: 0) { content() }
-            .background(alignment: .top) { StageDriftingClouds().padding(.horizontal, -16) }
-            .background { LeaderboardStageBackdrop(accent: accent).padding(.horizontal, -16) }
+            .background(alignment: .top) { StageDriftingClouds().padding(.horizontal, -16).modifier(TabletSideFade(on: fade)) }
+            .background { LeaderboardStageBackdrop(accent: accent).padding(.horizontal, -16).modifier(TabletSideFade(on: fade)) }
+    }
+}
+
+/// Tablet only: the stage's wash and cloud bank dissolve over the first and last ~5% of their width.
+private struct TabletSideFade: ViewModifier {
+    let on: Bool
+
+    func body(content: Content) -> some View {
+        if on {
+            content.mask(
+                LinearGradient(stops: [
+                    .init(color: .clear, location: 0),
+                    .init(color: .black, location: 0.05),
+                    .init(color: .black, location: 0.95),
+                    .init(color: .clear, location: 1),
+                ], startPoint: .leading, endPoint: .trailing))
+        } else {
+            content
+        }
     }
 }
 
