@@ -1,0 +1,44 @@
+[
+  {
+    "key": "2026-10-15-x",
+    "post_id": "941ebac0-e641-5626-b087-d8151871ad28",
+    "date": "2026-10-15",
+    "slot": "x",
+    "title": "X: Teaser 3",
+    "files": {
+      "landscape": "2026-10-15-x/landscape.png"
+    },
+    "caption": "TOMORROW. in house lettering over the ten cast silhouettes lit at the edge, with 18 unlit grey tiles above them (teaser 3).",
+    "mascot_check": "pass (hero composite; silhouettes cut from the real hero alpha)",
+    "aesthetic_check": "pass",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-16-feed",
+    "post_id": "1eed8608-c764-59bf-843c-18f47cfe2d0c",
+    "date": "2026-10-16",
+    "slot": "feed",
+    "title": "Feed: trailer + carousel slide 1",
+    "files": {
+      "portrait": "2026-10-16-feed/portrait.png"
+    },
+    "caption": "Launch day feed card: 18 DAILY GAMES. ONE SCORE. with the whole cast and Bring your family. (portrait for IG and Facebook).",
+    "mascot_check": "pass (hero composite)",
+    "aesthetic_check": "pass",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-16-x",
+    "post_id": "1541025f-5785-5f84-a186-bb8458ec6ef4",
+    "date": "2026-10-16",
+    "slot": "x",
+    "title": "X: Launch thread (family origin story)",
+    "files": {
+      "landscape": "2026-10-16-x/landscape.png"
+    },
+    "caption": "Launch day: 18 DAILY GAMES. ONE SCORE. with the whole cast and Bring your family. (landscape for X).",
+    "mascot_check": "pass (hero composite)",
+    "aesthetic_check": "pass",
+    "notes": ""
+  }
+]
