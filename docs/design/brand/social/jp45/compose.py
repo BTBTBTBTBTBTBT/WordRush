@@ -921,7 +921,7 @@ def contact_sheets(manifest):
         if x + im.width > cols_w - 10:
             x = 10; y += rowh + 10; rowh = 0
         sheet.paste(im, (x, y)); x += im.width + 10; rowh = max(rowh, im.height)
-    sheet.crop((0, 0, cols_w, y + rowh + 10)).save(os.path.join(HERE, 'contact-sheet.png'), optimize=True)
+    sheet.crop((0, 0, cols_w, y + rowh + 10)).save(os.path.join(HERE, 'contact-sheet.jpg'), quality=80)
 
 
 if __name__ == '__main__':

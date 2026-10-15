@@ -1055,27 +1055,20 @@
     "files": {
       "landscape": "2026-11-04-x/landscape.png"
     },
-    "caption": "MUDDLE WEDNESDAY: the Nov 3 Muddle cartoon (played yesterday) in a paper frame, Caption this.",
+    "caption": "MUDDLE WEDNESDAY: the Nov 3 Muddle cartoon (played yesterday) in a paper frame between R and W.",
     "card": "muddle-nov4",
     "season": "standard",
-    "series_color": "hue 45-28",
+    "series_color": "hue 45-28 (Muddle gold-orange)",
     "cast": [
-      "w",
-      "o1",
       "r",
-      "d",
-      "o2",
-      "c",
-      "i",
-      "o3",
-      "u",
-      "s"
+      "w"
     ],
-    "cast_count": 10,
-    "mascot_check": "pass (hero composite)",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
-    "notes": ""
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none (yesterday cartoon md-nrx549 overlaid in code; caption and answer not shown)",
+    "notes": "Queue listed R only; scene drew R + W (caped, on-model) at the edges by design (empty center for the cartoon).",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-04-feed",
@@ -1101,7 +1094,10 @@
     "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
     "aesthetic_check": "pass",
     "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-04-feed-1: layout (portrait 2:3): MUDDLE WEDNESDAY needs a calm empty rectangle for the day's cartoon (about 70 percent of the width x 28 percent of the height of the frame) between the sub line and the mascots' heads; this scene has only about 16 percent (237 px of 1350 after framing). Mascots C and D (and spelling) were fine. Redraw with the two mascots about half this size, standing low (heads below 68 percent of the frame height), headline in the top 33 percent, and the band from 36 to 66 percent plain background."
+    ]
   },
   {
     "key": "2026-11-05-x",
@@ -1124,7 +1120,10 @@
     "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
     "aesthetic_check": "pass",
     "hint": "hint: none (seven mystery tiles)",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-05-x-1: layout: WORD OF THE DAY QUIZ needs a calm band (about 20 percent of the height) under the headline for the word card added in code; there is only about 12 percent between the headline and the mascot heads. Mascots U (with magnifier) and S and the lettering were fine. Shrink the mascots and stand them low (heads below 62 percent of the frame height), headline in the top 30 percent, band 32 to 60 percent plain background."
+    ]
   },
   {
     "key": "2026-11-05-pin-1",
@@ -1135,19 +1134,21 @@
     "files": {
       "pin": "2026-11-05-pin-1/pin.png"
     },
-    "caption": "Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo from an already-played Muddle and the three steps.",
+    "caption": "Pinterest explainer pin: HOW TO PLAY MUDDLE (W, D, S playing with letter tiles).",
     "card": "pin-explainer",
     "season": "standard",
-    "series_color": "hue 45-28",
+    "series_color": "hue 45-28 (Muddle gold-orange)",
     "cast": [
-      "o1:ready",
-      "s:ready"
+      "w",
+      "d",
+      "s"
     ],
-    "cast_count": 2,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (demo scramble comes from an already-played Muddle daily)",
-    "notes": ""
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none",
+    "notes": "Scene shrunk (0.9) so the headline clears the wordmark.",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-05-pin-2",
@@ -1158,19 +1159,20 @@
     "files": {
       "pin": "2026-11-05-pin-2/pin.png"
     },
-    "caption": "Pinterest word card pin: WORD OF THE DAY with an evergreen word in glossy tiles and its meaning.",
+    "caption": "Pinterest word card pin: SHOVE / WORD OF THE DAY with C and I.",
     "card": "pin-word",
     "season": "standard",
-    "series_color": "hue 190-175",
+    "series_color": "hue 190-175 (teal, word pins)",
     "cast": [
-      "r:sleepwalk",
-      "i:ready"
+      "c",
+      "i"
     ],
     "cast_count": 2,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (evergreen word, absent from every daily bank; checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
-    "notes": ""
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none (evergreen word card)",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-05-pin-3",
@@ -1181,23 +1183,19 @@
     "files": {
       "pin": "2026-11-05-pin-3/pin.png"
     },
-    "caption": "Pinterest cast art pin: MEET THE CAST with a rotating group and Bring your family.",
+    "caption": "Pinterest cast art pin: MEET C. Bring your family.",
     "card": "pin-cast",
     "season": "standard",
     "series_color": "default purple-pink",
     "cast": [
-      "w:fly",
-      "o1:victory",
-      "d:ready",
-      "o2:strut",
-      "c:ready",
-      "o3:victory"
+      "c"
     ],
-    "cast_count": 6,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; house purple-pink headline kept)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-06-x",
@@ -1208,18 +1206,21 @@
     "files": {
       "landscape": "2026-11-06-x/landscape.png"
     },
-    "caption": "FRIDAY'S FINEST: gold tiles under the headline (best board of the week).",
+    "caption": "FRIDAY'S FINEST: R, O1 and U with a trophy, best board of the week.",
     "card": "friday",
     "season": "standard",
-    "series_color": "hue 350-335",
+    "series_color": "hue 350-335 (red-pink)",
     "cast": [
-      "u:ready"
+      "r",
+      "o1",
+      "u"
     ],
-    "cast_count": 1,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-06-feed",
@@ -1230,19 +1231,19 @@
     "files": {
       "portrait": "2026-11-06-feed/portrait.png"
     },
-    "caption": "FRIDAY'S FINEST: gold tiles under the headline (best board of the week).",
+    "caption": "FRIDAY'S FINEST: D with a trophy, best board of the week.",
     "card": "friday",
     "season": "standard",
-    "series_color": "hue 350-335",
+    "series_color": "hue 350-335 (red-pink)",
     "cast": [
-      "o1",
-      "u:spin"
+      "d"
     ],
-    "cast_count": 2,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-07-x",
@@ -1253,23 +1254,19 @@
     "files": {
       "landscape": "2026-11-07-x/landscape.png"
     },
-    "caption": "CAST SATURDAY: a rotating group of the cast.",
+    "caption": "CAST SATURDAY: Cosmo opens bold (C).",
     "card": "cast-sat",
     "season": "standard",
-    "series_color": "multicolor",
+    "series_color": "cast sweep (all cast colors)",
     "cast": [
-      "r:victory",
-      "d:skeptic",
-      "o2:twirl",
-      "c:telescope",
-      "i:victory",
-      "s:slide"
+      "c"
     ],
-    "cast_count": 6,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "Scene shrunk (0.78) so the headline clears the wordmark.",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-08-x",
@@ -1280,23 +1277,21 @@
     "files": {
       "landscape": "2026-11-08-x/landscape.png"
     },
-    "caption": "DIWALI: themed puzzles card.",
+    "caption": "HAPPY DIWALI: S, C and O2 with diyas and rangoli, themed puzzles today.",
     "card": "diwali",
     "season": "standard",
-    "series_color": "hue 42-8",
+    "series_color": "hue 42-8 (marigold-vermilion)",
     "cast": [
-      "w:hips",
-      "o1:cheer",
-      "o2:victory",
-      "c:victory",
-      "o3",
-      "u:stretch"
+      "s",
+      "c",
+      "o2"
     ],
-    "cast_count": 6,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "Letter mask tightened (smin 0.6) because the sky behind the headline is saturated lilac.",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-08-fb",
@@ -1327,7 +1322,10 @@
     "mascot_check": "pass (hero composite)",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-08-fb-1: palette: the 1-18 number tiles are a rainbow (pink, orange, green, blue); house tiles are glossy purple / gold / grey only (see the Nov 22 Sweep Sunday final). Mascots W and I and spelling were fine. Redo with the 18 tiles in purple, gold and grey (rotating)."
+    ]
   },
   {
     "key": "2026-11-09-x",
@@ -1338,20 +1336,21 @@
     "files": {
       "landscape": "2026-11-09-x/landscape.png"
     },
-    "caption": "MONDAY MASTERS: weekly race reset, The crown is open.",
+    "caption": "MONDAY MASTERS: the crown is open (O3, U, R in a start-line crouch).",
     "card": "monday",
     "season": "standard",
-    "series_color": "hue 225-210",
+    "series_color": "hue 225-210 (blue)",
     "cast": [
-      "r:wake",
-      "i:water",
-      "s:stopwatch"
+      "o3",
+      "u",
+      "r"
     ],
     "cast_count": 3,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-10-x",
@@ -1375,7 +1374,10 @@
     "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
     "aesthetic_check": "pass",
     "hint": "hint: none (five mystery tiles)",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-10-x-1: layout: WORD OF THE DAY QUIZ has the R mascot standing in the middle right under the headline, so there is no band for the word card added in code (needs about 20 percent of the height, 32 to 60 percent, plain background across the center). R and the two-line house lettering were fine. Put R small at bottom-left or bottom-right and keep the center band empty."
+    ]
   },
   {
     "key": "2026-11-11-x",
@@ -1399,7 +1401,10 @@
     "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-11-x-1: spelling: the headline reads VEERANS DAY (the T is missing/merged into the E). Must be exactly VETERANS DAY (V-E-T-E-R-A-N-S). Mascots C, D, O1, the flag ribbons and layout were fine."
+    ]
   },
   {
     "key": "2026-11-11-feed",
@@ -1410,21 +1415,20 @@
     "files": {
       "portrait": "2026-11-11-feed/portrait.png"
     },
-    "caption": "VETERANS DAY: themed puzzles card.",
+    "caption": "MUDDLE WEDNESDAY: the Nov 10 Muddle cartoon (played yesterday) in a paper frame between U and S.",
     "card": "veterans",
     "season": "standard",
-    "series_color": "hue 222-210",
+    "series_color": "hue 45-28 (Muddle gold-orange)",
     "cast": [
-      "w:proud",
-      "d",
-      "o3:mustache",
-      "s:trophy"
+      "u",
+      "s"
     ],
-    "cast_count": 4,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
-    "hint": "hint: none",
-    "notes": ""
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none (yesterday cartoon md-ico6hy overlaid in code; caption and answer not shown)",
+    "notes": "Replaces the Veterans Day composite; the Nov 11 X scene (VEERANS) was rejected so the X post stays on its composite.",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-12-x",
@@ -1448,7 +1452,10 @@
     "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
     "aesthetic_check": "pass",
     "hint": "hint: none (seven mystery tiles)",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-12-x-1: layout: WORD OF THE DAY QUIZ has three large mascots (W, D, S) spanning the full width with heads at 48 percent of the height, only about 17 percent between the headline and the mascot heads; no band for the word card. Mascots and lettering were fine. Use one or two small mascots, heads below 62 percent of the height, and a plain band from 32 to 60 percent."
+    ]
   },
   {
     "key": "2026-11-12-pin-1",
@@ -1459,20 +1466,20 @@
     "files": {
       "pin": "2026-11-12-pin-1/pin.png"
     },
-    "caption": "Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo from an already-played Muddle and the three steps.",
+    "caption": "Pinterest explainer pin: HOW TO PLAY KINDRED with C and I.",
     "card": "pin-explainer",
     "season": "standard",
-    "series_color": "hue 45-28",
+    "series_color": "hue 45-28 (Muddle gold-orange)",
     "cast": [
-      "r:cheer",
-      "i:cheer",
-      "s:victory"
+      "c",
+      "i"
     ],
-    "cast_count": 3,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (demo scramble comes from an already-played Muddle daily)",
-    "notes": ""
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-12-pin-2",
@@ -1483,18 +1490,21 @@
     "files": {
       "pin": "2026-11-12-pin-2/pin.png"
     },
-    "caption": "Pinterest word card pin: WORD OF THE DAY with an evergreen word in glossy tiles and its meaning.",
+    "caption": "Pinterest word card pin: QUAKE / WORD OF THE DAY with O1, R, U shaking.",
     "card": "pin-word",
     "season": "standard",
-    "series_color": "hue 190-175",
+    "series_color": "hue 190-175 (teal, word pins)",
     "cast": [
-      "u:victory"
+      "o1",
+      "r",
+      "u"
     ],
-    "cast_count": 1,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (evergreen word, absent from every daily bank; checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
-    "notes": ""
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none (evergreen word card)",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-12-pin-3",
@@ -1505,22 +1515,19 @@
     "files": {
       "pin": "2026-11-12-pin-3/pin.png"
     },
-    "caption": "Pinterest cast art pin: MEET THE CAST with a rotating group and Bring your family.",
+    "caption": "Pinterest cast art pin: MEET U. Bring your family.",
     "card": "pin-cast",
     "season": "standard",
     "series_color": "default purple-pink",
     "cast": [
-      "w:ready",
-      "o1:jump",
-      "d:cheer",
-      "c:backpack",
-      "o3:ready"
+      "u"
     ],
-    "cast_count": 5,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; house purple-pink headline kept)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-13-x",
@@ -1531,19 +1538,19 @@
     "files": {
       "landscape": "2026-11-13-x/landscape.png"
     },
-    "caption": "PLAYER OF THE WEEK: feature card for the repost.",
+    "caption": "PLAYER OF THE WEEK: D with a trophy on the podium (frame for a real player post).",
     "card": "potw",
     "season": "standard",
     "series_color": "default purple-pink",
     "cast": [
-      "o1:ready",
-      "o2:cheer"
+      "d"
     ],
-    "cast_count": 2,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; house purple-pink headline kept)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-13-feed",
@@ -1554,18 +1561,21 @@
     "files": {
       "portrait": "2026-11-13-feed/portrait.png"
     },
-    "caption": "PLAYER OF THE WEEK: feature card for the repost.",
+    "caption": "PLAYER OF THE WEEK: S, C, O2 around a podium trophy.",
     "card": "potw",
     "season": "standard",
     "series_color": "default purple-pink",
     "cast": [
-      "o2:gasp"
+      "s",
+      "c",
+      "o2"
     ],
-    "cast_count": 1,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; house purple-pink headline kept)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-14-x",
@@ -1576,22 +1586,19 @@
     "files": {
       "landscape": "2026-11-14-x/landscape.png"
     },
-    "caption": "CAST SATURDAY: a rotating group of the cast.",
+    "caption": "CAST SATURDAY: Opal is dramatic (O2) in the harvest wall.",
     "card": "cast-sat",
     "season": "thanksgiving",
-    "series_color": "multicolor",
+    "series_color": "harvest sweep 345-42-22-95-305",
     "cast": [
-      "w",
-      "r",
-      "c",
-      "o3",
-      "u"
+      "o2"
     ],
-    "cast_count": 5,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
-    "aesthetic_check": "pass",
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "O2 is in her regular hero art (Thanksgiving costumes ship Nov 16).",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-15-x",
@@ -1614,7 +1621,10 @@
     "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-15-x-1: palette: the 1-18 number tiles are a rainbow; house tiles are glossy purple / gold / grey only (see the Nov 22 Sweep Sunday final). Mascots W and I and spelling were fine. Redo with purple, gold and grey tiles."
+    ]
   },
   {
     "key": "2026-11-15-fb",
@@ -1638,7 +1648,10 @@
     "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-15-fb-1: palette: the 1-18 number tiles are a rainbow; house tiles are glossy purple / gold / grey only (see the Nov 22 Sweep Sunday portrait). Mascots R, O3, U and spelling were fine. Redo with purple, gold and grey tiles."
+    ]
   },
   {
     "key": "2026-11-16-x",
@@ -1669,7 +1682,10 @@
     "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-16-x-1: off-model: the mascot is an orange A-shaped blob with buck teeth and an acorn hat, not R and not any cast member; the headline lettering is red/cream, not the house purple-pink bubble lettering. FALL MAKEOVER needs R drawn exactly like cast/hero r.png (grey block, nightcap, sleepy eyes, hand at mouth) in his Thanksgiving costume art (scarf + nightcap, from seasons/thanksgiving/cast), house purple-pink headline."
+    ]
   },
   {
     "key": "2026-11-17-x",
@@ -1680,21 +1696,21 @@
     "files": {
       "landscape": "2026-11-17-x/landscape.png"
     },
-    "caption": "FAMILY LEAGUE: Set it up before Thursday.",
+    "caption": "FAMILY LEAGUE: start it before Thursday (C, D, O1).",
     "card": "league-open",
     "season": "thanksgiving",
-    "series_color": "hue 100-90",
+    "series_color": "hue 100-90 (sage, Family League)",
     "cast": [
-      "o2:alt1",
-      "i:alt1",
-      "o3:alt1",
-      "s:alt1"
+      "c",
+      "d",
+      "o1"
     ],
-    "cast_count": 4,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-18-x",
@@ -1705,27 +1721,20 @@
     "files": {
       "landscape": "2026-11-18-x/landscape.png"
     },
-    "caption": "MUDDLE WEDNESDAY: the Nov 17 Muddle cartoon (played yesterday) in a paper frame, Caption this.",
+    "caption": "MUDDLE WEDNESDAY: the Nov 17 Muddle cartoon (played yesterday) in a paper frame between U and S.",
     "card": "muddle-nov18",
     "season": "thanksgiving",
-    "series_color": "hue 25-15",
+    "series_color": "hue 25-15 (burnt orange)",
     "cast": [
-      "w",
-      "o1",
-      "r",
-      "d",
-      "o2",
-      "c",
-      "i",
-      "o3",
       "u",
       "s"
     ],
-    "cast_count": 10,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
-    "notes": ""
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none (yesterday cartoon md-aanlcb overlaid in code; caption and answer not shown)",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-18-feed",
@@ -1751,7 +1760,10 @@
     "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
     "aesthetic_check": "pass",
     "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-18-feed-1: layout (portrait 2:3): MUDDLE WEDNESDAY needs a calm empty rectangle for the day's cartoon (about 70 percent of the width x 28 percent of the height of the frame) between the sub line and the mascots; only about 17 percent here (254 px of 1350 after framing). Mascots W and D and spelling were fine. Redraw with the mascots about half this size, heads below 68 percent of the frame height, headline in the top 33 percent, band 36 to 66 percent plain."
+    ]
   },
   {
     "key": "2026-11-19-x",
@@ -1774,7 +1786,10 @@
     "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
     "aesthetic_check": "pass",
     "hint": "hint: none (seven mystery tiles)",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-19-x-1: lettering + layout: the WORD OF THE DAY QUIZ headline is drawn orange/red (not the house purple-pink bubble lettering), so it cannot be recolored in code to the Thanksgiving sage; and the center band between the C and I mascots is only about 350 px wide, too narrow for the word card. C and I were on-model. Redo with house purple-pink lettering and mascots small at the far left/right with a plain band from 32 to 60 percent."
+    ]
   },
   {
     "key": "2026-11-19-pin-1",
@@ -1797,7 +1812,10 @@
     "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
     "aesthetic_check": "pass",
     "hint": "hint: none (demo scramble comes from an already-played Muddle daily)",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-19-pin-1: spelling + framing: the headline reads HOW TO PLAY CODE BREAKER (two words); the game is CODEBREAKER (one word). Also the headline starts at 5 percent of the height and would sit on the wordmark. Redo with HOW TO PLAY / CODEBREAKER (one word, smaller if needed), headline top below 12 percent. O1, R, U and the peg board were fine."
+    ]
   },
   {
     "key": "2026-11-19-pin-2",
@@ -1808,19 +1826,19 @@
     "files": {
       "pin": "2026-11-19-pin-2/pin.png"
     },
-    "caption": "Pinterest word card pin: WORD OF THE DAY with an evergreen word in glossy tiles and its meaning.",
+    "caption": "Pinterest word card pin: BAKER / WORD OF THE DAY with D in the chef hat.",
     "card": "pin-word",
     "season": "thanksgiving",
-    "series_color": "hue 100-90",
+    "series_color": "hue 100-90 (sage, word pins)",
     "cast": [
-      "o1",
       "d"
     ],
-    "cast_count": 2,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (evergreen word, absent from every daily bank; checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
-    "notes": ""
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none (evergreen word card)",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-19-pin-3",
@@ -1831,27 +1849,19 @@
     "files": {
       "pin": "2026-11-19-pin-3/pin.png"
     },
-    "caption": "Pinterest cast art pin: MEET THE CAST with a rotating group and Bring your family.",
+    "caption": "Pinterest cast art pin: MEET S. Bring your family.",
     "card": "pin-cast",
     "season": "thanksgiving",
     "series_color": "default purple-pink",
     "cast": [
-      "w",
-      "o1",
-      "r",
-      "d",
-      "o2",
-      "c",
-      "i",
-      "o3",
-      "u",
       "s"
     ],
-    "cast_count": 10,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
-    "aesthetic_check": "pass",
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; house purple-pink headline kept)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-20-x",
@@ -1862,18 +1872,21 @@
     "files": {
       "landscape": "2026-11-20-x/landscape.png"
     },
-    "caption": "FRIDAY'S FINEST: gold tiles under the headline (best board of the week).",
+    "caption": "FRIDAY'S FINEST: C, S (trophy) and O2, best board of the week.",
     "card": "friday",
     "season": "thanksgiving",
-    "series_color": "hue 350-340",
+    "series_color": "hue 350-340 (cranberry)",
     "cast": [
+      "c",
+      "s",
       "o2"
     ],
-    "cast_count": 1,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
-    "aesthetic_check": "pass",
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-20-feed",
@@ -1884,19 +1897,20 @@
     "files": {
       "portrait": "2026-11-20-feed/portrait.png"
     },
-    "caption": "FRIDAY'S FINEST: gold tiles under the headline (best board of the week).",
+    "caption": "FRIDAY'S FINEST: W (trophy) and I, best board of the week.",
     "card": "friday",
     "season": "thanksgiving",
-    "series_color": "hue 350-340",
+    "series_color": "hue 350-340 (cranberry)",
     "cast": [
       "w",
-      "o3"
+      "i"
     ],
     "cast_count": 2,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
-    "aesthetic_check": "pass",
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-21-x",
@@ -1907,27 +1921,21 @@
     "files": {
       "landscape": "2026-11-21-x/landscape.png"
     },
-    "caption": "CAST SATURDAY: a rotating group of the cast.",
+    "caption": "CAST SATURDAY: Thanksgiving costumes (O3 pilgrim hat, U feather headband, R scarf).",
     "card": "cast-sat",
     "season": "thanksgiving",
-    "series_color": "multicolor",
+    "series_color": "harvest sweep 345-42-22-95-305",
     "cast": [
-      "w",
-      "o1",
-      "r",
-      "d",
-      "o2",
-      "c",
-      "i",
-      "o3",
-      "u",
-      "s"
+      "o3:pilgrim",
+      "u:feathers",
+      "r:scarf"
     ],
-    "cast_count": 10,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
-    "aesthetic_check": "pass",
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-22-x",
@@ -1938,19 +1946,20 @@
     "files": {
       "landscape": "2026-11-22-x/landscape.png"
     },
-    "caption": "SWEEP SUNDAY: 18 glossy tiles under the headline, All 18 dailies. One day.",
+    "caption": "SWEEP SUNDAY: 18 purple, gold and grey tiles (1-18) between W and R.",
     "card": "sweep",
     "season": "thanksgiving",
-    "series_color": "hue 22-15",
+    "series_color": "hue 22-15 (maple brown)",
     "cast": [
-      "w:alt1",
-      "o3:alt1"
+      "w",
+      "r"
     ],
     "cast_count": 2,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
-    "hint": "hint: none",
-    "notes": ""
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none (tiles 1-18 are the game numbers)",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-22-fb",
@@ -1961,20 +1970,21 @@
     "files": {
       "portrait": "2026-11-22-fb/portrait.png"
     },
-    "caption": "SWEEP SUNDAY: 18 glossy tiles under the headline, All 18 dailies. One day.",
+    "caption": "SWEEP SUNDAY: 18 purple, gold and grey tiles (1-18) under D, C and O1.",
     "card": "sweep",
     "season": "thanksgiving",
-    "series_color": "hue 22-15",
+    "series_color": "hue 22-15 (maple brown)",
     "cast": [
-      "o1:alt1",
-      "o2:alt1",
-      "u:alt1"
+      "d",
+      "c",
+      "o1"
     ],
     "cast_count": 3,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
-    "hint": "hint: none",
-    "notes": ""
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none (tiles 1-18 are the game numbers)",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-23-x",
@@ -1985,19 +1995,20 @@
     "files": {
       "landscape": "2026-11-23-x/landscape.png"
     },
-    "caption": "MONDAY MASTERS: weekly race reset, The crown is open.",
+    "caption": "MONDAY MASTERS: the crown is open (S wears the crown, U beside).",
     "card": "monday",
     "season": "thanksgiving",
-    "series_color": "hue 305-325",
+    "series_color": "hue 305-325 (deep plum)",
     "cast": [
-      "d:alt1",
-      "i:alt1"
+      "u",
+      "s"
     ],
     "cast_count": 2,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-24-x",
@@ -2008,22 +2019,21 @@
     "files": {
       "landscape": "2026-11-24-x/landscape.png"
     },
-    "caption": "FAMILY LEAGUE: Final call before Thanksgiving.",
+    "caption": "FAMILY LEAGUE: final call (W, D, S).",
     "card": "league-final",
     "season": "thanksgiving",
-    "series_color": "hue 100-90",
+    "series_color": "hue 100-90 (sage, Family League)",
     "cast": [
       "w",
-      "r:alt1",
-      "c:alt1",
-      "o3",
-      "s:alt1"
+      "d",
+      "s"
     ],
-    "cast_count": 5,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-25-x",
@@ -2034,22 +2044,20 @@
     "files": {
       "landscape": "2026-11-25-x/landscape.png"
     },
-    "caption": "THANKSGIVING EVE: themed puzzles card.",
+    "caption": "THANKSGIVING EVE: C and I at the pie, themed puzzles.",
     "card": "thanks-eve",
     "season": "thanksgiving",
-    "series_color": "hue 40-20",
+    "series_color": "hue 40-20 (harvest marigold)",
     "cast": [
-      "o1",
-      "d",
-      "o2",
-      "i",
-      "u"
+      "c",
+      "i"
     ],
-    "cast_count": 5,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
-    "aesthetic_check": "pass",
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-25-fb",
@@ -2080,7 +2088,10 @@
     "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-25-fb-1: layout (portrait 2:3): MUDDLE WEDNESDAY needs a calm empty rectangle for the day's cartoon (about 70 percent of the width x 28 percent of the height) between the sub line and the mascots; only about 16 percent here (268 px of 1350). Mascots O1 and R and spelling were fine. Redraw with the mascots about half this size, heads below 68 percent of the frame height, band 36 to 66 percent plain."
+    ]
   },
   {
     "key": "2026-11-26-x",
@@ -2350,5 +2361,59 @@
     "aesthetic_check": "pass",
     "hint": "hint: none",
     "notes": ""
+  },
+  {
+    "key": "2026-11-21-family",
+    "post_id": "bcbb7511-bde3-5a4e-9a69-a4c4fc155233",
+    "date": "2026-11-21",
+    "slot": "video",
+    "title": "Family smack-talk skit (cover)",
+    "files": {
+      "portrait": "2026-11-21-family/portrait.png"
+    },
+    "caption": "SMACK TALK SEASON: whoever loses does the dishes (W, D, S, C on the couch with their phones). Landscape version rejected for a misspelled headline (SMAK); redo queued.",
+    "card": "extra",
+    "season": "thanksgiving",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w",
+      "d",
+      "s",
+      "c"
+    ],
+    "cast_count": 4,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; house purple-pink headline kept)",
+    "hint": "hint: none",
+    "notes": "Cover image for the vertical video post (TikTok + Reels). @playwordocious footer.",
+    "source": "chatgpt-scene"
+  },
+  {
+    "key": "2026-11-26-table",
+    "post_id": "2a67268e-0749-5474-9ab9-ff088ea7346b",
+    "date": "2026-11-26",
+    "slot": "video",
+    "title": "Thanksgiving-table clip (cover)",
+    "files": {
+      "portrait": "2026-11-26-table/portrait.png",
+      "landscape": "2026-11-26-table/landscape.png"
+    },
+    "caption": "HAPPY THANKSGIVING: one more round before pie (W, D, S, C, O1 around the table).",
+    "card": "extra",
+    "season": "thanksgiving",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w",
+      "d",
+      "s",
+      "c",
+      "o1"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; house purple-pink headline kept)",
+    "hint": "hint: none",
+    "notes": "Cover image for the vertical video post (TikTok + Reels). @playwordocious footer.",
+    "source": "chatgpt-scene"
   }
 ]
