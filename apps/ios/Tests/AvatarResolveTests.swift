@@ -66,8 +66,10 @@ final class AvatarResolveTests: XCTestCase {
         let fx = try fixture("podium-layout-fixtures")
         guard let art = fx["art"] as? [String: Any] else { return }   // not generated yet
         XCTAssertEqual(art["aspect"] as? Double, PodiumArt.aspect)
+        XCTAssertEqual(art["maxWidthPt"] as? Double, PodiumArt.maxWidthPt)
         XCTAssertEqual(art["plantPt"] as? Double, PodiumArt.plantPt)
         XCTAssertEqual(art["nameGapPt"] as? Double, PodiumArt.nameGapPt)
+        XCTAssertEqual(art["headTop"] as? Double, PodiumArt.headTop)
         XCTAssertEqual(art["crownRise"] as? Double, PodiumArt.crownRise)
         XCTAssertEqual(art["crownGapPt"] as? Double, PodiumArt.crownGapPt)
         XCTAssertEqual(art["shadowWidth"] as? Double, PodiumArt.shadowWidth)

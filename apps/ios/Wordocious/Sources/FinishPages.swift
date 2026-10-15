@@ -532,8 +532,9 @@ struct PodiumView: View {
     /// Room above the art for the standing mascots' heads, the crown and the names (fraction of the width). The crowd sits
     /// under it, so the figures rise out of the image the way the approved mockup shows.
     static let headroom: CGFloat = 0.2
-    /// Tablets: the image scales with the page width up to this many points.
-    static let maxWidth: CGFloat = 1000
+    /// Tablets: the image scales with the page width up to this many points (core PodiumArt.maxWidthPt, 680: the WHOLE podium
+    /// fits between the "#N of M" row and the tab bar on an iPad Pro 13 in portrait). Centered; phones are narrower.
+    static let maxWidth = CGFloat(PodiumArt.maxWidthPt)
     /// Mascot box (the living figure's square, with its headroom) as a fraction of the width: ~120 / 102 pt on a phone, the
     /// size the old steps used. Where the drawn figure sits inside it comes from its layout bounds (PodiumPlace).
     static let goldFigure: CGFloat = 0.335

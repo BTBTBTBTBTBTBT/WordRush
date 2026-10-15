@@ -11,10 +11,15 @@ public enum PodiumArt {
 
     /// Image width / height (1536 x 1024).
     public static let aspect = 1.5
+    /// Tablets: the stage never grows past this many points wide (phones are narrower, so unchanged).
+    public static let maxWidthPt = 680.0
     /// The mascot lands this many points lower than the step-top center so it looks planted.
     public static let plantPt = 5.0
     /// The name label's BOTTOM sits this many points above the DRAWN head / hat top.
     public static let nameGapPt = 12.0
+    /// Where the drawn head / hat top sits, as a fraction of the mascot box from its top edge (small end: tall hats). iOS
+    /// never needs it for layout: it measures the drawn head from the living layout's own bounds (PodiumFigure.bounds).
+    public static let headTop = 0.04
     /// The first place's crown rises this fraction of the mascot box above the box's top (iOS measures the drawn head instead).
     public static let crownRise = 0.05
     /// Extra points the first place's name clears the crown by, on top of nameGapPt.
