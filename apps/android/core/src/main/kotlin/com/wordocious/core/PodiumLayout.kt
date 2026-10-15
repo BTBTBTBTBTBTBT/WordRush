@@ -44,6 +44,8 @@ data class PodiumArtStep(val place: Int, val feetX: Double, val feetY: Double, v
 object PodiumArtGeometry {
     /** Image width / height (1536 x 1024). */
     const val ASPECT = 1.5
+    /** Tablets: the stage never grows past this many points wide (phones are narrower, so unchanged). */
+    const val MAX_WIDTH_PT = 680.0
     /** Mascot lands this many points lower than the step-top center so it looks planted. */
     const val PLANT_PT = 5.0
     /** The name label's BOTTOM sits this many points above the DRAWN head / hat top (never tucked into the box). */

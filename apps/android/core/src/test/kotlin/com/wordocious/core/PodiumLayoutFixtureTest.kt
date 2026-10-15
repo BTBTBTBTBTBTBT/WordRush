@@ -52,6 +52,7 @@ class PodiumLayoutFixtureTest {
     fun art_geometry_matches() {
         val art = root["art"]!!.jsonObject
         assertEquals(art["aspect"]!!.jsonPrimitive.double, PodiumArtGeometry.ASPECT, 0.0)
+        assertEquals(art["maxWidthPt"]!!.jsonPrimitive.double, PodiumArtGeometry.MAX_WIDTH_PT, 0.0)
         assertEquals(art["plantPt"]!!.jsonPrimitive.double, PodiumArtGeometry.PLANT_PT, 0.0)
         assertEquals(art["nameGapPt"]!!.jsonPrimitive.double, PodiumArtGeometry.NAME_GAP_PT, 0.0)
         assertEquals(art["headTop"]!!.jsonPrimitive.double, PodiumArtGeometry.HEAD_TOP, 0.0)

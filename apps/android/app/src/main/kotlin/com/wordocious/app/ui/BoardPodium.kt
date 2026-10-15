@@ -121,8 +121,11 @@ object PodiumArt {
      * (core HEAD_TOP 0.04). The small end, so a name never sinks onto a hat.
      */
     const val HEAD_TOP = 0.12f
-    /** The widest the stage grows on a tablet (page width, capped). */
-    val MAX_WIDTH: Dp = 1000.dp
+    /**
+     * The widest the stage grows on a tablet (page width, capped; core MAX_WIDTH_PT = 680): the WHOLE podium (names, mascots, steps,
+     * panels) then fits between the "#N of M" row and the nav bar on a tablet in portrait. Centered; phones are narrower.
+     */
+    val MAX_WIDTH: Dp = PodiumArtGeometry.MAX_WIDTH_PT.dp
 
     /** The stage image's height for a display [width]. */
     fun heightFor(width: Dp): Dp = width / PodiumArtGeometry.ASPECT.toFloat()
@@ -225,12 +228,15 @@ fun BoardPodium(
         BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
             val w = minOf(maxWidth, if (compact) 300.dp else PodiumArt.MAX_WIDTH)
             val imgH = PodiumArt.heightFor(w)
+            // Names + crown grow with the stage past a phone's width (a tablet's 680 dp stage would otherwise carry phone-sized
+            // 19 sp names in wide glow pills); phones (<= 400 dp) keep k = 1.
+            val k = maxOf(1f, w.value / 400f)
             val density = LocalDensity.current
             // Figure sizes (mascot box, in dp) scale with the stage width: #1 slightly larger.
             val fig = { place: Int -> w * (if (place == 1) 0.36f else 0.30f) }
             val plant = geo.PLANT_PT.dp
             // Headroom: the gold figure, its crown and its name (bottom clears the crown by CROWN_GAP_PT) rise above the image's top edge.
-            val nameSlot = ((if (compact) 14f else 19f) * 1.3f).dp
+            val nameSlot = ((if (compact) 14f else 19f) * 1.3f * k).dp
             val goldFeet = imgH * geo.step(1).feetY.toFloat() + plant
             // box top = feet + drop - fig; the crown rides CROWN_RISE of the figure above it
             val goldCrownTop = goldFeet + fig(1) * (CHEER_FEET_DROP - 1f + 0f) - fig(1) * geo.CROWN_RISE.toFloat()
@@ -300,7 +306,7 @@ fun BoardPodium(
                                 // glow in their secondary color); the winner's pull keeps it above the crown.
                                 PodiumNameAbove(
                                     s.name, s.userId, s.username ?: s.name,
-                                    size = if (compact) 14f else (if (place == 1) 19f else 16f),
+                                    size = (if (compact) 14f else (if (place == 1) 19f else 16f)) * k,
                                     pull = 0.dp,
                                     avatarUrl = s.avatarUrl, config = s.config, castId = s.castId, frame = s.frame, accentHex = s.accentHex,
                                 )
@@ -321,7 +327,7 @@ fun BoardPodium(
                                         frame = s.frame, accentHex = s.accentHex, podiumPlace = if (stands) place else null,
                                     )
                                     // the crown sits ON the first place's head
-                                    if (place == 1) Icon3D(Icon3DName.CROWN, if (compact) 28.dp else 34.dp, Modifier.offset(y = -(figure * if (stands) geo.CROWN_RISE.toFloat() else 0.12f)).winnerCrownDrop(intro))
+                                    if (place == 1) Icon3D(Icon3DName.CROWN, (if (compact) 28.dp else 34.dp) * k, Modifier.offset(y = -(figure * if (stands) geo.CROWN_RISE.toFloat() else 0.12f)).winnerCrownDrop(intro))
                                 }
                             }
                         } else if (place in open) {
