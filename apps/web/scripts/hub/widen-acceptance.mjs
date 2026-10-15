@@ -29,11 +29,21 @@ const root = join(here, '..', '..', '..', '..');
 const dictPath = process.argv.includes('--dict') ? process.argv[process.argv.indexOf('--dict') + 1] : '/usr/share/dict/words';
 
 const block = new Set();
+// Words that are also first names but are plain dictionary words (LANCE, MARK...) stay accepted: the
+// name-word allowlist overrides the names blocklist (the same rule the lexicon and answer builds use),
+// and only that list; every other blocklist still applies in full.
+const nameOk = new Set();
+try {
+  for (const line of fs.readFileSync(join(root, 'scripts/data/name-word-allowlist.txt'), 'utf8').split('\n')) {
+    const w = line.trim().split(/[\s#,]/)[0].toUpperCase();
+    if (/^[A-Z]+$/.test(w)) nameOk.add(w);
+  }
+} catch { /* optional list */ }
 for (const f of ['offensive-blocklist.txt', 'profanity-exact.generated.txt', 'taste-exact.generated.txt', 'manual-blocklist.txt', 'proper-noun-blocklist.txt', 'answer-proper-nouns.txt', 'names-blocklist.txt', 'lexicon-reject.txt']) {
   try {
     for (const line of fs.readFileSync(join(root, 'scripts/data', f), 'utf8').split('\n')) {
       const w = line.trim().split(/[\s#,]/)[0].toUpperCase();
-      if (/^[A-Z]+$/.test(w)) block.add(w);
+      if (/^[A-Z]+$/.test(w) && !(f === 'names-blocklist.txt' && nameOk.has(w))) block.add(w);
     }
   } catch { /* optional list */ }
 }
