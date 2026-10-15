@@ -814,7 +814,7 @@ struct YesterdayPodiumCard: View {
                                                 value: podiumScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore),
                                                 avatarUrl: e.profiles.avatarUrl, rank: ranks[i],
                                                 detail: lbDetailLine(e, mode: mode))
-                                }, open: layout.open, stage: ModeStyle.accent(mode), onTap: { e in openProfile?(e.id) })
+                                }, open: layout.open, onTap: { e in openProfile?(e.id) })
                             }
                             ForEach(Array(top3.enumerated().dropFirst(start)), id: \.element.id) { i, e in
                                 RecordsBoardRow(rank: i + 1, entry: e, mode: mode,

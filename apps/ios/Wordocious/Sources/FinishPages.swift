@@ -508,22 +508,19 @@ struct PodiumEntry: Identifiable {
     var badge: String? = nil
 }
 
-/// FINISH_SPEC §C2 / §C4 / BJ4: the top-three podium — the players' avatars on gold /
-/// silver / bronze steps (2 · 1 · 3), a 3D crown on first place, soft numbers. From ONE
-/// result up (core PodiumLayout): the places still free stand as `open` spots (a softly
-/// dimmed step with R asleep, "Open spot" · "Claim #N"). `stage` = the board's accent:
-/// the finished stage backdrop behind it (BJ4). `compact` is the Friends race size.
-/// Rows after the podium list below it.
+/// 2.8 one-image podium (founder 10-15, "B, build both into the app"): ONE stadium image (`art-podium-stage`, 1536 x 1024,
+/// transparent soft fade at its top, sides and bottom) laid across the content width, so it melts into the season wallpaper
+/// behind the page. It carries the crowd, the lights and the three glossy steps with their numbers; each player's mascot
+/// stands with its FEET on its step's top-surface center (core `PodiumArt`, a port of packages/core PODIUM_ART), the name
+/// floats above it, and the stats print INSIDE the blank satin panel under the number. The same view is every podium in the
+/// app: Leaderboard today, Yesterday, the Friends races, the Records sheet. From ONE result up (core PodiumLayout) the places
+/// still free are `open`: the step stays, the panel reads "Open spot" · "Claim #N", R sleeps on it. Rows after the podium
+/// list below it. Static image + the same living mascots as before: no new per-frame work.
 struct PodiumView: View {
     /// First, second, third (fewer is fine).
     let entries: [PodiumEntry]
-    var compact: Bool = false
-    /// Light-only pages (Friends): keep the light inks in dark mode.
-    var lightOnly: Bool = false
     /// BJ4: places drawn as open spots (from PodiumLayout.layout(ranks).open).
     var open: [Int] = []
-    /// BJ4: the stage backdrop in the game's accent (nil = none).
-    var stage: Color? = nil
     var onTap: ((PodiumEntry) -> Void)? = nil
     /// 2.8 item 13: tapping another player's standing mascot opens their mini Stage card.
     @State private var stageTarget: PodiumStageTarget?
@@ -531,225 +528,121 @@ struct PodiumView: View {
     /// through the page's profile route when it supplies one.
     @Environment(\.lbOpenProfile) private var openProfile
     private var cardOn: Bool { FlagsService.shared.isLive("podium_stage_card") }
-    private var burstOn: Bool { FlagsService.shared.isLive("podium_burst") }
+
+    /// Room above the art for the standing mascots' heads, the crown and the names (fraction of the width). The crowd sits
+    /// under it, so the figures rise out of the image the way the approved mockup shows.
+    static let headroom: CGFloat = 0.2
+    /// Tablets: the image scales with the page width up to this many points.
+    static let maxWidth: CGFloat = 1000
+    /// Mascot box (the living figure's square, with its headroom) as a fraction of the width: ~120 / 102 pt on a phone, the
+    /// size the old steps used. Where the drawn figure sits inside it comes from its layout bounds (PodiumPlace).
+    static let goldFigure: CGFloat = 0.335
+    static let otherFigure: CGFloat = 0.285
 
     var body: some View {
-        // Founder 10-10 (smoothness): a place's identity is its PLAYER (stable by userId), so a game switch that leaves the same
-        // players on the podium keeps their living mascots' views (and layers) alive; only names / scores update.
-        HStack(alignment: .bottom, spacing: 8) {
-            ForEach(slots, id: \.id) { slot in column(place: slot.place) }
-        }
-        // The glossy floor plate (art-podium-floor) the pedestals stand on: a flat disc
-        // whose middle line meets the steps' feet (static, one image).
-        .padding(.bottom, Self.floorRise)
-        .background(alignment: .bottom) {
-            ArtThumbs.image("art-podium-floor", points: 360)
-                .resizable().interpolation(.high)
-                .frame(height: Self.floorRise * 2 + 4)
-                .accessibilityHidden(true)
-        }
-        .padding(.horizontal, 10).padding(.top, stage == nil ? 0 : 8)
-        .background { if let stage { PodiumStage(accent: stage) } }
-        .softSheet(item: $stageTarget) { t in
-            PodiumStageCard(entry: t.entry, place: t.place,
-                            onProfile: onTap.map { tap in { tap(t.entry) } } ?? openProfile.map { open in { open(t.entry.id) } })
-                .presentationDetents([.height(412), .large])
-        }
-    }
-
-    /// The three slots left to right (2 · 1 · 3), each identified by the player standing in it (the place when it is empty).
-    private var slots: [(place: Int, id: String)] {
-        var seen = Set<String>()
-        return [2, 1, 3].map { place in
-            guard place - 1 < entries.count else { return (place, "slot\(place)") }
-            let pid = entries[place - 1].id
-            if pid.isEmpty || !seen.insert(pid).inserted { return (place, "slot\(place)#\(pid)") }
-            return (place, pid)
-        }
-    }
-
-    private func stepHeight(_ tone: Int) -> CGFloat {
-        let t = min(max(tone, 1), 3) - 1
-        // Founder 10-09: slightly lower steps so the bigger figures still fit the stage without scrolling.
-        return compact ? [62, 46, 34][t] : [64, 47, 35][t]
-    }
-
-    @ViewBuilder private func column(place: Int) -> some View {
-        if place - 1 < entries.count {
-            let e = entries[place - 1]
-            let tone = min(e.rank ?? place, 3)
-            let first = tone == 1
-            // Founder 10-09: the stage podium's figures a size up to fill the room the controls gave back.
-            let avatar: CGFloat = compact ? (first ? 48 : 40) : (first ? 60 : 51)
-            let stands = PodiumFigure.standsFull(e)
-            // Name, points and detail: on a standing podium they ride on a soft plaque that overlaps the step's top edge.
-            // A light-only card turns dark under a dark season surface (Halloween night): the ink follows the card then.
-            // Founder 10-09: the plaque wears the player's own mascot-maker backdrop (fill) and frame (border); the ink
-            // follows the fill's brightness so the stats read on any backdrop.
-            let plate = PlayerTint.plate(userId: e.id, username: e.username)
-            // Founder 10-09: the name rides ABOVE the player's head in the bubble lettering (their own color, one line, never
-            // broken mid-word); the plaque under them holds the numbers, in the bubble numerals too.
-            let nameAbove = BubbleOneLine(text: e.name.uppercased(),
-                                          palette: .accent(PlayerTint.nameColor(userId: e.id, username: e.username)),
-                                          size: compact ? 14 : (first ? 19 : 16))
-            let ink = PlayerTint.platePalette(lightInk: plate.lightInk)
-            let plaque = VStack(spacing: 2) {
-                // Points stay the headline number (#1 a touch larger), then the detail line, both in the bubble font.
-                BubbleOneLine(text: e.value.uppercased(), palette: ink, size: (compact ? 14 : 17) + (first ? 2 : 0))
-                // Two parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
-                ForEach(Array(FriendCards.raceBadgeLines(e.badge).enumerated()), id: \.offset) { _, line in
-                    Text(line)
-                        .font(Brand.font(compact ? 8.5 : 9.5, .black)).tracking(0.4).monospacedDigit()
-                        .foregroundStyle(plate.badge)
-                        .lineLimit(1).minimumScaleFactor(0.55)
-                }
-                // Founder 10-10 ("the stats for the podium winners are hard to read"): the detail was one bubble line allowed to
-                // shrink to 55% (~6 pt). Now plain heavy type that barely shrinks, at most two lines: the first part on top, the
-                // rest under it ("3 GUESSES" / "1M 14S", "8 GUESSES" / "48S · 4/4").
-                if let d = e.detail, !d.isEmpty {
-                    ForEach(Array(Self.detailLines(d).enumerated()), id: \.offset) { _, line in
-                        Text(line.uppercased())
-                            .font(Brand.font(compact ? 10.5 : 12, .heavy)).tracking(0.3).monospacedDigit()
-                            .foregroundStyle(plate.lightInk ? Color.white : Color(hex: 0x2E1065))
-                            .lineLimit(1).minimumScaleFactor(0.8)
-                    }
-                }
-            }
-            let content = VStack(spacing: 4) {
-                if place == 1 && !stands {
-                    Icon3D(.crown, size: compact ? 24 : 26).padding(.bottom, -8).zIndex(1)
-                }
-                // Founder 10-09: a soft glow in the player's secondary (pattern) color behind the name so it pops.
-                nameAbove
-                    .background {
-                        let glow = PlayerTint.secondaryColor(userId: e.id, username: e.username)
-                        ZStack {
-                            if !PerfFlags.noPodGlow {
-                            Capsule().fill(glow.opacity(0.55)).padding(.horizontal, -2).padding(.vertical, -6).blur(radius: 12)
-                            Capsule().fill(glow.opacity(0.9)).padding(.horizontal, 10).padding(.vertical, 1).blur(radius: 6)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, -10)
-                    // Founder 10-09: closer to the top of the head (the standing figure's box carries headroom).
-                    .padding(.bottom, stands ? (place == 1 ? -10 : -18) : -2)
-                    .zIndex(2)
-                // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step full-body (no tile), 2x the old size,
-                // posed by place (1st cheers, 2nd claps, 3rd waves); photo players keep the framed tile.
-                PodiumFigure(entry: e, place: place, tone: tone, size: avatar, compact: compact)
-                // Sits fully ABOVE the step (it used to overlap the step's top by 12 pt and cover its top face).
-                let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
-                plaque
-                    .padding(.horizontal, 10).padding(.vertical, 4)
-                    .background(shape.fill(LinearGradient(colors: plate.fill.count > 1 ? plate.fill : [plate.fill.first ?? .white, plate.fill.first ?? .white],
-                                                          startPoint: .topLeading, endPoint: .bottomTrailing)))
-                    .overlay(shape.strokeBorder(LinearGradient(colors: plate.border.count > 1 ? plate.border : [plate.border.first ?? .clear, plate.border.first ?? .clear],
-                                                               startPoint: .top, endPoint: .bottom), lineWidth: plate.borderWidth))
-                    .shadow(color: .black.opacity(0.18), radius: 3, y: 2)
-            }
-            VStack(spacing: 4) {
-                Group {
-                    if DressUp.isOwn(e.id) || (stands && cardOn) || onTap != nil {
-                        // Founder 10-05 (door 1): your own place opens your Stage; a standing mascot opens its mini Stage card.
-                        Button {
-                            if DressUp.isOwn(e.id) { DressUp.shared.open() }
-                            else if stands, cardOn { Haptics.tap(); stageTarget = PodiumStageTarget(entry: e, place: tone) }
-                            else { onTap?(e) }
-                        } label: { content.contentShape(Rectangle()) }.buttonStyle(.squish)
-                    } else {
-                        content
-                    }
-                }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(A11yLabels.podiumPlace(e.rank ?? place, name: e.name, points: e.value, detail: e.detail))
-                .accessibilityHint(stands && cardOn && !DressUp.isOwn(e.id) ? "Opens their stage" : "")
-                .background(alignment: .top) {
-                    // the winner's confetti burst opens once on load
-                    if stands && place == 1 && burstOn { PodiumBurst().offset(y: -6) }
-                }
-                .zIndex(1)
-                if let bell = e.bell {
-                    Button(action: bell) {
-                        Icon3D(.bell, size: 16).frame(width: 30, height: 24).contentShape(Rectangle())
-                    }
-                    .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23: the family round icon, compact (row-sized)
-                    .accessibilityLabel("Taunt \(e.name)")
-                }
-                step(tone: tone, label: "\(e.rank ?? place)")
-            }
+        // Total height = the art's height + the headroom, both fractions of the width: the aspect is fixed, no measuring.
+        Color.clear
+            .aspectRatio(1 / (1 / CGFloat(PodiumArt.aspect) + Self.headroom), contentMode: .fit)
+            .frame(maxWidth: Self.maxWidth)
+            .overlay { GeometryReader { g in scene(width: g.size.width) } }
             .frame(maxWidth: .infinity)
-        } else if open.contains(place) {
-            openSpot(place: place)
-        } else {
-            Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
-        }
+            .softSheet(item: $stageTarget) { t in
+                PodiumStageCard(entry: t.entry, place: t.place,
+                                onProfile: onTap.map { tap in { tap(t.entry) } } ?? openProfile.map { open in { open(t.entry.id) } })
+                    .presentationDetents([.height(412), .large])
+            }
     }
 
-    /// The floor plate's rise under the steps' feet (pt).
-    static let floorRise: CGFloat = 10
+    private func scene(width w: CGFloat) -> some View {
+        let h = w / CGFloat(PodiumArt.aspect)
+        let top = w * Self.headroom
+        return ZStack(alignment: .topLeading) {
+            ArtThumbs.image("art-podium-stage", points: w)
+                .resizable().interpolation(.high)
+                .frame(width: w, height: h)
+                .offset(y: top)
+                .accessibilityHidden(true)
+            ForEach(PodiumArt.steps, id: \.place) { s in
+                let feet = CGPoint(x: CGFloat(s.feet.x) * w, y: top + CGFloat(s.feet.y) * h + CGFloat(PodiumArt.plantPt))
+                let panel = CGRect(x: CGFloat(s.panel.x0) * w, y: top + CGFloat(s.panel.y0) * h,
+                                   width: CGFloat(s.panel.x1 - s.panel.x0) * w, height: CGFloat(s.panel.y1 - s.panel.y0) * h)
+                if s.place - 1 < entries.count {
+                    let e = entries[s.place - 1]
+                    PodiumPlace(entry: e, place: s.place, feet: feet, width: w,
+                                onStage: cardOn ? { stageTarget = PodiumStageTarget(entry: e, place: min(e.rank ?? s.place, 3)) } : nil,
+                                onTap: onTap)
+                    panelText(e, panel: panel)
+                } else if open.contains(s.place) {
+                    emptySpot(place: s.place, feet: feet, panel: panel, width: w)
+                }
+            }
+        }
+        .frame(width: w, height: top + h, alignment: .topLeading)
+    }
+
+    // MARK: A standing place (PodiumPlace below)
+
+    /// The stats INSIDE the satin panel, centered: the score, then up to two lines (guesses, time) — dark purple on all three.
+    private func panelText(_ e: PodiumEntry, panel: CGRect) -> some View {
+        let ink = Color(red: Double(PodiumArt.textRgb.r) / 255, green: Double(PodiumArt.textRgb.g) / 255, blue: Double(PodiumArt.textRgb.b) / 255)
+        var lines = Self.detailLines(e.detail ?? "")
+        if lines.count < 2 { lines += FriendCards.raceBadgeLines(e.badge).prefix(2 - lines.count) }
+        return Self.panelLines(score: e.value, lines: lines, panel: panel, ink: ink)
+            .accessibilityHidden(true)
+    }
+
+    static func panelLines(score: String, lines: [String], panel: CGRect, ink: Color) -> some View {
+        let scoreSize = panel.height * CGFloat(PodiumArt.scoreHeight)
+        let lineSize = panel.height * CGFloat(PodiumArt.detailHeight)
+        return VStack(spacing: panel.height * 0.025) {
+            Text(score.uppercased())
+                .font(Brand.fixedFont(scoreSize, .black)).monospacedDigit()
+                .lineLimit(1).minimumScaleFactor(0.45)
+            ForEach(Array(lines.prefix(2).enumerated()), id: \.offset) { _, line in
+                Text(line.uppercased())
+                    .font(Brand.fixedFont(lineSize, .heavy)).tracking(0.2).monospacedDigit()
+                    .lineLimit(1).minimumScaleFactor(0.5)
+            }
+        }
+        .foregroundStyle(ink)
+        .frame(width: panel.width * 0.84, height: panel.height)
+        .position(x: panel.midX, y: panel.midY)
+    }
+
+    // MARK: An open place
+
+    /// BJ4: an open place — the step stays, R asleep on it, the panel reads "Open spot" · "Claim #N" in the same text style.
+    @ViewBuilder
+    private func emptySpot(place: Int, feet: CGPoint, panel: CGRect, width w: CGFloat) -> some View {
+        let copy = PodiumLayout.openSpot(place)
+        let h = w * 0.15
+        ArtThumbs.image("art-scene-r-asleep", points: h * 1.3)
+            .resizable().interpolation(.high).scaledToFit()
+            .frame(height: h)
+            .opacity(0.9)
+            .position(x: feet.x, y: feet.y - h * 0.38 + CGFloat(PodiumArt.plantPt))
+            .accessibilityHidden(true)
+        Self.panelLines(score: copy.title, lines: [copy.line], panel: panel,
+                        ink: Color(red: Double(PodiumArt.textRgb.r) / 255, green: Double(PodiumArt.textRgb.g) / 255, blue: Double(PodiumArt.textRgb.b) / 255))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(A11yLabels.podiumOpenSpot(place))
+    }
 
     /// The pedestal art (podium art 10-03, docs/design/brand/podium): `art-podium-N` wears
     /// its numeral; a step whose label isn't its metal's number takes the plain pedestal
-    /// with the label on it. Same heights as the code-drawn steps; the width follows the art.
+    /// with the label on it. (The Stage card's pedestals still use it.)
     static func pedestalArt(tone: Int, numbered: Bool) -> String {
         "art-podium-\(min(max(tone, 1), 3))\(numbered ? "" : "-plain")"
     }
 
-    /// BJ2: the pedestals + floor decoded off main before the Leaderboard / Home first shows them.
+    /// BJ2: the podium image + the pedestals decoded off main before the Leaderboard / Home first shows them.
     static func prewarm() {
-        var items: [(String, CGFloat)] = [("art-podium-floor", 360)]
+        var items: [(String, CGFloat)] = [("art-podium-stage", 400)]
         for t in 1...3 { items.append((pedestalArt(tone: t, numbered: true), 96)) }
         ArtThumbs.prewarm(items)
     }
-
-    private func step(tone: Int, label: String) -> some View {
-        let numbered = label == "\(min(max(tone, 1), 3))"
-        return ZStack {
-            ArtThumbs.image(Self.pedestalArt(tone: tone, numbered: numbered), points: 96)
-                .resizable().interpolation(.high).scaledToFit()
-            if !numbered {
-                Text(label)
-                    .font(Brand.font(compact ? 18 : 20, .black))
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.18), radius: 0, x: 0, y: 2)
-                    .offset(y: stepHeight(tone) * 0.12)
-            }
-        }
-        .frame(height: stepHeight(tone))
-        .frame(maxWidth: .infinity)
-        .accessibilityHidden(true)
-    }
-
-    /// BJ4: an open place — R asleep where the avatar would be, quiet lines, the step
-    /// in its metal softly dimmed. Intentional, never a grey circle or an outline.
-    private func openSpot(place: Int) -> some View {
-        let copy = PodiumLayout.openSpot(place)
-        let h: CGFloat = compact ? 38 : 44
-        return VStack(spacing: 4) {
-            ArtThumbs.image("art-scene-r-asleep", points: h * 1.3)
-                .resizable().interpolation(.high).scaledToFit()
-                .frame(height: h)
-                .opacity(0.85)
-            Text(copy.title)
-                .font(Brand.font(compact ? 12 : 13, .black))
-                .foregroundStyle(lightOnly ? FinishInk.muted : FinishInk.secondary)
-                .lineLimit(1).minimumScaleFactor(0.7)
-            Text(copy.line)
-                .font(Brand.font(compact ? 11 : 12, .heavy))
-                .foregroundStyle((lightOnly ? FinishInk.muted : FinishInk.secondary).opacity(0.8))
-                .lineLimit(1).minimumScaleFactor(0.7)
-            step(tone: place, label: "\(place)").opacity(0.45)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Place \(place) is open")
-    }
 }
 
-/// FINISH_SPEC BJ4 (founder 10-03: "a subtle background … it could use some finish"):
-/// the podium's stage — one soft vertical wash in the board's accent, ONE static shape
-/// layer (faint sunburst rays fanning out from behind #1 plus a few tiny confetti dots),
-/// and a soft floor shadow under the steps. Static (drawn once), no blur, no outline.
 extension PodiumView {
     /// A plaque's detail ("3 guesses · 1m 14s · 4/4") as at most two lines: the first part, then the rest.
     static func detailLines(_ detail: String) -> [String] {
@@ -762,53 +655,6 @@ extension PodiumView {
             return ["\(first) · \(parts[h])", rest.joined(separator: " · ")]
         }
         return parts.count == 1 ? [first] : [first, parts.dropFirst().joined(separator: " · ")]
-    }
-}
-
-struct PodiumStage: View {
-    let accent: Color
-
-    private static let confetti: [(x: CGFloat, y: CGFloat, r: CGFloat, hex: UInt)] = [
-        (0.07, 0.20, 2.0, 0xEC4899), (0.17, 0.48, 1.6, 0x22C55E), (0.29, 0.12, 1.8, 0x2563EB),
-        (0.71, 0.10, 2.0, 0xF5A524), (0.82, 0.42, 1.6, 0x7C3AED), (0.93, 0.18, 1.9, 0xEC4899),
-        (0.40, 0.30, 1.4, 0x22C55E), (0.61, 0.34, 1.4, 0x2563EB),
-    ]
-
-    var body: some View {
-        let dark = Theme.isDark
-        ZStack(alignment: .bottom) {
-            LinearGradient(colors: [accent.opacity(dark ? 0.12 : 0.16), accent.opacity(0)],
-                           startPoint: .top, endPoint: .bottom)
-            Canvas { ctx, size in
-                // Sunburst: 12 thin wedges from just above the #1 column, fading outward.
-                let c = CGPoint(x: size.width / 2, y: size.height * 0.30)
-                let reach = max(size.width, size.height) * 0.75
-                var rays = Path()
-                for i in 0..<12 {
-                    let a = Double(i) / 12 * 2 * .pi
-                    let w = 0.09
-                    rays.move(to: c)
-                    rays.addLine(to: CGPoint(x: c.x + reach * cos(a - w), y: c.y + reach * sin(a - w)))
-                    rays.addLine(to: CGPoint(x: c.x + reach * cos(a + w), y: c.y + reach * sin(a + w)))
-                    rays.closeSubpath()
-                }
-                ctx.fill(rays, with: .radialGradient(
-                    Gradient(colors: [(dark ? Color.white : accent).opacity(dark ? 0.07 : 0.11), .clear]),
-                    center: c, startRadius: 8, endRadius: reach * 0.8))
-                for d in Self.confetti {
-                    let r = d.r
-                    ctx.fill(Path(ellipseIn: CGRect(x: d.x * size.width - r, y: d.y * size.height - r, width: r * 2, height: r * 2)),
-                             with: .color(Color(hex: d.hex).opacity(dark ? 0.35 : 0.5)))
-                }
-                // The floor shadow under the steps.
-                let floor = CGRect(x: size.width * 0.06, y: size.height - 9, width: size.width * 0.88, height: 14)
-                ctx.fill(Path(ellipseIn: floor), with: .radialGradient(
-                    Gradient(colors: [Color.black.opacity(dark ? 0.22 : 0.10), .clear]),
-                    center: CGPoint(x: floor.midX, y: floor.midY), startRadius: 0, endRadius: floor.width / 2))
-            }
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
     }
 }
 
@@ -962,26 +808,148 @@ extension ToggleStyle where Self == CandySwitchStyle {
 }
 
 
-/// 2.8 item 13 (founder 10-07: "full-body mascots STANDING on their steps, no tile frame, ~2-3x today's size, crown on
-/// its head"): one podium place's figure. A mascot player (no photo) is drawn as the free-standing living mascot in the
-/// pose of their place while `AvatarLiveConfig.livingMascot` is on (the remote `living_mascot` switch); everyone else, and
-/// the whole podium while it is off, keeps the framed AvatarView exactly as before. Layout: the figure's feet overlap the
-/// step below by `PodiumFigure.footOverlap`, so it stands ON it.
+/// One podium place on the one-image podium: the player's mascot (or framed photo tile) with its lowest drawn pixel on
+/// the step-top `feet`, the crown on #1's head, and the name floating ABOVE the head (above the crown on #1) with a clear
+/// gap. Everything is measured against the DRAWN figure (the layout's bounds), not its padded box, so a tall hat or a
+/// round head never touches the label. #1 gets the one calm load-in (glow, sparkles, crown drop).
+struct PodiumPlace: View {
+    let entry: PodiumEntry
+    let place: Int
+    /// Where the figure's feet land (the scene's coordinates).
+    let feet: CGPoint
+    /// The podium image's width (pt): sizes everything.
+    let width: CGFloat
+    /// Opens the mini Stage card (nil = the card is off).
+    let onStage: (() -> Void)?
+    let onTap: ((PodiumEntry) -> Void)?
+    @ObservedObject private var directory = AvatarDirectory.shared
+
+    /// The label's clear gap above the DRAWN head (pt), and above the crown on #1 (core PODIUM_ART).
+    static var nameGap: CGFloat { CGFloat(PodiumArt.nameGapPt) }
+    static var crownGap: CGFloat { CGFloat(PodiumArt.nameGapPt + PodiumArt.crownGapPt) }
+
+    var body: some View {
+        let e = entry
+        let tone = min(e.rank ?? place, 3)
+        let first = place == 1
+        let box = width * (tone == 1 ? PodiumView.goldFigure : PodiumView.otherFigure)
+        let living = PodiumFigure.standsFull(e)
+        let side = living ? box : box * 0.5
+        let b = living ? (PodiumFigure.bounds(e, place: place, size: side) ?? AvatarRect(x: 0.12, y: 0.1, w: 0.76, h: 0.84))
+                       : AvatarRect(x: 0, y: 0, w: 1, h: 1)
+        let figBottom = feet.y + CGFloat(1 - (b.y + b.h)) * side
+        let figTop = figBottom - side
+        let headTop = figTop + CGFloat(b.y) * side
+        let crownSize = width * 0.085
+        let crownTop = headTop + crownSize * 0.2 - crownSize
+        let nameSize = width * (tone == 1 ? 0.053 : 0.0447)
+        let nameH = nameSize * 1.3
+        let nameTop = (first ? crownTop - Self.crownGap : headTop - Self.nameGap) - nameH + nameSize * 0.14   // the bubble line has ~0.14 em of air under its glyphs
+        let nameWidth = max(side * 1.1, width * 0.26)
+        let cw = max(nameWidth, side)
+        let unitH = figBottom - nameTop
+        let shadowW = CGFloat(b.w) * side * CGFloat(PodiumArt.shadowWidth)
+        let ownsCard = DressUp.isOwn(e.id) || (living && onStage != nil) || onTap != nil
+
+        ZStack(alignment: .topLeading) {
+            // The contact shadow under the feet (a static radial, no blur).
+            Ellipse()
+                .fill(RadialGradient(colors: [Color.black.opacity(0.5), Color.black.opacity(0)], center: .center,
+                                     startRadius: 0, endRadius: shadowW / 2))
+                .frame(width: shadowW, height: shadowW * 0.26)
+                .position(x: feet.x, y: feet.y)
+            if first {
+                PodiumWinnerGlow(diameter: side * CGFloat(PodiumWinnerIntro.glowSize))
+                    .position(x: feet.x, y: figTop + side / 2)
+            }
+            unit(e, side: side, living: living, cw: cw, nameWidth: nameWidth, nameSize: nameSize,
+                 unitH: unitH, figTop: figTop - nameTop, crownTop: crownTop - nameTop, crownSize: crownSize, first: first, ownsCard: ownsCard)
+                .position(x: feet.x, y: nameTop + unitH / 2)
+            if first && Self.sparkling {
+                ForEach(0..<PodiumWinnerIntro.sparkleOffsets.count, id: \.self) { i in
+                    let o = PodiumWinnerIntro.sparkleOffsets[i]
+                    PodiumWinnerSparkle(size: side * CGFloat(PodiumWinnerIntro.sparkleSize),
+                                        delay: (PodiumWinnerIntro.sparkleDelayMs + Double(i) * PodiumWinnerIntro.sparkleStaggerMs) / 1000)
+                        .position(x: feet.x + CGFloat(o[0]) * side, y: figTop + side / 2 + CGFloat(o[1]) * side)
+                }
+            }
+            if let bell = e.bell {
+                // the Friends board's taunt bell: small, beside the name on the step's outer side
+                Button(action: bell) {
+                    Icon3D(.bell, size: 16).frame(width: 30, height: 24).contentShape(Rectangle())
+                }
+                .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23: the family round icon, compact (row-sized)
+                .accessibilityLabel("Taunt \(e.name)")
+                .position(x: min(feet.x + nameWidth / 2 + 4, width - 17), y: nameTop + nameH / 2)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private static var sparkling: Bool { !(Theme.reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled) }
+
+    @ViewBuilder
+    private func unit(_ e: PodiumEntry, side: CGFloat, living: Bool, cw: CGFloat, nameWidth: CGFloat, nameSize: CGFloat,
+                      unitH: CGFloat, figTop: CGFloat, crownTop: CGFloat, crownSize: CGFloat, first: Bool, ownsCard: Bool) -> some View {
+        let tone = min(e.rank ?? place, 3)
+        let content = ZStack(alignment: .topLeading) {
+            BubbleOneLine(text: e.name.uppercased(),
+                          palette: .accent(PlayerTint.nameColor(userId: e.id, username: e.username)),
+                          size: nameSize)
+                .frame(width: nameWidth)
+                .background {
+                    // Founder 10-09: a soft glow in the player's secondary (pattern) color behind the name so it pops.
+                    let glow = PlayerTint.secondaryColor(userId: e.id, username: e.username)
+                    ZStack {
+                        if !PerfFlags.noPodGlow {
+                            Capsule().fill(glow.opacity(0.55)).padding(.horizontal, nameWidth * 0.2).padding(.vertical, -4).blur(radius: 12)
+                            Capsule().fill(glow.opacity(0.9)).padding(.horizontal, nameWidth * 0.3).padding(.vertical, 3).blur(radius: 6)
+                        }
+                    }
+                }
+                .offset(x: (cw - nameWidth) / 2, y: 0)
+            PodiumFigure(entry: e, place: place, tone: tone, size: side, living: living)
+                .frame(width: side, height: side)
+                .offset(x: (cw - side) / 2, y: figTop)
+            if first {
+                PodiumWinnerCrown(size: crownSize)
+                    .offset(x: (cw - crownSize) / 2, y: crownTop)
+            }
+        }
+        .frame(width: cw, height: unitH, alignment: .topLeading)
+        Group {
+            if ownsCard {
+                // Founder 10-05 (door 1): your own place opens your Stage; a standing mascot opens its mini Stage card.
+                Button {
+                    if DressUp.isOwn(e.id) { DressUp.shared.open() }
+                    else if living, let onStage { Haptics.tap(); onStage() }
+                    else { onTap?(e) }
+                } label: { content.contentShape(Rectangle()) }.buttonStyle(.squish)
+            } else {
+                content
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(A11yLabels.podiumPlace(e.rank ?? place, name: e.name, points: e.value, detail: e.detail))
+        .accessibilityHint(living && onStage != nil && !DressUp.isOwn(e.id) ? "Opens their stage" : "")
+    }
+}
+
+/// 2.8 item 13 (founder 10-07: "full-body mascots STANDING on their steps, no tile frame"): the figure itself. A mascot
+/// player (no photo) is drawn as the free-standing living mascot in the pose of their place while
+/// `AvatarLiveConfig.livingMascot` is on (the remote `living_mascot` switch); everyone else, and the whole podium while it
+/// is off, keeps the framed AvatarView. The one-image podium (10-15) sets where its feet land; no glow behind it any more
+/// (the stadium art carries the light).
 struct PodiumFigure: View {
     let entry: PodiumEntry
     let place: Int
     let tone: Int
-    /// The old tile size (pt); a standing figure draws at `scale` times it.
+    /// The figure's square (pt): the living mascot's box, or the framed tile's side.
     let size: CGFloat
-    let compact: Bool
+    /// Whether this place stands full-body (`standsFull`), decided once by the podium.
+    let living: Bool
 
     @ObservedObject private var directory = AvatarDirectory.shared
-    @Environment(\.accessibilityReduceMotion) private var envReduce
-
-    /// How much bigger the standing figure is than the old tile.
-    static let scale: CGFloat = 2.0
-    /// How far the figure's feet sink into the step (pt) so it stands on it.
-    static let footOverlap: CGFloat = 12
 
     private var resolved: AvatarResolve.Resolved {
         directory.look(username: entry.username, userId: entry.id, url: entry.avatarUrl, castId: nil, frame: nil,
@@ -997,86 +965,100 @@ struct PodiumFigure: View {
         return r.photoUrl == nil && LivingMascotView.canAnimate(r.config)
     }
 
+    /// The standing figure's DRAWN bounds in the box's fractions (head / hat top, feet bottom), from the same live layout the
+    /// mascot is painted with. nil when it doesn't stand full-body.
+    static func bounds(_ e: PodiumEntry, place: Int, size: CGFloat) -> AvatarRect? {
+        let r = AvatarDirectory.shared.look(username: e.username, userId: e.id, url: e.avatarUrl, castId: nil, frame: nil,
+                                            mascot: nil, accentHex: nil, lookup: true).resolved
+        guard r.photoUrl == nil, LivingMascotView.canAnimate(r.config), let fit = MascotParts.fit else { return nil }
+        var c = r.config; c.pose = AvatarPose.placePose(place); c.frame = "none"
+        return LiveLayoutMemo.layout(c, small: size <= MascotParts.smallSize, manifest: fit).bounds
+    }
+
     var body: some View {
         let r = resolved
-        if AvatarLiveConfig.livingMascot, r.photoUrl == nil, LivingMascotView.canAnimate(r.config) {
-            let big = size * Self.scale
+        if living, r.photoUrl == nil, LivingMascotView.canAnimate(r.config) {
             let posed: AvatarConfig = { var c = r.config; c.pose = AvatarPose.placePose(place); return c }()
             let initial = AvatarCatalog.initial(entry.username)
-            LivingMascotView(config: posed, initial: initial, size: big, cutout: true, interactive: false, own: DressUp.isOwn(entry.id),
+            LivingMascotView(config: posed, initial: initial, size: size, cutout: true, interactive: false, own: DressUp.isOwn(entry.id),
                              label: A11yLabels.mascot(own: DressUp.isOwn(entry.id), name: entry.name))
-                .frame(width: big, height: big)
-                .background { PodiumGlow(tone: tone, height: big) }
-                .overlay(alignment: .top) {
-                    // the crown sits ON the first place's head
-                    if place == 1 { Icon3D(.crown, size: compact ? 30 : 34).offset(y: -big * 0.05) }
-                }
-                .padding(.bottom, -Self.footOverlap)
-                .zIndex(1)
+                .frame(width: size, height: size)
         } else {
             AvatarView(url: entry.avatarUrl, username: entry.username, size: size, accentHex: entry.accentHex, emoji: entry.emoji,
                        pro: entry.pro, userId: entry.id)
-                .background { PodiumGlow(tone: tone, height: size) }
         }
     }
 }
 
-/// Podium glow (2.8 TestFlight feedback: "a glow behind the characters so they stand out"): a soft radial light behind a
-/// standing figure, one clearly different hue per metal (1st warm gold with a few twinkling sparkles, 2nd cool silver,
-/// 3rd copper bronze). Behind the figure only (a `.background`), no edge, transparent by its rim; the sparkles hold still
-/// under Reduce Motion / calm motion. Mirrors web PODIUM_GLOW / PodiumGlow and Android PodiumGlow hex-for-hex.
-struct PodiumGlow: View {
-    let tone: Int
-    /// The figure's height (pt): the glow is a multiple of it.
-    let height: CGFloat
-    @State private var twinkle = false
 
-    private var spec: (core: UInt, alpha: Double, scale: CGFloat) {
-        switch min(max(tone, 1), 3) {
-        case 1: return (0xFFC93C, 0.8, 1.55)
-        case 2: return (0xB4C8EE, 0.75, 1.4)
-        default: return (0xF28A3B, 0.7, 1.4)
-        }
-    }
-    private static let sparkles: [(x: CGFloat, y: CGFloat, size: CGFloat, delay: Double)] = [
-        (0.14, 0.30, 9, 0), (0.86, 0.24, 7, 0.7), (0.24, 0.74, 6, 1.3), (0.80, 0.68, 8, 0.35),
-    ]
+/// 2.8 item 13: which podium mascot was tapped (its mini Stage card).
+struct PodiumStageTarget: Identifiable {
+    let entry: PodiumEntry
+    let place: Int
+    var id: String { entry.id }
+}
+
+/// The #1 load-in, part 1: a soft gold radial glow behind the mascot that fades and scales in once (CSS ease-out), then rests
+/// at a low opacity. Static (the resting look) under Reduce Motion. Transform + opacity only. (Core PODIUM_WINNER_INTRO.)
+private struct PodiumWinnerGlow: View {
+    let diameter: CGFloat
+    @State private var on = false
+    @Environment(\.accessibilityReduceMotion) private var envReduce
 
     var body: some View {
-        let g = spec
-        let d = (height * g.scale).rounded()
-        let core = Color(hex: g.core)
-        let calm = Theme.reduceMotion
-        ZStack {
-            Circle().fill(RadialGradient(
-                gradient: Gradient(stops: [
-                    .init(color: core.opacity(g.alpha), location: 0),
-                    .init(color: core.opacity(g.alpha * 0.45), location: 0.54),
-                    .init(color: core.opacity(0), location: 1),
-                ]),
-                center: .center, startRadius: 0, endRadius: d / 2))
-            if tone <= 1 {
-                ForEach(0..<Self.sparkles.count, id: \.self) { i in
-                    let s = Self.sparkles[i]
-                    PodiumSparkle()
-                        .fill(Color(hex: 0xFFF1B8))
-                        .frame(width: s.size, height: s.size)
-                        .scaleEffect(calm ? 1 : (twinkle ? 1.1 : 0.7))
-                        .opacity(calm ? 0.85 : (twinkle ? 1 : 0.35))
-                        .animation(calm ? nil : .easeInOut(duration: 1.3).repeatForever(autoreverses: true).delay(s.delay), value: twinkle)
-                        .position(x: d * s.x, y: d * s.y)
-                }
+        let calm = envReduce || Theme.reduceMotion
+        let c = PodiumWinnerIntro.glowRgb
+        let gold = Color(red: Double(c.r) / 255, green: Double(c.g) / 255, blue: Double(c.b) / 255)
+        Circle()
+            .fill(RadialGradient(gradient: Gradient(stops: [
+                .init(color: gold.opacity(0.9), location: 0),
+                .init(color: gold.opacity(0.4), location: 0.5),
+                .init(color: gold.opacity(0), location: 1),
+            ]), center: .center, startRadius: 0, endRadius: diameter / 2))
+            .frame(width: diameter, height: diameter)
+            .scaleEffect(calm || on ? CGFloat(PodiumWinnerIntro.glowToScale) : CGFloat(PodiumWinnerIntro.glowFromScale))
+            .opacity(calm || on ? PodiumWinnerIntro.glowRestOpacity : 0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .onAppear {
+                guard !calm else { return }
+                let e = PodiumWinnerIntro.glowEase
+                withAnimation(.timingCurve(e[0], e[1], e[2], e[3], duration: PodiumWinnerIntro.glowMs / 1000)) { on = true }
             }
-        }
-        .frame(width: d, height: d)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-        .onAppear { if !calm { twinkle = true } }
     }
 }
 
-/// A four-point sparkle (the gold glow's twinkles).
-private struct PodiumSparkle: Shape {
+/// Part 2: a small four-point sparkle that fades in, drifts up a few points and fades out, once, over `sparkleMs`
+/// (staggered by `delay`).
+private struct PodiumWinnerSparkle: View {
+    let size: CGFloat
+    let delay: Double
+    @State private var shown = false
+    @State private var drift = false
+
+    var body: some View {
+        let c = PodiumWinnerIntro.sparkleRgb
+        let life = PodiumWinnerIntro.sparkleMs / 1000
+        PodiumSparkleShape()
+            .fill(Color(red: Double(c.r) / 255, green: Double(c.g) / 255, blue: Double(c.b) / 255))
+            .frame(width: size, height: size)
+            .scaleEffect(shown ? 1 : 0.6)
+            .offset(y: drift ? -CGFloat(PodiumWinnerIntro.sparkleDriftPt) : 0)
+            .opacity(shown ? PodiumWinnerIntro.sparklePeakOpacity : 0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .onAppear {
+                withAnimation(.linear(duration: life).delay(delay)) { drift = true }
+                withAnimation(.easeOut(duration: life * 0.35).delay(delay)) { shown = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay + life * 0.4) {
+                    withAnimation(.easeIn(duration: life * 0.6)) { shown = false }
+                }
+            }
+    }
+}
+
+/// A four-point sparkle.
+private struct PodiumSparkleShape: Shape {
     func path(in r: CGRect) -> Path {
         let w = r.width, h = r.height
         let pts: [(CGFloat, CGFloat)] = [(0.5, 0), (0.62, 0.38), (1, 0.5), (0.62, 0.62), (0.5, 1), (0.38, 0.62), (0, 0.5), (0.38, 0.38)]
@@ -1090,34 +1072,30 @@ private struct PodiumSparkle: Shape {
     }
 }
 
-
-/// 2.8 item 13: which podium mascot was tapped (its mini Stage card).
-struct PodiumStageTarget: Identifiable {
-    let entry: PodiumEntry
-    let place: Int
-    var id: String { entry.id }
-}
-
-/// 2.8 item 13: the winner's confetti burst, once, as the podium opens (the celebration kit's party burst, the season's
-/// swap when there is one). Transform + opacity only; nothing under Reduce Motion / Low Power.
-private struct PodiumBurst: View {
-    @State private var up = false
-    @State private var gone = false
+/// Part 3: the crown drops onto #1's head gently: ease-out over the intro's crown duration, a tiny dip below rest at ~70% of the
+/// move, then back to rest. Once.
+private struct PodiumWinnerCrown: View {
+    let size: CGFloat
+    /// 0 = above (hidden), 1 = dipped slightly below rest, 2 = at rest.
+    @State private var stage = 0
+    @Environment(\.accessibilityReduceMotion) private var envReduce
 
     var body: some View {
-        Group {
-            if !Motion.calm(), let n = SeasonKit.extra("celebrate-burst-party"), ArtAsset.exists(n) {
-                Image(n).resizable().interpolation(.high).scaledToFit().frame(width: 170)
-                    .scaleEffect(up ? 1.05 : 0.4)
-                    .opacity(gone ? 0 : (up ? 1 : 0))
-                    .onAppear {
-                        withAnimation(.easeOut(duration: 0.55)) { up = true }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { withAnimation(.easeIn(duration: 0.5)) { gone = true } }
+        let calm = envReduce || Theme.reduceMotion
+        let st = calm ? 2 : stage
+        Icon3D(.crown, size: size)
+            .offset(y: st == 0 ? -CGFloat(PodiumWinnerIntro.crownDropPt) : (st == 1 ? CGFloat(PodiumWinnerIntro.crownSettlePt) : 0))
+            .opacity(st == 0 ? 0 : 1)
+            .onAppear {
+                guard !calm else { return }
+                let total = PodiumWinnerIntro.crownMs / 1000
+                DispatchQueue.main.asyncAfter(deadline: .now() + PodiumWinnerIntro.crownDelayMs / 1000) {
+                    withAnimation(.easeOut(duration: total * 0.7)) { stage = 1 }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + total * 0.7) {
+                        withAnimation(.easeInOut(duration: total * 0.3)) { stage = 2 }
                     }
+                }
             }
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
     }
 }
 

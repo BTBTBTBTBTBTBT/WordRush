@@ -53,6 +53,65 @@ final class AvatarResolveTests: XCTestCase {
         }
     }
 
+    /// The one-image podium geometry (packages/core PODIUM_ART): the literal numbers, and the fixture's "art" once generated.
+    func testPodiumArtGeometry() throws {
+        XCTAssertEqual(PodiumArt.aspect, 1.5)
+        XCTAssertEqual(PodiumArt.order, [2, 1, 3])
+        XCTAssertEqual(PodiumArt.step(2).feet, PodiumArt.Point(x: 0.220, y: 0.435))
+        XCTAssertEqual(PodiumArt.step(1).feet, PodiumArt.Point(x: 0.500, y: 0.366))
+        XCTAssertEqual(PodiumArt.step(3).feet, PodiumArt.Point(x: 0.783, y: 0.455))
+        XCTAssertEqual(PodiumArt.step(2).panel, PodiumArt.Panel(x0: 0.103, x1: 0.335, y0: 0.605, y1: 0.810))
+        XCTAssertEqual(PodiumArt.step(1).panel, PodiumArt.Panel(x0: 0.383, x1: 0.620, y0: 0.581, y1: 0.799))
+        XCTAssertEqual(PodiumArt.step(3).panel, PodiumArt.Panel(x0: 0.667, x1: 0.902, y0: 0.615, y1: 0.810))
+        let fx = try fixture("podium-layout-fixtures")
+        guard let art = fx["art"] as? [String: Any] else { return }   // not generated yet
+        XCTAssertEqual(art["aspect"] as? Double, PodiumArt.aspect)
+        XCTAssertEqual(art["plantPt"] as? Double, PodiumArt.plantPt)
+        XCTAssertEqual(art["nameGapPt"] as? Double, PodiumArt.nameGapPt)
+        XCTAssertEqual(art["crownRise"] as? Double, PodiumArt.crownRise)
+        XCTAssertEqual(art["crownGapPt"] as? Double, PodiumArt.crownGapPt)
+        XCTAssertEqual(art["shadowWidth"] as? Double, PodiumArt.shadowWidth)
+        XCTAssertEqual(art["scoreHeight"] as? Double, PodiumArt.scoreHeight)
+        XCTAssertEqual(art["detailHeight"] as? Double, PodiumArt.detailHeight)
+        XCTAssertEqual(art["textRgb"] as? [Int], [PodiumArt.textRgb.r, PodiumArt.textRgb.g, PodiumArt.textRgb.b])
+        XCTAssertEqual(fx["artOrder"] as? [Int], PodiumArt.order)
+        if let w = fx["winnerIntro"] as? [String: Any] {
+            let g = try XCTUnwrap(w["glow"] as? [String: Any]), sp = try XCTUnwrap(w["sparkles"] as? [String: Any]), c = try XCTUnwrap(w["crown"] as? [String: Any])
+            XCTAssertEqual(g["size"] as? Double, PodiumWinnerIntro.glowSize)
+            XCTAssertEqual(g["colorRgb"] as? [Int], [PodiumWinnerIntro.glowRgb.r, PodiumWinnerIntro.glowRgb.g, PodiumWinnerIntro.glowRgb.b])
+            XCTAssertEqual(g["fromScale"] as? Double, PodiumWinnerIntro.glowFromScale)
+            XCTAssertEqual(g["toScale"] as? Double, PodiumWinnerIntro.glowToScale)
+            XCTAssertEqual(g["durationMs"] as? Double, PodiumWinnerIntro.glowMs)
+            XCTAssertEqual(g["ease"] as? [Double], PodiumWinnerIntro.glowEase)
+            XCTAssertEqual(g["restOpacity"] as? Double, PodiumWinnerIntro.glowRestOpacity)
+            XCTAssertEqual(sp["offsets"] as? [[Double]], PodiumWinnerIntro.sparkleOffsets)
+            XCTAssertEqual(sp["size"] as? Double, PodiumWinnerIntro.sparkleSize)
+            XCTAssertEqual(sp["durationMs"] as? Double, PodiumWinnerIntro.sparkleMs)
+            XCTAssertEqual(sp["delayMs"] as? Double, PodiumWinnerIntro.sparkleDelayMs)
+            XCTAssertEqual(sp["staggerMs"] as? Double, PodiumWinnerIntro.sparkleStaggerMs)
+            XCTAssertEqual(sp["driftPt"] as? Double, PodiumWinnerIntro.sparkleDriftPt)
+            XCTAssertEqual(sp["peakOpacity"] as? Double, PodiumWinnerIntro.sparklePeakOpacity)
+            XCTAssertEqual(sp["colorRgb"] as? [Int], [PodiumWinnerIntro.sparkleRgb.r, PodiumWinnerIntro.sparkleRgb.g, PodiumWinnerIntro.sparkleRgb.b])
+            XCTAssertEqual(c["delayMs"] as? Double, PodiumWinnerIntro.crownDelayMs)
+            XCTAssertEqual(c["durationMs"] as? Double, PodiumWinnerIntro.crownMs)
+            XCTAssertEqual(c["dropPt"] as? Double, PodiumWinnerIntro.crownDropPt)
+            XCTAssertEqual(c["settlePt"] as? Double, PodiumWinnerIntro.crownSettlePt)
+        }
+        let cel = try XCTUnwrap(fx["celebration"] as? [String: Any])
+        XCTAssertEqual(try XCTUnwrap(cel["aspect"] as? Double), CelebrationStage.aspect, accuracy: 1e-9)
+        XCTAssertEqual(cel["feetX"] as? [Double], CelebrationStage.feetX)
+        XCTAssertEqual(cel["footY"] as? Double, CelebrationStage.footY)
+        let steps = try XCTUnwrap(art["steps"] as? [[String: Any]])
+        XCTAssertEqual(steps.count, PodiumArt.steps.count)
+        for (s, mine) in zip(steps, PodiumArt.steps) {
+            let feet = try XCTUnwrap(s["feet"] as? [String: Double]), panel = try XCTUnwrap(s["panel"] as? [String: Double])
+            XCTAssertEqual(s["place"] as? Int, mine.place)
+            XCTAssertEqual(feet["x"], mine.feet.x); XCTAssertEqual(feet["y"], mine.feet.y)
+            XCTAssertEqual(panel["x0"], mine.panel.x0); XCTAssertEqual(panel["x1"], mine.panel.x1)
+            XCTAssertEqual(panel["y0"], mine.panel.y0); XCTAssertEqual(panel["y1"], mine.panel.y1)
+        }
+    }
+
     func testPodiumForNResults() {
         XCTAssertEqual(PodiumLayout.layout([1]).open, [2, 3])
         XCTAssertEqual(PodiumLayout.layout([1, 2]).open, [3])

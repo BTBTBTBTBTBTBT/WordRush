@@ -40,6 +40,8 @@ struct HomeBannerView: View {
     @State private var headWidth: CGFloat = 0
     @State private var unlimitedAfterPurchase = false
     @ObservedObject private var auth = AuthService.shared
+    /// The admin season preview flips the stage art live.
+    @AppStorage(CastSkin.debugKey) private var debugSeason = ""
 
     private var unlimited: Bool { playMode == .unlimited }
     private var wTier: BannerTier { unlimited ? .none : HomeBanner.groupTier(word.progress) }
@@ -137,12 +139,18 @@ struct HomeBannerView: View {
         // ART_SPEC §18.4: radius 22, the full content width.
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         let hasPuzzles = !puzzles.modes.isEmpty
+        let stageOn = Self.stageArt != nil && momentArt != nil
         let card = VStack(spacing: 0) {
+            // Founder 10-15: in the Halloween season the headline zone (cap + strip + the cast's slot) sits on the
+            // curtain-stage art; the zone keeps its layout, only what draws on it changes.
+            VStack(spacing: 0) {
             // BJ6 flair (founder 10-03: "that window needs flair … it looks unfinished"): the candy
             // frosting cap across the top edge, like the game cards' trim — brand purple → pink,
             // the moment's gold / pink on a swept / flawless day. Static, one shape.
+            // The stage art has its own coral valance: the cap keeps its room but is not drawn.
             BannerCap(colors: slots.showsMomentArt ? (momentBar ?? Self.brandCap) : Self.brandCap,
                       season: (slots.showsMomentArt && momentBar != nil) ? nil : look?.capStops(Self.brandCap[1]))
+                .opacity(stageOn ? 0 : 1)
             strip
             // §G4: the wide sweep / flawless art across the banner under the headline,
             // the whole cast in it fully visible (never cropped).
@@ -151,7 +159,9 @@ struct HomeBannerView: View {
                     // Founder 10-09: on a Flawless day the celebrating trio is ALIVE (each bounces, sways and squashes on its
                     // own beat under a swaying bunting, sparkles twinkling) instead of one flat picture.
                     // Founder 10-10: EVERY banner state is alive the same way (sweep, the season's idle cast), not a still.
-                    if let trio = Self.liveTrio(art: art, moment: slots.showsMomentArt ? moment : nil) {
+                    if stageOn {
+                        Color.clear.frame(height: 104)   // the cast stands on the stage's pools (overlay below)
+                    } else if let trio = Self.liveTrio(art: art, moment: slots.showsMomentArt ? moment : nil) {
                         trio.frame(height: 104)
                     } else {
                         Image(art).resizable().interpolation(.high).scaledToFit()
@@ -162,7 +172,7 @@ struct HomeBannerView: View {
                     .opacity(slots.showsMomentArt ? 1 : 0)
                     // §Z: Unlimited keeps the slot — U in her loop fills it instead.
                     .overlay {
-                        if !slots.showsMomentArt && ArtAsset.exists("art-scene-unlimited-loop") {
+                        if !stageOn && !slots.showsMomentArt && ArtAsset.exists("art-scene-unlimited-loop") {
                             ArtThumbs.image("art-scene-unlimited-loop", points: 130)   // §AQ2: slot-sized
                                 .resizable().interpolation(.high).scaledToFit()
                                 .idleLife(hop: 4, sway: 2.5, period: 1.8)
@@ -172,6 +182,9 @@ struct HomeBannerView: View {
                     .padding(.horizontal, 10).padding(.top, 6)
                     .accessibilityHidden(true)
             }
+            }
+            .background { if stageOn, let stage = Self.stageArt { stageBackdrop(stage) } }
+            .overlay { if stageOn, let art = momentArt { stageCast(art: art) } }
             // BI21: both rows share one tile size (sized so 10 fit) and spread edge to edge.
             // BJ6 (founder 10-03: the progress icons "a snag bigger"): the rows zone trims its side
             // padding to 6 and the tiles' minimum gap to 4 so the shared tile is as large as fits,
@@ -232,6 +245,81 @@ struct HomeBannerView: View {
             // stays inside the scroll content (it rose `scrollTopGap` past it, so the scroll view cut tall
             // hats and the crown at the header line).
             .padding(.top, Self.hostRise)
+    }
+
+    // MARK: Halloween curtain stage (founder 10-15)
+
+    /// The curtain-stage art (`art-celebration-stage-halloween`, 1586 x 992) behind the headline zone, in the Halloween
+    /// season only; nil otherwise (the card stays exactly as it was). A standard-season stage comes later.
+    private static var stageArt: String? {
+        guard CastSkin.season == .halloween, ArtAsset.exists("art-celebration-stage-halloween") else { return nil }
+        return "art-celebration-stage-halloween"
+    }
+    /// The three spotlight pools on the art (core CelebrationStage): x of the card width, y of its height (feet land here).
+    /// Decodes the stage art (in season only) at the zone's size off main; call on the main thread.
+    static func prewarmStage() {
+        guard let name = stageArt else { return }
+        let w = UIScreen.main.bounds.width - 32
+        // a phone's zone is about the art's aspect: its cover-fit width is the card width
+        ArtThumbs.prewarm([(name, w)])
+    }
+
+    private static let stagePoolX: [CGFloat] = CelebrationStage.feetX.map { CGFloat($0) }
+    private static let stagePoolY = CGFloat(CelebrationStage.footY)
+
+    /// The cover-fit placement of the art in a zone of `size`: the image fills it (overflow cropped). A zone close to the art's
+    /// aspect (a phone) shows it whole, centered. On a wide tablet zone the crop is shifted so the pools stay inside the
+    /// zone's lower part (never cropped away or pushed over the tile rows).
+    private static func stageRect(in size: CGSize) -> CGRect {
+        let aspect = CGFloat(CelebrationStage.aspect)
+        let k = max(size.width / aspect, size.height)   // image height in points
+        let iw = k * aspect, ih = k
+        let centered = (size.height - ih) / 2
+        let wanted = size.height * 0.86 - stagePoolY * ih
+        return CGRect(x: (size.width - iw) / 2, y: min(0, max(size.height - ih, abs(ih - size.height) < 1 ? centered : wanted)),
+                      width: iw, height: ih)
+    }
+
+    private static func stagePoint(_ fx: CGFloat, _ fy: CGFloat, in size: CGSize) -> CGPoint {
+        let r = stageRect(in: size)
+        return CGPoint(x: r.minX + fx * r.width, y: r.minY + fy * r.height)
+    }
+
+    /// One static image, decoded once (prewarmed at launch; see AppWarmup) at the zone's width. The zone's size never depends
+    /// on it: if it isn't decoded yet the zone shows the card's own dark fill and the art fades in, never resizing anything.
+    private func stageBackdrop(_ name: String) -> some View {
+        GeometryReader { g in
+            StageArtLayer(name: name, size: g.size, rect: Self.stageRect(in: g.size))
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// The animated cast on the pools: the same trio the banner shows today (idle Halloween O · W · R, the sweep's, the
+    /// flawless D · O · I), feet on the pool centers; Unlimited's U stands on the middle one.
+    private func stageCast(art: String) -> some View {
+        GeometryReader { g in
+            let size = g.size
+            let feet = Self.stagePoolX.map { Self.stagePoint($0, Self.stagePoolY, in: size) }
+            let fig = min(size.width * 0.21, size.height * 0.34)
+            ZStack {
+                if let trio = Self.liveTrio(art: art, moment: moment) {
+                    trio.placed(feet: feet, fig: fig)
+                        .opacity(slots.showsMomentArt ? 1 : 0)
+                }
+                if !slots.showsMomentArt && ArtAsset.exists("art-scene-unlimited-loop") {
+                    ArtThumbs.image("art-scene-unlimited-loop", points: fig * 1.3)
+                        .resizable().interpolation(.high).scaledToFit()
+                        .idleLife(hop: 4, sway: 2.5, period: 1.8)
+                        .frame(width: fig * 1.3, height: fig * 1.3)
+                        .position(x: feet[1].x, y: feet[1].y - fig * 0.65)
+                        .transition(.opacity)
+                }
+            }
+            .frame(width: size.width, height: size.height)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     // MARK: Background
@@ -896,6 +984,42 @@ extension Color {
 }
 
 
+/// The curtain-stage art in its zone: laid out from the zone's size from the first frame (the placement never depends on
+/// the bitmap), cached image shown at once, else decoded off main and faded in.
+private struct StageArtLayer: View {
+    let name: String
+    let size: CGSize
+    let rect: CGRect
+    @State private var img: UIImage?
+    @State private var ready: Bool
+
+    init(name: String, size: CGSize, rect: CGRect) {
+        self.name = name; self.size = size; self.rect = rect
+        let hit = ArtThumbs.cachedImage(name, points: rect.width)
+        _img = State(initialValue: hit)
+        _ready = State(initialValue: hit != nil)
+    }
+
+    var body: some View {
+        Group {
+            if let img { Image(uiImage: img).resizable().interpolation(.high) }
+            else { Image(name).resizable().interpolation(.high) }
+        }
+        .frame(width: rect.width, height: rect.height)
+        .offset(x: rect.minX, y: rect.minY)
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+        .clipped()
+        .opacity(ready ? 1 : 0)
+        .task(id: Int(rect.width)) {
+            guard !ready else { return }
+            let n = name, p = rect.width
+            let ui = await Task.detached(priority: .userInitiated) { ArtThumbs.uiImage(n, points: p) }.value
+            img = ui
+            withAnimation(.easeOut(duration: 0.25)) { ready = true }
+        }
+    }
+}
+
 /// Founder 10-09: the Flawless banner's celebrating cast, alive — three cheer poses on one floor under the bunting,
 /// each bouncing / swaying / squashing on its own offset beat; the bunting sways and gold sparkles twinkle.
 /// Reduce Motion / Low Power: the same scene, still.
@@ -907,10 +1031,20 @@ struct CelebrationTrio: View {
     /// Seconds per hop (the Halloween idle trio moves slower and spookier).
     var tempo: Double = 0.42
     var swayDegrees: Double = 4
+    /// Founder 10-15 (the Halloween curtain stage): where each figure's FEET land (points, in this view's own space) and the
+    /// figure's box size. Nil = the usual centered row under the bunting.
+    var stage: (feet: [CGPoint], fig: CGFloat)? = nil
 
     init(cast: [String]) { images = cast.map { "art-pose-\($0)-cheer" } }
     init(images: [String], bunting: Bool = false, sparkles: Bool = true, tempo: Double = 0.42, swayDegrees: Double = 4) {
         self.images = images; self.bunting = bunting; self.sparkles = sparkles; self.tempo = tempo; self.swayDegrees = swayDegrees
+    }
+
+    /// The same trio placed on the stage's spotlight pools.
+    func placed(feet: [CGPoint], fig: CGFloat) -> CelebrationTrio {
+        var t = self
+        t.stage = (feet, fig)
+        return t
     }
     @Environment(\.accessibilityReduceMotion) private var envReduce
     private var still: Bool { envReduce || Theme.reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled }
@@ -918,6 +1052,27 @@ struct CelebrationTrio: View {
     /// (CALoop.swift), run by the render server at the display's full rate, never a main-thread redraw.
 
     var body: some View {
+        if let stage {
+            // The spotlight pools hold the feet; the art carries its own lights, so no bunting, shadow or sparkles here.
+            ZStack {
+                ForEach(Array(images.enumerated()), id: \.offset) { i, name in
+                    let f = i < stage.feet.count ? stage.feet[i] : .zero
+                    CALoopImage(image: CALoopArt.image(name),
+                                motion: .hop(hop: 0.09, stretch: CGSize(width: 0.97, height: 1.03), squash: CGSize(width: 1.04, height: 0.95),
+                                             sway: swayDegrees, tempo: tempo, swayTempo: tempo * 2.26),
+                                delay: 0.2 + Double(i) * 0.18, still: still)
+                        .frame(width: stage.fig, height: stage.fig)
+                        .position(x: f.x, y: f.y - stage.fig / 2 + stage.fig * 0.03)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .accessibilityHidden(true)
+        } else {
+            centeredRow
+        }
+    }
+
+    private var centeredRow: some View {
         GeometryReader { g in
             let h = g.size.height, w = g.size.width
             let fig = min(h * 0.66, w / 3.6)

@@ -398,9 +398,8 @@ struct FriendsPanelView: View {
             // The podium (shared with the Leaderboard): gold / silver / bronze steps;
             // §225: podium columns open profiles too.
             // BJ4: the free places as open spots once anyone is on it (ties keep plain order).
-            PodiumView(entries: podium.map(podiumEntry), compact: true, lightOnly: true,
-                       open: podium.isEmpty ? [] : Array(stride(from: podium.count + 1, through: 3, by: 1)),
-                       stage: FriendsInk.goldAccent) { e in profileTarget = e.id }
+            PodiumView(entries: podium.map(podiumEntry),
+                       open: podium.isEmpty ? [] : Array(stride(from: podium.count + 1, through: 3, by: 1))) { e in profileTarget = e.id }
                 .padding(.horizontal, 4)
             // §238: everyone past the medals, ranked, on soft striped rows — the top 5, then an "All friends" fold.
             if standings.count > 3 {
@@ -477,9 +476,8 @@ struct FriendsPanelView: View {
                 }
             }
             .padding(.horizontal, 12).padding(.top, 8)
-            PodiumView(entries: rows.prefix(3).map(podiumEntry), compact: true, lightOnly: true,
-                       open: Array(stride(from: min(rows.count, 3) + 1, through: 3, by: 1)),
-                       stage: FriendsInk.pink) { e in profileTarget = e.id }
+            PodiumView(entries: rows.prefix(3).map(podiumEntry),
+                       open: Array(stride(from: min(rows.count, 3) + 1, through: 3, by: 1))) { e in profileTarget = e.id }
                 .padding(.horizontal, 4)
             if rows.count > 3 {
                 VStack(spacing: 0) {

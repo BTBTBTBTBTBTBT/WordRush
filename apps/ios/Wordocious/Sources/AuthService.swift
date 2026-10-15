@@ -679,6 +679,12 @@ final class AuthService: ObservableObject {
         return try? JSONDecoder().decode(Profile.self, from: data)
     }
 
+    /// The last known username while a persisted session is still restoring (nil otherwise): Home's greeting keeps its final
+    /// line count from the first frame, so the card never grows when the profile lands.
+    static var launchUsername: String? {
+        hadPersistedSession ? cachedProfileRow?.username : nil
+    }
+
     private static func cacheProfileRow(_ profile: Profile?) {
         guard let profile, let data = try? JSONEncoder().encode(profile) else { return }
         UserDefaults.standard.set(data, forKey: profileCacheKey)

@@ -376,6 +376,9 @@ enum StoreDemoData {
             let wanted: String = ids.lowercased()
             cast = cast.filter { wanted.contains($0.id.lowercased()) }
         }
+        // `-storeLbCount N`: only the top N players (podium shots with 1 or 2 results).
+        let args: [String] = ProcessInfo.processInfo.arguments
+        if let k = args.firstIndex(of: "-storeLbCount"), k + 1 < args.count, let n = Int(args[k + 1]) { cast = Array(cast.prefix(n)) }
         var out: [[String: Any]] = []
         for (i, p) in cast.enumerated() {
             let score: Int = 980 - i * 37 - (i * i) % 11

@@ -80,6 +80,7 @@ enum AppWarmup {
         // Avatar parts (MascotArtCache), cast button skins + labels (CastArt), the family pills + 3D icons (FamilyArt) and the
         // Good Morning host (HomeHostMascot) now start in LaunchWarm.start, at launch. The podium pedestals stay here.
         PodiumView.prewarm()
+        HomeBannerView.prewarmStage()   // 10-15: the Halloween curtain-stage art, decoded before Home shows it
         Task { @MainActor in DressUp.prewarm() }   // 10-05: the Stage set, tab icons + your stage mascot frames
         HeadingArt.prewarm()       // BJ16: popup / sheet heading lettering at display size, off main
         Task { @MainActor in LeaderboardArt.prewarm() }   // 10-05: the big day title + game card titles, no pop-in

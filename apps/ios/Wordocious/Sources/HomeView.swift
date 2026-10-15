@@ -264,7 +264,11 @@ struct HomeView: View {
         modes.compactMap(\.dbKey).reduce(0) { $0 + (unlimitedCounts[$1] ?? 0) }
     }
 
-    private var bannerName: String { auth.isAuthenticated ? (auth.profile?.username ?? "") : "" }
+    private var bannerName: String {
+        if auth.isAuthenticated { return auth.profile?.username ?? "" }
+        // a persisted session still restoring: the cached name, so the greeting never changes height when the profile lands
+        return auth.profile == nil ? (AuthService.launchUsername ?? "") : ""
+    }
 
     /// DEBUG only: `defaults write com.wordocious.app debugBanner ff` fakes the banner's day (first letter = WORDOCIOUS,
     /// second = PUZZLES; f flawless, s sweep, - real) to check every celebration combination.

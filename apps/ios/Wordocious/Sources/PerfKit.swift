@@ -72,6 +72,14 @@ enum ArtThumbs {
         return thumb
     }
 
+    /// The cached downsample for (`name`, `points`) when it is already decoded, else nil (never decodes).
+    static func cachedImage(_ name: String, points: CGFloat, scale: CGFloat? = nil) -> UIImage? {
+        guard points > 0 else { return nil }
+        let key = "\(name)|\(bucket(points: points, scale: scale ?? screenScale))"
+        lock.lock(); defer { lock.unlock() }
+        return cache.object(forKey: key as NSString)
+    }
+
     /// FINISH_SPEC BJ2: decode `items` (asset, display points) into the cache on a
     /// utility thread, so the first frame that shows them never decodes on main.
     /// Call on the main thread (it reads the screen scale there).

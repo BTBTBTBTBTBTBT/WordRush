@@ -377,19 +377,17 @@ struct StageYesterdayLedge<Expanded: View, Share: View>: View {
                 if open && !empty { share() }
             }
             if open && !empty {
-                // Founder 10-09: yesterday is a SMALLER copy of the main podium (gold / silver / bronze steps, the top
-                // three's points + how they got them, the same glows) — no white ledge art. Fixed height so the page
-                // never jumps while it loads.
+                // Founder 10-15: yesterday wears the SAME one-image podium as today (core PodiumArt). The placeholder
+                // holds the image's exact aspect, so the page never jumps while it loads.
                 Group {
                     if loading {
-                        Color.clear
+                        Color.clear.aspectRatio(1 / (1 / CGFloat(PodiumArt.aspect) + PodiumView.headroom), contentMode: .fit)
+                            .frame(maxWidth: PodiumView.maxWidth)
                     } else {
-                        PodiumView(entries: Array(minis.prefix(3)), compact: true,
+                        PodiumView(entries: Array(minis.prefix(3)),
                                    open: Array(stride(from: min(minis.count, 3) + 1, through: 3, by: 1)))
                     }
                 }
-                .frame(height: 230)
-                .frame(maxWidth: 360)
                 .frame(maxWidth: .infinity)
                 .transition(.opacity)
             }
@@ -508,17 +506,16 @@ struct EquatableLeaderboardBanner: View, Equatable {
 struct EquatablePodium: View, Equatable {
     let entries: [PodiumEntry]
     let open: [Int]
-    let stage: Color?
     let onTap: ((PodiumEntry) -> Void)?
     @ObservedObject private var theme = ThemeManager.shared
 
     static func == (a: EquatablePodium, b: EquatablePodium) -> Bool {
-        guard a.open == b.open, a.stage == b.stage, a.entries.count == b.entries.count else { return false }
+        guard a.open == b.open, a.entries.count == b.entries.count else { return false }
         return zip(a.entries, b.entries).allSatisfy { $0.sameShown($1) }
     }
 
     var body: some View {
-        PodiumView(entries: entries, open: open, stage: stage, onTap: onTap)
+        PodiumView(entries: entries, open: open, onTap: onTap)
     }
 }
 

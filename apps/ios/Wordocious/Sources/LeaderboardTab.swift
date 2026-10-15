@@ -457,8 +457,7 @@ struct LeaderboardTab: View {
             let layout = PodiumLayout.layout(sweepEntries.map(\.rank))
             if layout.filled > 0 {
                 PodiumView(entries: sweepEntries.prefix(layout.filled).map { sweepPodiumEntry($0, labels: sweepScoreLabels, details: sweepDetails, day: LeaderboardService.todayLocal()) },
-                           open: layout.open, stage: nil, onTap: { path.append($0.id) })
-                    .frame(minHeight: Self.stagePodiumHeight, alignment: .bottom)
+                           open: layout.open, onTap: { path.append($0.id) })
             }
         }
 
@@ -588,10 +587,8 @@ struct LeaderboardTab: View {
             let layout = PodiumLayout.layout(ranks)
             if layout.filled > 0 {
                 EquatablePodium(entries: entries.prefix(layout.filled).enumerated().map { podiumEntry($1, rank: ranks[$0], labels: lbScoreLabels) },
-                                open: layout.open, stage: nil, onTap: { path.append($0.id) })
-                    .equatable()
-                    // Founder 10-09: one fixed podium height for every game (no shift while clicking through the boards).
-                    .frame(minHeight: Self.stagePodiumHeight, alignment: .bottom)
+                                open: layout.open, onTap: { path.append($0.id) })
+                    .equatable()   // one image, one fixed height for every game: no shift while clicking through the boards
             }
         }
 
@@ -646,8 +643,7 @@ struct LeaderboardTab: View {
         VStack(spacing: 0) {
             if layout.filled > 0 {
                 PodiumView(entries: rows.prefix(layout.filled).map { sweepPodiumEntry($0, labels: labels, details: details, day: day) },
-                           open: layout.open, stage: GamePicker.sweepAccent,
-                           onTap: { path.append($0.id) })
+                           open: layout.open, onTap: { path.append($0.id) })
             }
             ForEach(Array(rows.enumerated().dropFirst(layout.filled)), id: \.element.id) { idx, entry in
                 row(entry).stripedRow(idx - layout.filled, accent: LbStyle.gold)
