@@ -828,13 +828,17 @@ private fun RpsBoard(s: RpsState, me: Side, them: String, enabled: Boolean, onPi
               }
             }
         }
-        if (theirs == RpsPick.HIDDEN) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, 14.dp * k)
-                Text("${them.uppercase()} PICKED", fontSize = (11f * k).sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.green, style = captionHalo())
+        // Founder 10-13 (no screen shifting): the PICKED badge row is taller than the HASN'T PICKED text, so the board moved
+        // 1 dp (phone) / 2.6 dp (tablet) on every pick. One fixed slot the height of the badge holds either line.
+        Box(Modifier.height(14.dp * k), contentAlignment = Alignment.Center) {
+            if (theirs == RpsPick.HIDDEN) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, 14.dp * k)
+                    Text("${them.uppercase()} PICKED", fontSize = (11f * k).sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.green, style = captionHalo())
+                }
+            } else {
+                Text("${them.uppercase()} HASN'T PICKED", fontSize = (11f * k).sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.label, style = captionHalo())
             }
-        } else {
-            Text("${them.uppercase()} HASN'T PICKED", fontSize = (11f * k).sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.label, style = captionHalo())
         }
 
         // The last round, revealed: ROCK... PAPER... SCISSORS... SHOOT! (both fists pump), then both cards turn over together to
