@@ -1461,14 +1461,15 @@
       "o3:laugh"
     ],
     "cast_count": 3,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "mascot_check": "pass (checked vs hero)",
     "aesthetic_check": "pass",
     "hint": "hint: none (five mystery tiles)",
     "notes": "",
     "rejected": [
       "2026-11-10-x-1: layout: WORD OF THE DAY QUIZ has the R mascot standing in the middle right under the headline, so there is no band for the word card added in code (needs about 20 percent of the height, 32 to 60 percent, plain background across the center). R and the two-line house lettering were fine. Put R small at bottom-left or bottom-right and keep the center band empty.",
       "2026-11-10-x-1: layout + cast: WORD OF THE DAY QUIZ scene draws R twice (one at each edge); the queue says one R. Redo with R once, standing at one edge, and a calm empty center band (about 30 percent of the width, 32 to 60 percent of the height) for the word card added in code; headline top below 8 percent of the height"
-    ]
+    ],
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-11-feed",
@@ -1855,14 +1856,15 @@
       "s"
     ],
     "cast_count": 5,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "mascot_check": "pass (checked vs hero)",
     "aesthetic_check": "pass",
     "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
     "notes": "",
     "rejected": [
       "2026-11-18-feed-1: layout (portrait 2:3): MUDDLE WEDNESDAY needs a calm empty rectangle for the day's cartoon (about 70 percent of the width x 28 percent of the height of the frame) between the sub line and the mascots; only about 17 percent here (254 px of 1350 after framing). Mascots W and D and spelling were fine. Redraw with the mascots about half this size, heads below 68 percent of the frame height, headline in the top 33 percent, band 36 to 66 percent plain.",
       "2026-11-18-feed-1: off-model S: the turkey-hat S has friendly raised brows and a smile; the real S has angled, determined brows and a gritted grin (cast/hero/s.png and the Thanksgiving s-alt art). W (pilgrim hat) and D (chef hat + pie), the layout (empty rectangle for the cartoon) and spelling were all fine. Redo with S's angry-determined brows"
-    ]
+    ],
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-18-x",
@@ -2547,13 +2549,14 @@
       "s"
     ],
     "cast_count": 10,
-    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "mascot_check": "pass (checked vs hero)",
     "aesthetic_check": "pass",
     "hint": "hint: none",
     "notes": "",
     "rejected": [
       "2026-11-29-feed-1: off-model S: the turkey-hat S has friendly raised brows and a smile; the real S has angled, determined brows and a gritted grin (cast/hero/s.png and the Thanksgiving s-alt art). W (pilgrim hat) and D (chef hat + pie), the DAY 45. headline, the empty center band and spelling were fine. Redo with S's angry-determined brows"
-    ]
+    ],
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-29-x",

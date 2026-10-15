@@ -122,21 +122,21 @@
   {
     "id": "2026-11-08-holiday-x-1",
     "why": "off-model S: this scene draws S with friendly raised brows and a smile (tongue out); the real S has angled, determined brows and a gritted grin (see cast/hero/s.png). O2 and C were fine, the headline was spelled right (HAPPY DIWALI / WISHING YOU LIGHT.), and the portrait of the same scene (2026-11-08-holiday-feed-1) was accepted, so redo the landscape with S's angry-determined brows and the same Diwali scene",
-    "status": "redo"
+    "status": "done (accepted 10-15 round 4)"
   },
   {
     "id": "2026-11-10-x-1",
     "why": "layout + cast: WORD OF THE DAY QUIZ scene draws R twice (one at each edge); the queue says one R. Redo with R once, standing at one edge, and a calm empty center band (about 30 percent of the width, 32 to 60 percent of the height) for the word card added in code; headline top below 8 percent of the height",
-    "status": "redo"
+    "status": "done (accepted 10-15 round 4)"
   },
   {
     "id": "2026-11-18-feed-1",
     "why": "off-model S: the turkey-hat S has friendly raised brows and a smile; the real S has angled, determined brows and a gritted grin (cast/hero/s.png and the Thanksgiving s-alt art). W (pilgrim hat) and D (chef hat + pie), the layout (empty rectangle for the cartoon) and spelling were all fine. Redo with S's angry-determined brows",
-    "status": "redo"
+    "status": "done (accepted 10-15 round 4)"
   },
   {
     "id": "2026-11-29-feed-1",
     "why": "off-model S: the turkey-hat S has friendly raised brows and a smile; the real S has angled, determined brows and a gritted grin (cast/hero/s.png and the Thanksgiving s-alt art). W (pilgrim hat) and D (chef hat + pie), the DAY 45. headline, the empty center band and spelling were fine. Redo with S's angry-determined brows",
-    "status": "redo"
+    "status": "done (accepted 10-15 round 4)"
   }
 ]
