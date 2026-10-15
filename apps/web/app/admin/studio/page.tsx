@@ -364,6 +364,8 @@ export default function SocialStudioPage() {
                 title="No posts yet"
                 body="Claude drafts a few posts each week. They land here, on the calendar above, for BMT and JP to review before anything goes out."
               />
+            ) : !queue.length && selected && planDay(selected) ? (
+              <p className="px-1 text-sm font-semibold text-gray-500">No posts drafted for this day yet. Drag one here on the calendar to move it.</p>
             ) : !queue.length ? (
               <StateScene
                 scene="empty"

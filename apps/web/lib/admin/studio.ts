@@ -405,6 +405,7 @@ export function seasonBands(years: readonly number[]): Band[] {
  */
 export const STUDIO_RELEASES: ReadonlyArray<{ version: string; date: string; note?: string }> = [
   { version: '2.7.1', date: '2026-10-05', note: 'submitted' },
+  { version: '2.8.2', date: '2026-10-13', note: 'submitted' },
 ];
 
 export function releaseBands(): Band[] {
