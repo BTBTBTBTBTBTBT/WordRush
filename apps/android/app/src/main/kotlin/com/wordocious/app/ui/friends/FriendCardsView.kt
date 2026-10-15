@@ -21,16 +21,24 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -50,14 +58,11 @@ import com.wordocious.core.FriendCards
 import com.wordocious.core.FriendsLayout
 import com.wordocious.core.GameTile
 
-// The Friends tab, ONE card per friend (FRIDAY-QUEUE items 9 + 9e, 2.8 wave 3; words and order from
-// core FriendCards, pinned by friend-cards-fixtures.json). Their living mascot with the green dot and
-// "playing Classic" under it, the name, "N games waiting on you" and a compact strip of game tiles (the
-// game's art + its name + what waits in plain words); a tile opens that game. No PLAY pills, no repeated "vs @name", no
-// bordered boxes. Founder 10-09: a friend with several games folds them into ONE "Pick a game" dropdown (the games' art
-// overlapping, the first titles, a chevron) that opens the tiles (yours first, theirs quiet); one game shows its tile;
-// none shows the start row. Each tile carries a small resign flag that flips the tile to "Resign Ghost?" Keep / Resign in
-// place. The ⋯ opens the family action menu (profile, play a game …) hosted by the Friends screen.
+// The Friends tab, ONE card per friend (words and order from core FriendCards, pinned by friend-cards-fixtures.json).
+// Design A + B's WAITING chip (founder 10-15; docs/design/review/friends-cards-1015/SPEC.md): a 44 dp avatar, the name and ONE
+// sub line (presence in green, else "N GAMES"), then ALWAYS one slim 50 dp row per game (yours first, at most 3, then "+N more"):
+// a glossy game coin, the title in caps with its plain-words state, a YOUR TURN / WAITING chip and the resign flag (Keep / Resign
+// in place). No bordered boxes; chip and row type are fixed size (FixedFont). The ⋯ opens the family action menu.
 
 /** The core layout for the friends + active games (online friends and friends with games get cards). */
 fun buildFriendsLayout(
@@ -98,123 +103,186 @@ private fun FriendCardView(
     onResign: (String) -> Unit,
 ) {
     var expanded by remember(card.friendId) { mutableStateOf(false) }
-    // The tile whose flag was tapped (it shows "Resign?" with Keep / Resign in place).
+    // The game whose flag was tapped (its row shows "Resign Ghost?" with Keep / Resign in place).
     var confirming by remember(card.friendId) { mutableStateOf<String?>(null) }
     // Every game going with them: yours to play first, then theirs.
     val all = card.tiles + card.theirTurn
-    val accent = if (card.waiting > 0) FriendsPink.solid else FriendsTiles.purple
+    val shown = if (expanded || all.size <= MAX_ROWS) all else all.take(MAX_ROWS)
+    // The bubble headline ("1 game waiting on you") is not drawn any more (the gold row says it); TalkBack still hears it.
+    val cardLabel = "Play a game with ${card.name}" + if (card.headline.isNotEmpty()) ", ${card.headline}" else ""
     Column(
         Modifier.fillMaxWidth()
-            .then(if (friend != null) Modifier.tileClickable(label = "Play a game with ${card.name}", card = true) { onPlayWith(friend) } else Modifier)
+            .then(if (friend != null) Modifier.tileClickable(label = cardLabel, card = true) { onPlayWith(friend) } else Modifier)
             .friendsCard(16.dp)
-            .padding(start = 12.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Their living mascot with the green dot; "playing Classic" under it.
-            Column(Modifier.width(76.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                FriendFace(
-                    card.name, friend?.avatarUrl, friend?.avatarEmoji, 52.dp, online = card.online,
-                    presenceRing = false, userId = card.friendId,
-                )
-                card.presence?.let {
-                    Text(
-                        it, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.green, maxLines = 1,
-                        overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp),
-                    )
-                }
-            }
-            Column(Modifier.weight(1f).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            FriendFace(
+                card.name, friend?.avatarUrl, friend?.avatarEmoji, 44.dp, online = card.online,
+                presenceRing = false, userId = card.friendId, dotSize = 11.dp,
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 FriendsName(card.name, size = 16f)
-                if (card.headline.isNotEmpty()) {
-                    Text(card.headline, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = PocketNight.pinkInk(), maxLines = 1)
-                } else if (card.theirTurn.isEmpty()) {
-                    Text("Tap to pick a game", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1)
+                // ONE sub line: the presence in green, else "N GAMES", else today's start prompt.
+                FixedFont {
+                    when {
+                        card.presence != null -> Text(
+                            card.presence!!, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.green,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                        all.isNotEmpty() -> Text(
+                            if (all.size == 1) "1 GAME" else "${all.size} GAMES", fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold,
+                            color = FriendsPink.muted, letterSpacing = 0.6.sp, maxLines = 1,
+                        )
+                        else -> Text("Tap to pick a game", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1)
+                    }
                 }
             }
             // A card for someone who is not on the friend list (a game left over, or an unfriended player) still gets
             // the ⋯: its menu (hosted by the Friends screen) offers View profile + Resign for each game in play.
-            RoundIconButton(onClick = { onMenu(friend ?: FriendsService.FriendProfile(id = card.friendId, username = card.name)) }, contentDescription = "More for ${card.name}") {
-                FamIconImage(FamIcon.MORE, FriendsPink.solid, 18.dp)
-            }
+            RoundIconButton(
+                onClick = { onMenu(friend ?: FriendsService.FriendProfile(id = card.friendId, username = card.name)) },
+                contentDescription = "More for ${card.name}", tap = 36.dp, compact = true,
+            ) { FamIconImage(FamIcon.MORE, FriendsPink.solid, 20.dp) }
         }
 
-        when {
-            all.size >= 2 -> {
-                GamesDropdown(all, expanded, accent) { expanded = !expanded }
-                if (expanded) TileGrid(all, confirming, { confirming = it }, card.name, onOpenGame, onResign, Modifier.padding(end = 8.dp))
-            }
-            all.size == 1 -> TileGrid(all, confirming, { confirming = it }, card.name, onOpenGame, onResign, Modifier.padding(end = 8.dp))
+        // ALWAYS one slim row per game (yours first), at most 3; more fold behind "+N more".
+        shown.forEach { t ->
+            GameRow(t, card.name, confirming == t.gameId, { confirming = if (it) t.gameId else null }, onOpenGame) { onResign(t.gameId) }
+        }
+        if (all.size > MAX_ROWS) MoreRow(all.size - MAX_ROWS, expanded) { expanded = !expanded }
+    }
+}
+
+private const val MAX_ROWS = 3
+private val GOLD = Color(0xFFFFC83D)
+private val GOLD_TEXT = Color(0xFFFFD45A)
+
+/** "+N more ⌄": the quiet fourth row that toggles the rest of the games. */
+@Composable
+private fun MoreRow(more: Int, expanded: Boolean, onToggle: () -> Unit) {
+    val lavender = FriendsQuietInk.violet
+    FixedFont {
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                .tileClickable(card = false, label = if (expanded) "Show fewer games" else "$more more games, collapsed", onClick = onToggle)
+                .padding(vertical = 3.dp),
+            horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(if (expanded) "Show less" else "+$more more", fontSize = 11.5.sp, fontWeight = FontWeight.Black, color = lavender, maxLines = 1)
+            Spacer(Modifier.width(3.dp))
+            Icon(Icons.Filled.KeyboardArrowDown, null, tint = lavender, modifier = Modifier.size(14.dp).rotate(if (expanded) 180f else 0f))
         }
     }
 }
 
-/** The folded games: their art overlapping, "Pick a game" with the first titles under it, and a chevron. Tap opens the tiles. */
+/**
+ * One slim game row (50 dp): the game's glossy coin, its title in caps with the plain-words state under it, then the chip
+ * (YOUR TURN gold / WAITING quiet) and the resign flag. Your turn = a faint gold fill + a soft gold glow (a shadow, no border).
+ * The whole row opens the game; the flag flips the row to Keep / Resign in place.
+ */
 @Composable
-private fun GamesDropdown(tiles: List<GameTile>, expanded: Boolean, accent: Color, onToggle: () -> Unit) {
-    val label = "${tiles.size} games, " + if (expanded) "expanded" else "collapsed"
-    Row(
-        Modifier.fillMaxWidth().padding(end = 8.dp)
-            .clip(RoundedCornerShape(16.dp)).background(friendsWash(accent, 0.10f))
-            .tileClickable(card = false, label = label, onClick = onToggle)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy((-10).dp)) {
-            tiles.take(4).forEachIndexed { i, t ->
-                Box(
-                    Modifier.zIndex((10 - i).toFloat()).size(34.dp).clip(CircleShape)
-                        .background(FriendsPink.page).background(friendsWash(t.kind.color, 0.22f)),
-                    Alignment.Center,
-                ) { FriendlyGameGlyph(t.kind, 26.dp) }
-            }
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            // The header already says how many wait on you; the dropdown names the games (no repeat).
-            Text("Pick a game", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading, maxLines = 1)
-            if (!expanded) {
-                Text(
-                    FriendCardCopy.gamesSubtitle(tiles.map { it.kind.title }),
-                    fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-        Box(Modifier.size(28.dp).clip(CircleShape).background(friendsWash(accent, 0.16f)), Alignment.Center) {
-            Icon(
-                Icons.Filled.KeyboardArrowDown, null, tint = accent,
-                modifier = Modifier.size(18.dp).rotate(if (expanded) 180f else 0f),
-            )
-        }
-    }
-}
-
-/** Tiles in a symmetric grid: one row up to 4, else 3 across. */
-@Composable
-private fun TileGrid(
-    tiles: List<GameTile>, confirming: String?, onConfirming: (String?) -> Unit, friendName: String,
-    onOpen: (String) -> Unit, onResign: (String) -> Unit, modifier: Modifier = Modifier,
+private fun GameRow(
+    t: GameTile, friendName: String, confirming: Boolean, onConfirming: (Boolean) -> Unit,
+    onOpen: (String) -> Unit, onResign: () -> Unit,
 ) {
-    val per = if (tiles.size <= 4) tiles.size.coerceAtLeast(1) else 3
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        tiles.chunked(per).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { t ->
-                    Box(Modifier.weight(1f)) {
-                        if (confirming == t.gameId) {
-                            ResignConfirm(t, { onConfirming(null) }, { onConfirming(null); onResign(t.gameId) })
-                        } else {
-                            TileCell(t, quiet = !t.yourTurn, Modifier.fillMaxWidth()) { onOpen(t.gameId) }
-                            ResignFlag(t, friendName, Modifier.align(Alignment.TopEnd).offset(x = 3.dp, y = (-3).dp)) { onConfirming(t.gameId) }
-                        }
+    val shape = RoundedCornerShape(14.dp)
+    val dark = FriendsPink.dark
+    val mine = t.yourTurn
+    val plate = when {
+        confirming -> friendsWash(FriendsPink.solid, 0.14f)
+        mine -> GOLD.copy(alpha = 0.12f)
+        dark -> Color.White.copy(alpha = 0.06f)
+        else -> FriendsTiles.purple.copy(alpha = 0.10f)
+    }
+    Box(
+        Modifier.fillMaxWidth().height(50.dp)
+            .then(if (mine && !confirming) Modifier.shadow(8.dp, shape, clip = false, ambientColor = GOLD.copy(alpha = 0.40f), spotColor = GOLD.copy(alpha = 0.40f)) else Modifier)
+            .clip(shape).background(plate),
+    ) {
+        FixedFont {
+            if (confirming) {
+                ResignConfirm(t, { onConfirming(false) }, { onConfirming(false); onResign() })
+            } else {
+                Row(
+                    Modifier.fillMaxSize().tileClickable(card = false, label = "${t.kind.title}, ${t.word}", onClick = { onOpen(t.gameId) })
+                        .padding(start = 8.dp, end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    GameCoin(t.kind.color) { FriendlyGameGlyph(t.kind, 22.dp) }
+                    Column(Modifier.weight(1f).padding(start = 10.dp, end = 6.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        FitText(t.kind.title.uppercase(), 12.5f, FontWeight.Black, FriendsPink.heading, 0.75f)
+                        FitText(t.word, 11f, FontWeight.Bold, if (mine) (if (dark) GOLD_TEXT else FriendsQuietInk.gold) else FriendsPink.muted, 0.8f)
                     }
+                    if (mine) YourTurnChip() else WaitingChip()
+                    Spacer(Modifier.width(6.dp))
+                    ResignFlag(t, friendName, Modifier) { onConfirming(true) }
                 }
-                repeat(per - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
 }
 
-/** The small flag in a tile's corner (a 30 dp hit area around a 22 dp coin). */
+/** One line of fixed-size text that shrinks (down to [minScale]) before it would clip. */
+@Composable
+private fun FitText(text: String, size: Float, weight: FontWeight, color: Color, minScale: Float) {
+    var scale by remember(text, size) { mutableFloatStateOf(1f) }
+    Text(
+        text, fontSize = (size * scale).sp, fontWeight = weight, color = color,
+        maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+        onTextLayout = { if (it.hasVisualOverflow && scale > minScale) scale = (scale - 0.05f).coerceAtLeast(minScale) },
+    )
+}
+
+/** The game's coin (34): a radial gradient of its accent (light top-left, 25% darker at the rim), a gloss ellipse, the art 22. */
+@Composable
+private fun GameCoin(accent: Color, art: @Composable () -> Unit) {
+    val light = lerp(accent, Color.White, 0.40f)
+    val rim = lerp(accent, Color.Black, 0.25f)
+    Box(
+        Modifier.size(34.dp).clip(CircleShape).drawBehind {
+            drawCircle(
+                Brush.radialGradient(listOf(light, accent, rim), center = Offset(size.width * 0.32f, size.height * 0.28f), radius = size.width * 0.95f),
+            )
+            drawOval(Color.White.copy(alpha = 0.22f), Offset(size.width * 0.16f, size.height * 0.05f), Size(size.width * 0.68f, size.height * 0.45f))
+        },
+        Alignment.Center,
+    ) { art() }
+}
+
+/** YOUR TURN: a gold capsule (24 high) with a 1 px white top highlight and dark-amber type. */
+@Composable
+private fun YourTurnChip() {
+    Box(
+        Modifier.height(24.dp).clip(CircleShape)
+            .background(Brush.verticalGradient(listOf(Color(0xFFFFE58A), Color(0xFFF5B21B))))
+            .drawBehind {
+                val px = 1.dp.toPx()
+                drawLine(Color.White.copy(alpha = 0.35f), Offset(size.height / 2f, px / 2f), Offset(size.width - size.height / 2f, px / 2f), strokeWidth = px)
+            }
+            .padding(horizontal = 10.dp),
+        Alignment.Center,
+    ) {
+        Text("YOUR TURN", fontSize = 10.5.sp, fontWeight = FontWeight.Black, color = Color(0xFF5A3200), letterSpacing = 0.4.sp, maxLines = 1, softWrap = false)
+    }
+}
+
+/** WAITING (B's chip): a quiet capsule (22 high), a small clock and WAITING in muted ink. */
+@Composable
+private fun WaitingChip() {
+    Row(
+        Modifier.height(22.dp).clip(CircleShape)
+            .background(if (FriendsPink.dark) Color.White.copy(alpha = 0.08f) else FriendsTiles.purple.copy(alpha = 0.14f))
+            .padding(horizontal = 9.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Icon(Icons.Filled.Schedule, null, tint = FriendsPink.muted, modifier = Modifier.size(9.dp))
+        Text("WAITING", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.muted, letterSpacing = 0.5.sp, maxLines = 1, softWrap = false)
+    }
+}
+
+/** The flag at a row's right end (a 30 dp hit area around a 22 dp coin). */
 @Composable
 private fun ResignFlag(t: GameTile, friendName: String, modifier: Modifier, onTap: () -> Unit) {
     Box(
@@ -229,63 +297,28 @@ private fun ResignFlag(t: GameTile, friendName: String, modifier: Modifier, onTa
     }
 }
 
-/** The tile turned over: "Resign Ghost?", then Keep and Resign side by side, in the tile's own place. */
+/** The row turned over, inside its 50 dp: "Resign Ghost?" with "They win this one" under it, then Keep and Resign. */
 @Composable
 private fun ResignConfirm(t: GameTile, onKeep: () -> Unit, onResign: () -> Unit) {
-    val pink = FriendsPink.solid
-    Column(
-        Modifier.fillMaxWidth().heightIn(min = 96.dp).clip(RoundedCornerShape(14.dp)).background(friendsWash(pink, 0.14f))
-            .padding(horizontal = 6.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+    Row(
+        Modifier.fillMaxSize().padding(start = 12.dp, end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        FamIconImage(FamIcon.FLAG, pink, 20.dp)
-        Text(
-            "Resign ${t.kind.title}?", fontSize = 12.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
-            maxLines = 2, textAlign = TextAlign.Center, lineHeight = 13.sp,
-        )
-        Text("They win this one", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1, textAlign = TextAlign.Center)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Box(
-                Modifier.weight(1f).height(26.dp).clip(CircleShape).background(FriendsTiles.purple.copy(alpha = 0.18f))
-                    .tileClickable(card = false, label = "Keep ${t.kind.title}", onClick = onKeep),
-                Alignment.Center,
-            ) { Text("Keep", fontSize = 11.5.sp, fontWeight = FontWeight.Black, color = FriendsTiles.purple, maxLines = 1) }
-            Box(
-                Modifier.weight(1f).height(26.dp).clip(CircleShape)
-                    .background(Brush.verticalGradient(listOf(Color(0xFFF472B6), Color(0xFFDB2777))))
-                    .tileClickable(card = false, label = "Resign ${t.kind.title}", onClick = onResign),
-                Alignment.Center,
-            ) { Text("Resign", fontSize = 11.5.sp, fontWeight = FontWeight.Black, color = Color.White, maxLines = 1) }
+        FamIconImage(FamIcon.FLAG, FriendsPink.solid, 18.dp)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            FitText("Resign ${t.kind.title}?", 12.5f, FontWeight.Black, FriendsPink.heading, 0.75f)
+            FitText("They win this one", 11f, FontWeight.Bold, FriendsPink.muted, 0.8f)
         }
-    }
-}
-
-/**
- * The game's art, its NAME (bold, one line), then what waits in plain words (up to two lines, centered, shrink to fit);
- * a tap goes straight into that game. Founder 10-09: never a cryptic two-word state.
- */
-@Composable
-private fun TileCell(t: GameTile, quiet: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    Column(
-        modifier.tileClickable(card = false, label = "${t.kind.title}, ${t.word}", onClick = onClick).alpha(if (quiet) 0.72f else 1f),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-        FriendlyGameIcon(t.kind, 42.dp)
-        // The name shrinks to fit one line (the iOS minimumScaleFactor), never an ellipsis.
-        var nameSize by remember(t.kind) { mutableStateOf(12f) }
-        Text(
-            t.kind.title, fontSize = nameSize.sp, fontWeight = FontWeight.Black,
-            color = if (quiet) FriendsPink.muted else FriendsPink.heading,
-            maxLines = 1, softWrap = false, overflow = TextOverflow.Clip, textAlign = TextAlign.Center,
-            onTextLayout = { if (it.hasVisualOverflow && nameSize > 8f) nameSize -= 0.5f },
-        )
-        // The plain-words state: two lines at most, centered, shrinking until it fits.
-        var size by remember(t.word) { mutableStateOf(10.5f) }
-        Text(
-            t.word, fontSize = size.sp, fontWeight = FontWeight.Bold, lineHeight = (size + 2f).sp,
-            color = if (quiet) FriendsPink.muted else FriendsPink.heading.copy(alpha = 0.85f),
-            maxLines = 2, overflow = TextOverflow.Clip, textAlign = TextAlign.Center,
-            onTextLayout = { if (it.hasVisualOverflow && size > 7.5f) size -= 0.5f },
-        )
+        Box(
+            Modifier.height(28.dp).widthIn(min = 52.dp).clip(CircleShape).background(FriendsTiles.purple.copy(alpha = 0.18f))
+                .tileClickable(card = false, label = "Keep ${t.kind.title}", onClick = onKeep).padding(horizontal = 10.dp),
+            Alignment.Center,
+        ) { Text("Keep", fontSize = 11.5.sp, fontWeight = FontWeight.Black, color = FriendsTiles.purple, maxLines = 1) }
+        Box(
+            Modifier.height(28.dp).widthIn(min = 52.dp).clip(CircleShape)
+                .background(Brush.verticalGradient(listOf(Color(0xFFF472B6), Color(0xFFDB2777))))
+                .tileClickable(card = false, label = "Resign ${t.kind.title}", onClick = onResign).padding(horizontal = 10.dp),
+            Alignment.Center,
+        ) { Text("Resign", fontSize = 11.5.sp, fontWeight = FontWeight.Black, color = Color.White, maxLines = 1) }
     }
 }

@@ -48,23 +48,24 @@ struct FriendCardView: View {
 
     private var accent: Color { card.waiting > 0 ? FriendsInk.pink : FriendsInk.purple }
 
+    /// Founder 10-15 (design A + B's waiting chip, docs/design/review/friends-cards-1015/SPEC.md): one slim row per game,
+    /// your turn first; at most three, then a quiet "+N more" row that opens the rest.
+    private static let rowLimit = 3
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             header
-            // Founder 10-09: a friend with several games folds them into one dropdown (the games' art, how many wait
-            // on you, a chevron); it opens the tiles to pick from. One game shows its tile; none shows the start row.
-            if allTiles.count >= 2 {
-                gamesDropdown
-                if expanded {
-                    strip(allTiles, quiet: false).transition(.opacity)
-                }
-            } else if let only = allTiles.first {
-                strip([only], quiet: false)
-            } else {
+            if allTiles.isEmpty {
                 startRow
+            } else {
+                let shown = expanded ? allTiles : Array(allTiles.prefix(Self.rowLimit))
+                VStack(spacing: 6) {
+                    ForEach(shown) { t in gameRow(t) }
+                    if allTiles.count > Self.rowLimit { moreRow(allTiles.count - Self.rowLimit) }
+                }
             }
         }
-        .padding(12)
+        .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .friendsCard(accent: accent, radius: 18, tint: 0.07, line: 0.2)   // founder 10-10: no top bar (page was busy)
     }
@@ -85,9 +86,11 @@ struct FriendCardView: View {
                                     .lineLimit(1)
                             }
                         }
-                        if !card.headline.isEmpty {
-                            BubbleOneLine(text: card.headline.uppercased(), palette: .accent(FriendsInk.bannerHead), size: 13, minScale: 0.5,
-                                          alignment: .leading)
+                        if card.presence == nil && !allTiles.isEmpty {
+                            // The gold row says which game waits on you; the header only counts them.
+                            Text(allTiles.count == 1 ? "1 GAME" : "\(allTiles.count) GAMES")
+                                .font(Brand.fixedFont(10.5, .heavy)).tracking(0.6).foregroundStyle(FriendsInk.muted)
+                                .lineLimit(1)
                         }
                     }
                     Spacer(minLength: 4)
@@ -111,49 +114,137 @@ struct FriendCardView: View {
 
     /// The friend's living mascot (the shared resolver: their mascot, photo or cast pick).
     private var avatar: some View {
-        AvatarView(url: friend?.avatar_url ?? fallbackOpponent?.avatarUrl, username: card.name, size: 52,
+        AvatarView(url: friend?.avatar_url ?? fallbackOpponent?.avatarUrl, username: card.name, size: 44,
                    emoji: friend?.avatar_emoji ?? fallbackOpponent?.avatarEmoji,
                    castId: friend?.avatar_cast_id, frame: friend?.avatar_frame,
                    userId: friend?.id ?? fallbackOpponent?.id, stroke: false)
             .overlay(alignment: .bottomTrailing) {
                 if card.online {
-                    Circle().fill(FriendsInk.online).frame(width: 13, height: 13)
+                    Circle().fill(FriendsInk.online).frame(width: 11, height: 11)
                         .overlay(Circle().stroke(FriendsInk.nightCard ?? Color.white, lineWidth: 2))
                         .offset(x: 2, y: 2)
                 }
             }
-            .frame(width: 52, height: 52)
+            .frame(width: 44, height: 44)
     }
 
-    // MARK: Game tiles
+    // MARK: Game rows (design A)
 
-    /// Up to four tiles share one row; five or six wrap into a three-across grid so no tile is ever
-    /// sliced by the card edge (the old sideways scroller cut the fifth one mid-tile).
-    @ViewBuilder private func strip(_ tiles: [GameTile], quiet: Bool) -> some View {
-        if tiles.count <= 4 {
-            HStack(spacing: 8) {
-                ForEach(tiles) { t in tileButton(t, quiet: quiet).frame(maxWidth: 104) }
-            }
-            .frame(maxWidth: .infinity)
-        } else {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-                ForEach(tiles) { t in tileButton(t, quiet: quiet) }
+    private static let turnGold = Color(hex: 0xFFC83D)
+
+    /// One slim row: the game's coin, its CAPS name over what waits, then the YOUR TURN / WAITING chip and the resign flag.
+    @ViewBuilder private func gameRow(_ t: GameTile) -> some View {
+        ZStack {
+            if confirming == t.gameId {
+                rowResignConfirm(t)
+            } else {
+                HStack(spacing: 6) {
+                    Button {
+                        if let g = games[t.gameId] { onOpenGame(g) }
+                    } label: {
+                        HStack(spacing: 10) {
+                            GameCoin(kind: t.kind, size: 34)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(t.kind.title.uppercased()).font(Brand.fixedFont(12.5, .black)).tracking(0.3)
+                                    .foregroundStyle(FriendsInk.heading).lineLimit(1).minimumScaleFactor(0.75)
+                                Text(t.word).font(Brand.fixedFont(11, .bold))
+                                    .foregroundStyle(t.yourTurn ? Color(hex: 0xFFD45A) : FriendsInk.muted)
+                                    .lineLimit(1).minimumScaleFactor(0.8)
+                            }
+                            Spacer(minLength: 4)
+                            if t.yourTurn { yourTurnChip } else { waitingChip }
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.squishCard)
+                    .accessibilityLabel("\(t.kind.title), \(t.word)")
+                    if onResign != nil, games[t.gameId] != nil { resignFlag(t).offset(x: -3, y: 3) }
+                }
             }
         }
-    }
-
-    private func tileButton(_ t: GameTile, quiet q: Bool) -> some View {
-        let quiet = q || !t.yourTurn
-        return ZStack(alignment: .topTrailing) {
-            if confirming == t.gameId {
-                resignConfirm(t)
-            } else {
-                tileFace(t, quiet: quiet)
-                if onResign != nil, games[t.gameId] != nil { resignFlag(t) }
-            }
+        .padding(.leading, 8).padding(.trailing, 4)
+        .frame(maxWidth: .infinity, minHeight: 50)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(t.yourTurn ? Self.turnGold.opacity(0.12) : (FriendsInk.dark ? Color.white.opacity(0.06) : FriendsInk.lavender.opacity(0.10)))
+                .shadow(color: t.yourTurn ? Self.turnGold.opacity(0.40) : .clear, radius: 8)
         }
         .animation(Theme.reduceMotion ? nil : .easeInOut(duration: 0.16), value: confirming)
     }
+
+    /// The gold glossy capsule on a game that waits on you.
+    private var yourTurnChip: some View {
+        Text("YOUR TURN").font(Brand.fixedFont(10.5, .black)).tracking(0.4)
+            .foregroundStyle(Color(hex: 0x5A3200)).lineLimit(1).fixedSize()
+            .padding(.horizontal, 10).frame(height: 24)
+            .background(
+                Capsule().fill(LinearGradient(colors: [Color(hex: 0xFFE58A), Color(hex: 0xF5B21B)], startPoint: .top, endPoint: .bottom))
+                    // the glossy top highlight (fades out by the middle: a sheen, not an outline)
+                    .overlay(Capsule().strokeBorder(LinearGradient(colors: [Color.white.opacity(0.35), Color.white.opacity(0)],
+                                                                   startPoint: .top, endPoint: .center), lineWidth: 1))
+            )
+            .accessibilityHidden(true)
+    }
+
+    /// B's dim chip on a game that waits on them.
+    private var waitingChip: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "clock").font(.system(size: 9, weight: .bold))
+            Text("WAITING").font(Brand.fixedFont(10, .heavy)).tracking(0.5)
+        }
+        .foregroundStyle(FriendsInk.muted).lineLimit(1).fixedSize()
+        .padding(.horizontal, 9).frame(height: 22)
+        .background(Capsule().fill(FriendsInk.dark ? Color.white.opacity(0.08) : FriendsInk.lavender.opacity(0.14)))
+        .accessibilityHidden(true)
+    }
+
+    /// The row turned over: "Resign Ghost? They win this one" then Keep / Resign, inside the row's height.
+    private func rowResignConfirm(_ t: GameTile) -> some View {
+        HStack(spacing: 8) {
+            FamClayIcon(name: "flag", size: 16, ink: FriendsInk.pink)
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Resign \(t.kind.title)?").font(Brand.fixedFont(12, .black)).foregroundStyle(FriendsInk.heading)
+                    .lineLimit(1).minimumScaleFactor(0.75)
+                Text("They win this one").font(Brand.fixedFont(10, .bold)).foregroundStyle(FriendsInk.rowSub).lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            Button { confirming = nil } label: {
+                Text("Keep").font(Brand.fixedFont(11, .black)).foregroundStyle(FriendsInk.lavender)
+                    .padding(.horizontal, 12).frame(height: 26)
+                    .background(Capsule().fill(FriendsInk.lavender.opacity(0.18)))
+            }
+            .buttonStyle(.squishCard)
+            Button {
+                confirming = nil
+                if let g = games[t.gameId] { onResign?(g) }
+            } label: {
+                Text("Resign").font(Brand.fixedFont(11, .black)).foregroundStyle(.white)
+                    .padding(.horizontal, 12).frame(height: 26)
+                    .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF472B6), Color(hex: 0xDB2777)],
+                                                               startPoint: .top, endPoint: .bottom)))
+            }
+            .buttonStyle(.squishCard)
+        }
+        .padding(.trailing, 4)
+        .transition(.opacity)
+    }
+
+    /// More than three games: a quiet row that opens (and folds) the rest.
+    private func moreRow(_ n: Int) -> some View {
+        Button(action: onToggleTheirs) {
+            HStack(spacing: 6) {
+                Text(expanded ? "Show fewer" : "+\(n) more").font(Brand.fixedFont(11.5, .black)).foregroundStyle(FriendsInk.lavender)
+                Image(systemName: "chevron.down").font(.system(size: 9, weight: .black)).foregroundStyle(FriendsInk.lavender)
+                    .rotationEffect(.degrees(expanded ? 180 : 0))
+            }
+            .frame(maxWidth: .infinity).frame(height: 28)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.squishCard)
+        .accessibilityLabel(expanded ? "Show fewer games" : "\(n) more games")
+    }
+
+    // MARK: Pieces
 
     /// The small flag in the tile's corner (a 30 pt hit area around a 22 pt coin).
     private func resignFlag(_ t: GameTile) -> some View {
@@ -175,68 +266,6 @@ struct FriendCardView: View {
         .accessibilityLabel("Resign \(t.kind.title) against \(card.name)")
     }
 
-    /// The tile turned over: "Resign Ghost?", then Keep and Resign side by side, in the tile's own frame.
-    private func resignConfirm(_ t: GameTile) -> some View {
-        VStack(spacing: 6) {
-            FamClayIcon(name: "flag", size: 20, ink: FriendsInk.pink)
-            Text("Resign \(t.kind.title)?").font(Brand.font(12, .black)).foregroundStyle(FriendsInk.heading)
-                .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.75)
-            Text("They win this one").font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.rowSub)
-                .lineLimit(1).minimumScaleFactor(0.8)
-            HStack(spacing: 5) {
-                Button { confirming = nil } label: {
-                    Text("Keep").font(Brand.font(11.5, .black)).foregroundStyle(FriendsInk.lavender)
-                        .frame(maxWidth: .infinity).frame(height: 26)
-                        .background(Capsule().fill(FriendsInk.lavender.opacity(0.18)))
-                }
-                .buttonStyle(.squishCard)
-                Button {
-                    confirming = nil
-                    if let g = games[t.gameId] { onResign?(g) }
-                } label: {
-                    Text("Resign").font(Brand.font(11.5, .black)).foregroundStyle(.white)
-                        .frame(maxWidth: .infinity).frame(height: 26)
-                        .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF472B6), Color(hex: 0xDB2777)],
-                                                                   startPoint: .top, endPoint: .bottom)))
-                }
-                .buttonStyle(.squishCard)
-            }
-        }
-        .padding(.vertical, 8).padding(.horizontal, 6)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(FriendsInk.pink.opacity(0.14)))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(FriendsInk.pink.opacity(0.35), lineWidth: 1))
-        .transition(.opacity)
-    }
-
-    private func tileFace(_ t: GameTile, quiet: Bool) -> some View {
-        Button {
-            if let g = games[t.gameId] { onOpenGame(g) }
-        } label: {
-            // Founder 10-09: the game's NAME, then what waits in plain words (two lines), never a cryptic two-word state.
-            VStack(spacing: 3) {
-                gameArt(t.kind, size: 34)
-                Text(t.kind.title).font(Brand.font(12, .black))
-                    .foregroundStyle(quiet ? FriendsInk.rowSub : FriendsInk.heading)
-                    .lineLimit(1).minimumScaleFactor(0.65)
-                Text(t.word).font(Brand.font(10.5, .bold))
-                    .foregroundStyle(quiet ? FriendsInk.rowSub : FriendsInk.heading.opacity(0.85))
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2).minimumScaleFactor(0.8)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxHeight: .infinity, alignment: .top)
-            }
-            .padding(.vertical, 8).padding(.horizontal, 6)
-            .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(FriendsKit.tileAccent(t.kind).vsWash(quiet ? 0.07 : 0.14)))
-            .opacity(quiet ? 0.85 : 1)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.squishCard)
-        .accessibilityLabel("\(t.kind.title), \(t.word)")
-    }
-
     /// A friend with nothing going yet: the six games as small tiles, tap one to start it with them.
     private var startRow: some View {
         HStack(spacing: 8) {
@@ -254,53 +283,38 @@ struct FriendCardView: View {
         }
     }
 
-    /// The folded games: their art overlapping, "3 games · 2 your turn", and a chevron. Tap opens the tiles.
-    private var gamesDropdown: some View {
-        let mine = card.tiles.count
-        let n = allTiles.count
-        let line = mine > 0 ? "\(n) games · \(mine) your turn" : "\(n) games · waiting on \(card.name)"
-        return Button(action: onToggleTheirs) {
-            HStack(spacing: 10) {
-                HStack(spacing: -10) {
-                    ForEach(Array(allTiles.prefix(4).enumerated()), id: \.element.id) { i, t in
-                        gameArt(t.kind, size: 26)
-                            .padding(4)
-                            .background(Circle().fill(FriendsKit.tileAccent(t.kind).vsWash(0.22)))
-                            .background(Circle().fill(FriendsInk.nightCard ?? Color.white))
-                            .zIndex(Double(10 - i))
-                    }
-                }
-                VStack(alignment: .leading, spacing: 1) {
-                    // The header already says how many wait on you; the dropdown names the games (no repeat).
-                    Text("Pick a game").font(Brand.font(13, .black))
-                        .foregroundStyle(FriendsInk.heading).lineLimit(1).minimumScaleFactor(0.8)
-                    if !expanded {
-                        Text(allTiles.prefix(3).map { $0.kind.title }.joined(separator: ", ") + (n > 3 ? " and more" : ""))
-                            .font(Brand.font(10.5, .bold)).foregroundStyle(FriendsInk.rowSub)
-                            .lineLimit(1).minimumScaleFactor(0.8)
-                    }
-                }
-                Spacer(minLength: 4)
-                Image(systemName: "chevron.down").font(.system(size: 11, weight: .black))
-                    .foregroundStyle(accent)
-                    .rotationEffect(.degrees(expanded ? 180 : 0))
-                    .frame(width: 28, height: 28)
-                    .background(Circle().fill(accent.opacity(0.16)))
-            }
-            .padding(.horizontal, 10).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(accent.opacity(0.10)))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.squishCard)
-        .accessibilityLabel(line)
-        .accessibilityHint(expanded ? "Hides the games" : "Shows the games to pick from")
-    }
-
     @ViewBuilder private func gameArt(_ k: FriendlyKind, size: CGFloat) -> some View {
         if let art = k.pocketArt {
             GameArtImage(asset: art, size: size)
         } else {
             FriendlyGameIcon(kind: k, size: size, tinted: true)
         }
+    }
+}
+
+/// Design A's game coin (founder 10-15): a glossy round plate in the game's accent (light top-left, darker rim, a white
+/// gloss) with the game's art centered. Drawn once (static gradients), no per-frame work.
+struct GameCoin: View {
+    let kind: FriendlyKind
+    var size: CGFloat = 34
+
+    var body: some View {
+        let accent = FriendsKit.tileAccent(kind)
+        ZStack {
+            Circle().fill(accent)
+            Circle().fill(RadialGradient(colors: [Color.white.opacity(0.38), Color.white.opacity(0)],
+                                         center: UnitPoint(x: 0.35, y: 0.3), startRadius: 0, endRadius: size * 0.55))
+            Circle().fill(Color.black.opacity(0.18)).mask(
+                Circle().strokeBorder(lineWidth: size * 0.09).blur(radius: size * 0.04))
+            Ellipse().fill(Color.white.opacity(0.22))
+                .frame(width: size * 0.62, height: size * 0.32)
+                .offset(y: -size * 0.2)
+            Group {
+                if let art = kind.pocketArt { GameArtImage(asset: art, size: size * 0.64) }
+                else { FriendlyGameIcon(kind: kind, size: size * 0.64, tinted: false) }
+            }
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }

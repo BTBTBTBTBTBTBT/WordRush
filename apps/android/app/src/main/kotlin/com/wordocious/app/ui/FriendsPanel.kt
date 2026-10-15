@@ -57,6 +57,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.zIndex
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
@@ -884,45 +888,81 @@ private fun YourFriendsSection(
             .shadow(6.dp, shape, clip = false, ambientColor = FinishInk.cardShadow, spotColor = FinishInk.cardShadow)
             .clip(shape).background(LIST_TINT), // BI23: no outline
     ) {
+        // Nudge row (design A, founder 10-15): up to 4 of the friends who haven't played, overlapping, "N haven't played today",
+        // and the compact NUDGE ALL candy on the right.
+        if (slackers.isNotEmpty()) {
+            com.wordocious.app.ui.friends.FixedFont {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy((-7).dp)) {
+                        slackers.take(4).forEachIndexed { i, f ->
+                            Box(Modifier.zIndex((10 - i).toFloat())) {
+                                FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 22.dp, online = false, presenceRing = false, userId = f.id)
+                            }
+                        }
+                    }
+                    Text(
+                        "${slackers.size} haven't played today", Modifier.weight(1f), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
+                        color = com.wordocious.app.ui.vs.VsInk.label, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                    Row(
+                        Modifier
+                            .squishClickable(label = "Nudge all who haven't played") {
+                                scope.launch {
+                                    var n = 0
+                                    for (f in slackers) {
+                                        if (FriendsService.taunt(f.id, "slowpoke", com.wordocious.app.todayLocalDate()) == FriendsService.TauntOutcome.SENT) n++
+                                    }
+                                    onNote(if (n > 0) "Nudged $n friend${if (n == 1) "" else "s"}!" else "Everyone already nudged today")
+                                }
+                            }
+                            .height(30.dp).clip(CircleShape)
+                            .background(Brush.verticalGradient(listOf(Color(0xFF9B6BFF), Color(0xFF6D28D9))))
+                            .drawBehind {
+                                val px = 1.dp.toPx()
+                                drawLine(Color.White.copy(alpha = 0.30f), Offset(size.height / 2f, px / 2f), Offset(size.width - size.height / 2f, px / 2f), strokeWidth = px)
+                            }
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        Icon3D(Icon3DName.BELL, 14.dp)
+                        Text("NUDGE ALL", fontSize = 11.5.sp, fontWeight = FontWeight.Black, color = Color(0xFFFFD24A), letterSpacing = 0.4.sp, maxLines = 1, softWrap = false)
+                    }
+                }
+            }
+        }
+        // The All friends fold: one slim row (friends glyph, label, chevron); "Add" stays at its right end.
         Row(
-            Modifier.fillMaxWidth().padding(start = 12.dp, end = 10.dp, top = 10.dp, bottom = 6.dp),
+            Modifier.fillMaxWidth().padding(start = 12.dp, end = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Row(
-                Modifier.weight(1f).then(
+                Modifier.weight(1f).padding(vertical = 10.dp).then(
                     if (collapsible) Modifier.squishClickable(label = FriendCards.allFriendsLabel(shown.size) + if (open) ", expanded" else ", collapsed") { open = !open } else Modifier,
                 ),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                FriendsLabel(
-                    when {
-                        friends.isEmpty() -> "YOUR FRIENDS"
-                        collapsible -> FriendCards.allFriendsLabel(shown.size)
-                        else -> "YOUR FRIENDS · ${friends.size}"
-                    },
-                    Modifier.weight(1f, fill = false), color = com.wordocious.app.ui.vs.VsInk.label,
-                )
-                if (collapsible) {
-                    Icon(
-                        Icons.Filled.KeyboardArrowDown, null, tint = com.wordocious.app.ui.vs.VsInk.label,
-                        modifier = Modifier.size(16.dp).rotate(if (open) 180f else 0f),
+                val lavender = com.wordocious.app.ui.friends.FriendsQuietInk.violet
+                Icon(Icons.Filled.Groups, null, tint = lavender, modifier = Modifier.size(16.dp))
+                com.wordocious.app.ui.friends.FixedFont {
+                    Text(
+                        when {
+                            friends.isEmpty() -> "YOUR FRIENDS"
+                            collapsible -> FriendCards.allFriendsLabel(shown.size)
+                            else -> "YOUR FRIENDS · ${friends.size}"
+                        },
+                        Modifier, fontSize = 12.5.sp, fontWeight = FontWeight.Black, color = lavender, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
                 }
-            }
-            if (slackers.isNotEmpty()) {
-                FriendsQuietText(
-                    "Nudge all", com.wordocious.app.ui.friends.FriendsQuietInk.gold, "Nudge all who haven't played",
-                    onClick = {
-                        scope.launch {
-                            var n = 0
-                            for (f in slackers) {
-                                if (FriendsService.taunt(f.id, "slowpoke", com.wordocious.app.todayLocalDate()) == FriendsService.TauntOutcome.SENT) n++
-                            }
-                            onNote(if (n > 0) "Nudged $n friend${if (n == 1) "" else "s"}!" else "Everyone already nudged today")
-                        }
-                    },
-                ) { Icon3D(Icon3DName.BELL, 16.dp) }
+                if (collapsible) {
+                    Icon(
+                        Icons.Filled.KeyboardArrowDown, null, tint = lavender,
+                        modifier = Modifier.size(10.dp).rotate(if (open) 180f else 0f),
+                    )
+                }
             }
             // C4b: "Add a friend" moved here from the header circle (same flow); founder 10-10: a quiet text action.
             FriendsQuietText(

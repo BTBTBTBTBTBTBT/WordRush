@@ -127,7 +127,7 @@
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/DressingRoom.kt": 5,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/EditProfileScreen.kt": 7,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/FinishPages.kt": 1,
-    "apps/android/app/src/main/kotlin/com/wordocious/app/ui/FriendsPanel.kt": 9,
+    "apps/android/app/src/main/kotlin/com/wordocious/app/ui/FriendsPanel.kt": 10,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/GameOrderEdit.kt": 1,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/HelpInfoScreens.kt": 1,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/HomeBannerView.kt": 2,

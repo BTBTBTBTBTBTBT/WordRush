@@ -254,6 +254,8 @@ fun FriendFace(
     presenceRing: Boolean = true,
     /** BJ5: the friend's user id (the shared avatar resolver). */
     userId: String? = null,
+    /** The online dot's diameter (null = 30% of the face, at least 12 dp). */
+    dotSize: Dp? = null,
 ) {
     // AQ2: the pulse is read in the draw pass only (no per-frame recomposition of the row),
     // and holds still while the page scrolls or is hidden.
@@ -289,7 +291,7 @@ fun FriendFace(
             // C4: the green dot (#22c55e) in a 2 dp white ring.
             Box(
                 Modifier.align(Alignment.BottomEnd).offset(x = 3.dp, y = 1.dp)
-                    .size((size.value * 0.3f).coerceAtLeast(12f).dp)
+                    .size(dotSize ?: (size.value * 0.3f).coerceAtLeast(12f).dp)
                     .clip(CircleShape).background(Color.White).padding(2.dp)
                     .clip(CircleShape).background(FriendsPink.online),
             )
@@ -414,5 +416,18 @@ fun FriendsCaption(text: String, modifier: Modifier = Modifier, color: Color = F
     Text(
         text, fontSize = 11.sp, fontWeight = if (tabular) FontWeight.ExtraBold else FontWeight.Bold, color = color,
         modifier = modifier, maxLines = 1, overflow = TextOverflow.Ellipsis,
+    )
+}
+
+/**
+ * Fixed-size type (founder 10-15, "the buttons are huge" on a large system text size): inside this, sp is read at font scale 1,
+ * so the Friends cards' chips and row labels keep their exact spec size. Names stay OUTSIDE it and follow the text size.
+ */
+@Composable
+fun FixedFont(content: @Composable () -> Unit) {
+    val d = androidx.compose.ui.platform.LocalDensity.current
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density, 1f),
+        content = content,
     )
 }

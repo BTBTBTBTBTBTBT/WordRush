@@ -693,13 +693,22 @@ struct FriendsPanelView: View {
         if !restFriends.isEmpty || !slackers.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
                 if !slackers.isEmpty {
+                    // Founder 10-15 (design A, SPEC.md): their faces, the count, and a compact candy NUDGE ALL (fixed sizes).
                     HStack(spacing: 8) {
+                        HStack(spacing: -7) {
+                            ForEach(Array(slackers.prefix(4).enumerated()), id: \.element.id) { i, f in
+                                AvatarView(url: f.avatar_url, username: f.username, size: 22, emoji: f.avatar_emoji,
+                                           castId: f.avatar_cast_id, frame: f.avatar_frame, userId: f.id, stroke: false)
+                                    .frame(width: 22, height: 22)
+                                    .zIndex(Double(10 - i))
+                            }
+                        }
+                        .accessibilityHidden(true)
                         Text(slackers.count == 1 ? "1 friend hasn't played today" : "\(slackers.count) haven't played today")
-                            .font(Brand.font(11, .heavy)).foregroundStyle(FriendsInk.rowSub)
+                            .font(Brand.fixedFont(12, .heavy)).foregroundStyle(FriendsInk.rowSub)
                             .lineLimit(1).minimumScaleFactor(0.8)
                         Spacer(minLength: 6)
-                        FriendsQuietText(title: "Nudge all", art: "icon3d-bell", tint: FriendsQuietInk.gold,
-                                         label: "Nudge all who haven't played") {
+                        NudgeAllButton {
                             Task {
                                 var n = 0
                                 for f in slackers {
@@ -712,7 +721,7 @@ struct FriendsPanelView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 4)
+                    .padding(.horizontal, 12).padding(.vertical, 8)
                 }
                 if !restFriends.isEmpty {
                     Button {
@@ -720,14 +729,16 @@ struct FriendsPanelView: View {
                         if Theme.reduceMotion { change() } else { withAnimation(.easeInOut(duration: 0.18), change) }
                     } label: {
                         HStack(spacing: 6) {
+                            Image("icon3d-tab-friends").resizable().scaledToFit().frame(width: 16, height: 16).opacity(0.9)
+                                .accessibilityHidden(true)
                             Text(FriendCards.allFriendsLabel(restFriends.count))
-                                .font(Brand.font(12, .black)).foregroundStyle(FriendsInk.lavender)
+                                .font(Brand.fixedFont(12.5, .black)).foregroundStyle(FriendsInk.lavender)
                             Spacer(minLength: 4)
                             Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
                                 .foregroundStyle(FriendsInk.lavender)
                                 .rotationEffect(.degrees(open ? 180 : 0))
                         }
-                        .padding(.horizontal, 12).padding(.vertical, 11)
+                        .padding(.horizontal, 12).padding(.vertical, 10)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.squish)

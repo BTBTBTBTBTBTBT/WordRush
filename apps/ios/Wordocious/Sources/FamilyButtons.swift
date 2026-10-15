@@ -602,6 +602,30 @@ struct FriendsQuietText: View {
     }
 }
 
+/// Founder 10-15 (Friends design A, docs/design/review/friends-cards-1015/SPEC.md): the compact candy NUDGE ALL — a purple
+/// glossy capsule (30 tall, fixed text size), the 3D bell and gold caps. Replaces the big quiet pill on the Friends page.
+struct NudgeAllButton: View {
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image("icon3d-bell").resizable().interpolation(.high).scaledToFit().frame(width: 14, height: 14)
+                Text("NUDGE ALL").font(Brand.fixedFont(11.5, .black)).tracking(0.4).foregroundStyle(Color(hex: 0xFFD24A))
+                    .lineLimit(1).fixedSize()
+            }
+            .padding(.horizontal, 12).frame(height: 30)
+            .background(
+                Capsule().fill(LinearGradient(colors: [Color(hex: 0x9B6BFF), Color(hex: 0x6D28D9)], startPoint: .top, endPoint: .bottom))
+                    .overlay(Capsule().strokeBorder(LinearGradient(colors: [Color.white.opacity(0.30), Color.white.opacity(0)],
+                                                                   startPoint: .top, endPoint: .center), lineWidth: 1))
+            )
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.squish)
+        .accessibilityLabel("Nudge all who haven't played")
+    }
+}
+
 /// A round icon button drawn as a gold OUTLINE (founder 10-10, Muddle: "the clue and hint buttons are dark and hard to read
 /// … the same color as the gold tiles … outlines instead of fills"): a 2 pt gold ring, a faint gold wash, the clay icon in gold.
 struct GoldOutlineIconButton: View {

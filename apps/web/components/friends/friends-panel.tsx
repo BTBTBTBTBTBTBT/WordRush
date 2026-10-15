@@ -716,19 +716,55 @@ export function FriendsPanel() {
       <div className="fr-right-col space-y-3">
       {/* 7. YOUR FRIENDS — a lavender card with soft striped rows and chunky candy
           Play / Challenge / Nudge buttons (C4); "Add a friend" lives in its header (C4b). */}
-      <FrCard accent={FR_LOOK.lavender} bar={FR_LOOK.lavenderBar}>
-        <div className="flex items-center justify-between gap-2" style={{ padding: '8px 10px 6px 12px' }}>
+      {/* Founder 10-15 (docs/design/review/friends-cards-1015/SPEC.md): the nudge row leads, then the slim All friends fold. */}
+      {friends.length > 0 && slackers.length > 0 && (
+        <div
+          className="flex items-center justify-between gap-2"
+          style={{ padding: '8px 12px', borderRadius: 16, background: `var(--fr-season-card, ${softMix(FR_LOOK.lavender, 0.1)})`, boxShadow: '0 6px 14px rgba(60,30,110,0.07)' }}
+        >
+          <span className="flex items-center min-w-0 flex-1" style={{ gap: 8 }}>
+            <span className="flex items-center shrink-0" aria-hidden="true">
+              {slackers.slice(0, 4).map((f, i) => (
+                <span key={f.id} className="relative flex" style={{ marginLeft: i === 0 ? 0 : -7, zIndex: 10 - i }}>
+                  <FriendAvatar name={f.username} userId={f.id} url={f.avatar_url} config={f.avatar_config} castId={f.avatar_cast_id} frame={f.avatar_frame} pro={f.is_pro} level={f.level} size={22} />
+                </span>
+              ))}
+            </span>
+            <span className="min-w-0 truncate font-extrabold" style={{ fontSize: 12, color: FR_LOOK.rowSub }}>
+              <SoftNum size={12}>{slackers.length}</SoftNum> haven’t played today
+            </span>
+          </span>
+          {/* §216: one tap nudges every friend who hasn't played today. */}
+          <button
+            type="button"
+            data-squish
+            onClick={nudgeAll}
+            aria-label="Nudge all friends who haven't played today"
+            className="shrink-0 flex items-center font-black whitespace-nowrap"
+            style={{
+              height: 30, padding: '0 12px', gap: 5, borderRadius: 999, border: 0, fontSize: 11.5, letterSpacing: '0.4px', color: '#FFD24A',
+              background: 'linear-gradient(180deg, #9B6BFF, #6D28D9)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3)',
+            }}
+          >
+            <Icon3D name="bell" size={14} />
+            NUDGE ALL
+          </button>
+        </div>
+      )}
+      <FrCard accent={FR_LOOK.lavender} style={{ border: 'none' }}>
+        <div className="flex items-center justify-between gap-2" style={{ padding: '10px 12px' }}>
           {friends.length > 0 ? (
             <h2 className="m-0 min-w-0">
               <button
                 type="button"
                 onClick={() => setAllOpen(!allListOpen)}
                 aria-expanded={allListOpen}
-                className="flex items-center gap-1 text-[11px] font-black uppercase truncate"
-                style={{ letterSpacing: 1.3, color: 'var(--fr-label, #5b3c96)' }}
+                className="flex items-center gap-1.5 font-black truncate"
+                style={{ fontSize: 12.5, color: FR_LOOK.lavender }}
               >
-                {allFriendsLabel(friends.length)}
-                <ChevronDown className="w-3.5 h-3.5 transition-transform shrink-0" style={{ transform: allListOpen ? 'rotate(180deg)' : 'none' }} aria-hidden="true" />
+                <Users size={16} strokeWidth={2.4} className="shrink-0" aria-hidden="true" />
+                <span className="truncate">{allFriendsLabel(friends.length)}</span>
+                <ChevronDown size={10} strokeWidth={3.2} className="transition-transform shrink-0" style={{ transform: allListOpen ? 'rotate(180deg)' : 'none' }} aria-hidden="true" />
               </button>
             </h2>
           ) : (
@@ -804,15 +840,6 @@ export function FriendsPanel() {
                 </div>
               );
             })}
-            {/* §216: one tap nudges every friend who hasn't played today. */}
-            {slackers.length > 0 && (
-              <div className="flex items-center justify-between gap-2 px-3 pt-2.5 pb-2" style={{ borderTop: `1px solid ${softMix(FR_LOOK.lavender, 0.1)}` }}>
-                <span className="text-[11px] font-extrabold" style={{ color: FR_LOOK.rowSub }}>
-                  <SoftNum size={12}>{slackers.length}</SoftNum> {slackers.length === 1 ? 'friend hasn’t' : 'friends haven’t'} played today
-                </span>
-                <QuietText ink="gold" icon={<Icon3D name="bell" size={16} />} label="Nudge all friends who haven't played today" onClick={nudgeAll}>Nudge all</QuietText>
-              </div>
-            )}
           </div>
         )) : (
           <div className="px-4 pb-4 pt-1 space-y-1.5 text-xs font-bold" style={{ color: FR_LOOK.rowSub }}>

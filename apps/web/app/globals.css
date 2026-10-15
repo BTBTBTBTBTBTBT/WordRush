@@ -1028,6 +1028,10 @@ html[data-season-tone="dark"] [data-page-tint="friends"] {
   --fr-teal: #5eead4;
   /* 2.8 wave 3: the friend cards' "playing Classic" line (green) lifted for the night glass */
   --fr-online: #6ee7b7;
+  /* The friend cards' slim game rows (founder 10-15): plate, WAITING chip and your-turn status on the night glass */
+  --fr-row-plate: rgba(255, 255, 255, 0.06);
+  --fr-chip-wait: rgba(255, 255, 255, 0.08);
+  --fr-turn-ink: #ffd45a;
 }
 /* Quiet Friends actions (founder 10-10: "the buttons are loud and obnoxious"): a row's one action is a quiet round
    icon, Add / Nudge all / Rematch quiet text on a soft capsule. Inks: gold / pink / violet, deep on the light page,

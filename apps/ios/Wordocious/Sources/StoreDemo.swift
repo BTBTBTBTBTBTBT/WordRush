@@ -25,6 +25,9 @@ enum StoreDemo {
     /// `-storeDemoFree`: the same player as a FREE signed-in account (no Pro, no Pro frame on the
     /// profile), so the free-tier gates, Go Pro prompts and paywalls can be shot.
     static let free = ProcessInfo.processInfo.arguments.contains("-storeDemoFree")
+    /// `-friendGamesDemo`: the Friends page carries pocket games (Rock Paper Scissors waiting on Quillby; Word Chain your turn +
+    /// Rock Paper Scissors waiting on VowelMaven) so the friend game cards can be designed in the sim (founder 10-15).
+    static let friendGamesDemo = ProcessInfo.processInfo.arguments.contains("-friendGamesDemo")
     /// `-storeAvatarKinds`: the leaderboard leaders cover every avatar kind core `resolveAvatar`
     /// draws — #1 a custom PHOTO (a drawn test picture served for the avatars bucket URL, never a
     /// real photo), #2 a cast pick, #3 WordWiz's built mascot, #4 a seeded default. Off for store shots.
@@ -323,6 +326,7 @@ enum StoreDemoData {
         if path.hasSuffix("/vs/counts") { return (200, json(["waiting": ["DUEL": 3, "QUORDLE": 1], "playing": ["DUEL": 8, "OCTORDLE": 2]]), [:]) }
         if path.hasSuffix("/presence") { return (200, json(["online": 46]), [:]) }
         if path.hasPrefix("/api/friends/feed") { return (200, json(["events": feed(), "reactions": [String: Any]()]), [:]) }
+        if path == "/api/friends/games", StoreDemo.friendGamesDemo { return (200, json(friendGamesPayload()), [:]) }
         if path == "/api/friends" { return (200, json(friendsPayload()), [:]) }
         if path == "/api/achievements" { return (200, Data(StoreDemo.titleCatalog.utf8), [:]) }
         return (200, json([Any]()), count)
@@ -493,6 +497,24 @@ enum StoreDemoData {
         r["flawlessStreak"] = 3; r["h2hW"] = 7; r["h2hL"] = 5
         r["lastSeenAt"] = StoreDemo.iso(seen); r["activity"] = activity ?? NSNull(); r["friendStreak"] = p.streak / 3
         return r
+    }
+
+    /// `-friendGamesDemo`: three active pocket games (see StoreDemo.friendGamesDemo).
+    static func friendGamesPayload() -> [String: Any] {
+        let now = ISO8601DateFormatter().string(from: Date())
+        func opp(_ p: StoreDemo.Person) -> [String: Any] { ["id": p.id, "username": p.name, "avatarUrl": NSNull(), "avatarEmoji": NSNull()] }
+        let waitingRps: [String: Any] = ["kind": "rps", "picks": ["a": "paper"], "rounds": [Any](), "score": ["a": 0, "b": 0]]
+        let chainYours: [String: Any] = ["kind": "chain", "words": [["by": "a", "word": "CRANE", "points": 5]], "turn": "b", "score": ["a": 5, "b": 0]]
+        func game(_ id: String, _ kind: String, _ title: String, me: String, _ p: StoreDemo.Person, _ state: [String: Any], yourTurn: Bool, _ line: String) -> [String: Any] {
+            ["id": id, "kind": kind, "title": title, "me": me, "opponent": opp(p), "state": state, "status": "active",
+             "yourTurn": yourTurn, "result": NSNull(), "line": line, "answer": NSNull(), "createdAt": now, "updatedAt": now]
+        }
+        let q = StoreDemo.people[1], v = StoreDemo.people[2]
+        return ["active": [
+            game("demo-g1", "chain", "Word Chain", me: "b", v, chainYours, yourTurn: true, "Your word · starts with E"),
+            game("demo-g2", "rps", "Rock Paper Scissors", me: "a", q, waitingRps, yourTurn: false, "Round 1 · waiting on \(q.name)"),
+            game("demo-g3", "rps", "Rock Paper Scissors", me: "a", v, waitingRps, yourTurn: false, "Round 1 · waiting on \(v.name)"),
+        ], "recent": [Any]()]
     }
 
     static func friendsPayload() -> [String: Any] {
