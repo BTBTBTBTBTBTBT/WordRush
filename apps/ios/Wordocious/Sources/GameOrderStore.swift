@@ -20,11 +20,26 @@ final class GameOrderStore: ObservableObject {
 
     private static func key(_ uid: String?) -> String { "game-order:\(uid?.lowercased() ?? "guest")" }
 
+    /// Founder 10-15 ("they start in the default order and then clip to the order the user puts them in"): the store used to
+    /// read the local mirror only once the profile landed (HomeView `.task(id: profile.id)`), so Home painted the default
+    /// order first and re-sorted a beat later. A restoring session now paints the last signed-in player's mirror from the
+    /// FIRST frame (the cached profile row says who), and `bind(nil)` while the session is still restoring keeps it.
+    private init() {
+        if AuthService.hadPersistedSession, let uid = AuthService.cachedProfileRow?.id {
+            userId = uid
+            prefs = Self.readLocal(uid)
+        } else if AuthService.shared.isGuest {
+            prefs = Self.readLocal(nil)
+        }
+    }
+
     /// Editing is available (the off-switch is live).
     var canEdit: Bool { FlagsService.shared.isLive("custom_game_order") }
 
     /// Call when the signed-in account changes (HomeView `.task(id:)`): load the local mirror, then the profile row.
     func bind(userId uid: String?) {
+        // Still restoring the session (no profile yet): keep the launch order instead of flashing the guest / default one.
+        if uid == nil, userId != nil, AuthService.shared.isLoading { return }
         guard uid != userId || fetchedFor == nil else { return }
         userId = uid
         prefs = Self.readLocal(uid)

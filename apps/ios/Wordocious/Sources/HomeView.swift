@@ -697,7 +697,7 @@ struct HomeView: View {
             // Unlimited's per-row "N PLAYED TODAY": fetched when the switch flips to Unlimited.
             .task(id: effectiveMode) { await loadUnlimitedCounts() }
             // Item 35: load this account's saved game order (local mirror first, then the profile row).
-            .task(id: auth.profile?.id) { orderStore.bind(userId: auth.profile?.id) }
+            .task(id: "\(auth.profile?.id ?? "-")|\(auth.isLoading)") { orderStore.bind(userId: auth.profile?.id) }
             // Item 41: decide once the profile + seen list are known; a beat after Home settles, and never over a game or celebration.
             .task(id: auth.profile?.id) {
                 guard await WhatsNewGate.decide() == .show else { return }

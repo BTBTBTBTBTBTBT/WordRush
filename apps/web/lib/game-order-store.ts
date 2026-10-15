@@ -7,6 +7,7 @@
 // Pure rules live in @wordle-duel/core game-order.ts (shared with iOS / Android ports).
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
+import { cacheUser } from './page-cache';
 import {
   DEFAULT_DAILIES_ORDER, DEFAULT_PUZZLES_ORDER, PINNED_FIRST_DAILY, applyGameOrder, isDefaultOrder, moveGame, parseGameOrder,
   type GameOrderPrefs, type GameOrderSection,
@@ -56,10 +57,12 @@ export interface GameOrderApi {
 }
 
 export function useGameOrder(): GameOrderApi {
-  const { user, profile } = useAuth();
+  const { user, profile, loading } = useAuth();
   const { isLive } = useFlags();
   const live = isLive('custom_game_order');
-  const userId = user?.id ?? null;
+  // Founder 10-15 ("they start in the default order and then clip"): before auth resolves, read the stored session's
+  // player (page-cache cacheUser) so the first paint already has their own order (iOS / Android parity).
+  const userId = user?.id ?? (loading ? cacheUser() : null);
   const v = useSyncExternalStore(
     (cb) => { listeners.add(cb); return () => { listeners.delete(cb); }; },
     () => version,

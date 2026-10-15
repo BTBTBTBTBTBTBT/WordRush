@@ -268,9 +268,13 @@ fun HomeScreen(
             val visibleCards = MODE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
             val visibleMore = MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
             // Item 35: the player's own order (default = the catalog's; Classic pinned first).
-            val savedOrder by com.wordocious.app.data.GameOrderStore.prefs.collectAsState()
+            // Founder 10-15 ("they start in the default order and then clip to the order the user puts them in"): binding in a
+            // LaunchedEffect ran AFTER the first frame, so Home painted the catalog order and re-sorted a beat later. Bind during
+            // composition, before the order is read (the cached profile row is already restored at launch), so the first frame
+            // has the player's own order.
             val orderUserId = authProfile?.id
-            androidx.compose.runtime.LaunchedEffect(orderUserId) { com.wordocious.app.data.GameOrderStore.bind(orderUserId) }
+            remember(orderUserId) { com.wordocious.app.data.GameOrderStore.bind(orderUserId); orderUserId }
+            val savedOrder by com.wordocious.app.data.GameOrderStore.prefs.collectAsState()
             val orderEdit = remember { GameOrderEditState() }
             val wordCards = remember(visibleCards, savedOrder) {
                 com.wordocious.app.data.GameOrderStore.ordered(visibleCards.filter { !it.homeWide }, com.wordocious.core.GameOrderSection.DAILIES) { it.id }
