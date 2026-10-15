@@ -144,6 +144,8 @@ describe('media + formatting helpers', () => {
     expect(mediaOf('text/html')).toBe('html');
     expect(mediaOf('audio/wav')).toBe('audio');
     expect(mediaOf('audio/mp4')).toBe('audio');
+    expect(mediaOf('video/mp4')).toBe('video');
+    expect(isRaster('video/mp4')).toBe(false);
     expect(mediaOf('application/json')).toBe('other');
     expect(isRaster('image/png')).toBe(true);
     expect(isRaster('image/svg+xml')).toBe(false);

@@ -63,9 +63,9 @@ export function useSigner(): Signer {
   return useMemo(() => ({ get, ensure }), [get, ensure]);
 }
 
-export function MediaGlyph({ media, size = 'md' }: { media: 'html' | 'audio' | 'other'; size?: 'sm' | 'md' }) {
-  const Icon = media === 'html' ? Play : media === 'audio' ? AudioLines : Palette;
-  const label = media === 'html' ? 'Animation' : media === 'audio' ? 'Sound' : 'File';
+export function MediaGlyph({ media, size = 'md' }: { media: 'html' | 'audio' | 'video' | 'other'; size?: 'sm' | 'md' }) {
+  const Icon = media === 'html' || media === 'video' ? Play : media === 'audio' ? AudioLines : Palette;
+  const label = media === 'html' ? 'Animation' : media === 'video' ? 'Video' : media === 'audio' ? 'Sound' : 'File';
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-purple-100 to-purple-200/70">
       <span className={`${size === 'sm' ? 'w-7 h-7' : 'w-11 h-11'} rounded-full bg-white/90 shadow-sm flex items-center justify-center text-purple-600`}>
@@ -81,6 +81,7 @@ export function Thumb({ asset, signer, size = 'md' }: { asset: ArtAsset; signer:
   const [fallback, setFallback] = useState(false);
   const media = mediaOf(asset.mime);
   useEffect(() => { if (fallback) signer.ensure('full', [asset.id]); }, [fallback, asset.id, signer]);
+  if (media === 'video') return <VideoThumb asset={asset} signer={signer} />;
   if (media !== 'image') return <MediaGlyph media={media} size={size} />;
   const url = fallback ? signer.get('full', asset.id) : signer.get('thumb', asset.id);
   if (!url) return <div className="absolute inset-0 animate-pulse bg-purple-100/50" />;
@@ -97,3 +98,38 @@ export function Thumb({ asset, signer, size = 'md' }: { asset: ArtAsset; signer:
   );
 }
 
+
+/**
+ * A muted, looping video tile. The clip only loads and plays while it is on screen (a section can hold dozens),
+ * and `#t=0.1` shows its first frame before it starts.
+ */
+function VideoThumb({ asset, signer }: { asset: ArtAsset; signer: Signer }) {
+  const url = signer.get('thumb', asset.id);
+  const ref = useRef<HTMLVideoElement>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') { setNear(true); return; }
+    const io = new IntersectionObserver(([e]) => setNear(e.isIntersecting), { rootMargin: '120px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [url]);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (near) el.play().catch(() => {}); else el.pause();
+  }, [near, url]);
+  if (!url) return <div className="absolute inset-0 animate-pulse bg-purple-100/50" />;
+  return (
+    <video
+      ref={ref}
+      src={near ? `${url}#t=0.1` : undefined}
+      muted
+      loop
+      playsInline
+      preload={near ? 'auto' : 'none'}
+      aria-label={asset.title}
+      className="absolute inset-0 w-full h-full object-contain p-1.5"
+    />
+  );
+}

@@ -10,8 +10,8 @@ const TTL = 3600; // seconds; the page refreshes cached URLs after 50 minutes
 
 /**
  * Signed URLs for up to 120 art_assets ids: { ids, variant } -> { urls: { [id]: url } }.
- * thumb = a 360px contain-resized render for raster images (plain URL otherwise,
- * or when the transform sign fails); full = plain; download = attachment named
+ * thumb = a 360px contain-resized render for raster images (plain URL otherwise, e.g. video/mp4 and audio,
+ * which are never sent to the image transformer, or when the transform sign fails); full = plain; download = attachment named
  * after the file. Unknown ids are skipped.
  */
 export async function POST(request: NextRequest) {
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         if (data?.signedUrl) urls[a.id] = data.signedUrl;
         return;
       }
+      // Only raster images go through the image transformer; video and everything else gets the plain URL.
       if (isRaster(a.mime)) {
         const { data } = await bucket.createSignedUrl(a.path, TTL, {
           transform: { width: 360, height: 360, resize: 'contain' },

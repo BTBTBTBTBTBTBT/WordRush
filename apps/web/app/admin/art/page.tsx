@@ -210,7 +210,7 @@ export default function ArtLibraryPage() {
   const thumbIds = (view === 'sections'
     ? sections.filter(isOpen).flatMap((s) => s.assets.slice(0, limitFor(s)))
     : view === 'picks' ? picks.flatMap((g) => g.assets) : feedbackAssets)
-    .filter((a) => mediaOf(a.mime) === 'image')
+    .filter((a) => ['image', 'video'].includes(mediaOf(a.mime)))
     .map((a) => a.id);
   const thumbKey = thumbIds.join('|');
   useEffect(() => {
@@ -883,6 +883,12 @@ function FullImage({ asset, signer, label }: { asset: ArtAsset; signer: Signer; 
   );
 }
 
+function FullVideo({ asset, signer }: { asset: ArtAsset; signer: Signer }) {
+  const url = signer.get('full', asset.id);
+  if (!url) return <div className="h-full animate-pulse bg-purple-100/20" />;
+  return <video src={url} controls loop playsInline preload="metadata" aria-label={asset.title} className="w-full h-full object-contain" />;
+}
+
 function Lightbox({ ids, index, preview = null, byId, signer, onIndex, onClose, onDecide, onDownload, review, feedback }: {
   ids: string[];
   index: number;
@@ -906,7 +912,7 @@ function Lightbox({ ids, index, preview = null, byId, signer, onIndex, onClose, 
   // Sign the full file for this asset, its hero and both neighbors (instant prev / next).
   const neighborKey = [ids[index - 1], ids[index], ids[index + 1], hero?.id].filter(Boolean).join('|');
   useEffect(() => {
-    const want = neighborKey.split('|').filter((id) => id && mediaOf(byId.get(id)?.mime ?? '') === 'image');
+    const want = neighborKey.split('|').filter((id) => id && ['image', 'video'].includes(mediaOf(byId.get(id)?.mime ?? '')));
     if (want.length) signer.ensure('full', want);
   }, [neighborKey, byId, signer]);
 
@@ -967,6 +973,10 @@ function Lightbox({ ids, index, preview = null, byId, signer, onIndex, onClose, 
                 <AudioLines className="w-7 h-7" />
               </span>
               <audio key={asset.id} controls preload="metadata" src={fileUrl(asset.id)} className="w-full max-w-md" />
+            </div>
+          ) : media === 'video' ? (
+            <div className="h-[48vh] sm:h-[60vh] rounded-xl overflow-hidden bg-gray-900">
+              <FullVideo key={asset.id} asset={asset} signer={signer} />
             </div>
           ) : media === 'image' ? (
             hero && hero.id !== asset.id ? (

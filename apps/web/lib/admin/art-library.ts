@@ -56,7 +56,7 @@ export const EMPTY_FILTERS: ArtFilters = { type: null, season: null, character: 
 /** featured (default): season art awaiting a call, then the newest finished pieces. */
 export type ArtSort = 'featured' | 'newest' | 'az';
 
-export type ArtMedia = 'image' | 'html' | 'audio' | 'other';
+export type ArtMedia = 'image' | 'html' | 'audio' | 'video' | 'other';
 
 export const SIGN_VARIANTS = ['thumb', 'full', 'download'] as const;
 export type SignVariant = (typeof SIGN_VARIANTS)[number];
@@ -67,6 +67,7 @@ export function mediaOf(mime: string): ArtMedia {
   if (/^image\//.test(mime)) return 'image';
   if (mime === 'text/html') return 'html';
   if (/^audio\//.test(mime)) return 'audio';
+  if (/^video\//.test(mime)) return 'video';
   return 'other';
 }
 
