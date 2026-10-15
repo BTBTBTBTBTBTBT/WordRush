@@ -51,9 +51,11 @@ export const PODIUM_ART = {
   plantPt: 5,
   /**
    * Founder 10-15 ("the name titles need to be higher up and not blocking their heads"): the name label's BOTTOM sits this
-   * many points above the DRAWN head / hat top (the line `headTop` below), never tucked into the mascot box.
+   * many points above the DRAWN head / hat top (the line `headTop` below), never tucked into the mascot box. 10-15 TestFlight
+   * ("kind of small and spaced too far above their heads, needs to be more prominent"): 12 -> 4, so the name reads as the
+   * mascot's own label.
    */
-  nameGapPt: 12,
+  nameGapPt: 4,
   /**
    * Where the drawn head / hat top is, as a fraction of the mascot box measured from the box's top edge, for the tallest
    * hats (web render of all 30 bodies x 46 hats x 3 poses: the visible top is 0.02 - 0.14 below the edge; tall hats 0.02-0.04,
@@ -63,7 +65,22 @@ export const PODIUM_ART = {
   /** The first place's crown rises this fraction of the mascot box above the box's top (it rides ON the head). */
   crownRise: 0.05,
   /** Extra points the first place's name clears the crown by, on top of nameGapPt (name bottom -> crown top). */
-  crownGapPt: 10,
+  crownGapPt: 2,
+  /**
+   * Founder 10-15: the names are bigger (were ~0.053 / ~0.046 of the width) and shrink to fit their slot so a long username
+   * never clips: font size as a fraction of the stage width, and the slot width the line is shrunk into (silver 0.22 +/- 0.155
+   * stays on screen; gold's wider slot sits higher, above the crown, so it never meets the others).
+   */
+  nameSize: { gold: 0.068, other: 0.06 },
+  nameWidth: { gold: 0.33, other: 0.31 },
+  /** The smallest the name may shrink to (fraction of nameSize) so a 20-character username still fits its slot. */
+  nameMinScale: 0.3,
+  /**
+   * An open place's sleepy R on its cloud (art-scene-r-asleep, 373 x 302): width as a fraction of the stage width, and the art's
+   * BOTTOM sits on the step-top center (feet) + plantPt, so the cloud rests ON the step instead of hanging over its front rim
+   * (founder 10-15: "the cloud guy isn't sitting nicely on the podium").
+   */
+  openSpot: { width: 0.19, aspect: 373 / 302, plantPt: 2 },
   /** Contact shadow ellipse width as a fraction of the mascot width. */
   shadowWidth: 0.9,
   /** Panel text: the score line and the two detail lines, as fractions of the panel height. */
@@ -78,6 +95,18 @@ export const PODIUM_ART = {
     { place: 3, feet: { x: 0.783, y: 0.455 }, panel: { x0: 0.667, x1: 0.902, y0: 0.615, y1: 0.810 } },
   ] as readonly PodiumArtStep[],
 } as const;
+
+/**
+ * Founder 10-15 ("anything we can do to not make the crown look like a bolt on icon"): first place WEARS the crown — the
+ * Dressing Room's crown hat, fitted to their body like any hat — in place of their own hat, on the podium only (a floating
+ * crown icon stays only on a photo tile). Crowns they already wear stay.
+ */
+export const PODIUM_WINNER_ROYAL_HEADS: readonly string[] = ['crown', 'minicrown', 'tiara'];
+
+/** The hat the first place wears on the podium. */
+export function podiumWinnerHead(head: string | null | undefined): string {
+  return head && PODIUM_WINNER_ROYAL_HEADS.includes(head) ? head : 'crown';
+}
 
 /** Screen order (left to right) of the places on the podium art: 2, 1, 3. */
 export const PODIUM_ART_ORDER: readonly (1 | 2 | 3)[] = [2, 1, 3];

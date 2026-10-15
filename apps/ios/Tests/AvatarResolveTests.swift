@@ -72,11 +72,22 @@ final class AvatarResolveTests: XCTestCase {
         XCTAssertEqual(art["headTop"] as? Double, PodiumArt.headTop)
         XCTAssertEqual(art["crownRise"] as? Double, PodiumArt.crownRise)
         XCTAssertEqual(art["crownGapPt"] as? Double, PodiumArt.crownGapPt)
+        let ns = try XCTUnwrap(art["nameSize"] as? [String: Double]), nw = try XCTUnwrap(art["nameWidth"] as? [String: Double])
+        XCTAssertEqual(ns["gold"], PodiumArt.nameSizeGold); XCTAssertEqual(ns["other"], PodiumArt.nameSizeOther)
+        XCTAssertEqual(nw["gold"], PodiumArt.nameWidthGold); XCTAssertEqual(nw["other"], PodiumArt.nameWidthOther)
+        XCTAssertEqual(art["nameMinScale"] as? Double, PodiumArt.nameMinScale)
+        let os = try XCTUnwrap(art["openSpot"] as? [String: Double])
+        XCTAssertEqual(os["width"], PodiumArt.openSpotWidth)
+        XCTAssertEqual(os["aspect"]!, PodiumArt.openSpotAspect, accuracy: 1e-12)
+        XCTAssertEqual(os["plantPt"], PodiumArt.openSpotPlantPt)
         XCTAssertEqual(art["shadowWidth"] as? Double, PodiumArt.shadowWidth)
         XCTAssertEqual(art["scoreHeight"] as? Double, PodiumArt.scoreHeight)
         XCTAssertEqual(art["detailHeight"] as? Double, PodiumArt.detailHeight)
         XCTAssertEqual(art["textRgb"] as? [Int], [PodiumArt.textRgb.r, PodiumArt.textRgb.g, PodiumArt.textRgb.b])
         XCTAssertEqual(fx["artOrder"] as? [Int], PodiumArt.order)
+        for c in try XCTUnwrap(fx["winnerHead"] as? [[String: String]]) {
+            XCTAssertEqual(PodiumArt.winnerHead(c["head"]!.isEmpty ? nil : c["head"]), c["out"])
+        }
         if let w = fx["winnerIntro"] as? [String: Any] {
             let g = try XCTUnwrap(w["glow"] as? [String: Any]), sp = try XCTUnwrap(w["sparkles"] as? [String: Any]), c = try XCTUnwrap(w["crown"] as? [String: Any])
             XCTAssertEqual(g["size"] as? Double, PodiumWinnerIntro.glowSize)

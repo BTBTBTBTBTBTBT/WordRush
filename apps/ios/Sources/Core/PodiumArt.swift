@@ -16,14 +16,26 @@ public enum PodiumArt {
     /// The mascot lands this many points lower than the step-top center so it looks planted.
     public static let plantPt = 5.0
     /// The name label's BOTTOM sits this many points above the DRAWN head / hat top.
-    public static let nameGapPt = 12.0
+    public static let nameGapPt = 4.0
     /// Where the drawn head / hat top sits, as a fraction of the mascot box from its top edge (small end: tall hats). iOS
     /// never needs it for layout: it measures the drawn head from the living layout's own bounds (PodiumFigure.bounds).
     public static let headTop = 0.04
     /// The first place's crown rises this fraction of the mascot box above the box's top (iOS measures the drawn head instead).
     public static let crownRise = 0.05
     /// Extra points the first place's name clears the crown by, on top of nameGapPt.
-    public static let crownGapPt = 10.0
+    public static let crownGapPt = 2.0
+    /// Founder 10-15: bigger names, shrunk to fit their slot (fractions of the stage width; gold / the others).
+    public static let nameSizeGold = 0.068
+    public static let nameSizeOther = 0.06
+    public static let nameWidthGold = 0.33
+    public static let nameWidthOther = 0.31
+    /// The smallest a name may shrink to (fraction of its size) so a 20-character username still fits.
+    public static let nameMinScale = 0.3
+    /// An open place's sleepy R on its cloud: width (fraction of the stage width), the art's aspect (373 x 302), and how many
+    /// points below the step-top center the art's BOTTOM sits (it rests ON the step, never over the front rim).
+    public static let openSpotWidth = 0.19
+    public static let openSpotAspect = 373.0 / 302.0
+    public static let openSpotPlantPt = 2.0
     /// Contact shadow ellipse width as a fraction of the mascot width.
     public static let shadowWidth = 0.9
     /// Panel text: the score line and the two detail lines, as fractions of the panel height.
@@ -44,6 +56,14 @@ public enum PodiumArt {
 
     /// The art step for a place (1...3).
     public static func step(_ place: Int) -> Step { steps.first { $0.place == min(max(place, 1), 3) }! }
+
+    /// Founder 10-15: first place WEARS the crown (the Dressing Room's crown hat, fitted to the body) in place of their own hat,
+    /// on the podium only; crowns they already wear stay. Core podiumWinnerHead.
+    public static let winnerRoyalHeads: [String] = ["crown", "minicrown", "tiara"]
+    public static func winnerHead(_ head: String?) -> String {
+        if let head, winnerRoyalHeads.contains(head) { return head }
+        return "crown"
+    }
 }
 
 /// The Home Halloween curtain stage (`art-celebration-stage-halloween`, 1586 x 992): a port of CELEBRATION_STAGE in

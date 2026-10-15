@@ -75,6 +75,31 @@ enum MascotArtCache {
         return Image(name)
     }
 
+    private static let inkLock = NSLock()
+    private static var inkTops: [String: Double] = [:]
+
+    /// The transparent rows above an art's ink, as a fraction of its height (0 when unknown). The podium hangs a name 4 pt
+    /// above the DRAWN head (founder 10-15): a layer's rect starts at its padded canvas, so the name floated ~10 pt too high.
+    /// Measured once per art on a 128-row alpha thumbnail (cached; prewarm fills it off main).
+    static func inkTop(_ name: String) -> Double {
+        inkLock.lock(); if let hit = inkTops[name] { inkLock.unlock(); return hit }; inkLock.unlock()
+        var top = 0.0
+        if let cg = uiImage(name)?.cgImage, cg.height > 0 {
+            let h = 128, w = max(8, Int(Double(cg.width) / Double(cg.height) * 128))
+            var px = [UInt8](repeating: 0, count: w * h)
+            px.withUnsafeMutableBytes { buf in
+                if let ctx = CGContext(data: buf.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                                       space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.alphaOnly.rawValue) {
+                    ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+                }
+            }
+            // row 0 of the buffer is the image's top row
+            if let row = (0..<h).first(where: { r in (0..<w).contains { px[r * w + $0] > 24 } }) { top = Double(row) / Double(h) }
+        }
+        inkLock.lock(); inkTops[name] = top; inkLock.unlock()
+        return top
+    }
+
     /// Decode every body plus the parts the defaults and cast presets wear, on a utility thread.
     static func prewarm() {
         guard let fit = MascotParts.fit else { return }
@@ -83,8 +108,15 @@ enum MascotArtCache {
         for c in configs {
             for small in [false, true] { AvatarFit.layout(c, small: small, manifest: fit).layers.forEach { names.insert($0.art) } }
         }
+        // Founder 10-15: the podium's first place wears the fitted crown hat; decode its piece for every body (in the winner's
+        // pose) at launch so the Leaderboard never decodes it on the frame it first shows.
+        for body in fit.bodies.keys {
+            var c = AvatarCatalog.defaultAvatar(userId: "warm"); c.body = body; c.head = "crown"; c.pose = AvatarPose.placePose(1)
+            AvatarFit.layout(c, small: false, manifest: fit).layers.forEach { names.insert($0.art) }
+        }
         DispatchQueue.global(qos: .utility).async {
             for n in names { _ = uiImage(n) }
+            for n in names where n.hasPrefix("art-av-acc-") || n.hasPrefix("art-av-body-") { _ = inkTop(n) }
         }
     }
 

@@ -58,6 +58,20 @@ class PodiumLayoutFixtureTest {
         assertEquals(art["headTop"]!!.jsonPrimitive.double, PodiumArtGeometry.HEAD_TOP, 0.0)
         assertEquals(art["crownRise"]!!.jsonPrimitive.double, PodiumArtGeometry.CROWN_RISE, 0.0)
         assertEquals(art["crownGapPt"]!!.jsonPrimitive.double, PodiumArtGeometry.CROWN_GAP_PT, 0.0)
+        val ns = art["nameSize"]!!.jsonObject; val nw = art["nameWidth"]!!.jsonObject
+        assertEquals(ns["gold"]!!.jsonPrimitive.double, PodiumArtGeometry.NAME_SIZE_GOLD, 0.0)
+        assertEquals(ns["other"]!!.jsonPrimitive.double, PodiumArtGeometry.NAME_SIZE_OTHER, 0.0)
+        assertEquals(nw["gold"]!!.jsonPrimitive.double, PodiumArtGeometry.NAME_WIDTH_GOLD, 0.0)
+        assertEquals(nw["other"]!!.jsonPrimitive.double, PodiumArtGeometry.NAME_WIDTH_OTHER, 0.0)
+        assertEquals(art["nameMinScale"]!!.jsonPrimitive.double, PodiumArtGeometry.NAME_MIN_SCALE, 0.0)
+        root["winnerHead"]!!.jsonArray.map { it.jsonObject }.forEach { c ->
+            val head = c["head"]!!.jsonPrimitive.content
+            assertEquals(c["out"]!!.jsonPrimitive.content, PodiumArtGeometry.winnerHead(head.ifEmpty { null }))
+        }
+        val os = art["openSpot"]!!.jsonObject
+        assertEquals(os["width"]!!.jsonPrimitive.double, PodiumArtGeometry.OPEN_SPOT_WIDTH, 0.0)
+        assertEquals(os["aspect"]!!.jsonPrimitive.double, PodiumArtGeometry.OPEN_SPOT_ASPECT, 1e-12)
+        assertEquals(os["plantPt"]!!.jsonPrimitive.double, PodiumArtGeometry.OPEN_SPOT_PLANT_PT, 0.0)
         assertEquals(art["shadowWidth"]!!.jsonPrimitive.double, PodiumArtGeometry.SHADOW_WIDTH, 0.0)
         assertEquals(art["scoreHeight"]!!.jsonPrimitive.double, PodiumArtGeometry.SCORE_HEIGHT, 0.0)
         assertEquals(art["detailHeight"]!!.jsonPrimitive.double, PodiumArtGeometry.DETAIL_HEIGHT, 0.0)

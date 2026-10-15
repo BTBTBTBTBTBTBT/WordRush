@@ -146,8 +146,6 @@ private const val CHEER_FEET_DROP = 0.19f
 /** The panel's text ink: rgb(70, 30, 100) on all three light satin panels (core PodiumArtGeometry.TEXT_RGB). */
 private val PANEL_INK = PodiumArtGeometry.TEXT_RGB.let { Color(it[0], it[1], it[2]) }
 
-/** The sleepy cast member on an open spot (art-scene-r-asleep, ~373×302). */
-private const val ASLEEP_ASPECT = 373f / 302f
 
 /** The detail text as at most two panel lines: the first part, then the rest (parity with iOS PodiumView.detailLines). */
 fun podiumDetailLines(detail: String?): List<String> {
@@ -236,7 +234,9 @@ fun BoardPodium(
             val fig = { place: Int -> w * (if (place == 1) 0.36f else 0.30f) }
             val plant = geo.PLANT_PT.dp
             // Headroom: the gold figure, its crown and its name (bottom clears the crown by CROWN_GAP_PT) rise above the image's top edge.
-            val nameSlot = ((if (compact) 14f else 19f) * 1.3f * k).dp
+            // Founder 10-15: bigger names that hug the head (core NAME_SIZE_* of the stage width, shrunk to fit NAME_WIDTH_*).
+            val nameSizeOf = { place: Int -> (w.value * (if (place == 1) geo.NAME_SIZE_GOLD else geo.NAME_SIZE_OTHER)).toFloat() }
+            val nameSlot = (nameSizeOf(1) * 1.3f).dp
             val goldFeet = imgH * geo.step(1).feetY.toFloat() + plant
             // box top = feet + drop - fig; the crown rides CROWN_RISE of the figure above it
             val goldCrownTop = goldFeet + fig(1) * (CHEER_FEET_DROP - 1f + 0f) - fig(1) * geo.CROWN_RISE.toFloat()
@@ -255,7 +255,7 @@ fun BoardPodium(
                         val cx = (step.feetX * wPx).toFloat()
                         val feetY = topPx + (step.feetY * imgHPx).toFloat() + plant.toPx()
                         val f = fig(place)
-                        val colW = (wPx * 0.30f).roundToInt()
+                        val colW = (wPx * (if (place == 1) geo.NAME_WIDTH_GOLD else geo.NAME_WIDTH_OTHER)).roundToInt()
                         // ── the stats panel (or the open spot's copy) ──
                         val pnl = step.panel
                         val px = (pnl.x0 * wPx).toFloat(); val py = topPx + (pnl.y0 * imgHPx).toFloat()
@@ -306,14 +306,15 @@ fun BoardPodium(
                                 // glow in their secondary color); the winner's pull keeps it above the crown.
                                 PodiumNameAbove(
                                     s.name, s.userId, s.username ?: s.name,
-                                    size = (if (compact) 14f else (if (place == 1) 19f else 16f)) * k,
+                                    size = nameSizeOf(place),
                                     pull = 0.dp,
                                     avatarUrl = s.avatarUrl, config = s.config, castId = s.castId, frame = s.frame, accentHex = s.accentHex,
                                 )
                                 // Founder 10-15: the name floats ABOVE the drawn head (never tucked into the box). The crowned winner's name
                                 // clears the crown (CROWN_RISE of the figure above the box) by CROWN_GAP_PT; the others clear the head top.
+                                // A standing #1 wears the crown hat (inside the head line), so only a photo tile keeps the crown icon.
                                 Spacer(Modifier.height(
-                                    if (place == 1) figure * (if (stands) geo.CROWN_RISE.toFloat() else 0.12f) + geo.CROWN_GAP_PT.dp
+                                    if (place == 1 && !stands) figure * 0.12f + geo.CROWN_GAP_PT.dp
                                     else (geo.NAME_GAP_PT.dp - figure * PodiumArt.HEAD_TOP).coerceAtLeast(0.dp),
                                 ))
                                 Box(Modifier.zIndex(1f), contentAlignment = Alignment.TopCenter) {
@@ -327,16 +328,32 @@ fun BoardPodium(
                                         frame = s.frame, accentHex = s.accentHex, podiumPlace = if (stands) place else null,
                                     )
                                     // the crown sits ON the first place's head
-                                    if (place == 1) Icon3D(Icon3DName.CROWN, (if (compact) 28.dp else 34.dp) * k, Modifier.offset(y = -(figure * if (stands) geo.CROWN_RISE.toFloat() else 0.12f)).winnerCrownDrop(intro))
+                                    if (place == 1 && !stands) Icon3D(Icon3DName.CROWN, (if (compact) 28.dp else 34.dp) * k, Modifier.offset(y = -(figure * 0.12f)).winnerCrownDrop(intro))
                                 }
                             }
                         } else if (place in open) {
-                            // the sleepy cast member keeps the open step company
-                            val rW = w * 0.20f
+                            // the sleepy cast member keeps the open step company. Founder 10-15: the cloud rests ON the step (its bottom
+                            // on the step-top center + OPEN_SPOT_PLANT_PT, core openSpot), not over the front rim; a soft contact shadow.
+                            val rW = w * geo.OPEN_SPOT_WIDTH.toFloat()
+                            val rH = rW / geo.OPEN_SPOT_ASPECT.toFloat()
+                            val rBottom = feetY - plant.toPx() + geo.OPEN_SPOT_PLANT_PT.dp.toPx()
+                            val shW = rW.toPx() * 0.8f
+                            Box(
+                                Modifier.anchoredRect(cx - shW / 2f, rBottom - rH.toPx() * 0.04f - shW * 0.11f, shW, shW * 0.22f)
+                                    .clearAndSetSemantics { }.drawBehind {
+                                        drawOval(
+                                            Brush.radialGradient(
+                                                listOf(Color(0xFF14002B).copy(alpha = 0.5f), Color(0xFF14002B).copy(alpha = 0f)),
+                                                center = Offset(size.width / 2f, size.height / 2f), radius = size.width / 2f,
+                                            ),
+                                            topLeft = Offset.Zero, size = Size(size.width, size.height),
+                                        )
+                                    },
+                            ) {}
                             Image(
                                 painterResource(com.wordocious.app.R.drawable.art_scene_r_asleep), contentDescription = null,
                                 contentScale = ContentScale.Fit,
-                                modifier = Modifier.anchoredBottomCenter(cx, feetY, rW.roundToPx()).width(rW).height(rW / ASLEEP_ASPECT)
+                                modifier = Modifier.anchoredBottomCenter(cx, rBottom, rW.roundToPx()).width(rW).height(rH)
                                     .semantics(mergeDescendants = true) { contentDescription = A11yLabels.podiumOpenSpot(place) },
                             )
                         }

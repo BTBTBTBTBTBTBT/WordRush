@@ -212,7 +212,8 @@ function WinnerGlow({ feetX, feetY, size, crown }: { feetX: number; feetY: numbe
 /** A standing player: name, mascot (feet on the step-top center, planted a little lower), contact shadow. */
 function Standing({ place, step, w }: { place: PodiumPlace; step: 1 | 2 | 3; w: number }) {
   const tone = podiumTone(place.rank);
-  const first = tone === 'gold';
+  // The gold STEP (slot 1) decides first place's look (crown hat, name size, glow): the same rule on iOS, Android and web.
+  const first = step === 1;
   const livingOn = useLivingMascotOn();
   const { isLive } = useFlags();
   const cardOn = livingOn && isLive('podium_stage_card');
@@ -221,23 +222,25 @@ function Standing({ place, step, w }: { place: PodiumPlace; step: 1 | 2 | 3; w: 
   const [stageOpen, setStageOpen] = React.useState(false);
   const { feet } = podiumArtStep(step);
   const size = mascotSize(w, step);
-  const nameSize = Math.max(11, Math.round(w * (first ? 0.053 : 0.046)));
-  const nameW = Math.round(w * (first ? 0.3 : 0.27));
+  // Founder 10-15: bigger names that hug the head (core nameSize / nameWidth / nameGapPt), shrunk to fit their slot.
+  const nameSize = Math.max(12, Math.round(w * (first ? PODIUM_ART.nameSize.gold : PODIUM_ART.nameSize.other)));
+  const nameW = Math.round(w * (first ? PODIUM_ART.nameWidth.gold : PODIUM_ART.nameWidth.other));
   const tile = Math.round(size / 2);
-  const crown = place.crown !== false;
-  // The name's bottom clears the DRAWN head top (box top + headTop) by nameGapPt; a crowned winner's name instead clears the
-  // crown that rides above the box by crownGapPt. Never tucked into the box.
-  const nameGap = first && crown ? PODIUM_ART.crownRise * size + PODIUM_ART.crownGapPt : Math.max(0, PODIUM_ART.nameGapPt - PODIUM_ART.headTop * size);
+  const crown = first && place.crown !== false;
+  // The name's bottom clears the DRAWN head top (box top + headTop) by nameGapPt. A standing winner wears the crown hat (inside
+  // that line); only a photo tile still carries the crown icon, whose name clears it by crownGapPt. Never tucked into the box.
+  const iconCrown = crown && (!livingOn || !!place.avatarUrl);
+  const nameGap = iconCrown ? PODIUM_ART.crownRise * size + PODIUM_ART.crownGapPt : Math.max(0, PODIUM_ART.nameGapPt - PODIUM_ART.headTop * size);
   const figure = place.isMe || cardOn ? (
     // Founder 10-05 (door 1): your own place opens your Stage; with the living mascot on, anyone else's opens their mini Stage card.
     <button type="button" onClick={() => (place.isMe ? openDressUp() : setStageOpen(true))}
       aria-label={place.isMe ? 'Dress up your mascot' : podiumStageCardLabel(place.username, place.rank)}
       className="block border-0 bg-transparent p-0 cursor-pointer" style={{ lineHeight: 0 }}>
-      <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={tile} planted crown={crown} intro={introOn} ring={place.isMe ? '#f59e0b' : undefined} />
+      <PodiumFigure place={place} tone={step} size={tile} planted crown={crown} intro={introOn} ring={place.isMe ? '#f59e0b' : undefined} />
     </button>
   ) : (
     <Link href={`/profile/${place.userId}`} tabIndex={-1} aria-hidden="true" className="block" style={{ lineHeight: 0 }}>
-      <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={tile} planted crown={crown} intro={introOn} />
+      <PodiumFigure place={place} tone={step} size={tile} planted crown={crown} intro={introOn} />
     </Link>
   );
   const points = typeof place.points === 'string' || typeof place.points === 'number' ? String(place.points) : '';
@@ -271,11 +274,21 @@ function Standing({ place, step, w }: { place: PodiumPlace; step: 1 | 2 | 3; w: 
 /** BJ4: a free place — its step stays; the sleepy R keeps it company; the panel reads "Open spot" · "Claim #N". Not tappable. */
 function OpenStep({ step, title, line, w }: { step: 1 | 2 | 3; title: string; line: string; w: number }) {
   const { feet } = podiumArtStep(step);
-  const h = Math.round(w * 0.14);
-  const iw = Math.round((h * 373) / 302);
+  // Founder 10-15: the cloud rests ON the step (its bottom on the step-top center, core openSpot), not over the front rim.
+  const iw = Math.round(w * PODIUM_ART.openSpot.width);
+  const h = Math.round(iw / PODIUM_ART.openSpot.aspect);
   return (
     <>
       <span className="sr-only">{title}, {line}</span>
+      <span
+        aria-hidden="true"
+        className="absolute pointer-events-none"
+        style={{
+          left: `${feet.x * 100}%`, top: `calc(${feet.y * 100}% + ${PODIUM_ART.openSpot.plantPt}px - ${Math.round(h * 0.04)}px)`, width: iw * 0.8, height: iw * 0.8 * 0.22,
+          transform: 'translate(-50%, -50%)', borderRadius: '50%', zIndex: 1,
+          background: 'radial-gradient(ellipse at center, rgba(10,0,30,0.5) 0%, rgba(10,0,30,0.25) 45%, rgba(10,0,30,0) 72%)',
+        }}
+      />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={artSrc(OPEN_SPOT_ART)}
@@ -287,7 +300,7 @@ function OpenStep({ step, title, line, w }: { step: 1 | 2 | 3; title: string; li
         decoding="async"
         draggable={false}
         className="absolute select-none pointer-events-none"
-        style={{ left: `${feet.x * 100}%`, top: `calc(${feet.y * 100}% + ${PODIUM_ART.plantPt}px)`, width: iw, height: h, transform: 'translate(-50%, -100%)', objectFit: 'contain', opacity: 0.9, zIndex: 3 }}
+        style={{ left: `${feet.x * 100}%`, top: `calc(${feet.y * 100}% + ${PODIUM_ART.openSpot.plantPt}px)`, width: iw, height: h, transform: 'translate(-50%, -100%)', objectFit: 'contain', opacity: 0.9, zIndex: 3 }}
       />
       <PanelText w={w} place={step} score={title} lines={[line]} />
     </>

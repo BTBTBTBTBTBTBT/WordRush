@@ -45,7 +45,7 @@ import { headlineTokens, headlineLayout, headlineWidthEm, headlineFontSize, HEAD
 import { bubbleFit, bubbleWidthEm, bubbleGlyphName, bubbleAtlasLayout, homeHeadlineFit, BUBBLE_GLYPHS } from '../src/bubble-text';
 import { NEW_ACHIEVEMENTS, HIDDEN_ACHIEVEMENT_KEYS, puzzleCountAchievements, puzzleResultAchievements, pangramCount, puzzleDayAchievements, botAchievements, friendAchievements, wonFriendsRace, pocketAchievements, avatarAchievements, momentAchievements } from '../src/achievement-rules';
 import { AVATAR_BACKDROPS, AVATAR_COLORS, avatarColorHex, castPreset, defaultAvatar, enforceAvatarPro, isCustomPhotoUrl, nearestAvatarColor, resolveAvatar, validateAvatar } from '../src/avatar-config';
-import { podiumLayout, podiumOpenSpot, PODIUM_ART, PODIUM_ART_ORDER, PODIUM_WINNER_INTRO, CELEBRATION_STAGE } from '../src/podium-layout';
+import { podiumLayout, podiumOpenSpot, podiumWinnerHead, PODIUM_ART, PODIUM_ART_ORDER, PODIUM_WINNER_INTRO, CELEBRATION_STAGE } from '../src/podium-layout';
 import { nameHex, plateHexes } from '../src/player-tint';
 import { AVATAR_MANIFEST, applyAvatarPick, avatarLayout, avatarPatternShapes, avatarPickConflict } from '../src/avatar-layout';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
@@ -888,7 +888,8 @@ export function renderPodiumLayoutFixtures() {
   const boards: number[][] = [[], [1], [1, 2], [1, 1], [1, 2, 3], [1, 2, 3, 4, 5], [1, 1, 3, 4], [1, 2, 2, 4], [1, 1, 1, 1], [1, 1, 1], [2], [4, 5]];
   const cases = boards.map((ranks) => ({ ranks, layout: podiumLayout(ranks) }));
   const open = [1, 2, 3].map((place) => ({ place, ...podiumOpenSpot(place) }));
-  return { cases, open, art: PODIUM_ART, artOrder: PODIUM_ART_ORDER, winnerIntro: PODIUM_WINNER_INTRO, celebration: CELEBRATION_STAGE };
+  return { cases, open, art: PODIUM_ART, artOrder: PODIUM_ART_ORDER, winnerIntro: PODIUM_WINNER_INTRO, celebration: CELEBRATION_STAGE,
+    winnerHead: ['none', 'party', 'witch', 'crown', 'minicrown', 'tiara', 'halo', ''].map((head) => ({ head, out: podiumWinnerHead(head) })) };
 }
 
 // Round 2 fit system: the layout every renderer draws (rects per layer), the conflict swaps and the

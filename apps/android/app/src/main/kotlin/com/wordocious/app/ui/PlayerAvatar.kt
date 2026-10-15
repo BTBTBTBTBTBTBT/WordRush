@@ -75,7 +75,12 @@ fun PlayerAvatar(
         val initial = remember(username) { MascotConfigRules.initialOf(username) }
         val shown = remember(resolved.config, headOverride) { if (headOverride != null) resolved.config.copy(head = headOverride) else resolved.config }
         if (podiumPlace != null && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) {
-            val posed = remember(shown, podiumPlace) { shown.copy(pose = com.wordocious.core.AvatarPoses.placePose(podiumPlace)) }
+            // Founder 10-15: first place WEARS the crown (the fitted crown hat, core podiumWinnerHead) instead of a crown icon
+            // floating over the head; their own hat comes back off the podium. Same rule as iOS PodiumView and web Podium.
+            val posed = remember(shown, podiumPlace) {
+                shown.copy(pose = com.wordocious.core.AvatarPoses.placePose(podiumPlace),
+                           head = if (podiumPlace == 1) com.wordocious.core.PodiumArtGeometry.winnerHead(shown.head) else shown.head)
+            }
             LivingMascot(posed, initial, size, modifier, cutout = true, pro = pro, own = PlayerAvatars.isOwn(userId, username), tappable = false, label = null)
         } else if (standing && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) {
             LivingMascot(shown, initial, size, modifier, cutout = true, pro = pro, own = PlayerAvatars.isOwn(userId, username), tappable = false, label = null)

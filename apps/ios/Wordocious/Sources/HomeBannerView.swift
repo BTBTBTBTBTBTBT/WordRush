@@ -308,11 +308,14 @@ struct HomeBannerView: View {
                         .opacity(slots.showsMomentArt ? 1 : 0)
                 }
                 if !slots.showsMomentArt && ArtAsset.exists("art-scene-unlimited-loop") {
-                    ArtThumbs.image("art-scene-unlimited-loop", points: fig * 1.3)
+                    // Founder 10-15: U (900 x 759 art) stood so tall her rope covered the meta line. Smaller, and standing IN the
+                    // middle pool (the art's bottom ~4% below the pool center, where the rope dips), so the line reads clear.
+                    let iw = fig * 1.1, ih = iw * 759 / 900
+                    ArtThumbs.image("art-scene-unlimited-loop", points: iw)
                         .resizable().interpolation(.high).scaledToFit()
                         .idleLife(hop: 4, sway: 2.5, period: 1.8)
-                        .frame(width: fig * 1.3, height: fig * 1.3)
-                        .position(x: feet[1].x, y: feet[1].y - fig * 0.65)
+                        .frame(width: iw, height: ih)
+                        .position(x: feet[1].x, y: feet[1].y + ih * 0.04 - ih / 2)
                         .transition(.opacity)
                 }
             }

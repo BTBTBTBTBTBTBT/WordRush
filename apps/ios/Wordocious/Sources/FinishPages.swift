@@ -518,12 +518,16 @@ struct PodiumEntry: Identifiable {
 /// list below it. Static image + the same living mascots as before: no new per-frame work.
 struct PodiumView: View {
     /// First, second, third (fewer is fine).
-    let entries: [PodiumEntry]
+    let allEntries: [PodiumEntry]
     /// BJ4: places drawn as open spots (from PodiumLayout.layout(ranks).open).
-    var open: [Int] = []
+    var allOpen: [Int] = []
     var onTap: ((PodiumEntry) -> Void)? = nil
     /// 2.8 item 13: tapping another player's standing mascot opens their mini Stage card.
     @State private var stageTarget: PodiumStageTarget?
+
+    init(entries: [PodiumEntry], open: [Int] = [], onTap: ((PodiumEntry) -> Void)? = nil) {
+        self.allEntries = entries; self.allOpen = open; self.onTap = onTap
+    }
     /// Founder 10-12: podiums with no tap handler of their own (Yesterday's ledge) still offer View profile on the Stage card,
     /// through the page's profile route when it supplies one.
     @Environment(\.lbOpenProfile) private var openProfile
@@ -553,6 +557,16 @@ struct PodiumView: View {
                     .presentationDetents([.height(412), .large])
             }
     }
+
+    #if DEBUG
+    /// `-podiumOpenDemo`: every podium shows only its top two with #3 open (open-spot capture; DEBUG only).
+    private static let openDemo = ProcessInfo.processInfo.arguments.contains("-podiumOpenDemo")
+    private var entries: [PodiumEntry] { Self.openDemo ? Array(allEntries.prefix(2)) : allEntries }
+    private var open: [Int] { Self.openDemo ? [3] : allOpen }
+    #else
+    private var entries: [PodiumEntry] { allEntries }
+    private var open: [Int] { allOpen }
+    #endif
 
     private func scene(width w: CGFloat) -> some View {
         let h = w / CGFloat(PodiumArt.aspect)
@@ -616,12 +630,21 @@ struct PodiumView: View {
     @ViewBuilder
     private func emptySpot(place: Int, feet: CGPoint, panel: CGRect, width w: CGFloat) -> some View {
         let copy = PodiumLayout.openSpot(place)
-        let h = w * 0.15
-        ArtThumbs.image("art-scene-r-asleep", points: h * 1.3)
+        // Founder 10-15: the cloud rests ON the step (its bottom on the step-top center, core openSpot), not over the front rim.
+        let ow = w * CGFloat(PodiumArt.openSpotWidth)
+        let h = ow / CGFloat(PodiumArt.openSpotAspect)
+        let bottom = feet.y - CGFloat(PodiumArt.plantPt) + CGFloat(PodiumArt.openSpotPlantPt)
+        Ellipse()
+            .fill(RadialGradient(colors: [Color.black.opacity(0.45), Color.black.opacity(0)], center: .center,
+                                 startRadius: 0, endRadius: ow * 0.4))
+            .frame(width: ow * 0.8, height: ow * 0.8 * 0.22)
+            .position(x: feet.x, y: bottom - h * 0.04)
+            .accessibilityHidden(true)
+        ArtThumbs.image("art-scene-r-asleep", points: ow)
             .resizable().interpolation(.high).scaledToFit()
-            .frame(height: h)
+            .frame(width: ow, height: h)
             .opacity(0.9)
-            .position(x: feet.x, y: feet.y - h * 0.38 + CGFloat(PodiumArt.plantPt))
+            .position(x: feet.x, y: bottom - h / 2)
             .accessibilityHidden(true)
         Self.panelLines(score: copy.title, lines: [copy.line], panel: panel,
                         ink: Color(red: Double(PodiumArt.textRgb.r) / 255, green: Double(PodiumArt.textRgb.g) / 255, blue: Double(PodiumArt.textRgb.b) / 255))
@@ -843,10 +866,13 @@ struct PodiumPlace: View {
         let headTop = figTop + CGFloat(b.y) * side
         let crownSize = width * 0.085
         let crownTop = headTop + crownSize * 0.2 - crownSize
-        let nameSize = width * (tone == 1 ? 0.053 : 0.0447)
+        // Founder 10-15: bigger names that hug the head (core nameSize / nameWidth / nameGapPt), shrunk to fit their slot.
+        let nameSize = width * CGFloat(first ? PodiumArt.nameSizeGold : PodiumArt.nameSizeOther)
         let nameH = nameSize * 1.3
-        let nameTop = (first ? crownTop - Self.crownGap : headTop - Self.nameGap) - nameH + nameSize * 0.14   // the bubble line has ~0.14 em of air under its glyphs
-        let nameWidth = max(side * 1.1, width * 0.26)
+        // A standing #1 wears the crown hat (inside the drawn bounds), so only a photo tile still carries the crown icon.
+        let iconCrown = first && !living
+        let nameTop = (iconCrown ? crownTop - Self.crownGap : headTop - Self.nameGap) - nameH + nameSize * 0.14   // the bubble line has ~0.14 em of air under its glyphs
+        let nameWidth = width * CGFloat(first ? PodiumArt.nameWidthGold : PodiumArt.nameWidthOther)
         let cw = max(nameWidth, side)
         let unitH = figBottom - nameTop
         let shadowW = CGFloat(b.w) * side * CGFloat(PodiumArt.shadowWidth)
@@ -864,7 +890,7 @@ struct PodiumPlace: View {
                     .position(x: feet.x, y: figTop + side / 2)
             }
             unit(e, side: side, living: living, cw: cw, nameWidth: nameWidth, nameSize: nameSize,
-                 unitH: unitH, figTop: figTop - nameTop, crownTop: crownTop - nameTop, crownSize: crownSize, first: first, ownsCard: ownsCard)
+                 unitH: unitH, figTop: figTop - nameTop, crownTop: crownTop - nameTop, crownSize: crownSize, first: iconCrown, ownsCard: ownsCard)
                 .position(x: feet.x, y: nameTop + unitH / 2)
             if first && Self.sparkling {
                 ForEach(0..<PodiumWinnerIntro.sparkleOffsets.count, id: \.self) { i in
@@ -896,7 +922,7 @@ struct PodiumPlace: View {
         let content = ZStack(alignment: .topLeading) {
             BubbleOneLine(text: e.name.uppercased(),
                           palette: .accent(PlayerTint.nameColor(userId: e.id, username: e.username)),
-                          size: nameSize)
+                          size: nameSize, minScale: CGFloat(PodiumArt.nameMinScale))
                 .frame(width: nameWidth)
                 .background {
                     // Founder 10-09: a soft glow in the player's secondary (pattern) color behind the name so it pops.
@@ -972,14 +998,32 @@ struct PodiumFigure: View {
         let r = AvatarDirectory.shared.look(username: e.username, userId: e.id, url: e.avatarUrl, castId: nil, frame: nil,
                                             mascot: nil, accentHex: nil, lookup: true).resolved
         guard r.photoUrl == nil, LivingMascotView.canAnimate(r.config), let fit = MascotParts.fit else { return nil }
-        var c = r.config; c.pose = AvatarPose.placePose(place); c.frame = "none"
-        return LiveLayoutMemo.layout(c, small: size <= MascotParts.smallSize, manifest: fit).bounds
+        let c = podiumConfig(r.config, place: place)
+        let l = LiveLayoutMemo.layout(c, small: size <= MascotParts.smallSize, manifest: fit)
+        // The live layout's bounds keep ROOM above the head for every pose's raised arms, so its top floats over the real head.
+        // The drawn head / hat top is the highest non-arm piece's first inked row (founder 10-15: names 4 pt above the head).
+        var b = l.bounds
+        let arms: Set<String> = ["armL", "armR", "handL", "handR"]
+        let tops = l.layers.filter { !arms.contains($0.ride ?? "") && !$0.layer.hasPrefix("arm") && !$0.art.hasSuffix("-armL") && !$0.art.hasSuffix("-armR") }
+            .map { $0.rect.y + MascotArtCache.inkTop($0.art) * $0.rect.h }
+        if let head = tops.min(), head > b.y, head < b.y + b.h * 0.5 {
+            b.h -= head - b.y; b.y = head
+        }
+        return b
+    }
+
+    /// The config the podium draws: posed for its place, no frame; first place WEARS the crown (core podiumWinnerHead, founder
+    /// 10-15: the fitted crown hat instead of a crown icon floating over the head).
+    static func podiumConfig(_ config: AvatarConfig, place: Int) -> AvatarConfig {
+        var c = config; c.pose = AvatarPose.placePose(place); c.frame = "none"
+        if place == 1 { c.head = PodiumArt.winnerHead(c.head) }
+        return c
     }
 
     var body: some View {
         let r = resolved
         if living, r.photoUrl == nil, LivingMascotView.canAnimate(r.config) {
-            let posed: AvatarConfig = { var c = r.config; c.pose = AvatarPose.placePose(place); return c }()
+            let posed: AvatarConfig = { var c = Self.podiumConfig(r.config, place: place); c.frame = r.config.frame; return c }()
             let initial = AvatarCatalog.initial(entry.username)
             LivingMascotView(config: posed, initial: initial, size: size, cutout: true, interactive: false, own: DressUp.isOwn(entry.id),
                              label: A11yLabels.mascot(own: DressUp.isOwn(entry.id), name: entry.name))

@@ -158,10 +158,24 @@
     "aspect": 1.5,
     "maxWidthPt": 680,
     "plantPt": 5,
-    "nameGapPt": 12,
+    "nameGapPt": 4,
     "headTop": 0.04,
     "crownRise": 0.05,
-    "crownGapPt": 10,
+    "crownGapPt": 2,
+    "nameSize": {
+      "gold": 0.068,
+      "other": 0.06
+    },
+    "nameWidth": {
+      "gold": 0.33,
+      "other": 0.31
+    },
+    "nameMinScale": 0.3,
+    "openSpot": {
+      "width": 0.19,
+      "aspect": 1.2350993377483444,
+      "plantPt": 2
+    },
     "shadowWidth": 0.9,
     "scoreHeight": 0.29,
     "detailHeight": 0.19,
@@ -282,5 +296,39 @@
       0.67
     ],
     "footY": 0.895
-  }
+  },
+  "winnerHead": [
+    {
+      "head": "none",
+      "out": "crown"
+    },
+    {
+      "head": "party",
+      "out": "crown"
+    },
+    {
+      "head": "witch",
+      "out": "crown"
+    },
+    {
+      "head": "crown",
+      "out": "crown"
+    },
+    {
+      "head": "minicrown",
+      "out": "minicrown"
+    },
+    {
+      "head": "tiara",
+      "out": "tiara"
+    },
+    {
+      "head": "halo",
+      "out": "crown"
+    },
+    {
+      "head": "",
+      "out": "crown"
+    }
+  ]
 }

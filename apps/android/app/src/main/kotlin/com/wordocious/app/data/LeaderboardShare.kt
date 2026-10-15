@@ -802,13 +802,12 @@ object LeaderboardShare {
             run {
                 // BJ5: the shared resolver's mascot (share podiums stay mascot-only, never a letter tile).
                 // Standing full-body (a cutout in its place's pose), like the in-app podium.
-                val cfg = ShareAvatars.mascotConfig(null, s.name).copy(pose = com.wordocious.core.AvatarPoses.placePose(place))
+                // Founder 10-15: first place WEARS the crown hat (core podiumWinnerHead), the same rule as the in-app podiums.
+                val base = ShareAvatars.mascotConfig(null, s.name)
+                val cfg = base.copy(pose = com.wordocious.core.AvatarPoses.placePose(place),
+                                    head = if (place == 1) geo.winnerHead(base.head) else base.head)
                 val key = com.wordocious.app.ui.MascotKey.of(cfg, MascotConfigRules.initialOf(s.name), 200f, a.toInt(), dark = false, cutout = true, forcePose = true)
                 com.wordocious.app.ui.MascotComposer.draw(context, c, cx - a / 2f, feetY - a + drop, a, key)
-            }
-            if (place == 1) {
-                val cw = 0.12f * blk.w
-                ShareFinish.drawArtInto(context, c, R.drawable.icon3d_crown, RectF(cx - cw / 2f, feetY - a + drop - cw * 0.55f, cx + cw / 2f, feetY - a + drop + cw * 0.45f))
             }
             val name = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 textAlign = Paint.Align.CENTER; typeface = fonts.black; textSize = if (place == 1) 44f else 38f
@@ -817,10 +816,9 @@ object LeaderboardShare {
             }
             val label = clampText(name, if (s.isYou) "${s.name} · YOU" else s.name, blk.w * 0.31f)
             // Founder 10-15: the name pill's bottom sits NAME_GAP_PT above the drawn head top (box top + HEAD_TOP of the figure), never
-            // tucked into the box; the winner's clears the crown by CROWN_GAP_PT. (The pill reaches 8 px below the text baseline.)
+            // tucked into the box; the winner's crown hat sits inside that line. (The pill reaches 8 px below the text baseline.)
             val boxTop = feetY - a + drop
-            val pillBottom = if (place == 1) boxTop - 0.55f * 0.12f * blk.w - geo.CROWN_GAP_PT.toFloat() * blk.pt
-                             else boxTop + com.wordocious.app.ui.PodiumArt.HEAD_TOP * a - geo.NAME_GAP_PT.toFloat() * blk.pt
+            val pillBottom = boxTop + com.wordocious.app.ui.PodiumArt.HEAD_TOP * a - geo.NAME_GAP_PT.toFloat() * blk.pt
             val nameBottom = pillBottom - 8f
             // a soft white pill so the name reads over the dark crowd as well as the cream page
             val tw = name.measureText(label)

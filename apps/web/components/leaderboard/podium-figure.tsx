@@ -1,7 +1,7 @@
 'use client';
 
 import type * as React from 'react';
-import { PODIUM_ART, PODIUM_WINNER_INTRO, avatarPlacePose } from '@wordle-duel/core';
+import { PODIUM_WINNER_INTRO, avatarPlacePose, podiumWinnerHead } from '@wordle-duel/core';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { BoardAvatar } from '@/components/leaderboard/board-rows';
@@ -20,12 +20,13 @@ export const PODIUM_FIGURE_SCALE = 2;
 export const PODIUM_FOOT_OVERLAP = 12;
 
 export function PodiumFigure({ place, tone, size, ring, planted = false, crown = true, intro = false }: {
+  /** `tone`: the podium SLOT (1 = the gold step), the same rule as iOS PodiumView / Android BoardPodium. */
   place: PodiumPlace; tone: number; size: number; ring?: string;
   /** One-image podium: the figure's box ends exactly at its feet (no overlap into a step below). */
   planted?: boolean;
   /** False: no crown on first place (a Friends race nobody has scored in yet). */
   crown?: boolean;
-  /** The winner intro: the crown drops in gently (core PODIUM_WINNER_INTRO.crown). */
+  /** The winner intro: a photo tile's crown icon drops in gently (core PODIUM_WINNER_INTRO.crown). */
   intro?: boolean;
 }) {
   const livingOn = useLivingMascotOn();
@@ -35,7 +36,9 @@ export function PodiumFigure({ place, tone, size, ring, planted = false, crown =
   });
   if (livingOn && !look.url) {
     const big = size * PODIUM_FIGURE_SCALE;
-    const posed = { ...look.config, pose: avatarPlacePose(tone) };
+    // Founder 10-15: first place WEARS the crown (the fitted crown hat, core podiumWinnerHead) instead of a crown icon floating
+    // over the head; their own hat comes back off the podium.
+    const posed = { ...look.config, pose: avatarPlacePose(tone), ...(tone === 1 && crown ? { head: podiumWinnerHead(look.config.head) } : null) };
     // MascotAvatar clamps its size to 200 px. A wider stage (a tablet) asks for more, so the avatar would draw at 200 at the box's
     // TOP and float above its step: draw it at the clamped size and scale it up from the bottom center instead (feet stay put).
     const drawn = clampAvatarSize(big);
@@ -45,20 +48,6 @@ export function PodiumFigure({ place, tone, size, ring, planted = false, crown =
         <span className="absolute block" style={{ left: '50%', bottom: 0, width: drawn, height: drawn, marginLeft: -drawn / 2, transform: k === 1 ? undefined : `scale(${k})`, transformOrigin: '50% 100%' }}>
           <MascotAvatar config={posed as typeof look.config} initial={look.initial} size={drawn} cutout living />
         </span>
-        {tone === 1 && crown && (
-          <span
-            className={intro ? 'podium-crown' : undefined}
-            style={{
-              position: 'absolute', left: '50%', top: -big * PODIUM_ART.crownRise, marginLeft: -17, zIndex: 2, lineHeight: 0,
-              ...(intro ? ({
-                '--drop': `${PODIUM_WINNER_INTRO.crown.dropPt}px`, '--settle': `${PODIUM_WINNER_INTRO.crown.settlePt}px`, opacity: 0,
-                animation: `podium-crown-in ${PODIUM_WINNER_INTRO.crown.durationMs}ms ease-out ${PODIUM_WINNER_INTRO.crown.delayMs}ms both`, willChange: 'transform, opacity',
-              } as React.CSSProperties) : null),
-            }}
-          >
-            <Icon3D name="crown" size={34} />
-          </span>
-        )}
       </span>
     );
   }

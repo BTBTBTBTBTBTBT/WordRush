@@ -49,13 +49,25 @@ object PodiumArtGeometry {
     /** Mascot lands this many points lower than the step-top center so it looks planted. */
     const val PLANT_PT = 5.0
     /** The name label's BOTTOM sits this many points above the DRAWN head / hat top (never tucked into the box). */
-    const val NAME_GAP_PT = 12.0
+    const val NAME_GAP_PT = 4.0
     /** Where the drawn head / hat top is, as a fraction of the mascot box from the box's top edge (small end: tall hats). */
     const val HEAD_TOP = 0.04
     /** The first place's crown rises this fraction of the mascot box above the box's top. */
     const val CROWN_RISE = 0.05
     /** Extra points the first place's name clears the crown by (name bottom to crown top). */
-    const val CROWN_GAP_PT = 10.0
+    const val CROWN_GAP_PT = 2.0
+    /** Founder 10-15: bigger names, shrunk to fit their slot (fractions of the stage width; gold / the others). */
+    const val NAME_SIZE_GOLD = 0.068
+    const val NAME_SIZE_OTHER = 0.06
+    const val NAME_WIDTH_GOLD = 0.33
+    const val NAME_WIDTH_OTHER = 0.31
+    /** The smallest a name may shrink to (fraction of its size) so a 20-character username still fits. */
+    const val NAME_MIN_SCALE = 0.3
+    /** An open place's sleepy R on its cloud: width (fraction of the stage width), aspect (373 x 302), and the points below the
+     *  step-top center its BOTTOM sits (it rests ON the step, never over the front rim). */
+    const val OPEN_SPOT_WIDTH = 0.19
+    const val OPEN_SPOT_ASPECT = 373.0 / 302.0
+    const val OPEN_SPOT_PLANT_PT = 2.0
     /** Contact shadow ellipse width as a fraction of the mascot width. */
     const val SHADOW_WIDTH = 0.9
     /** Panel text: the score line and the two detail lines, as fractions of the panel height. */
@@ -71,6 +83,11 @@ object PodiumArtGeometry {
     )
     /** Screen order (left to right) of the places on the podium art: 2, 1, 3. */
     val ORDER: List<Int> = listOf(2, 1, 3)
+
+    /** Founder 10-15: first place WEARS the crown (the Dressing Room's crown hat, fitted to the body) in place of their own hat,
+     *  on the podium only; crowns they already wear stay. Core podiumWinnerHead. */
+    val WINNER_ROYAL_HEADS: List<String> = listOf("crown", "minicrown", "tiara")
+    fun winnerHead(head: String?): String = if (head != null && head in WINNER_ROYAL_HEADS) head else "crown"
 
     /** The art step for a place (1..3). */
     fun step(place: Int): PodiumArtStep = STEPS.first { it.place == place }
