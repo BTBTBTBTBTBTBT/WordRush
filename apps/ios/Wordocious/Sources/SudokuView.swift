@@ -34,6 +34,9 @@ final class SudokuVM: ObservableObject {
     private(set) var restoredFinished = false
 
     init(seed: String? = nil) {
+        #if DEBUG
+        defer { VideoDemo.reg(self) }   // JP-plan video harness (VideoDemo.swift)
+        #endif
         self.isDaily = seed == nil
         self.seed = seed ?? generateDailySeed(date: LeaderboardService.todayLocal(), gameMode: GameMode.sudoku.rawValue)
         let puzzle = generateSudoku(self.seed, difficulty: seed == nil ? .medium : sudokuDifficultyForSeed(self.seed))

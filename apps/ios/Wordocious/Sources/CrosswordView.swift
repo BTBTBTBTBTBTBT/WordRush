@@ -51,6 +51,9 @@ final class CrosswordVM: ObservableObject {
     private var armTask: Task<Void, Never>?
 
     init(seed: String? = nil) {
+        #if DEBUG
+        defer { VideoDemo.reg(self) }   // JP-plan video harness (VideoDemo.swift)
+        #endif
         self.isDaily = seed == nil
         let today = LeaderboardService.todayLocal()
         self.seed = seed ?? generateDailySeed(date: today, gameMode: GameMode.crossword.rawValue)

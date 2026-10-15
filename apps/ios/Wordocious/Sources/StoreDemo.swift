@@ -175,6 +175,7 @@ enum StoreDemo {
         if let data = try? JSONSerialization.data(withJSONObject: ladder) { UserDefaults.standard.set(data, forKey: "wd_cpu_progression_v1") }
         URLProtocol.registerClass(StoreDemoURLProtocol.self)
         Task { @MainActor in await StoreDemoDriver.run() }
+        if VideoDemo.scene != nil { Task { @MainActor in await VideoDemo.run() } }   // JP-plan video harness
     }
 
     /// `-storeLog <host path>`: one line per canned request (the sim writes host paths directly).

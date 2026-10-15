@@ -92,6 +92,9 @@ final class ProperNoundleVM: ObservableObject {
     /// Solo → today's daily puzzle. VS → a deterministic puzzle from the match
     /// seed so both players get the same one.
     init(seed: String? = nil, isVersus: Bool = false) {
+        #if DEBUG
+        defer { VideoDemo.reg(self) }   // JP-plan video harness (VideoDemo.swift)
+        #endif
         self.isVersus = isVersus
         self.isDaily = (seed == nil && !isVersus)
         self.gameSeed = seed
