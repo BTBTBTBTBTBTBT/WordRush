@@ -75,12 +75,12 @@ const SOCIAL_REGISTRY: {
   status: 'live' | 'pending';
   note?: string;
 }[] = [
-  { platform: 'X', handle: '@wordocious', url: 'https://x.com/wordocious', owner: 'bt@wordocious.com', status: 'live' },
-  { platform: 'TikTok', handle: '@wordocious2', url: 'https://tiktok.com/@wordocious2', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious rename: retry ~Aug 30' },
-  { platform: 'Instagram', handle: '@wordocious2', url: 'https://instagram.com/wordocious2', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious reserved — ownership test pending' },
-  { platform: 'Facebook', handle: 'Wordocious (Page)', url: 'https://facebook.com/profile.php?id=61592604427791', owner: 'Brian (admin)', status: 'live' },
-  { platform: 'Pinterest', handle: 'bt3518 → wordocious', url: 'https://pinterest.com/bt3518', owner: 'bt@wordocious.com', status: 'live', note: 'username rename blocked on new account — retry' },
-  { platform: 'Threads', handle: '@wordocious2', url: null, owner: 'via Instagram', status: 'pending', note: 'auto-claims on first Threads sign-in' },
+  { platform: 'X', handle: '@wordocious', url: 'https://x.com/wordocious', owner: 'bt@wordocious.com', status: 'live', note: 'JP (@JassonPatterson) admin invite pending: he must allow Delegate invites' },
+  { platform: 'TikTok', handle: '@playwordocious', url: 'https://tiktok.com/@playwordocious', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious held by a dormant account: claim via trademark once registered (renamed 10-14; next rename allowed after 30 days)' },
+  { platform: 'Instagram', handle: '@playwordocious', url: 'https://instagram.com/playwordocious', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious held by a dormant account: claim via trademark once registered (renamed 10-14)' },
+  { platform: 'Facebook', handle: 'facebook.com/wordocious', url: 'https://facebook.com/wordocious', owner: 'Brian (admin)', status: 'live', note: 'username set 10-14; Instagram not yet connected to the Page' },
+  { platform: 'Pinterest', handle: 'wordocious', url: 'https://pinterest.com/wordocious', owner: 'bt@wordocious.com', status: 'live', note: 'JP invited as Manager (jp@pattersonlp.com) 10-14' },
+  { platform: 'Threads', handle: '@playwordocious', url: null, owner: 'via Instagram', status: 'pending', note: 'auto-claims on first Threads sign-in' },
   { platform: 'Reddit', handle: 'u/wordocious', url: null, owner: 'bt@wordocious.com', status: 'pending', note: 'create via phone app account switcher' },
   { platform: 'YouTube', handle: '@wordocious', url: null, owner: 'TBD (Google account)', status: 'pending' },
 ];

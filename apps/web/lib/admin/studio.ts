@@ -38,12 +38,12 @@ export interface PlatformInfo {
 }
 
 export const PLATFORM_INFO: Record<Platform, PlatformInfo> = {
-  instagram: { id: 'instagram', label: 'Instagram', limit: 2200, size: 'portrait', link: 'bio', provider: 'meta', handle: '@wordocious2' },
+  instagram: { id: 'instagram', label: 'Instagram', limit: 2200, size: 'portrait', link: 'bio', provider: 'meta', handle: '@playwordocious' },
   facebook: { id: 'facebook', label: 'Facebook', limit: 63206, size: 'portrait', link: 'text', provider: 'meta', handle: 'Wordocious (Page)' },
-  threads: { id: 'threads', label: 'Threads', limit: 500, size: 'portrait', link: 'text', provider: 'threads', handle: '@wordocious2' },
+  threads: { id: 'threads', label: 'Threads', limit: 500, size: 'portrait', link: 'text', provider: 'threads', handle: '@playwordocious' },
   pinterest: { id: 'pinterest', label: 'Pinterest', limit: 500, size: 'pin', link: 'field', provider: 'pinterest', handle: 'wordocious' },
   x: { id: 'x', label: 'X', limit: 280, size: 'landscape', link: 'text', provider: 'x', handle: '@wordocious' },
-  tiktok: { id: 'tiktok', label: 'TikTok', limit: 2200, size: 'portrait', link: 'bio', provider: 'tiktok', handle: '@wordocious2' },
+  tiktok: { id: 'tiktok', label: 'TikTok', limit: 2200, size: 'portrait', link: 'bio', provider: 'tiktok', handle: '@playwordocious' },
 };
 
 export const PROVIDERS: Record<Provider, { label: string; platforms: Platform[]; env: string[] }> = {

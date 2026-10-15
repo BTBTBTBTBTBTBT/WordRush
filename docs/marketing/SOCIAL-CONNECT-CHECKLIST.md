@@ -18,7 +18,7 @@ Pause switch: **Pause all posting** at the top of the Studio stops everything, r
 
 ## Instagram + Facebook Page (one Meta app, one Connect)
 
-Handles: Instagram @wordocious2, the Wordocious Facebook Page.
+Handles: Instagram @playwordocious, the Wordocious Facebook Page.
 
 Before you start: Instagram must be a **Business or Creator** account, **linked to the Wordocious Facebook Page** (Instagram app > Settings > Account type and tools; then link the Page in Meta Business Suite). Instagram posting through the API does not work for personal accounts.
 
@@ -38,14 +38,14 @@ Limits worth knowing: Instagram takes JPEG images by URL (our images are JPEG); 
 
 ## Threads
 
-Handle: @wordocious2 (it rides on the Instagram account).
+Handle: @playwordocious (it rides on the Instagram account).
 
 1. developers.facebook.com > Create App > pick the **Threads API** use case (it is its own app type).
 2. Threads API > Settings > Redirect Callback URLs:
    `https://wordocious.com/api/admin/studio/callback/threads`
    (Meta also asks for Uninstall and Delete callback URLs; the same URL is fine for now.)
 3. Permissions: `threads_basic`, `threads_content_publish`.
-4. In Development mode, add @wordocious2 as a **Threads tester** (App roles > Roles), then accept the invite in the Threads/Instagram app (Settings > Account > Website permissions; Meta moves this).
+4. In Development mode, add @playwordocious as a **Threads tester** (App roles > Roles), then accept the invite in the Threads/Instagram app (Settings > Account > Website permissions; Meta moves this).
 5. Vercel env vars: `THREADS_APP_ID`, `THREADS_APP_SECRET` (Threads API > Settings, not the main app's ID).
 6. Connect "Threads". The token lasts about 60 days; the Studio refreshes it automatically before it runs out.
 
@@ -82,7 +82,7 @@ Limits, honestly: X's API tiers change often. The Free tier has historically all
 
 ## TikTok (drafts only)
 
-Handle: @wordocious2.
+Handle: @playwordocious.
 
 TikTok only allows **direct** posting from apps that pass its audit. Until then the Studio sends each post to the **TikTok inbox as a draft**: you get a notification in the TikTok app and finish the post there (sound, then Post). Images only for now; video comes later.
 
