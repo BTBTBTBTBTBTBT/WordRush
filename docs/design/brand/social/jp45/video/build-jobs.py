@@ -20,12 +20,37 @@ def side(n, ext):
         return None
 
 
+def autostart(clip, ss):
+    """The recorder's first frame lands 0.4-2 s off the scene's wall-clock mark (and the clip may open on the launch skeleton or the
+    Home -> game slide-in). Find the last big full-screen change within the slide-in window after the mark; the cut starts on the
+    settled board right after it (typing begins 2.4 s after the mark, and key presses are small diffs)."""
+    import subprocess
+    import numpy as np
+    w, h, fps = 54, 96, 20
+    t0 = max(0, ss - 0.6)
+    r = subprocess.run(['ffmpeg', '-v', 'error', '-ss', f'{t0:.2f}', '-t', '3.4', '-i', os.path.join(RAW, f'{clip}.mp4'), '-vf',
+                        f'fps={fps},scale={w}:{h},format=gray', '-f', 'rawvideo', '-'], capture_output=True)
+    fr = np.frombuffer(r.stdout, dtype=np.uint8)
+    n = len(fr) // (w * h)
+    if n < 4:
+        return max(0, ss - 0.25)
+    fr = fr[:n * w * h].reshape(n, h, w).astype(np.int16)
+    d = np.abs(np.diff(fr, axis=0)).mean(axis=(1, 2))
+    # the slide-in lives in the first ~2.6 s after the mark (typing starts at +2.4 s)
+    last = None
+    for i, v in enumerate(d):
+        tt = t0 + (i + 1) / fps
+        if v > 5 and tt < ss + 2.3:
+            last = tt
+    return max(0, (last + 0.3) if last is not None else ss - 0.25)
+
+
 def game_job(date, slug, clip, season, cap1, cap2, notes, tail=TAIL, maxlen=54):
     ss, ln = side(clip, 'ss'), side(clip, 'len')
     if ss is None or ln is None:
         return None
-    start = max(0, ss - 0.25)
-    t = min(maxlen, ln + 0.25 + tail)
+    start = autostart(clip, ss)
+    t = min(maxlen, ln + 0.25 + tail - max(0, start - (ss - 0.25)))
     mid = round(t * 0.5, 1)
     return dict(date=date, slug=slug, post_title=TITLES[date], season=season, notes=notes, cover_at=round(min(t * 0.55, t - 1), 1),
                 captions=[[cap1, 0.4, mid], [cap2, mid + 0.1, round(t - 0.2, 1)]],
@@ -71,7 +96,7 @@ def build():
                          cover_at=round(total * 0.4, 1)))
 
     montage('2026-10-15', 'teaser', 'teaser', H, ['18 games.', 'One scoreboard.', 'A cast with opinions.', 'Tomorrow.'],
-            'Teaser: fast cuts of six games, scripted in the simulator (Unlimited boards).', maxlen=16)
+            'Teaser: fast cuts of six games, scripted in the simulator (Unlimited boards).', maxlen=28)
     intro_ss, intro_len = side('intro', 'ss'), side('intro', 'len')
     tour_ss, tour_len = side('tour', 'ss'), side('tour', 'len')
     extra = []
@@ -87,12 +112,12 @@ def build():
     # Oct 17 reveal: the season flipping on Home, then the cold-start opening in the Halloween cast
     rs, rl = side('reveal', 'ss'), side('reveal', 'len')
     if rs is not None and rl is not None:
-        clips = [dict(file='reveal.mp4', ss=round(max(0, rs - 0.1), 2), t=round(min(18, rl + 0.3), 2))]
+        clips = [dict(file='reveal.mp4', ss=round(max(0, rs + 0.2), 2), t=round(min(18, rl - 0.1), 2))]   # opens on the standard look (the flip to it is the scene's first action)
         if intro_ss is not None: clips.append(dict(file='intro.mp4', ss=round(max(0, intro_ss), 2), t=5.4))
         tot = sum(c['t'] for c in clips)
         jobs.append(dict(date='2026-10-17', slug='halloween-reveal', post_title=TITLES['2026-10-17'], season=H,
                          notes='The app flipping to Halloween on Home (haunted glass, costumed cast), then the cold-start opening animation in costume. Season preview via the harness, no account.',
-                         captions=[['We did not update the app.', 0.4, 5.4], ['The app got dressed.', 5.6, round(tot - 0.2, 1)]], clips=clips,
+                         captions=[['We did not update the app.', 0.4, 3.2], ['The app got dressed.', 3.5, round(tot - 0.2, 1)]], clips=clips,
                          cover_at=round(tot * 0.45, 1)))
     jobs.sort(key=lambda j: j['date'])
     json.dump(jobs, open(os.path.join(HERE, 'jobs.json'), 'w'), indent=1)

@@ -1,11 +1,43 @@
 [
  {
+  "date": "2026-10-15",
+  "post_title": "[Needs capture] Teaser reel: 18 games, tomorrow",
+  "file": "video/2026-10-15-teaser.mp4",
+  "cover": "video/2026-10-15-teaser-cover.jpg",
+  "seconds": 25.1,
+  "notes": "Teaser: fast cuts of six games, scripted in the simulator (Unlimited boards)."
+ },
+ {
+  "date": "2026-10-16",
+  "post_title": "[Needs capture] Launch trailer (30s)",
+  "file": "video/2026-10-16-launch-trailer.mp4",
+  "cover": "video/2026-10-16-launch-trailer-cover.jpg",
+  "seconds": 32.9,
+  "notes": "Launch trailer: the cold-start intro, then nine games cut fast, scripted in the simulator."
+ },
+ {
+  "date": "2026-10-17",
+  "post_title": "[Needs capture] Halloween reveal: the app got dressed",
+  "file": "video/2026-10-17-halloween-reveal.mp4",
+  "cover": "video/2026-10-17-halloween-reveal-cover.jpg",
+  "seconds": 24.9,
+  "notes": "The app flipping to Halloween on Home (haunted glass, costumed cast), then the cold-start opening animation in costume. Season preview via the harness, no account."
+ },
+ {
   "date": "2026-10-20",
   "post_title": "[Needs capture] 18 Days ep.1: OctoWord",
   "file": "video/2026-10-20-ep01-octoword.mp4",
   "cover": "video/2026-10-20-ep01-octoword-cover.jpg",
   "seconds": 23.2,
   "notes": "18 Days episode: octo scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
+ },
+ {
+  "date": "2026-10-22",
+  "post_title": "[Needs capture] 18 Days ep.2: Starsweep",
+  "file": "video/2026-10-22-ep02-starsweep.mp4",
+  "cover": "video/2026-10-22-ep02-starsweep-cover.jpg",
+  "seconds": 16.5,
+  "notes": "18 Days episode: starsweep scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
  },
  {
   "date": "2026-10-23",
@@ -28,7 +60,7 @@
   "post_title": "[Needs capture] Product Hunt day cut: 18 games in 30s (set the PH link first)",
   "file": "video/2026-10-27-ph-18-games-30s.mp4",
   "cover": "video/2026-10-27-ph-18-games-30s-cover.jpg",
-  "seconds": 31.6,
+  "seconds": 33.5,
   "notes": "Product Hunt cut: all 18 games, one beat each, scripted in the simulator."
  },
  {
@@ -38,6 +70,14 @@
   "cover": "video/2026-10-29-ep04-hubbub-cover.jpg",
   "seconds": 27.2,
   "notes": "18 Days episode: hubbub scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
+ },
+ {
+  "date": "2026-10-30",
+  "post_title": "[Needs capture] Halloween Eve special: themed boards montage",
+  "file": "video/2026-10-30-halloween-eve.mp4",
+  "cover": "video/2026-10-30-halloween-eve-cover.jpg",
+  "seconds": 28.8,
+  "notes": "Halloween Eve: eight games in the Halloween skin, scripted in the simulator."
  },
  {
   "date": "2026-10-31",
@@ -56,12 +96,60 @@
   "notes": "Cast art only: the Halloween costume art swept away left to right, the hero puppets (blink, wave) underneath."
  },
  {
+  "date": "2026-11-03",
+  "post_title": "[Needs capture] 18 Days ep.5: Kindred",
+  "file": "video/2026-11-03-ep05-kindred.mp4",
+  "cover": "video/2026-11-03-ep05-kindred-cover.jpg",
+  "seconds": 26.6,
+  "notes": "18 Days episode: kindred scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
+ },
+ {
+  "date": "2026-11-05",
+  "post_title": "[Needs capture] 18 Days ep.6: Letter Ladder",
+  "file": "video/2026-11-05-ep06-letter-ladder.mp4",
+  "cover": "video/2026-11-05-ep06-letter-ladder-cover.jpg",
+  "seconds": 25.0,
+  "notes": "18 Days episode: ladder scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
+ },
+ {
+  "date": "2026-11-06",
+  "post_title": "[Needs capture] 18 Days ep.7: Spyglass",
+  "file": "video/2026-11-06-ep07-spyglass.mp4",
+  "cover": "video/2026-11-06-ep07-spyglass-cover.jpg",
+  "seconds": 27.0,
+  "notes": "18 Days episode: spyglass scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
+ },
+ {
   "date": "2026-11-07",
   "post_title": "[Needs capture] Cast Saturday video: Cosmo",
   "file": "video/2026-11-07-meet-cosmo.mp4",
   "cover": "video/2026-11-07-meet-cosmo-cover.jpg",
   "seconds": 16.1,
   "notes": "Cast art only: Cosmo (hero puppet with blink and tap-laugh)."
+ },
+ {
+  "date": "2026-11-10",
+  "post_title": "[Needs capture] 18 Days ep.8: Codebreaker",
+  "file": "video/2026-11-10-ep08-codebreaker.mp4",
+  "cover": "video/2026-11-10-ep08-codebreaker-cover.jpg",
+  "seconds": 15.5,
+  "notes": "18 Days episode: code scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
+ },
+ {
+  "date": "2026-11-12",
+  "post_title": "[Needs capture] 18 Days ep.9: Sudocious",
+  "file": "video/2026-11-12-ep09-sudocious.mp4",
+  "cover": "video/2026-11-12-ep09-sudocious-cover.jpg",
+  "seconds": 25.4,
+  "notes": "18 Days episode: sudocious scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
+ },
+ {
+  "date": "2026-11-13",
+  "post_title": "[Needs capture] 18 Days ep.10: Crosswordocious",
+  "file": "video/2026-11-13-ep10-crosswordocious.mp4",
+  "cover": "video/2026-11-13-ep10-crosswordocious-cover.jpg",
+  "seconds": 21.9,
+  "notes": "18 Days episode: crossword scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
  },
  {
   "date": "2026-11-14",
@@ -78,6 +166,46 @@
   "cover": "video/2026-11-16-thanksgiving-reveal-cover.jpg",
   "seconds": 14.1,
   "notes": "Cast art only (no Thanksgiving build is on main yet, so the real app flip could not be recorded): hero puppets cross-fade to the Thanksgiving costume art on a burst; the end card sits on the standard sky."
+ },
+ {
+  "date": "2026-11-17",
+  "post_title": "[Needs capture] 18 Days ep.11: QuadWord",
+  "file": "video/2026-11-17-ep11-quadword.mp4",
+  "cover": "video/2026-11-17-ep11-quadword-cover.jpg",
+  "seconds": 25.3,
+  "notes": "18 Days episode: quad scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
+ },
+ {
+  "date": "2026-11-19",
+  "post_title": "[Needs capture] Pocket games spotlight: RPS and Tic-Tac-Tile",
+  "file": "video/2026-11-19-pocket-games.mp4",
+  "cover": "video/2026-11-19-pocket-games-cover.jpg",
+  "seconds": 37.9,
+  "notes": "Pocket games spotlight: RPS and Tic-Tac-Tile played to the finish against a scripted friend."
+ },
+ {
+  "date": "2026-11-20",
+  "post_title": "[Needs capture] 18 Days ep.12: Succession",
+  "file": "video/2026-11-20-ep12-succession.mp4",
+  "cover": "video/2026-11-20-ep12-succession-cover.jpg",
+  "seconds": 19.0,
+  "notes": "18 Days episode: succession scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
+ },
+ {
+  "date": "2026-11-24",
+  "post_title": "[Needs capture] 18 Days ep.13: Deliverance",
+  "file": "video/2026-11-24-ep13-deliverance.mp4",
+  "cover": "video/2026-11-24-ep13-deliverance-cover.jpg",
+  "seconds": 18.6,
+  "notes": "18 Days episode: deliverance scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
+ },
+ {
+  "date": "2026-11-27",
+  "post_title": "[Needs capture] 18 Days ep.14: Gauntlet",
+  "file": "video/2026-11-27-ep14-gauntlet.mp4",
+  "cover": "video/2026-11-27-ep14-gauntlet-cover.jpg",
+  "seconds": 31.9,
+  "notes": "18 Days episode: gauntlet scripted in the iPhone simulator (Unlimited board, random seed, never a daily)."
  },
  {
   "date": "2026-11-28",

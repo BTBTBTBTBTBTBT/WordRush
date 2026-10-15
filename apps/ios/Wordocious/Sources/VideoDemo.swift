@@ -39,6 +39,8 @@ enum VideoDemo {
     static func run() async {
         while !LaunchGate.isOpen { await raw(0.05) }
         DictionaryLoader.ensureInitialized()
+        // First clears pop achievement cards (First Starsweep, Blitz...) that would sit over the rest of a montage: hold them all.
+        AchievementUnlockCenter.shared.block("video-harness")
         let name = scene ?? ""
         // Settle on Home first (the cold-start intro's landing).
         if name == "intro" { mark() }
@@ -152,9 +154,9 @@ enum VideoDemo {
             await raw(full ? 1.6 : 0.3)
             // A first guess from common letters (a believable miss), then the answer.
             let common = Array("STARELONICD")
-            for i in 0..<ans.count { v.type(String(common[i % common.count])); await sleep(full ? 0.12 : 0.04) }
-            await raw(0.4); v.submit(); await sleep(full ? 2.0 : 0.4)
-            if over() { return }
+            // (always a miss first: a one-guess solve pops the Perfectionist achievement, which would stall a montage)
+            for i in 0..<ans.count { v.type(String(common[i % common.count])); await sleep(full ? 0.12 : 0.03) }
+            await raw(full ? 0.4 : 0.15); v.submit(); await sleep(full ? 2.0 : 0.45)
             for ch in ans { v.type(String(ch)); await sleep(full ? 0.14 : 0.04) }
             await raw(0.5); v.submit(); await sleep(full ? 1.0 : 0.2)
         case "GAUNTLET":
@@ -173,12 +175,14 @@ enum VideoDemo {
             // One wrong star first: the board tells you, then it is taken back.
             let wrongCol = (Int(String(sol[0]))! + 2) % n
             // (a single tap pencils a black star; a quick second tap plays it)
-            v.tap(wrongCol); await raw(0.14); v.tap(wrongCol); await raw(full ? 1.8 : 0.5)
-            v.undo(); await raw(full ? 0.7 : 0.2)
+            if full {   // (a montage beat goes straight to the right stars: played stars are the picture)
+                v.tap(wrongCol); await raw(0.14); v.tap(wrongCol); await raw(1.8)
+                v.undo(); await raw(0.7)
+            }
             for r in 0..<n {
                 let c = r * n + Int(String(sol[r]))!
                 v.tap(c); await raw(0.14); v.tap(c)
-                await sleep(full ? 0.8 : 0.18)
+                await sleep(full ? 0.8 : 0.12)
                 if over() { return }
             }
         case "GROUPS":

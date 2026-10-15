@@ -1,55 +1,98 @@
 [
  {
-  "date": "2026-10-20",
-  "slug": "ep01-octoword",
-  "post_title": "[Needs capture] 18 Days ep.1: OctoWord",
+  "date": "2026-10-15",
+  "slug": "teaser",
+  "post_title": "[Needs capture] Teaser reel: 18 games, tomorrow",
   "season": "halloween",
-  "notes": "18 Days episode: octo scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
-  "cover_at": 11.9,
+  "notes": "Teaser: fast cuts of six games, scripted in the simulator (Unlimited boards).",
   "captions": [
    [
-    "OctoWord: eight boards, one keyboard.",
-    0.4,
-    10.8
+    "18 games.",
+    0.3,
+    5.7
    ],
    [
-    "Every guess lands on all eight. Watch the cascade.",
-    10.9,
-    21.4
+    "One scoreboard.",
+    6.2,
+    11.6
+   ],
+   [
+    "A cast with opinions.",
+    12.1,
+    17.5
+   ],
+   [
+    "Tomorrow.",
+    17.9,
+    23.4
    ]
   ],
   "clips": [
    {
-    "file": "octo.mp4",
-    "ss": 8.12,
-    "t": 21.65
+    "file": "teaser.mp4",
+    "ss": 7.15,
+    "t": 23.53,
+    "speed": 1.0
    }
-  ]
+  ],
+  "cover_at": 9.4
  },
  {
-  "date": "2026-10-23",
-  "slug": "ep03-muddle",
-  "post_title": "[Needs capture] 18 Days ep.3: Muddle",
+  "date": "2026-10-17",
+  "slug": "halloween-reveal",
+  "post_title": "[Needs capture] Halloween reveal: the app got dressed",
   "season": "halloween",
-  "notes": "18 Days episode: muddle scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
-  "cover_at": 11.9,
+  "notes": "The app flipping to Halloween on Home (haunted glass, costumed cast), then the cold-start opening animation in costume. Season preview via the harness, no account.",
   "captions": [
    [
-    "Muddle: unscramble four words.",
+    "We did not update the app.",
     0.4,
-    10.8
+    3.2
    ],
    [
-    "Then crack the punchline.",
-    10.9,
-    21.4
+    "The app got dressed.",
+    3.5,
+    23.2
    ]
   ],
   "clips": [
    {
-    "file": "muddle.mp4",
-    "ss": 7.14,
-    "t": 21.65
+    "file": "reveal.mp4",
+    "ss": 7.32,
+    "t": 18
+   },
+   {
+    "file": "intro.mp4",
+    "ss": 4.47,
+    "t": 5.4
+   }
+  ],
+  "cover_at": 10.5
+ },
+ {
+  "date": "2026-10-22",
+  "slug": "ep02-starsweep",
+  "post_title": "[Needs capture] 18 Days ep.2: Starsweep",
+  "season": "halloween",
+  "notes": "18 Days episode: starsweep scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 8.2,
+  "captions": [
+   [
+    "Starsweep: one star per row, column and color.",
+    0.4,
+    7.5
+   ],
+   [
+    "Tap wrong and it tells you.",
+    7.6,
+    14.7
+   ]
+  ],
+  "clips": [
+   {
+    "file": "starsweep.mp4",
+    "ss": 9.24,
+    "t": 14.95
    }
   ]
  },
@@ -63,48 +106,291 @@
    [
     "18 games in 30 seconds.",
     0.3,
-    15.0
+    15.9
    ],
    [
     "One score.",
-    15.1,
-    29.9
+    16.3,
+    31.9
    ]
   ],
   "clips": [
    {
     "file": "montage18.mp4",
-    "ss": 10.61,
-    "t": 40.66,
-    "speed": 1.352
+    "ss": 6.98,
+    "t": 41.8,
+    "speed": 1.306
    }
   ],
   "cover_at": 12.8
  },
  {
-  "date": "2026-10-29",
-  "slug": "ep04-hubbub",
-  "post_title": "[Needs capture] 18 Days ep.4: Hubbub",
-  "season": "halloween",
-  "notes": "18 Days episode: hubbub scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
-  "cover_at": 14.1,
+  "date": "2026-11-03",
+  "slug": "ep05-kindred",
+  "post_title": "[Needs capture] 18 Days ep.5: Kindred",
+  "season": "standard",
+  "notes": "18 Days episode: kindred scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 13.8,
   "captions": [
    [
-    "Hubbub: build words from seven letters.",
+    "Kindred: sort sixteen words into four groups.",
     0.4,
-    12.8
+    12.6
    ],
    [
-    "Find the pangram that uses them all.",
-    12.9,
-    25.4
+    "Watch for the near misses.",
+    12.7,
+    24.9
    ]
   ],
   "clips": [
    {
-    "file": "hubbub.mp4",
-    "ss": 6.92,
-    "t": 25.65
+    "file": "kindred.mp4",
+    "ss": 9.63,
+    "t": 25.11
+   }
+  ]
+ },
+ {
+  "date": "2026-11-05",
+  "slug": "ep06-letter-ladder",
+  "post_title": "[Needs capture] 18 Days ep.6: Letter Ladder",
+  "season": "standard",
+  "notes": "18 Days episode: ladder scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 12.9,
+  "captions": [
+   [
+    "Letter Ladder: change one letter at a time.",
+    0.4,
+    11.7
+   ],
+   [
+    "Climb from the first word to the last.",
+    11.799999999999999,
+    23.2
+   ]
+  ],
+  "clips": [
+   {
+    "file": "ladder.mp4",
+    "ss": 9.28,
+    "t": 23.45
+   }
+  ]
+ },
+ {
+  "date": "2026-11-06",
+  "slug": "ep07-spyglass",
+  "post_title": "[Needs capture] 18 Days ep.7: Spyglass",
+  "season": "standard",
+  "notes": "18 Days episode: spyglass scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 14.0,
+  "captions": [
+   [
+    "Spyglass: find the hidden words in the grid.",
+    0.4,
+    12.7
+   ],
+   [
+    "Ten words. Any direction.",
+    12.799999999999999,
+    25.2
+   ]
+  ],
+  "clips": [
+   {
+    "file": "spyglass.mp4",
+    "ss": 9.27,
+    "t": 25.44
+   }
+  ]
+ },
+ {
+  "date": "2026-11-10",
+  "slug": "ep08-codebreaker",
+  "post_title": "[Needs capture] 18 Days ep.8: Codebreaker",
+  "season": "standard",
+  "notes": "18 Days episode: code scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 7.7,
+  "captions": [
+   [
+    "Codebreaker: every letter is in code.",
+    0.4,
+    7.0
+   ],
+   [
+    "Crack the whole quote.",
+    7.1,
+    13.8
+   ]
+  ],
+  "clips": [
+   {
+    "file": "code.mp4",
+    "ss": 9.9,
+    "t": 13.97
+   }
+  ]
+ },
+ {
+  "date": "2026-11-12",
+  "slug": "ep09-sudocious",
+  "post_title": "[Needs capture] 18 Days ep.9: Sudocious",
+  "season": "standard",
+  "notes": "18 Days episode: sudocious scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 13.1,
+  "captions": [
+   [
+    "Sudocious: every row, column and box.",
+    0.4,
+    11.9
+   ],
+   [
+    "Digits one to nine. No repeats.",
+    12.0,
+    23.7
+   ]
+  ],
+  "clips": [
+   {
+    "file": "sudocious.mp4",
+    "ss": 9.7,
+    "t": 23.88
+   }
+  ]
+ },
+ {
+  "date": "2026-11-13",
+  "slug": "ep10-crosswordocious",
+  "post_title": "[Needs capture] 18 Days ep.10: Crosswordocious",
+  "season": "standard",
+  "notes": "18 Days episode: crossword scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 11.2,
+  "captions": [
+   [
+    "Crosswordocious: a mini crossword, every day.",
+    0.4,
+    10.2
+   ],
+   [
+    "Tap a clue. Fill it in.",
+    10.299999999999999,
+    20.1
+   ]
+  ],
+  "clips": [
+   {
+    "file": "crossword.mp4",
+    "ss": 9.3,
+    "t": 20.32
+   }
+  ]
+ },
+ {
+  "date": "2026-11-17",
+  "slug": "ep11-quadword",
+  "post_title": "[Needs capture] 18 Days ep.11: QuadWord",
+  "season": "standard",
+  "notes": "18 Days episode: quad scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 13.0,
+  "captions": [
+   [
+    "QuadWord: four boards, one keyboard.",
+    0.4,
+    11.9
+   ],
+   [
+    "Every guess lands on all four.",
+    12.0,
+    23.5
+   ]
+  ],
+  "clips": [
+   {
+    "file": "quad.mp4",
+    "ss": 9.72,
+    "t": 23.72
+   }
+  ]
+ },
+ {
+  "date": "2026-11-20",
+  "slug": "ep12-succession",
+  "post_title": "[Needs capture] 18 Days ep.12: Succession",
+  "season": "standard",
+  "notes": "18 Days episode: succession scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 9.6,
+  "captions": [
+   [
+    "Succession: four boards, one at a time.",
+    0.4,
+    8.7
+   ],
+   [
+    "Solve one to open the next.",
+    8.799999999999999,
+    17.3
+   ]
+  ],
+  "clips": [
+   {
+    "file": "succession.mp4",
+    "ss": 9.23,
+    "t": 17.49
+   }
+  ]
+ },
+ {
+  "date": "2026-11-24",
+  "slug": "ep13-deliverance",
+  "post_title": "[Needs capture] 18 Days ep.13: Deliverance",
+  "season": "standard",
+  "notes": "18 Days episode: deliverance scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 9.4,
+  "captions": [
+   [
+    "Deliverance: four boards, clues already in.",
+    0.4,
+    8.5
+   ],
+   [
+    "Six guesses to deliver every word.",
+    8.6,
+    16.8
+   ]
+  ],
+  "clips": [
+   {
+    "file": "deliverance.mp4",
+    "ss": 9.97,
+    "t": 17.03
+   }
+  ]
+ },
+ {
+  "date": "2026-11-27",
+  "slug": "ep14-gauntlet",
+  "post_title": "[Needs capture] 18 Days ep.14: Gauntlet",
+  "season": "standard",
+  "notes": "18 Days episode: gauntlet scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 16.7,
+  "captions": [
+   [
+    "Gauntlet: five stages, one run.",
+    0.4,
+    15.2
+   ],
+   [
+    "Classic to OctoWord. Do not slip.",
+    15.299999999999999,
+    30.1
+   ]
+  ],
+  "clips": [
+   {
+    "file": "gauntlet.mp4",
+    "ss": 9.34,
+    "t": 30.35
    }
   ]
  }
