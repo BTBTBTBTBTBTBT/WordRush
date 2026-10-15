@@ -2,6 +2,7 @@
 #   ruby scripts/asc/shots.rb list VER
 #   ruby scripts/asc/shots.rb download VER OUTDIR
 #   ruby scripts/asc/shots.rb replace VER POSITION DISPLAY_TYPE FILE   # 1-based position in that set
+#   ruby scripts/asc/shots.rb upload-set VER DISPLAY_TYPE FILE...      # create the set if missing, upload FILEs in order
 require_relative "asc_lib"
 require "digest"
 require "fileutils"
@@ -61,6 +62,49 @@ when "replace"
   call("PATCH", "/v1/appScreenshotSets/#{set["id"]}/relationships/appScreenshots",
        { data: ids.map { |i| { type: "appScreenshots", id: i } } })
   puts "replaced #{dtype} ##{pos} with #{File.basename(file)}"
+when "upload-set"
+  ver, dtype, files = ARGV[1], ARGV[2], ARGV[3..]
+  abort("usage: upload-set VER DISPLAY_TYPE FILE...") if dtype.nil? || files.nil? || files.empty?
+  v = version(ver) or abort("no version #{ver}")
+  loc = call("GET", "/v1/appStoreVersions/#{v["id"]}/appStoreVersionLocalizations")["data"]
+          .find { |l| l["attributes"]["locale"] == "en-US" }
+  set = sets_for(ver).find { |s| s["attributes"]["screenshotDisplayType"] == dtype }
+  unless set
+    set = call("POST", "/v1/appScreenshotSets", { data: { type: "appScreenshotSets",
+            attributes: { screenshotDisplayType: dtype },
+            relationships: { appStoreVersionLocalization: { data: { type: "appStoreVersionLocalizations", id: loc["id"] } } } } })["data"]
+    puts "created set #{dtype}"
+  end
+  abort("set already holds #{shots(set["id"]).size} shots; use replace") unless shots(set["id"]).empty?
+  ids = []
+  files.each do |file|
+    data = File.binread(file)
+    res = call("POST", "/v1/appScreenshots", { data: { type: "appScreenshots",
+            attributes: { fileName: File.basename(file), fileSize: data.bytesize },
+            relationships: { appScreenshotSet: { data: { type: "appScreenshotSets", id: set["id"] } } } } })["data"]
+    res["attributes"]["uploadOperations"].each do |op|
+      uri = URI(op["url"])
+      req = Net::HTTP.const_get(op["method"].capitalize).new(uri)
+      op["requestHeaders"].each { |h| req[h["name"]] = h["value"] }
+      req.body = data.byteslice(op["offset"], op["length"])
+      r = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(req) }
+      abort("upload part -> #{r.code}") unless r.code.to_i.between?(200, 299)
+    end
+    call("PATCH", "/v1/appScreenshots/#{res["id"]}", { data: { type: "appScreenshots", id: res["id"],
+          attributes: { uploaded: true, sourceFileChecksum: Digest::MD5.hexdigest(data) } } })
+    ids << res["id"]
+    puts "uploaded #{File.basename(file)} (#{data.bytesize / 1024} KB)"
+  end
+  call("PATCH", "/v1/appScreenshotSets/#{set["id"]}/relationships/appScreenshots",
+       { data: ids.map { |i| { type: "appScreenshots", id: i } } })
+  puts "ordered #{ids.size} shots"
+  30.times do
+    states = shots(set["id"]).map { |x| x["attributes"]["assetDeliveryState"]&.dig("state") }
+    puts "states: #{states.group_by(&:itself).transform_values(&:size)}"
+    break if states.size == ids.size && states.all? { |st| st == "COMPLETE" }
+    abort("a screenshot FAILED") if states.include?("FAILED")
+    sleep 5
+  end
 else
-  abort("usage: list|download|replace")
+  abort("usage: list|download|replace|upload-set")
 end

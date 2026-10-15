@@ -49,6 +49,8 @@ SHOTS_SIM = [
 if SET == 'sim': SHOTS = SHOTS_SIM
 WIDGET_DIR = os.path.join(HERE, '..', '..', 'docs', 'design', 'widgets-2026-10-02')
 SIZES = {'67': (1320, 2868), '65': (1284, 2778)}
+# 2.8.3: the iPad Pro 13" slot (APP_IPAD_PRO_3GEN_129) — SET=sim shots captured on the iPad sim (2064x2752), same captions.
+if os.environ.get('IPAD'): SIZES = {'129': (2064, 2752)}
 # 2.8 (10-10): PLAY=1 also writes Google Play phone frames (9:16, within Play's 2:1 limit).
 if os.environ.get('PLAY'): SIZES['play'] = (1080, 1920)
 
