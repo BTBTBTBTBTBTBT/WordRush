@@ -1,10 +1,11 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Rocket } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Rocket, Video } from 'lucide-react';
 import { STATUS_LOOK } from './status-look';
 import {
   bandsOn, monthGrid, weekOf, type Band, type DisplayStatus,
 } from '@/lib/admin/studio';
+import { needsCapture, PLAN_PHASES, planDay, planPhase } from '@/lib/admin/social-plan';
 
 export interface CalPost {
   id: string;
@@ -62,6 +63,19 @@ function BandStrip({ bands, day }: { bands: Band[]; day: string }) {
   );
 }
 
+/** JP's phase (P0-P4) as a strip along the bottom of the day; the season band stays on top. */
+function PhaseStrip({ day }: { day: string }) {
+  const plan = planDay(day);
+  if (!plan) return null;
+  const phase = planPhase(plan.phase);
+  return (
+    <span
+      className={`absolute left-0 right-0 bottom-0 h-1 ${phase.strip} ${day === phase.start ? 'rounded-l-full ml-1' : ''} ${day === phase.end ? 'rounded-r-full mr-1' : ''}`}
+      title={`${phase.id} ${phase.name}`}
+    />
+  );
+}
+
 export function StudioCalendar({
   view, anchor, today, posts, bands, selected, onSelect, onMove, onNav,
 }: {
@@ -79,6 +93,8 @@ export function StudioCalendar({
   const weeks = view === 'month' ? monthGrid(anchor) : [weekOf(anchor)];
   const title = view === 'month' ? monthLabel(anchor) : `${shortDay(weeks[0][0])} – ${shortDay(weeks[0][6])}`;
   const seasonsShown = Array.from(new Set(weeks.flat().flatMap((d) => bandsOn(d, bands)).map((b) => `${b.tone}:${b.label}`)));
+
+  const phasesShown = PLAN_PHASES.map((p) => p.id).filter((id) => weeks.flat().some((d) => planDay(d)?.phase === id));
 
   const drop = (day: string) => (e: React.DragEvent) => {
     e.preventDefault();
@@ -115,6 +131,7 @@ export function StudioCalendar({
           const isToday = day === today;
           const past = day < today;
           const max = view === 'month' ? 2 : 6;
+          const plan = planDay(day);
           return (
             <div
               key={day}
@@ -125,11 +142,12 @@ export function StudioCalendar({
               onDragOver={(e) => { if (!past) e.preventDefault(); }}
               onDrop={drop(day)}
               className={`relative overflow-hidden rounded-xl text-left transition outline-none focus-visible:ring-2 focus-visible:ring-purple-400
-                ${view === 'month' ? 'min-h-[64px] sm:min-h-[96px] p-1 sm:p-1.5' : 'min-h-[56px] sm:min-h-[180px] p-1.5 flex sm:block items-center gap-2'}
+                ${view === 'month' ? 'min-h-[64px] sm:min-h-[96px] p-1 sm:p-1.5 pb-2' : 'min-h-[56px] sm:min-h-[180px] p-1.5 pb-2 flex sm:block items-center gap-2'}
                 ${isSel ? 'bg-purple-100 ring-2 ring-purple-400' : inMonth ? 'bg-purple-50/50 hover:bg-purple-50' : 'bg-gray-50/60'}
                 ${past ? 'opacity-60' : ''}`}
             >
               <BandStrip bands={bandsOn(day, bands)} day={day} />
+              <PhaseStrip day={day} />
               <p className={`mt-1 text-[11px] sm:text-xs font-black ${view === 'week' ? 'w-20 sm:w-auto shrink-0' : ''} ${isToday ? 'text-purple-700' : inMonth ? 'text-gray-700' : 'text-gray-300'}`}>
                 {view === 'week' ? <><span className="sm:hidden">{shortDay(day)}</span><span className="hidden sm:inline">{dayNum(day)}</span></> : dayNum(day)}
                 {isToday && <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-purple-600 align-middle" aria-label="today" />}
@@ -138,7 +156,18 @@ export function StudioCalendar({
                     <Rocket className="w-2.5 h-2.5" /><span className="hidden lg:inline">{b.label}</span>
                   </span>
                 ))}
+                {plan && needsCapture(plan) && <Video className="ml-1 inline w-2.5 h-2.5 align-middle text-amber-600" aria-label="Needs capture" />}
               </p>
+              {plan && (
+                <p
+                  title={`${plan.phase} · ${plan.beat}`}
+                  className={view === 'week'
+                    ? 'min-w-0 flex-1 truncate text-[11px] font-bold text-gray-600 sm:flex-none sm:whitespace-normal sm:line-clamp-3 sm:mt-0.5'
+                    : 'hidden sm:block mt-0.5 truncate text-[9px] lg:text-[10px] font-bold text-gray-500'}
+                >
+                  {plan.beat}
+                </p>
+              )}
               <div className={`mt-1 flex flex-wrap gap-1 ${view === 'week' ? 'sm:flex-col' : ''}`}>
                 {list.slice(0, max).map((p) => <Chip key={p.id} post={p} compact={view === 'month'} onDragStart={drag(p.id)} />)}
                 {list.length > max && <span className="text-[10px] font-black text-purple-700 self-center">+{list.length - max}</span>}
@@ -154,6 +183,10 @@ export function StudioCalendar({
             <span className={`w-2 h-2 rounded-full ${STATUS_LOOK[s].dot}`} />{STATUS_LOOK[s].label}
           </span>
         ))}
+        {phasesShown.map((id) => {
+          const ph = planPhase(id);
+          return <span key={id} className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500"><span className={`w-4 h-1 rounded-full ${ph.strip}`} />{ph.id} {ph.name}</span>;
+        })}
         {seasonsShown.map((s) => (
           <span key={s} className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500">
             {s.startsWith('season:')

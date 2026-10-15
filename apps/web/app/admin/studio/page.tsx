@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, CalendarDays, CalendarRange, CircleCheck, CircleDashed, Clapperboard, Pause, Play, RotateCcw, X } from 'lucide-react';
+import { AlertTriangle, CalendarDays, CalendarRange, ListChecks, CircleCheck, CircleDashed, Clapperboard, Pause, Play, RotateCcw, X } from 'lucide-react';
 import { PageHeader, useAdminData } from '../components/admin-ui';
 import { StudioCalendar, type CalPost } from './calendar';
 import { PostCard, type CardActions } from './post-card';
+import { PlanDayCard, PlanTab } from './plan-view';
+import { planDay } from '@/lib/admin/social-plan';
 import { artSrc, PAGE_SCENES } from '@/lib/art';
 import {
   addDays, applyEdit, calendarFlags, dayKey, displayStatus, groupByDay, moveToDay, PLATFORM_INFO, PROVIDERS, releaseBands, reviewState,
@@ -56,12 +58,14 @@ export default function SocialStudioPage() {
   const [view, setView] = useState<'month' | 'week'>('month');
   const [anchor, setAnchor] = useState(today);
   const [selected, setSelected] = useState<string | null>(null);
+  const [tab, setTab] = useState<'calendar' | 'plan'>('calendar');
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   useEffect(() => {
     if (search === null) return;
     const sp = new URLSearchParams(search);
     if (sp.get('connected')) setNotice({ ok: true, text: `${PROVIDERS[sp.get('connected') as Provider]?.label ?? sp.get('connected')} connected.` });
     if (sp.get('connect_error')) setNotice({ ok: false, text: sp.get('connect_error')! });
+    if (sp.get('tab') === 'plan') setTab('plan');
     const v = sp.get('view');
     if (v === 'week' || v === 'month') setView(v);
     const d = sp.get('day');
@@ -232,6 +236,9 @@ export default function SocialStudioPage() {
     });
   };
 
+  /** Jump from the Plan tab to a day on the calendar (its card opens above the day's posts). */
+  const openPlanDay = (day: string) => { setTab('calendar'); setSelected(day); setAnchor(day); };
+
   /* ---------------------------------------------------------------- view */
 
   return (
@@ -259,7 +266,23 @@ export default function SocialStudioPage() {
         </p>
       )}
 
-      {error && !data ? (
+      <div className="inline-flex rounded-xl bg-white shadow-sm p-1" role="tablist" aria-label="Studio sections">
+        {([['calendar', 'Calendar', CalendarDays], ['plan', "JP's 45-day plan", ListChecks]] as const).map(([id, label, Icon]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className={`h-9 rounded-lg px-3.5 text-xs font-extrabold inline-flex items-center gap-1.5 ${tab === id ? 'bg-purple-600 text-white' : 'text-purple-700 hover:bg-purple-50'}`}
+          >
+            <Icon className="w-3.5 h-3.5" /> {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'plan' ? (
+        <PlanTab today={today} onOpenDay={openPlanDay} />
+      ) : error && !data ? (
         <StateScene
           scene="offline"
           title="The studio did not load"
@@ -334,6 +357,7 @@ export default function SocialStudioPage() {
                 <button onClick={() => setSelected(null)} className="h-8 rounded-lg bg-white shadow-sm px-3 text-xs font-extrabold text-purple-700 hover:bg-purple-50">Show all</button>
               )}
             </div>
+            {selected && planDay(selected) && <PlanDayCard day={planDay(selected)!} onOpenPlan={() => setTab('plan')} />}
             {!posts.length ? (
               <StateScene
                 scene="empty"
