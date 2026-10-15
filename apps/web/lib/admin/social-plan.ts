@@ -223,6 +223,18 @@ export const PLAN_SETUP: readonly PlanTask[] = [
     links: [],
   },
   {
+    id: 'C1', owner: 'BMT', status: 'in progress', doneOn: null,
+    task: 'Connect the accounts so approved posts can publish themselves (one developer app per platform; Studio > Accounts > Connect).',
+    note: 'Pause all posting is ON (10-15) and the Oct 15-16 posts are held until BMT and JP agree. X: developer app created, read and write, callback set, keys saved in Vercel; next is Connect (founder clicks Allow) and buying X API credits, since the X API is now pay-per-use. Pinterest: app "Wordocious Social Studio" (1624551) created, redirect set, trial access pending review; the secret unlocks on approval. Meta (Instagram, Facebook, Threads): developer signup stuck on the text code, retry 10-15 morning. TikTok: developer login needed (signup email goes to bt@showloud.com).',
+    links: [
+      { label: 'Studio > Accounts', href: '/admin/studio?tab=accounts' },
+      { label: 'X developer console', href: 'https://console.x.com' },
+      { label: 'Pinterest app', href: 'https://developers.pinterest.com/apps/1624551/' },
+      { label: 'Meta for Developers', href: 'https://developers.facebook.com/apps/' },
+      { label: 'TikTok for Developers', href: 'https://developers.tiktok.com/apps/' },
+    ],
+  },
+  {
     id: 'S2', owner: 'JP', status: 'in progress', doneOn: null,
     task: 'Install the social package: profile pictures (icon B, the W mascot), X header, FB cover, IG highlight covers, TikTok and YouTube banners, Pinterest boards, LinkedIn covers.',
     note: 'Done 10-14: icon B profile pictures on Facebook, Instagram, TikTok, X and Pinterest; Facebook cover; X header; Pinterest boards Daily Games, Meet the Cast and Game Guides. Left: IG highlight covers (designed, in review), YouTube banner and LinkedIn covers (those accounts are not set up yet).',
@@ -283,6 +295,9 @@ export interface AccountChange { date: string; channel: string; change: string }
 
 /** Live changes made on the real accounts, newest first. Append at the top whenever an account is touched. */
 export const PLAN_ACCOUNT_LOG: readonly AccountChange[] = [
+  { date: '2026-10-15', channel: 'Social Studio', change: 'Pause all posting turned ON; Oct 15-16 posts and the four old test drafts held.' },
+  { date: '2026-10-15', channel: 'Pinterest', change: 'Developer app "Wordocious Social Studio" (1624551) submitted; trial access pending; redirect URL added.' },
+  { date: '2026-10-15', channel: 'X', change: 'Developer account and app created (read and write, OAuth 2.0 web app, callback wordocious.com/api/admin/studio/callback/x); client ID and secret saved in Vercel.' },
   { date: '2026-10-14', channel: 'Instagram', change: 'Link added in the app by the founder: "Play free" → https://wordocious.com/go/instagram.' },
   { date: '2026-10-14', channel: 'Pinterest', change: 'Boards created: Daily Games, Meet the Cast, Game Guides. Profile About rewritten; website https://wordocious.com/go/pinterest.' },
   { date: '2026-10-14', channel: 'Facebook', change: 'Bio: "18 daily games. One score. Bring your family. Play free at wordocious.com/go/facebook".' },

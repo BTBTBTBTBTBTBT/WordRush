@@ -62,7 +62,7 @@ describe('JP launch kit', () => {
 
 describe('launch setup status', () => {
   it('gives S1 to S7 a status, owner, note and valid done date', () => {
-    expect(PLAN_SETUP.map((t) => t.id)).toEqual(['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7']);
+    expect(PLAN_SETUP.map((t) => t.id).filter((id) => id.startsWith('S'))).toEqual(['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7']);
     for (const t of PLAN_SETUP) {
       expect(['done', 'in progress', 'pending', 'n/a']).toContain(t.status);
       expect(t.note.length, t.id).toBeGreaterThan(10);
