@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Megaphone, BellRing, Send, Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useDrill } from '../components/drill-panel';
+import { PageHeader } from '../components/admin-ui';
 
 // The one page for everything Wordocious says to players: announcements
 // (authored HERE, displayed by all three apps) and push infrastructure
@@ -43,11 +44,30 @@ export default function AdminMessagingPage() {
   const [formType, setFormType] = useState('info');
   const [formExpiry, setFormExpiry] = useState('');
 
+  const [actionError, setActionError] = useState<string | null>(null);
+
   const load = () =>
     fetch('/api/admin/messaging')
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((d) => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
+
+  // Writes: surface a failed request instead of reloading as if it worked.
+  const write = async (url: string, init: RequestInit, what: string): Promise<boolean> => {
+    setActionError(null);
+    try {
+      const res = await fetch(url, init);
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setActionError(`Could not ${what}: ${j?.error ?? `request failed (${res.status})`}`);
+        return false;
+      }
+      return true;
+    } catch {
+      setActionError(`Could not ${what}: the server could not be reached.`);
+      return false;
+    }
+  };
   useEffect(() => { load(); }, []);
 
   const sendTest = async () => {
@@ -62,27 +82,28 @@ export default function AdminMessagingPage() {
 
   const createAnnouncement = async () => {
     if (!formTitle || !formBody) return;
-    await fetch('/api/admin/announcements', {
+    const ok = await write('/api/admin/announcements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: formTitle, body: formBody, type: formType, expires_at: formExpiry || null }),
-    });
+    }, 'create the announcement');
+    if (!ok) return; // keep the form open so nothing typed is lost
     setFormTitle(''); setFormBody(''); setFormExpiry(''); setShowForm(false);
     load();
   };
 
   const toggleAnnouncement = async (id: string, disabled: boolean) => {
-    await fetch(`/api/admin/announcements/${id}`, {
+    const ok = await write(`/api/admin/announcements/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ active: disabled }),
-    });
-    load();
+    }, 'update the announcement');
+    if (ok) load();
   };
 
   const deleteAnnouncement = async (id: string) => {
-    await fetch(`/api/admin/announcements/${id}`, { method: 'DELETE' });
-    load();
+    const ok = await write(`/api/admin/announcements/${id}`, { method: 'DELETE' }, 'delete the announcement');
+    if (ok) load();
   };
 
   if (loading) return <div className="h-60 bg-gray-100 rounded-xl animate-pulse" />;
@@ -92,7 +113,8 @@ export default function AdminMessagingPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-black text-gray-900">Messaging</h1>
+      <PageHeader title="Messaging" />
+      {actionError && <p className="text-sm font-bold text-red-500">{actionError}</p>}
 
       {/* Announcements: authored here, shown in all three apps */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">

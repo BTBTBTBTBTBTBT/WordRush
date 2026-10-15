@@ -5,6 +5,7 @@ import { Calendar, Trophy, Swords, Flame } from 'lucide-react';
 
 import { MODE_LABELS, modeLabel } from '@/lib/mode-labels';
 import { Icon3D } from '@/components/ui/icon3d';
+import { PageHeader } from '../components/admin-ui';
 
 const MODES = Object.keys(MODE_LABELS).filter((m) => m !== 'VS');
 
@@ -18,34 +19,44 @@ export default function AdminGamesPage() {
   const [matches, setMatches] = useState<any[]>([]);
   const [streaks, setStreaks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
+    setError(null);
+    const getJson = async (url: string) => {
+      const r = await fetch(url);
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j?.error) throw new Error(j?.error ?? `Request failed (${r.status})`);
+      return j;
+    };
+    const fail = (e: any) => { setError(e?.message || 'Could not load games data.'); setLoading(false); };
     if (mode === 'STREAKS') {
       // Streaks are a NOW snapshot per player — no day, no solo/vs dimension.
       // Reuses the portal-wide drill endpoint so this table and the Puzzles
       // page's streak drill can never disagree.
-      fetch('/api/admin/drill?metric=streaks').then(r => r.json()).then((d) => {
+      getJson('/api/admin/drill?metric=streaks').then((d) => {
         setStreaks(d.rows || []);
         setLoading(false);
-      });
+      }).catch(fail);
       return;
     }
     Promise.all([
-      fetch(`/api/admin/games/leaderboard?day=${day}&mode=${mode}&play_type=${playType}`).then(r => r.json()),
-      fetch(`/api/admin/games/seeds?day=${day}`).then(r => r.json()),
-      fetch(`/api/admin/games/matches?limit=15&mode=${mode}&play_type=${playType}`).then(r => r.json()),
+      getJson(`/api/admin/games/leaderboard?day=${day}&mode=${mode}&play_type=${playType}`),
+      getJson(`/api/admin/games/seeds?day=${day}`),
+      getJson(`/api/admin/games/matches?limit=15&mode=${mode}&play_type=${playType}`),
     ]).then(([lb, sd, mt]) => {
       setLeaderboard(lb.results || []);
       setSeeds(sd.seeds || []);
       setMatches(mt.matches || []);
       setLoading(false);
-    });
+    }).catch(fail);
   }, [day, mode, playType]);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-black text-gray-900">Games &amp; Leaderboards</h1>
+      <PageHeader title="Games & Leaderboards" />
+      {error && <p className="text-sm font-bold text-red-500">Could not load games data: {error}</p>}
 
       {/* Filters */}
       <div className="flex gap-2 flex-wrap">
@@ -70,7 +81,7 @@ export default function AdminGamesPage() {
         )}
       </div>
 
-      {mode === 'STREAKS' && (
+      {mode === 'STREAKS' && !error && (
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
             <Flame className="w-4 h-4" /> Daily Streaks — every player, longest first
@@ -112,7 +123,7 @@ export default function AdminGamesPage() {
         </div>
       )}
 
-      {mode !== 'STREAKS' && (<>
+      {mode !== 'STREAKS' && !error && (<>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Daily Leaderboard */}

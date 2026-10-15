@@ -5,6 +5,7 @@ import {
   Megaphone, Link2, Users, BellRing, Gift, Share2, Search, AtSign,
   ExternalLink, Copy, Check, CircleDashed, CircleCheck,
 } from 'lucide-react';
+import { PageHeader } from '../components/admin-ui';
 
 interface MarketingLink {
   slug: string;
@@ -111,14 +112,7 @@ export default function AdminMarketingPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-          <Megaphone className="w-6 h-6 text-violet-600" /> Marketing
-        </h1>
-        <p className="text-sm text-gray-500 font-semibold mt-1">
-          Every channel that can bring a player in, and whether it actually did.
-        </p>
-      </div>
+      <PageHeader title="Marketing" icon={Megaphone} subtitle="Every channel that can bring a player in, and whether it actually did." />
 
       {/* Channel scoreboard */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -135,9 +129,9 @@ export default function AdminMarketingPage() {
       {/* Shares: provenance + outcome (JP, 2026-09-23) */}
       <SharesSection shares={data?.shares} />
 
-      {/* Link builder & attribution — LIVE */}
+      {/* Link builder & attribution */}
       <section className="bg-white rounded-xl border border-gray-200 p-5">
-        <SectionTitle icon={Link2} title="Links & attribution" badge="LIVE" badgeClass="bg-green-50 text-green-700" />
+        <SectionTitle icon={Link2} title="Links & attribution" />
         <p className="text-xs text-gray-500 font-semibold mb-3">
           Clicks count on redirect; any brand-new account within 30 days of a click is credited to
           its channel (first touch wins). Put these in bios once — retarget them later without
@@ -250,11 +244,11 @@ export default function AdminMarketingPage() {
 
       {/* Signups by source detail */}
       <section className="bg-white rounded-xl border border-gray-200 p-5">
-        <SectionTitle icon={Users} title="Signups by source" badge="LIVE" badgeClass="bg-green-50 text-green-700" />
+        <SectionTitle icon={Users} title="Signups by source" />
         {Object.keys(data?.signupsBySource ?? {}).length === 0 ? (
           <p className="text-sm text-gray-400 font-semibold py-4 text-center">
-            Substrate is live — awaiting the first attributed signup. Bios are linked; this fills
-            itself.
+            No attributed signups yet. Bios are linked, so this fills in by itself
+            as people sign up from them.
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
@@ -278,8 +272,9 @@ export default function AdminMarketingPage() {
       </div>
 
       <p className="text-[11px] text-gray-400 font-semibold max-w-2xl">
-        Deliberately absent: content calendar (link a doc, don&apos;t build a tool) and paid-ads
-        tracking (no paid until organic LTV exists). Email appears only after an opt-in list does.
+        Not tracked here: paid ads (none until organic lifetime value exists) and email (it appears
+        once there is an opt-in list). The content calendar lives in{' '}
+        <a href="/admin/studio" className="font-bold text-violet-700 hover:underline">Social Studio</a>.
       </p>
     </div>
   );
@@ -382,7 +377,7 @@ function SharesSection({ shares }: { shares?: SharesBlock }) {
   return (
     <section className="bg-white rounded-xl border border-gray-200 p-5">
       <SectionTitle icon={Share2} title={`Shares (${shares.windowDays}d) — where from, what happened`}
-        badge="LIVE" badgeClass="bg-green-50 text-green-700" />
+        {...(tracked ? {} : { badge: 'PARTIAL', badgeClass: 'bg-amber-50 text-amber-700' })} />
       <p className="text-xs text-gray-500 font-semibold mb-3">
         Every Share-button tap on web, iOS, and Android logs one row: platform, kind (text · image ·
         link_invite · other), the game, and the screen it was tapped on. {b.total.toLocaleString()} in
@@ -498,7 +493,7 @@ function PushCampaignCard() {
 
   return (
     <section className="bg-white rounded-xl border border-gray-200 p-5">
-      <SectionTitle icon={BellRing} title="Push campaigns" badge="LIVE" badgeClass="bg-green-50 text-green-700" />
+      <SectionTitle icon={BellRing} title="Push campaigns" />
       <div className="space-y-2">
         <input
           value={title} onChange={(e) => setTitle(e.target.value)} maxLength={60}
@@ -564,7 +559,10 @@ function SearchConsoleCard() {
 
   return (
     <section className="bg-white rounded-xl border border-gray-200 p-5">
-      <SectionTitle icon={Search} title="Search Console" badge="LIVE" badgeClass="bg-green-50 text-green-700" />
+      <SectionTitle icon={Search} title="Search Console"
+        {...(error
+          ? { badge: 'ERROR', badgeClass: 'bg-red-50 text-red-600' }
+          : data ? { badge: 'LIVE', badgeClass: 'bg-green-50 text-green-700' } : {})} />
       {error ? (
         <p className="text-xs font-semibold text-amber-600">{error}</p>
       ) : !data ? (

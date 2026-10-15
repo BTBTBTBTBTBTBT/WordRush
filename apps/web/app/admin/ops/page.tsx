@@ -5,6 +5,7 @@ import { Activity, AlertTriangle, Webhook, Swords, ExternalLink } from 'lucide-r
 import { DrillCard, useDrill } from '../components/drill-panel';
 import Link from 'next/link';
 import { modeLabel } from '@/lib/mode-labels';
+import { PageHeader } from '../components/admin-ui';
 
 // Operational health — the "is anything quietly broken" page: cron heartbeats,
 // the store-webhook ledger, an anti-cheat watchlist, and VS match health.
@@ -51,15 +52,12 @@ export default function AdminOpsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-gray-900">Ops Health</h1>
-        <p className="text-sm text-gray-500 font-medium mt-1">
+      <PageHeader title="Ops Health" subtitle={<>
           Is anything quietly broken: cron heartbeats, the store-webhook ledger, the anti-cheat watchlist and VS match health.
           Feature flags and the content runway moved to{' '}
           <Link href="/admin/flags" className="font-bold text-purple-700">Feature Flags</Link> and{' '}
           <Link href="/admin/banks" className="font-bold text-purple-700">Content Banks</Link>.
-        </p>
-      </div>
+      </>} />
 
       {/* Cron heartbeats */}
       <div className="bg-white border border-gray-200 rounded-xl p-4">
@@ -107,10 +105,10 @@ export default function AdminOpsPage() {
       {/* Anti-cheat watchlist */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <p className="text-xs font-black text-gray-400 uppercase tracking-wide px-4 pt-4 flex items-center gap-2">
-          <AlertTriangle className="w-3.5 h-3.5" /> Anti-cheat watchlist — rows the DB clamps allowed but that exceed legit maxima (30d)
+          <AlertTriangle className="w-3.5 h-3.5" /> Anti-cheat watchlist — scores that got through but look too high to be real (30d)
         </p>
         {data.suspects.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm font-bold text-gray-300">Nothing suspicious. The clamps held.</p>
+          <p className="px-4 py-6 text-center text-sm font-bold text-gray-300">Nothing suspicious in the last 30 days.</p>
         ) : (
           <table className="w-full text-sm mt-2">
             <thead>

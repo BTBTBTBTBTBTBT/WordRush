@@ -23,6 +23,10 @@ const PREVIEWS: Array<{ q: string; label: string; note: string }> = [
   { q: 'auto', label: 'Back to the calendar', note: 'Clears the preview' },
 ];
 
+// "2026-10-17" -> "Oct 17" (month/day only; the year shows in the Window card).
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const monthDay = (ymd: string) => `${MONTHS[Number(ymd.slice(5, 7)) - 1]} ${Number(ymd.slice(8, 10))}`;
+
 export default function AdminSeasonsPage() {
   const day = useMemo(localDay, []);
   const s = useMemo(() => halloweenStatus(day), [day]);
@@ -32,14 +36,14 @@ export default function AdminSeasonsPage() {
       <PageHeader
         title="Seasons"
         icon={Ghost}
-        subtitle="Halloween runs Oct 17 to Nov 1 on each player's local date. During the season the registry (season-registry.json) swaps the cast skins, the game and page titles, the wallpapers, the button tints and the Home banner; admins preview any season from Settings > Season preview."
+        subtitle={`Halloween runs ${monthDay(s.start)} to ${monthDay(s.end)} on each player's local date. During the season the registry (season-registry.json) swaps the cast skins, the game and page titles, the wallpapers, the button tints and the Home banner; admins preview any season from Settings > Season preview.`}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Status today" value={s.active ? 'Halloween is on' : 'Off season'} sub={`Your local date: ${day}`} icon={Ghost} tone={s.active ? 'text-orange-600 bg-orange-50' : 'text-gray-500 bg-gray-100'} />
         <Stat label={s.active ? 'Days left' : 'Starts in'} value={s.active ? `${s.daysLeft} day${s.daysLeft === 1 ? '' : 's'}` : `${s.daysUntilStart} day${s.daysUntilStart === 1 ? '' : 's'}`} sub={s.active ? `Ends after ${s.end}` : `Opens ${s.start}`} icon={CalendarRange} />
         <Stat label="Window" value={`${s.start.slice(5)} → ${s.end.slice(5)}`} sub={s.start.slice(0, 4)} icon={CalendarRange} />
-        <Stat label="Source of truth" value="core currentSeason" sub="packages/core level-season.ts" />
+        <Stat label="Clock" value="Player's own date" sub="Each player switches on their local calendar day" />
       </div>
 
       <Section title="Preview on the web" icon={ExternalLink} note="Each link opens Home in a new tab; the choice holds for that browser session.">

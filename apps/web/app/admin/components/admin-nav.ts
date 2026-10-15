@@ -59,7 +59,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     items: [
       { href: '/admin/users', label: 'Users', icon: Users, blurb: 'Search players, Pro, bans, achievements' },
       { href: '/admin/onboarding', label: 'Onboarding', icon: UserPlus, blurb: 'New-player activation funnel' },
-      { href: '/admin/moderation', label: 'Moderation', icon: Shield, blurb: 'Reports, bans, audit log' },
+      { href: '/admin/moderation', label: 'Moderation', icon: Shield, blurb: 'Bans, new accounts, audit log' },
     ],
   },
   {

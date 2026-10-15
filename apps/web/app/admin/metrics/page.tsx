@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { TrendingUp, Share2, Flag, UserPlus } from 'lucide-react';
 import { DrillCard, useDrill } from '../components/drill-panel';
 import { modeLabel } from '@/lib/mode-labels';
+import { PageHeader } from '../components/admin-ui';
 
 // The Weekly Five as a page — the founders' agreed metric set (distribution
 // memo §14), previously only runnable as SQL by hand. DAU, retention cohorts,
@@ -83,19 +84,7 @@ export default function AdminMetricsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-black text-gray-900">Metrics — the Weekly Five</h1>
-
-      {/* §257: every figure on this page was UNDERCOUNTED before 2026-09-11.
-          The reads behind DAU, share rate and the cohorts stopped silently at
-          PostgREST's 1,000-row cap; daily_results had 2,388 rows and matches
-          2,426 when it was found, so the further back a day, the more it
-          lost. Fixed by paging (lib/supabase-sweep.ts). The step up this week
-          is the fix landing, not growth — compare trends from 09-11 onward. */}
-      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-900">
-        Baseline note: numbers before <span className="font-black">Sep 11, 2026</span> were undercounted — the
-        underlying reads stopped at 1,000 rows without saying so (fixed that day, §257). Expect a step up this
-        week that is the fix, not growth; read trends from Sep 11 onward.
-      </div>
+      <PageHeader title="Metrics" subtitle="The Weekly Five: daily players, share rate, Pro conversion, signups and reports." />
 
       {/* Headline cards — each opens the rows behind its number */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

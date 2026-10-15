@@ -14,10 +14,17 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '25');
   const offset = (page - 1) * limit;
+  // ?banned=1 filters on the server so the Moderation page's list and count
+  // cover every banned account, not just whichever fell inside a page.
+  const bannedOnly = searchParams.get('banned') === '1';
 
   let query = admin
     .from('profiles')
-    .select('id, username, avatar_url, level, is_pro, is_banned, last_played_at, created_at, role, age_confirmed_13, age_under13_at', { count: 'exact' });
+    .select('id, username, avatar_url, level, is_pro, is_banned, ban_reason, last_played_at, created_at, role, age_confirmed_13, age_under13_at', { count: 'exact' });
+
+  if (bannedOnly) {
+    query = query.eq('is_banned', true);
+  }
 
   if (q) {
     query = query.ilike('username', `%${q}%`);

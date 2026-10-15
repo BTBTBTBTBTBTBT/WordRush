@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PageHeader } from '../components/admin-ui';
 
 interface UserRow {
   id: string;
@@ -52,10 +53,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black text-gray-900">Users</h1>
-        <span className="text-sm text-gray-400 font-bold">{total.toLocaleString()} total</span>
-      </div>
+      <PageHeader title="Users" actions={<span className="text-sm text-gray-400 font-bold">{total.toLocaleString()} total</span>} />
 
       {/* Search */}
       <form onSubmit={handleSearch} className="flex gap-2">

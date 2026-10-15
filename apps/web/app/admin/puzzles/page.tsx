@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Puzzle, Flame, Shield } from 'lucide-react';
 import { DrillCard, useDrill } from '../components/drill-panel';
 import { modeLabel } from '@/lib/mode-labels';
+import { PageHeader } from '../components/admin-ui';
 
 // Puzzle analytics — which dailies were brutal, which modes get played, and
 // whether the streak/shield economy is actually being used.
@@ -55,8 +56,7 @@ export default function AdminPuzzlesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black text-gray-900">Puzzle Analytics</h1>
+      <PageHeader title="Puzzle Analytics" actions={
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
@@ -67,7 +67,7 @@ export default function AdminPuzzlesPage() {
           <option value={30}>Last 30 days</option>
           <option value={60}>Last 60 days</option>
         </select>
-      </div>
+      } />
 
       {/* Mode popularity */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">

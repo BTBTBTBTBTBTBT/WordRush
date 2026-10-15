@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CreditCard, Users, Activity, LifeBuoy } from 'lucide-react';
 import { useDrill } from '../components/drill-panel';
+import { PageHeader } from '../components/admin-ui';
 
 // The customer-service payments view. Design rule: an agent reading this page
 // should be able to answer "what is this user paying, through which rail, and
@@ -36,7 +37,7 @@ export default function AdminPaymentsPage() {
 
   useEffect(() => {
     fetch('/api/admin/payments')
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((d) => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
@@ -48,7 +49,7 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-black text-gray-900">Pro &amp; Payments</h1>
+      <PageHeader title="Pro & Payments" />
 
       {/* CS crib sheet — where a request can actually be executed */}
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 font-medium">

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Gift, Users, Crown, Percent, CalendarPlus, Ban } from 'lucide-react';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { useDrill } from '../components/drill-panel';
+import { PageHeader } from '../components/admin-ui';
 
 interface ReferralRow {
   id: string;
@@ -72,7 +73,7 @@ export default function AdminReferralsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-black text-gray-900">Referrals &amp; Gifts</h1>
+        <PageHeader title="Referrals & Gifts" />
         <div className="h-40 bg-gray-100 rounded animate-pulse" />
       </div>
     );
@@ -89,14 +90,7 @@ export default function AdminReferralsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-gray-900">Referrals &amp; Gifts</h1>
-        <p className="text-xs text-gray-400 font-medium mt-0.5">
-          Gift a week of Pro: friends get 7 days of Pro; inviters earn +3 days per join
-          (first 5), +4 shields at 3 joins, and a free month per monthly subscription —
-          3 free months per annual.
-        </p>
-      </div>
+      <PageHeader title="Referrals & Gifts" subtitle="Gift a week of Pro: friends get 7 days of Pro; inviters earn +3 days per join (first 5), +4 shields at 3 joins, and a free month per monthly subscription — 3 free months per annual." />
 
       {/* Stat cards — same grid as the dashboard */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -120,8 +114,8 @@ export default function AdminReferralsPage() {
           All Invites (latest 200)
         </h2>
         {rows.length === 0 ? (
-          <p className="text-sm text-gray-400 font-medium">No invites yet — the profile page's
-            "Gift Pro to Friends" panel creates them.</p>
+          <p className="text-sm text-gray-400 font-medium">No invites yet — the profile page&apos;s
+            &quot;Gift Pro to Friends&quot; panel creates them.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

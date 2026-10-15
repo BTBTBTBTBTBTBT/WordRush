@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { DollarSign, CreditCard, Smartphone, Megaphone, ExternalLink, Receipt, CheckCircle2, HelpCircle } from 'lucide-react';
 import { useDrill } from '../components/drill-panel';
+import { PageHeader } from '../components/admin-ui';
 import { EXPENSES, expenseTotals } from '@/lib/expenses';
 import type { AdTotals, AdWindow, LevelPlayResult, LevelPlayEnvVar } from '@/lib/levelplay-reporting';
 
@@ -116,7 +117,7 @@ export default function AdminRevenuePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-black text-gray-900">Revenue</h1>
+      <PageHeader title="Revenue" />
 
       {/* Subscriptions across all three rails */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -264,7 +265,7 @@ function AdWindowTable({ w }: { w: AdWindow }) {
 
 // Unity LevelPlay (ironSource) reporting for the iOS + Android apps, or a calm
 // setup card until the two server env vars exist. Also shows the app_flags
-// The `ads` row is the apps' remote kill switch (unknown/missing = off).
+// `ads` row, the apps' remote kill switch (unknown/missing = off).
 function AppAdsCard({ levelPlay, adFlags }: { levelPlay: LevelPlayResult | undefined; adFlags: RevenueData['adFlags'] }) {
   const status = levelPlay?.status ?? 'not_connected';
   return (
@@ -334,11 +335,11 @@ function AppAdsCard({ levelPlay, adFlags }: { levelPlay: LevelPlayResult | undef
         <Link href="/admin/flags" className="ml-auto inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">Admin → Flags</Link>
       </div>
       <ul className="mt-3 space-y-1 text-xs font-semibold text-gray-600">
-        <li><span className="font-black text-gray-800">Live:</span> iOS 2.8.2 on the App Store (10-14) and Android 2.8.2 (224) on Google Play (10-13), both with LevelPlay; the ads flag is on for everyone, Pro still means no ads.</li>
+        <li><span className="font-black text-gray-800">As of 10-14 (typed by hand, not read from the stores):</span> iOS 2.8.2 on the App Store (10-14) and Android 2.8.2 (224) on Google Play (10-13), both with LevelPlay. The live ads flag state is the pill above; Pro still means no ads.</li>
         <li>
           <span className="font-black text-gray-800">Authorized sellers:</span>{' '}
           <a href="/app-ads.txt" target="_blank" rel="noreferrer" className="font-bold text-purple-600 hover:underline">wordocious.com/app-ads.txt</a>{' '}
-          carries Unity&apos;s 161 lines (unity.com DIRECT + its resellers), copied 10-14; Unity developer website set to wordocious.com the same day.
+          carried Unity&apos;s 161 lines (unity.com DIRECT + its resellers) when copied on 10-14; Unity developer website set to wordocious.com the same day.
           Unity re-checks within about a day. Re-copy the block from Unity Monetization → Settings → App-ads.txt whenever it lists missing sellers.
         </li>
       </ul>

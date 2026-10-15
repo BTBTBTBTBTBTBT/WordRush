@@ -24,14 +24,35 @@ export async function GET(request: NextRequest) {
 
   const admin = getAdminSupabase();
 
+  const nowIso = new Date().toISOString();
   const soonIso = new Date(Date.now() + 7 * 86400000).toISOString();
+
+  // Active Pro = the same rule the Dashboard, Revenue and Metrics use (and the
+  // clients' isProActive): flag set AND (no expiry OR expiry in the future).
+  // A lapsed row reads is_pro until the hourly sweep fires, so is_pro alone
+  // overstates. Page through the full set (PostgREST caps one response at
+  // 1000 rows) so the list and the count are the true total, never a silent cap.
+  const loadActivePro = async () => {
+    const rows: any[] = [];
+    const PAGE = 1000;
+    for (let from = 0; from < 50000; from += PAGE) {
+      const { data, error } = await admin
+        .from('profiles')
+        .select('id, username, is_pro, pro_expires_at, stripe_customer_id, stripe_subscription_id')
+        .eq('is_pro', true)
+        .or(`pro_expires_at.is.null,pro_expires_at.gt.${nowIso}`)
+        .order('pro_expires_at', { ascending: false, nullsFirst: true })
+        .order('id', { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) return { data: rows.length ? rows : null, error };
+      rows.push(...(data || []));
+      if (!data || data.length < PAGE) break;
+    }
+    return { data: rows, error: null };
+  };
+
   const [proRes, eventsRes, referralsRes] = await Promise.all([
-    admin
-      .from('profiles')
-      .select('id, username, is_pro, pro_expires_at, stripe_customer_id, stripe_subscription_id')
-      .eq('is_pro', true)
-      .order('pro_expires_at', { ascending: false })
-      .limit(200),
+    loadActivePro(),
     admin
       .from('store_webhook_events')
       .select('event_id, source, processed_at')
@@ -39,6 +60,11 @@ export async function GET(request: NextRequest) {
       .limit(25),
     admin.from('referrals').select('status, redeemed_at, reward_granted_at, expires_at'),
   ]);
+
+  // A failed page would otherwise show a silently short list.
+  if (proRes.error) {
+    return NextResponse.json({ error: 'Could not load the active Pro list.' }, { status: 500 });
+  }
 
   const proUsers = (proRes.data || []).map((p) => ({
     ...p,

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { BookOpen, RotateCcw } from 'lucide-react';
+import { PageHeader } from '../components/admin-ui';
 
 // Upcoming Word of the Day schedule. Server-derived from the exact module that
 // renders the player-facing card and archive, so this table IS the future —
@@ -52,8 +53,7 @@ export default function AdminWordsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black text-gray-900">Word of the Day</h1>
+      <PageHeader title="Word of the Day" actions={
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
@@ -64,7 +64,7 @@ export default function AdminWordsPage() {
           <option value={90}>Next 90 days</option>
           <option value={120}>Next 120 days</option>
         </select>
-      </div>
+      } />
 
       {/* Cycle mechanics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
