@@ -47,18 +47,64 @@ wanted() {
 
 dump() { $ADB shell uiautomator dump /sdcard/_ui.xml >/dev/null 2>&1; $ADB shell cat /sdcard/_ui.xml 2>/dev/null; }
 
-# "x y" of the first node whose text or content-desc contains $1 (empty if absent).
+# "x y" of the node whose text or content-desc EQUALS $1 (case-insensitive), else the first one that contains it
+# (empty + rc 1 if absent). Exact-first keeps "Home" / "Help" from matching a longer label on the tablet layout.
 find_xy() {
   # uiautomator's dump fails while an animation runs ("could not get idle state"): retry before giving up.
-  local b try
+  local try xy
   for try in 1 2 3 4; do
-    b=$(dump | tr '<' '\n' | grep -i -- "$1" | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
-    [ -n "$b" ] && break
+    xy=$(dump | python3 -c '
+import sys, re, xml.etree.ElementTree as ET
+needle = sys.argv[1].lower(); exact = part = None
+for n in ET.fromstring(sys.stdin.read()).iter("node"):
+    t, d = n.get("text", "").lower(), n.get("content-desc", "").lower()
+    b = list(map(int, re.findall(r"\d+", n.get("bounds", ""))))
+    if len(b) != 4 or not (t or d): continue
+    c = "%d %d" % ((b[0] + b[2]) // 2, (b[1] + b[3]) // 2)
+    if exact is None and needle in (t, d): exact = c
+    elif part is None and (needle in t or needle in d): part = c
+print(exact or part or "")' "$1" 2>/dev/null)
+    [ -n "$xy" ] && { echo "$xy"; return 0; }
     sleep 0.5
   done
-  [ -z "$b" ] && return 1
-  local x1 y1 x2 y2; read -r x1 y1 x2 y2 <<< "$(echo "$b" | grep -o '[0-9]\+' | tr '\n' ' ')"
-  echo "$(( (x1 + x2) / 2 )) $(( (y1 + y2) / 2 ))"
+  return 1
+}
+
+# Fresh installs open on the birth-year gate, then the welcome, the tour and the guest door (the same path a new
+# player takes; a guest never signs in). reach_home taps through whichever of those is on screen until the Home tab
+# bar shows. Year: scroll the wheel to 1990 (an adult; the gate records it on this device only).
+tap_label() { local xy; xy=$(find_xy "$1") || return 1; tap_xy $xy; sleep "${2:-1.5}"; }
+pick_adult_year() {
+  # The wheel shows 5 years at a time: read the visible years and drag toward 1990 with short, slow drags
+  # (a fast fling skips the whole window).
+  local wheel cx cy i yrs lo hi xy
+  wheel=$(find_xy "Year you were born") || return 1
+  cx=${wheel% *}; cy=${wheel#* }
+  for i in $(seq 1 60); do
+    yrs=$(dump | grep -oE 'text="(19|20)[0-9][0-9]"' | grep -oE '[0-9]{4}' | sort -un)
+    if echo "$yrs" | grep -qx 1990; then xy=$(find_xy 1990) && tap_xy $xy && sleep 1 && return 0; fi
+    lo=$(echo "$yrs" | head -1); hi=$(echo "$yrs" | tail -1)
+    if [ -z "$lo" ]; then sleep 1; continue; fi
+    if [ "$lo" -gt 1990 ]; then $ADB shell input swipe "$cx" $(( cy + 120 )) "$cx" $(( cy - 120 )) 500
+    else $ADB shell input swipe "$cx" $(( cy - 120 )) "$cx" $(( cy + 120 )) 500; fi
+    sleep 0.4
+  done
+  return 1
+}
+reach_home() {
+  local i d
+  for i in $(seq 1 30); do
+    d=$(dump)
+    if   echo "$d" | grep -q 'content-desc="Leaderboard"'; then return 0
+    elif echo "$d" | grep -q 'content-desc="Year you were born"'; then pick_adult_year && tap_label "Continue" 2.5
+    elif echo "$d" | grep -q 'Play as guest, without an account'; then tap_label "Play as guest, without an account" 2.5
+    elif echo "$d" | grep -q 'Explore first, go to Home'; then tap_label "Explore first, go to Home" 2.5
+    elif echo "$d" | grep -q 'content-desc="Skip this step"'; then tap_label "Skip this step" 2
+    elif echo "$d" | grep -q "content-desc=\"Let's go!\""; then tap_label "Let's go!" 2
+    elif echo "$d" | grep -q 'Play without an account'; then tap_label "Play without an account" 2.5
+    else sleep 1; fi
+  done
+  echo "  !! reach_home: no Home tab bar after 30 steps"; return 1
 }
 
 SIZE=$($ADB shell wm size | grep -o '[0-9]*x[0-9]*' | tail -1)
@@ -70,7 +116,7 @@ swipe_down() { $ADB shell input swipe "$CX" $(( H / 4 )) "$CX" $(( H * 3 / 4 )) 
 type_word()  { local w="$1" i; for (( i=0; i<${#w}; i++ )); do $ADB shell input text "${w:$i:1}"; done; }
 key()        { $ADB shell input keyevent "$@"; }
 
-echo "| step | frames | janky % | p90 ms | p99 ms | >25ms | >50ms |" > "$OUT.rows"
+echo "| step | frames | janky % | p90 ms | p99 ms | >25ms | >50ms | slow UI | slow bmp |" > "$OUT.rows"
 
 # Measure: reset the counters, run the action, wait, read gfxinfo.
 measure() {
@@ -80,7 +126,10 @@ measure() {
   "$@"
   sleep "$hold"
   local g; g=$($ADB shell dumpsys gfxinfo "$PKG")
-  local frames janky p90 p99 o25 o50
+  local frames janky p90 p99 o25 o50 slowui slowbmp
+  # gfxinfo's main-thread counters (cumulative since the reset): frames whose UI thread ran > 16 ms, and slow bitmap uploads.
+  slowui=$(echo "$g" | grep -m1 "Slow UI thread" | grep -o '[0-9]\+' | head -1)
+  slowbmp=$(echo "$g" | grep -m1 "Slow bitmap uploads" | grep -o '[0-9]\+' | head -1)
   frames=$(echo "$g" | grep -m1 "Total frames rendered" | grep -o '[0-9]\+' | head -1)
   janky=$(echo "$g" | grep -m1 "Janky frames:" | grep -o '([0-9.]*%)' | tr -d '()%')
   p90=$(echo "$g" | grep -m1 "90th percentile" | grep -o '[0-9]\+ms' | tr -d ms)
@@ -92,7 +141,7 @@ measure() {
     [ "$ms" -gt 25 ] && o25=$(( o25 + n ))
     [ "$ms" -gt 50 ] && o50=$(( o50 + n ))
   done
-  printf "| %s | %s | %s | %s | %s | %s | %s |\n" "$name" "${frames:-0}" "${janky:-0}" "${p90:-0}" "${p99:-0}" "$o25" "$o50" | tee -a "$OUT.rows"
+  printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" "$name" "${frames:-0}" "${janky:-0}" "${p90:-0}" "${p99:-0}" "$o25" "$o50" "${slowui:-0}" "${slowbmp:-0}" | tee -a "$OUT.rows"
 }
 
 tap_xy() { $ADB shell input tap "$1" "$2"; }
@@ -112,12 +161,14 @@ back() { key KEYCODE_BACK; }
 
 echo "Wordocious Android perf tour -> $OUT"
 
-# Cold start.
+# Cold start. FRESH=0 keeps the app's data (default: pm clear, so the onboarding walk below runs every time).
+[ "${FRESH:-1}" = 1 ] && $ADB shell pm clear "$PKG" >/dev/null
 $ADB shell am force-stop "$PKG"
 sleep 1
 # PERF_EXTRAS: launch extras for an A/B run (e.g. PERF_EXTRAS="--ez noPuppets true": the static cast header).
 measure "launch" 6 sh -c "$ADB shell am start -W -n $PKG/.MainActivity ${PERF_EXTRAS:-} | grep -E 'TotalTime' | sed 's/^/  /'"
-if xy=$(find_xy "Play without an account"); then tap_xy $xy; sleep 3; fi
+wanted launch || { $ADB shell am start -n "$PKG/.MainActivity" >/dev/null; sleep 4; }
+reach_home
 
 # Home.
 measure "home.idle" 2 true
@@ -142,7 +193,14 @@ if wanted strategy; then
 fi
 measure "help.close" 1.2 back
 if wanted wotd; then
-  if xy=$(find_xy "Help"); then tap_xy $xy; sleep 1.5; fi
+  # Back out of any sheet to Home (the earlier Back presses can leave the app: relaunch then).
+  for _ in 1 2 3 4; do
+    dump | grep -q 'content-desc="Leaderboard"' && break
+    if $ADB shell dumpsys window | grep -q "mCurrentFocus=.*$PKG"; then back; sleep 1.2; else $ADB shell am start -n "$PKG/.MainActivity" >/dev/null; sleep 3; fi
+  done
+  sleep 1; if xy=$(find_xy "Help"); then tap_xy $xy; sleep 1.5; else echo "  !! wotd: Help icon not on screen"; fi
+  # "Words" sits below Strategy in the Help list: scroll to it (up to 3 swipes).
+  for _ in 1 2 3; do find_xy "Words" >/dev/null && break; swipe_up; sleep 0.8; done
   measure_tap "wotd.open" "Words" 1.5
   measure "wotd.scroll" 1 scroll_page
   back; sleep 1; back; sleep 1
@@ -251,7 +309,7 @@ musical_set halloween
   echo "$($ADB shell getprop ro.product.model) · API $($ADB shell getprop ro.build.version.sdk) · $($ADB shell dumpsys package $PKG | grep -m1 versionName | xargs)"
   echo
   cat "$OUT.rows" | sed '1a\
-|---|---:|---:|---:|---:|---:|---:|'
+|---|---:|---:|---:|---:|---:|---:|---:|---:|'
 } > "$OUT"
 rm -f "$OUT.rows"
 echo "report: $OUT"
