@@ -223,20 +223,30 @@ export const PLAN_SETUP: readonly PlanTask[] = [
   {
     id: 'S2', owner: 'JP', status: 'in progress', doneOn: null,
     task: 'Install the social package: profile pictures (icon B, the W mascot), X header, FB cover, IG highlight covers, TikTok and YouTube banners, Pinterest boards, LinkedIn covers.',
-    note: 'Done 10-14: icon B profile pictures on Facebook, Instagram, TikTok, X and Pinterest; Facebook cover; X header. Left: IG highlight covers, Pinterest boards, YouTube banner, LinkedIn covers (Claude sets these in the founder\'s Chrome once the art is final).',
+    note: 'Done 10-14: icon B profile pictures on Facebook, Instagram, TikTok, X and Pinterest; Facebook cover; X header; Pinterest boards Daily Games, Meet the Cast and Game Guides. Left: IG highlight covers (designed, in review), YouTube banner and LinkedIn covers (those accounts are not set up yet).',
     links: [
       { label: 'X', href: 'https://x.com/wordocious' },
       { label: 'Instagram', href: 'https://instagram.com/playwordocious' },
       { label: 'TikTok', href: 'https://tiktok.com/@playwordocious' },
       { label: 'Facebook', href: 'https://facebook.com/wordocious' },
       { label: 'Pinterest', href: 'https://pinterest.com/wordocious' },
+      { label: 'Board: Daily Games', href: 'https://www.pinterest.com/wordocious/daily-games/' },
+      { label: 'Board: Meet the Cast', href: 'https://www.pinterest.com/wordocious/meet-the-cast/' },
+      { label: 'Board: Game Guides', href: 'https://www.pinterest.com/wordocious/game-guides/' },
     ],
   },
   {
-    id: 'S3', owner: 'BMT', status: 'pending', doneOn: null,
+    id: 'S3', owner: 'BMT', status: 'in progress', doneOn: null,
     task: 'Bios: one line ("18 daily games. One score.") plus the wordocious.com link carrying a per-channel attribution parameter from admin Marketing. Verify the landing-visit beacons fire.',
-    note: 'Bios and the per-channel /go links are drafted and the links are live (linkedin, producthunt and press added 10-14). Not yet set on the profiles: Claude does that in the founder\'s Chrome once ready; add each live bio URL below.',
-    links: [{ label: 'Channel links and clicks (Marketing)', href: '/admin/marketing' }],
+    note: 'Live 10-14 on X, Instagram, TikTok, Facebook and Pinterest, each with its own /go link (TikTok and Facebook carry it in the bio text). Left: Instagram\'s website link can only be added in the phone app (add https://wordocious.com/go/instagram under Edit profile > Links); Threads, YouTube and LinkedIn wait for those profiles.',
+    links: [
+      { label: 'X', href: 'https://x.com/wordocious' },
+      { label: 'Instagram', href: 'https://instagram.com/playwordocious' },
+      { label: 'TikTok', href: 'https://tiktok.com/@playwordocious' },
+      { label: 'Facebook', href: 'https://facebook.com/wordocious' },
+      { label: 'Pinterest', href: 'https://pinterest.com/wordocious' },
+      { label: 'Channel links and clicks (Marketing)', href: '/admin/marketing' },
+    ],
     kit: ['bios'],
   },
   {
@@ -271,6 +281,11 @@ export interface AccountChange { date: string; channel: string; change: string }
 
 /** Live changes made on the real accounts, newest first. Append at the top whenever an account is touched. */
 export const PLAN_ACCOUNT_LOG: readonly AccountChange[] = [
+  { date: '2026-10-14', channel: 'Pinterest', change: 'Boards created: Daily Games, Meet the Cast, Game Guides. Profile About rewritten; website https://wordocious.com/go/pinterest.' },
+  { date: '2026-10-14', channel: 'Facebook', change: 'Bio: "18 daily games. One score. Bring your family. Play free at wordocious.com/go/facebook".' },
+  { date: '2026-10-14', channel: 'TikTok', change: 'Bio: "18 daily games. One score. A cast with opinions. wordocious.com/go/tiktok" (no clickable link field on this account yet).' },
+  { date: '2026-10-14', channel: 'Instagram', change: 'Bio: "18 daily games. One score. A cast with opinions. Free. Link below." Website link pending (phone app only).' },
+  { date: '2026-10-14', channel: 'X', change: 'Bio: "18 daily games. One score. Free on web, iOS and Android. Your move." Website already /go/x.' },
   { date: '2026-10-14', channel: 'Marketing', change: 'Tracked links added for LinkedIn, Product Hunt and press (/go/linkedin, /go/producthunt, /go/press); the other eight channel links already existed.' },
   { date: '2026-10-14', channel: 'Pinterest', change: 'JP invited as Manager (jp@pattersonlp.com).' },
   { date: '2026-10-14', channel: 'TikTok', change: 'TikTok Business Center created and JP invited.' },
