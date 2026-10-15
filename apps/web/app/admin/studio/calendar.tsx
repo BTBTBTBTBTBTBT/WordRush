@@ -34,7 +34,7 @@ function Chip({ post, compact, onDragStart }: { post: CalPost; compact: boolean;
     >
       {post.thumb ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={post.thumb} alt="" className={`${compact ? 'w-6 h-7 sm:w-7 sm:h-8' : 'w-8 h-10'} shrink-0 rounded-md object-cover bg-purple-100`} draggable={false} />
+        <img src={post.thumb} alt="" className={`${compact ? 'w-6 h-7 sm:w-7 sm:h-8' : 'w-8 h-10'} shrink-0 rounded-md object-contain bg-purple-100`} draggable={false} />
       ) : (
         <span className={`${compact ? 'w-6 h-7' : 'w-8 h-10'} shrink-0 rounded-md bg-purple-100`} />
       )}
