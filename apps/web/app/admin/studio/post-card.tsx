@@ -106,14 +106,14 @@ export function PostCard({
       </div>
 
       <div className="p-3 grid gap-3 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+        <div className="flex items-start gap-1.5 overflow-x-auto no-scrollbar">
           {shown.map((m) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={m.path}
               src={urls[m.path] ?? m.path}
               alt={`${post.title} (${info.label}, ${m.width} × ${m.height})`}
-              className="w-full max-w-[220px] mx-auto rounded-xl bg-purple-50 object-cover"
+              className="w-full h-auto self-start max-w-[220px] mx-auto rounded-xl bg-purple-50 object-contain"
               style={{ aspectRatio: `${m.width} / ${m.height}` }}
             />
           ))}
