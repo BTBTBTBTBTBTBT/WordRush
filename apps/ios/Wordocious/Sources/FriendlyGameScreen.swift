@@ -1505,18 +1505,28 @@ struct FriendlyGameScreen: View {
         let mine = w.by == me
         let side = mine ? FriendsKit.purple : FriendsKit.amber
         let green = FriendsKit.tileAccent(.chain)
-        return HStack(spacing: 4) {
-            ForEach(letters.indices, id: \.self) { i in
-                let glow = newest && i == letters.count - 1
-                // §B1 glossy tiles in the player's color (purple yours, gold theirs);
-                // the newest word's last letter glows green (the next word starts with it).
-                PocketTile(face: mine ? .correct : .present, letter: letters[i], width: 30,
-                           glow: glow ? green : .clear, glowAmount: glow ? 1 : 0, pop: newest && !chainNoPop)
-                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .stroke(glow ? green : .clear, lineWidth: 2.5).padding(.bottom, 2))
-                    .scaleEffect(glow ? 1.08 : 1)
+        return HStack(spacing: 6) {
+            // Words run 5–15 letters: the tiles shrink to the row's width (max 30) so a long word never pushes the
+            // whole screen wider than the phone (Johnny 10-15: an 11-letter ESTABLISHED hid backspace off-screen).
+            GeometryReader { geo in
+                let n = max(letters.count, 1)
+                let gap: CGFloat = n > 9 ? 3 : 4
+                let t = min(30, (geo.size.width - gap * CGFloat(n - 1)) / CGFloat(n))
+                HStack(spacing: gap) {
+                    ForEach(letters.indices, id: \.self) { i in
+                        let glow = newest && i == letters.count - 1
+                        // §B1 glossy tiles in the player's color (purple yours, gold theirs);
+                        // the newest word's last letter glows green (the next word starts with it).
+                        PocketTile(face: mine ? .correct : .present, letter: letters[i], width: t,
+                                   glow: glow ? green : .clear, glowAmount: glow ? 1 : 0, pop: newest && !chainNoPop)
+                            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .stroke(glow ? green : .clear, lineWidth: 2.5).padding(.bottom, 2))
+                            .scaleEffect(glow ? 1.08 : 1)
+                    }
+                }
+                .frame(width: geo.size.width, height: geo.size.height, alignment: .leading)
             }
-            Spacer(minLength: 6)
+            .frame(height: 36)
             PocketBubble(text: "+\(w.points)", color: side, size: 15, palette: PlayerTint.platePalette(lightInk: FriendsInk.dark), fixed: true)
                 .padding(.horizontal, 9).frame(minHeight: 26)
             .friendsChip(side)
