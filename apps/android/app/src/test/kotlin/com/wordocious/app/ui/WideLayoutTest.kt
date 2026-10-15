@@ -23,7 +23,7 @@ class WideLayoutTest {
         assertEquals(0f, WideLayout.sideGutter(600f, WideLayout.GAME_COLUMN_DP), 0.001f)
         assertEquals(600f, WideLayout.columnWidth(600f, WideLayout.PAGE_COLUMN_DP), 0.001f)
         // A 10" tablet in landscape.
-        assertEquals(640f, WideLayout.columnWidth(1280f, WideLayout.GAME_COLUMN_DP), 0.001f)
+        assertEquals(1100f, WideLayout.columnWidth(1280f, WideLayout.GAME_COLUMN_DP), 0.001f) // tablet slice 5: games use the wide page
         assertEquals(600f, WideLayout.columnWidth(1280f, WideLayout.PAGE_COLUMN_DP), 0.001f)
         assertEquals(340f, WideLayout.sideGutter(1280f, WideLayout.PAGE_COLUMN_DP), 0.001f)
     }
