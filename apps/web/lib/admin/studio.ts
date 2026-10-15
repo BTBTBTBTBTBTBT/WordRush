@@ -63,7 +63,39 @@ export function isProvider(p: unknown): p is Provider {
 
 /* --------------------------------------------------------------- rows */
 
-export interface SocialMedia { size: MediaSize; src: 'public' | 'bucket'; path: string; width: number; height: number }
+/**
+ * One media entry. The three image sizes are JPEGs. A 'video' entry is an MP4 (mime 'video/mp4') with an optional
+ * poster JPEG (`poster`, a path in the same `src`). Video posting is not built: the publisher ignores 'video'
+ * entries (see publishableImages) and the card / calendar only show them.
+ */
+export interface SocialMedia {
+  size: MediaSize | 'video';
+  src: 'public' | 'bucket';
+  path: string;
+  width: number;
+  height: number;
+  mime?: 'video/mp4';
+  poster?: string;
+}
+
+export const VIDEO_MIME = 'video/mp4';
+export const isVideo = (m: Pick<SocialMedia, 'size'>): boolean => m.size === 'video';
+
+/**
+ * The images the publisher may send to a platform: that platform's size, else portrait. 'video' entries are NEVER
+ * included (a video must not go out as an image, and video posting is not built yet).
+ */
+export function publishableImages(media: readonly SocialMedia[], size: MediaSize): SocialMedia[] {
+  const images = media.filter((m) => !isVideo(m));
+  const own = images.filter((m) => m.size === size);
+  return own.length ? own : images.filter((m) => m.size === 'portrait');
+}
+
+/** The picture a card or calendar chip shows for a platform size: that size, else the first image, else a video's poster. */
+export function previewMedia(media: readonly SocialMedia[], size: MediaSize = 'portrait'): SocialMedia | null {
+  const images = media.filter((m) => !isVideo(m));
+  return images.find((m) => m.size === size) ?? images[0] ?? media.find(isVideo) ?? null;
+}
 
 export interface SocialPost {
   id: string;
@@ -481,12 +513,13 @@ export function parseEditBody(body: unknown): { post_id: string; edit: ContentEd
   return { post_id: b.post_id, edit };
 }
 
+const safePath = (p: unknown): p is string => typeof p === 'string' && /^[A-Za-z0-9/_.-]{1,200}$/.test(p) && !p.includes('..');
+
 function isMedia(m: unknown): m is SocialMedia {
   const x = m as SocialMedia;
-  return !!x && (x.size === 'portrait' || x.size === 'pin' || x.size === 'landscape')
-    && (x.src === 'public' || x.src === 'bucket')
-    && typeof x.path === 'string' && /^[A-Za-z0-9/_.-]{1,200}$/.test(x.path) && !x.path.includes('..')
-    && Number.isInteger(x.width) && Number.isInteger(x.height);
+  if (!x || !(x.src === 'public' || x.src === 'bucket') || !safePath(x.path) || !Number.isInteger(x.width) || !Number.isInteger(x.height)) return false;
+  if (x.size === 'video') return x.mime === VIDEO_MIME && (x.poster === undefined || safePath(x.poster));
+  return (x.size === 'portrait' || x.size === 'pin' || x.size === 'landscape') && x.mime === undefined && x.poster === undefined;
 }
 
 export function parseScheduleBody(body: unknown):

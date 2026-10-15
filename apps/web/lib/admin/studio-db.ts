@@ -64,12 +64,16 @@ export async function loadAccountStatus(admin: Admin): Promise<AccountStatus[]> 
 /** A browser-usable URL for each media item: public paths as-is, bucket objects signed for an hour. */
 export async function mediaUrls(admin: Admin, media: readonly SocialMedia[], origin: string | null, seconds = 3600): Promise<Record<string, string>> {
   const out: Record<string, string> = {};
-  const bucket = media.filter((m) => m.src === 'bucket').map((m) => m.path);
+  // A video's poster lives beside it (same src) and needs a URL of its own.
+  const bucket = media.filter((m) => m.src === 'bucket').flatMap((m) => (m.poster ? [m.path, m.poster] : [m.path]));
   if (bucket.length) {
     const { data } = await admin.storage.from('social-media').createSignedUrls(Array.from(new Set(bucket)), seconds);
     for (const row of data ?? []) if (row.path && row.signedUrl) out[row.path] = row.signedUrl;
   }
-  for (const m of media) if (m.src === 'public') out[m.path] = origin ? `${origin.replace(/\/$/, '')}${m.path}` : m.path;
+  for (const m of media) {
+    if (m.src !== 'public') continue;
+    for (const p of m.poster ? [m.path, m.poster] : [m.path]) out[p] = origin ? `${origin.replace(/\/$/, '')}${p}` : p;
+  }
   return out;
 }
 

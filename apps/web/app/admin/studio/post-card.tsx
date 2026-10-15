@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { ReviewerDisc, TileActions } from '../art/review-panel';
 import {
-  captionBudget, PLATFORM_INFO, PLATFORMS, trackedUrl, zonedInstant, zonedTime, dayKey,
+  captionBudget, isVideo, PLATFORM_INFO, PLATFORMS, trackedUrl, zonedInstant, zonedTime, dayKey,
   type DisplayStatus, type Platform, type ReviewState, type Reviewer, type SocialPost, type SocialReview, type SocialTarget,
 } from '@/lib/admin/studio';
 import type { StudioPayload } from '@/lib/admin/studio-types';
@@ -46,8 +46,10 @@ export function PostCard({
   useEffect(() => { if (!live.some((t) => t.platform === tab) && live[0]) setTab(live[0].platform); }, [live, tab]);
   const target = live.find((t) => t.platform === tab) ?? null;
   const info = PLATFORM_INFO[tab];
-  const media = post.media.filter((m) => m.size === info.size);
-  const shown = media.length ? media : post.media.slice(0, 1);
+  const video = post.media.find(isVideo) ?? null;
+  const images = post.media.filter((m) => !isVideo(m));
+  const media = images.filter((m) => m.size === info.size);
+  const shown = video ? [] : media.length ? media : images.slice(0, 1);
   const done = post.status !== 'draft';
   const look = STATUS_LOOK[status];
   const mine = me ? reviews.find((r) => r.reviewer_id === me && r.version === post.version)?.decision ?? null : null;
@@ -107,6 +109,23 @@ export function PostCard({
 
       <div className="p-3 grid gap-3 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
         <div className="flex items-start gap-1.5 overflow-x-auto no-scrollbar">
+          {video && (
+            // Muted + looping + inline so it plays on a phone without taking over; controls to pause or unmute.
+            // Real 9:16 shape: object-contain inside the box, never stretched or cropped (see 32ec918d4).
+            <video
+              key={video.path}
+              src={urls[video.path] ?? video.path}
+              poster={video.poster ? urls[video.poster] ?? video.poster : undefined}
+              aria-label={`${post.title} (video, ${video.width} × ${video.height})`}
+              className="w-full h-auto self-start max-w-[220px] mx-auto rounded-xl bg-purple-50 object-contain"
+              style={{ aspectRatio: `${video.width} / ${video.height}` }}
+              muted
+              loop
+              playsInline
+              controls
+              preload="metadata"
+            />
+          )}
           {shown.map((m) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img

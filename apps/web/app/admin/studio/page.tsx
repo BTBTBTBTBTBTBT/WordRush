@@ -11,7 +11,7 @@ import { PlanDayCard, PlanTab } from './plan-view';
 import { planDay } from '@/lib/admin/social-plan';
 import { artSrc, PAGE_SCENES } from '@/lib/art';
 import {
-  addDays, applyEdit, calendarFlags, dayKey, displayStatus, groupByDay, moveToDay, PLATFORM_INFO, PROVIDERS, releaseBands, reviewState,
+  addDays, applyEdit, calendarFlags, dayKey, displayStatus, groupByDay, moveToDay, PLATFORM_INFO, previewMedia, PROVIDERS, releaseBands, reviewState,
   seasonBands, type Platform, type Provider, type SocialPost, type SocialReview, type SocialTarget,
 } from '@/lib/admin/studio';
 import type { StudioPayload } from '@/lib/admin/studio-types';
@@ -85,8 +85,10 @@ export default function SocialStudioPage() {
   const states = useMemo(() => new Map(posts.map((p) => [p.id, reviewState(p, reviews, reviewers)])), [posts, reviews, reviewers]);
   const statusOf = useCallback((p: SocialPost) => displayStatus(p, states.get(p.id)!, reviewers, paused), [states, reviewers, paused]);
   const thumbOf = useCallback((p: SocialPost) => {
-    const m = p.media.find((x) => x.size === 'portrait') ?? p.media[0];
-    return m ? urls[m.path] ?? m.path : null;
+    const m = previewMedia(p.media);
+    if (!m) return null;
+    const src = m.size === 'video' ? m.poster : m.path; // a video with no poster has no still to show
+    return src ? urls[src] ?? src : null;
   }, [urls]);
   const byDay = useMemo(() => {
     const g = groupByDay(posts);

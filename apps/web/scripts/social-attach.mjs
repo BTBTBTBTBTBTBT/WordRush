@@ -7,6 +7,8 @@
 //   node apps/web/scripts/social-attach.mjs <post-id> <image.png> --size portrait,pin   only these sizes (others kept as they are)
 //   node apps/web/scripts/social-attach.mjs --manifest media.json                       [{ "post_id": "...", "files": { "portrait": "a.png", "landscape": "b.png", "pin": "c.png" } }]
 //                                                                                        ("files" may also hold "source": one image for every size; paths are relative to the manifest)
+//   node apps/web/scripts/social-attach.mjs <post-id> --video clip.mp4 --poster cover.jpg   a 9:16 video (uploaded as-is, no transcode) + its poster JPEG;
+//                                                                                        existing media is kept; images are NOT touched. Stored at posts/<id>/video.mp4 + video-poster.jpg
 //   node apps/web/scripts/social-attach.mjs --clear <post-id>                           media back to [] (bucket files removed)
 //
 // Options: --dry-run   render the JPEGs to a temp folder and print the media JSON; touches nothing (no network)
@@ -33,19 +35,21 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function usage(msg) {
   if (msg) console.error(`social-attach: ${msg}\n`);
-  console.error(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 20).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
+  console.error(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 22).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
   process.exit(msg ? 1 : 0);
 }
 
 /* ------------------------------------------------------------------ args */
 const argv = process.argv.slice(2);
-const opts = { dry: false, env: null, manifest: null, clear: false, only: null, files: {}, source: null, postId: null };
+const opts = { video: null, poster: null, dry: false, env: null, manifest: null, clear: false, only: null, files: {}, source: null, postId: null };
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   if (a === '--dry-run') opts.dry = true;
   else if (a === '--env') opts.env = argv[++i];
   else if (a === '--manifest') opts.manifest = argv[++i];
   else if (a === '--clear') opts.clear = true;
+  else if (a === '--video') opts.video = argv[++i];
+  else if (a === '--poster') opts.poster = argv[++i];
   else if (a === '--size') opts.only = String(argv[++i] ?? '').split(',').filter(Boolean);
   else if (a === '-h' || a === '--help') usage();
   else if (a.startsWith('--') && SIZES.includes(a.slice(2))) opts.files[a.slice(2)] = argv[++i];
@@ -110,6 +114,9 @@ if (opts.manifest) {
     const { source, ...files } = e.files ?? {};
     jobs.push({ postId: e.post_id, files, source, only: opts.only, base: dirname(file) });
   }
+} else if (opts.video) {
+  if (!opts.postId) usage('give a post id (uuid)');
+  jobs.push({ postId: opts.postId, video: resolve(opts.video), poster: opts.poster ? resolve(opts.poster) : null });
 } else if (opts.clear) {
   if (!opts.postId && opts.source && UUID.test(opts.source)) opts.postId = opts.source;
   if (!opts.postId) usage('--clear needs a post id');
@@ -170,6 +177,8 @@ async function run(job) {
     return console.log(`${job.postId}: media cleared (version ${v}, ${paths.length} files removed)`);
   }
 
+  if (job.video) return runVideo(job);
+
   const sources = plan(job, job.base);
   const tag = randomBytes(4).toString('hex');
   const rendered = [];
@@ -202,4 +211,36 @@ async function run(job) {
   const old = (post.media ?? []).filter((m) => m.src === 'bucket' && fresh.some((f) => f.size === m.size)).map((m) => m.path);
   if (old.length) await admin.storage.from('social-media').remove(old);
   console.log(`OK ${job.postId}: ${fresh.map((f) => f.size).join(', ')} attached (version ${v}); both approvals reset`);
+}
+
+/** 1080x1920 video + poster. The mp4 goes up byte for byte; the poster is re-encoded to a JPEG (flattened, mozjpeg q88). */
+async function runVideo(job) {
+  if (!existsSync(job.video)) throw new Error(`${job.video} does not exist`);
+  if (job.poster && !existsSync(job.poster)) throw new Error(`${job.poster} does not exist`);
+  const mp4 = readFileSync(job.video);
+  if (mp4.length < 12 || mp4.toString('latin1', 4, 8) !== 'ftyp') throw new Error('that is not an mp4 (no ftyp box)');
+  if (mp4.length > 20 * 1024 * 1024) throw new Error('video is over 20 MB (the bucket limit); trim it first');
+  let poster = null;
+  if (job.poster) poster = await sharp(readFileSync(job.poster)).rotate().flatten({ background: '#ffffff' }).jpeg({ quality: 88, mozjpeg: true }).toBuffer();
+  const base = `posts/${job.postId}`;
+  const entry = { size: 'video', src: 'bucket', path: `${base}/video.mp4`, width: 1080, height: 1920, mime: 'video/mp4', ...(poster ? { poster: `${base}/video-poster.jpg` } : {}) };
+
+  if (opts.dry) {
+    console.log(`DRY ${job.postId}: video ${(mp4.length / 1024 / 1024).toFixed(1)} MB${poster ? `, poster ${(poster.length / 1024).toFixed(0)} KB` : ''}`);
+    console.log(JSON.stringify(entry));
+    return;
+  }
+
+  const post = await loadDraft(job.postId);
+  // Fixed paths: a re-run replaces the file in place (upsert), so there is nothing stale to clean up.
+  const up = await admin.storage.from('social-media').upload(entry.path, mp4, { contentType: 'video/mp4', upsert: true });
+  if (up.error) throw new Error(`upload video: ${up.error.message}`);
+  if (poster) {
+    const pu = await admin.storage.from('social-media').upload(entry.poster, poster, { contentType: 'image/jpeg', upsert: true });
+    if (pu.error) throw new Error(`upload poster: ${pu.error.message}`);
+  }
+  const next = [...(post.media ?? []).filter((m) => m.size !== 'video'), entry];
+  if (JSON.stringify(next) === JSON.stringify(post.media ?? [])) return console.log(`${job.postId}: video already attached (files refreshed)`);
+  const v = await saveMedia(post, next);
+  console.log(`OK ${job.postId}: video${poster ? ' + poster' : ''} attached (version ${v}); both approvals reset`);
 }

@@ -3,7 +3,7 @@ import { getAdminSupabase } from '@/lib/supabase-admin';
 import { stampHeartbeat } from '@/lib/heartbeat';
 import { loadPaused, loadStudioReviewers, mediaUrls, POST_COLUMNS, REVIEW_COLUMNS, TARGET_COLUMNS } from '@/lib/admin/studio-db';
 import {
-  CLAIM_STALE_MS, finalText, MAX_ATTEMPTS, PLATFORM_INFO, publishEligibility, retryDelayMs, reviewState, rollupStatus, trackedUrl,
+  CLAIM_STALE_MS, finalText, MAX_ATTEMPTS, PLATFORM_INFO, publishableImages, publishEligibility, retryDelayMs, reviewState, rollupStatus, trackedUrl,
   type Platform, type SocialPost, type SocialReview, type SocialTarget,
 } from '@/lib/admin/studio';
 import { PUBLISHERS, providerEnv, scrub, type AccountRow } from '@/lib/social/adapters';
@@ -103,8 +103,8 @@ export async function GET(req: NextRequest) {
           }
         }
         const size = PLATFORM_INFO[target.platform].size;
-        const media = post.media.filter((m) => m.size === size);
-        const pick = media.length ? media : post.media.filter((m) => m.size === 'portrait');
+        // Images only: a 'video' entry is never sent (video posting is not built; those posts stay paused).
+        const pick = publishableImages(post.media, size);
         const urls = await mediaUrls(admin, pick, SITE, 3 * 3600);
         const imageUrls = pick.map((m) => urls[m.path]).filter(Boolean);
         if (!imageUrls.length) throw new Error('No image for this platform');

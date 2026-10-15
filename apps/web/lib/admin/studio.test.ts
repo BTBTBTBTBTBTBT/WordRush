@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { currentSeason } from '@wordle-duel/core';
 import {
   addDays, applyEdit, calendarFlags, captionBudget, countChars, dayKey, displayStatus, finalText, groupByDay, monthGrid, moveToDay,
-  parseEditBody, parseReviewBody, parseScheduleBody, publishEligibility, reviewState, rollupStatus, seasonBands, targetSlug, weekOf,
-  zonedInstant, type Platform, type SocialPost, type SocialReview, type SocialTarget,
+  parseEditBody, parseReviewBody, parseScheduleBody, previewMedia, publishableImages, publishEligibility, reviewState, rollupStatus, seasonBands, targetSlug, weekOf,
+  zonedInstant, type Platform, type SocialMedia, type SocialPost, type SocialReview, type SocialTarget,
 } from './studio';
 
 const BMT = 'b0000000-0000-4000-8000-000000000001';
@@ -184,5 +184,35 @@ describe('request validation', () => {
     expect(parseScheduleBody({ post_id: POST_ID, platforms: ['x', 'x', 'threads'] })).toMatchObject({ platforms: ['x', 'threads'] });
     expect(parseScheduleBody({ post_id: POST_ID })).toHaveProperty('error');
     expect(parseScheduleBody({ post_id: POST_ID, scheduled_at: 'tomorrow-ish' })).toHaveProperty('error');
+  });
+});
+
+describe('video media', () => {
+  const img = (size: SocialMedia['size'], w = 1080, h = 1350): SocialMedia => ({ size, src: 'bucket', path: `posts/${POST_ID}/${size}.jpg`, width: w, height: h });
+  const vid: SocialMedia = { size: 'video', src: 'bucket', path: `posts/${POST_ID}/video.mp4`, width: 1080, height: 1920, mime: 'video/mp4', poster: `posts/${POST_ID}/video-poster.jpg` };
+
+  it('edit bodies accept a video entry with a poster and refuse a malformed one', () => {
+    expect(parseEditBody({ post_id: POST_ID, media: [vid] })).toHaveProperty('edit.media');
+    expect(parseEditBody({ post_id: POST_ID, media: [{ ...vid, poster: undefined }] })).toHaveProperty('edit.media');
+    expect(parseEditBody({ post_id: POST_ID, media: [{ ...vid, mime: undefined }] })).toHaveProperty('error');
+    expect(parseEditBody({ post_id: POST_ID, media: [{ ...vid, mime: 'video/webm' }] })).toHaveProperty('error');
+    expect(parseEditBody({ post_id: POST_ID, media: [{ ...vid, poster: '../x.jpg' }] })).toHaveProperty('error');
+    expect(parseEditBody({ post_id: POST_ID, media: [{ ...img('portrait'), mime: 'video/mp4' }] })).toHaveProperty('error');
+  });
+
+  it('the publisher never sends a video as an image', () => {
+    for (const size of ['portrait', 'pin', 'landscape'] as const) {
+      expect(publishableImages([vid], size)).toEqual([]);
+      expect(publishableImages([vid, img('portrait'), img('pin', 1000, 1500)], size).some((m) => m.size === 'video')).toBe(false);
+    }
+    expect(publishableImages([vid, img('portrait'), img('pin', 1000, 1500)], 'pin').map((m) => m.size)).toEqual(['pin']);
+    // a size with no image falls back to portrait, still without the video
+    expect(publishableImages([vid, img('portrait')], 'landscape').map((m) => m.size)).toEqual(['portrait']);
+  });
+
+  it('previews prefer images, then a video', () => {
+    expect(previewMedia([vid, img('portrait')])?.size).toBe('portrait');
+    expect(previewMedia([vid])?.size).toBe('video');
+    expect(previewMedia([])).toBeNull();
   });
 });

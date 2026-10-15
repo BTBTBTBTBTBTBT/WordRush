@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Social Studio routes are admin-only: when verifyAdmin refuses, every handler must return that refusal before
@@ -95,5 +97,13 @@ describe('publisher cron', () => {
     const res = await cron(new NextRequest('http://localhost/api/cron/social-publish', { headers: { authorization: 'Bearer wrong' } }));
     expect(res.status).toBe(401);
     expect(getAdminSupabase).not.toHaveBeenCalled();
+  });
+});
+
+describe('publisher video guard', () => {
+  it('picks its images through publishableImages (which drops video entries), never straight from post.media', () => {
+    const src = readFileSync(join(__dirname, '../../cron/social-publish/route.ts'), 'utf8');
+    expect(src).toContain('publishableImages(post.media');
+    expect(src).not.toMatch(/post\.media\.filter/);
   });
 });
