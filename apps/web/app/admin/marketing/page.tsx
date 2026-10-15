@@ -77,8 +77,8 @@ const SOCIAL_REGISTRY: {
 }[] = [
   { platform: 'X', handle: '@wordocious', url: 'https://x.com/wordocious', owner: 'bt@wordocious.com', status: 'live', note: 'JP (@JassonPatterson) admin invite pending: he must allow Delegate invites' },
   { platform: 'TikTok', handle: '@playwordocious', url: 'https://tiktok.com/@playwordocious', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious held by a dormant account: claim via trademark once registered (renamed 10-14; next rename after 30 days). Linked to TikTok Business Center ShowLoud LLC; JP invited as admin' },
-  { platform: 'Instagram', handle: '@playwordocious', url: 'https://instagram.com/playwordocious', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious held by a dormant account: claim via trademark once registered (renamed 10-14). Professional (Business) account, connected to the Facebook Page' },
-  { platform: 'Facebook', handle: 'facebook.com/wordocious', url: 'https://facebook.com/wordocious', owner: 'Brian (admin)', status: 'live', note: 'username set 10-14; @playwordocious connected to the Page (Page admins manage IG too)' },
+  { platform: 'Instagram', handle: '@playwordocious', url: 'https://instagram.com/playwordocious', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious held by a dormant account: claim via trademark once registered (renamed 10-14). Professional (Business) account, connected to the Facebook Page; JP gets access through the Page' },
+  { platform: 'Facebook', handle: 'facebook.com/wordocious', url: 'https://facebook.com/wordocious', owner: 'Brian (admin)', status: 'live', note: 'username set 10-14; @playwordocious connected to the Page (Page admins manage IG too). JP Page access pending: needs his Facebook profile link (his email finds no profile)' },
   { platform: 'Pinterest', handle: 'wordocious', url: 'https://pinterest.com/wordocious', owner: 'bt@wordocious.com', status: 'live', note: 'JP invited as Manager (jp@pattersonlp.com) 10-14' },
   { platform: 'Threads', handle: '@playwordocious', url: null, owner: 'via Instagram', status: 'pending', note: 'auto-claims on first Threads sign-in' },
   { platform: 'Reddit', handle: 'u/wordocious', url: null, owner: 'bt@wordocious.com', status: 'pending', note: 'create via phone app account switcher' },
@@ -189,6 +189,23 @@ export default function AdminMarketingPage() {
           The anti-sprawl ledger: every account, its owning login, and its state. Bios all point at
           the /go link for their channel.
         </p>
+        <ul className="mb-3 space-y-1 text-xs font-semibold text-gray-600">
+          <li>
+            <span className="font-black text-gray-800">Content plan:</span> JP&apos;s 45-day plan (Oct 13 to Nov 29, launch Oct 16)
+            and its draft posts live in{' '}
+            <a href="/admin/studio?tab=plan" className="font-bold text-violet-700 hover:underline">Social Studio</a>.
+            Posts go out by themselves once BMT and JP both approve.
+          </li>
+          <li>
+            <span className="font-black text-gray-800">Profile pictures:</span> every account uses icon B (the W mascot) since
+            10-14; Facebook cover and X header refreshed the same day.
+          </li>
+          <li>
+            <span className="font-black text-gray-800">Claiming @wordocious (Instagram, TikTok):</span> keep dated evidence now,
+            report with the USPTO serial number once filed, refile with the registration number, then rename
+            @playwordocious (plan: bible §385).
+          </li>
+        </ul>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-[10px] font-black tracking-wider text-gray-400 border-b border-gray-100">
