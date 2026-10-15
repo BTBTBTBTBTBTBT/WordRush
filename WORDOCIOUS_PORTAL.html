@@ -290,7 +290,7 @@
 
 <!-- 8 -->
 <h2 id="backend"><span class="num">8</span><span class="t">Backend (Supabase)</span><img class="mx" src="/mascots/u.png" alt="" width="34" height="34" loading="lazy"></h2>
-<p>Project ref <code>eniiqqsxpmuyrspvepiw</code> &mdash; Postgres + Auth + RLS, on the <strong>Pro plan with Micro compute since Oct 3, 2026</strong> (daily backups, leaked-password protection, spend cap on). There is no bespoke app server for game data; clients talk to Supabase directly under row-level security, and privileged writes go through Next.js API routes using the service-role key.</p>
+<p>Project ref <code>eniiqqsxpmuyrspvepiw</code> &mdash; Postgres + Auth + RLS, on the <strong>Pro plan ($25/month) with Micro compute since Oct 3, 2026</strong> (daily backups, leaked-password protection, spend cap on). There is no bespoke app server for game data; clients talk to Supabase directly under row-level security, and privileged writes go through Next.js API routes using the service-role key.</p>
 <ul>
   <li><strong>Auth:</strong> Google OAuth, Sign in with Apple (iOS), email + password with confirmation and reset. Guests can play without an account; their results live only on the device.</li>
   <li><strong>Core tables:</strong> <code>profiles</code> (identity, <code>role</code>, <code>is_pro</code> and <code>pro_expires_at</code> &mdash; the single Pro entitlement all three clients read), <code>daily_results</code> (stored per-day scores behind every leaderboard), <code>matches</code>, <code>medals</code>, <code>streak_shields</code>, <code>daily_bonuses</code>, <code>device_tokens</code>, <code>announcements</code>, <code>reports</code>, <code>store_webhook_events</code> (payments idempotency ledger).</li>
@@ -422,7 +422,7 @@
 <h2 id="integrations"><span class="num">19</span><span class="t">Integrations directory</span><img class="mx" src="/mascots/i.png" alt="" width="34" height="34" loading="lazy"></h2>
 <div class="rows c3">
   <div><div class="k">Vercel</div><div class="w">Web hosting, crons, env secrets</div><div class="w">project <code>wordocious</code></div></div>
-  <div><div class="k">Supabase</div><div class="w">Auth + Postgres + RLS (Pro plan)</div><div class="w"><code>eniiqqsxpmuyrspvepiw</code></div></div>
+  <div><div class="k">Supabase</div><div class="w">Auth + Postgres + RLS (Pro plan, $25/month)</div><div class="w"><code>eniiqqsxpmuyrspvepiw</code></div></div>
   <div><div class="k">Railway</div><div class="w">VS socket server</div><div class="w">auto-deploy from main</div></div>
   <div><div class="k">GitHub</div><div class="w">Monorepo, CI, monthly validator</div><div class="w"><code>BTBTBTBTBTBTBT/WordRush</code></div></div>
   <div><div class="k">App Store Connect</div><div class="w">iOS distribution, IAP, sales reports</div><div class="w">app <code>6775966055</code>, team <code>Q32F6GRDYG</code></div></div>

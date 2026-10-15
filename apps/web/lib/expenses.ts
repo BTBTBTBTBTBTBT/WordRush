@@ -69,9 +69,9 @@ export const EXPENSES: ExpenseItem[] = [
   {
     service: 'Supabase',
     purpose: 'Postgres + Auth + RLS (eniiqqsxpmuyrspvepiw)',
-    plan: 'Free Plan',
-    monthly: 0,
-    note: 'Verified in dashboard 2026-08-01 (org BTBTBTBTBTBTBT, 5 projects). Free caps: 500MB DB / 50k MAU, and NO point-in-time backups — upgrade to Pro ($25/mo) is the first bill worth paying once revenue starts.',
+    plan: 'Pro Plan (Micro compute)',
+    monthly: 25,
+    note: 'Pro since 2026-10-03, founder-confirmed $25/mo (2026-10-14). Needed after the 10-02 outage (the free nano instance was CPU-throttled). Includes daily backups, leaked-password protection, the 60 s idle-transaction timeout and a spend cap; the Micro compute add-on is covered by the plan\'s compute credit. Usage beyond the Pro quotas would bill extra, but the spend cap is on.',
     verified: true,
     billingUrl: 'https://supabase.com/dashboard/org/_/billing',
     account: 'personal handle',
