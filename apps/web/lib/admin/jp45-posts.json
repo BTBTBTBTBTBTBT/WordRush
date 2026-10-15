@@ -1,0 +1,3704 @@
+{
+ "_about": "JP's 45-day plan as Social Studio drafts (source of truth). Generated into docs/sql/20261014-jp45-posts.sql by apps/web/scripts/jp45-posts.mjs. Times are America/Chicago. Post ids for the 93 non-video posts come from the plan spec (deterministic); video posts use uuid5 of 'wordocious.com/jp45/video/<date>'. 'note' and 'wotd' are for humans and tests, not stored in the database.",
+ "posts": [
+  {
+   "id": "941ebac0-e641-5626-b087-d8151871ad28",
+   "title": "Teaser 3: Tomorrow",
+   "kind": "teaser",
+   "date": "2026-10-15",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "social package",
+   "beat": "Teaser 3 — \"Tomorrow.\"",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Tomorrow.\n\n18 daily games. One score. Bring your family."
+    },
+    {
+     "platform": "threads",
+     "caption": "Tomorrow.\n\n18 daily games. One score. Bring your family.\n\nFree on web, iOS and Android."
+    }
+   ]
+  },
+  {
+   "id": "79f2e335-7446-51e6-b3dc-9b7c53c6201d",
+   "title": "Pin: How to play Classic",
+   "kind": "pin",
+   "date": "2026-10-15",
+   "time": "13:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/guides/classic",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "Teaser 3 — \"Tomorrow.\"",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "How to play Classic, the free daily word puzzle on Wordocious: find the hidden five-letter word in six guesses. Purple tiles mean the right letter in the right spot, amber tiles mean the right letter in the wrong spot, gray tiles mean the letter is not in the word. A new puzzle every day, with a scoreboard to settle the family argument."
+    }
+   ]
+  },
+  {
+   "id": "c1c193f3-3f14-50d3-8bd1-5a14b16942f4",
+   "title": "Pin: Word card, BANJO",
+   "kind": "pin",
+   "date": "2026-10-15",
+   "time": "15:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/word/2026-09-12",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "Teaser 3 — \"Tomorrow.\"",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Word of the Day: BANJO (noun). A stringed instrument with a round body and a long neck, played by plucking or strumming. Build your vocabulary with a new word every morning on Wordocious, plus the full archive of past words."
+    }
+   ]
+  },
+  {
+   "id": "1c9c3340-1c60-5117-b16b-c572700357f9",
+   "title": "Pin: Cast art, W",
+   "kind": "pin",
+   "date": "2026-10-15",
+   "time": "17:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "Teaser 3 — \"Tomorrow.\"",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Meet W, the leader of the Wordocious cast. Ten letter characters spell WORDOCIOUS, and each one hosts a corner of the app: daily word games, logic puzzles, head-to-head races and more. W runs Classic, the original daily word puzzle."
+    }
+   ]
+  },
+  {
+   "id": "2d17dfbd-7bed-59ea-87a0-f3a303e2f029",
+   "title": "[Needs capture] Teaser reel: 18 games, tomorrow",
+   "kind": "video",
+   "date": "2026-10-15",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "social package",
+   "beat": "Teaser 3 — \"Tomorrow.\"",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 games. One scoreboard. A cast with opinions.\n\nTomorrow.\n\nFollow so you do not miss it."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 games. One scoreboard. A cast with opinions.\n\nTomorrow.\n\nFollow so you do not miss it."
+    }
+   ]
+  },
+  {
+   "id": "1541025f-5785-5f84-a186-bb8458ec6ef4",
+   "title": "Launch day: 18 games, one score",
+   "kind": "launch",
+   "date": "2026-10-16",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "trailer cut from storeShot set",
+   "beat": "LAUNCH DAY — 18 games, one score",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "We built one daily word game so our family could trash-talk each other. Then it got out of hand.\n\nToday: 18 daily games. One score. Free on web, iOS and Android."
+    },
+    {
+     "platform": "threads",
+     "caption": "We built one daily word game so our family could trash-talk each other. Then it got out of hand.\n\nToday: 18 daily games. One score. Live head-to-head. Free on web, iOS and Android.\n\nBring your family."
+    }
+   ]
+  },
+  {
+   "id": "b627ad02-ee5c-52df-b659-a8fa4d5aa2ea",
+   "title": "[Needs capture] Launch trailer (30s)",
+   "kind": "video",
+   "date": "2026-10-16",
+   "time": "10:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "trailer cut from storeShot set",
+   "beat": "LAUNCH DAY — 18 games, one score",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 daily puzzles. One scoreboard. A cast with opinions. Free. Your move.\n\nWordocious is live on web, iOS and Android. Bring your family.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 daily puzzles. One scoreboard. A cast with opinions. Free. Your move.\n\nWordocious is live on web, iOS and Android. Bring your family.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "1eed8608-c764-59bf-843c-18f47cfe2d0c",
+   "title": "Launch day carousel: meet the cast",
+   "kind": "launch",
+   "date": "2026-10-16",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "trailer cut from storeShot set",
+   "beat": "LAUNCH DAY — 18 games, one score",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "18 daily puzzles. One scoreboard. A cast with opinions. Free.\n\nWordocious is live: eight word dailies and ten more puzzles, one account, one streak, one score. Race your family, take on the bots, and find out who really owns the group chat.\n\nYour move. Play free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "We built one daily word game so our family could trash-talk each other. Then it got out of hand.\n\nToday it is 18 daily games, one score, and live head-to-head races, with a ten-character cast hosting every corner. Free on web, iOS and Android.\n\nBring your family."
+    },
+    {
+     "platform": "threads",
+     "caption": "18 daily puzzles. One scoreboard. A cast with opinions. Free.\n\nWordocious is live on web, iOS and Android. Bring your family."
+    }
+   ]
+  },
+  {
+   "id": "419e5ec9-4722-5c89-8894-4b30481f1388",
+   "title": "Halloween reveal: the app got dressed",
+   "kind": "season",
+   "date": "2026-10-17",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "halloween",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "screen recording of season flip",
+   "beat": "HALLOWEEN FLIPS IN-APP (Oct 17-31)",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "We did not update the app. The app got dressed.\n\nHalloween is live through Oct 31: costumes, haunted glass, the works."
+    },
+    {
+     "platform": "threads",
+     "caption": "We did not update the app. The app got dressed.\n\nHalloween is live in Wordocious through Oct 31: costumes for the whole cast, haunted glass on the home board, the works. Open the app and look around."
+    }
+   ]
+  },
+  {
+   "id": "1f09b0db-f9a3-50ae-8070-54e6aa50c299",
+   "title": "[Needs capture] Halloween reveal: the app got dressed",
+   "kind": "video",
+   "date": "2026-10-17",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "screen recording of season flip",
+   "beat": "HALLOWEEN FLIPS IN-APP (Oct 17-31)",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "We did not update the app. The app got dressed.\n\nHalloween is live through Oct 31: costumes, haunted glass, the works.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "We did not update the app. The app got dressed.\n\nHalloween is live through Oct 31: costumes, haunted glass, the works.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "44ffa501-fe29-59bf-bcc3-7bf2057a8ff3",
+   "title": "Sweep Sunday debut",
+   "kind": "ritual",
+   "date": "2026-10-18",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "sweep share card",
+   "beat": "SWEEP SUNDAY debut",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "All 18 dailies. One day. Nobody has swept it yet.\n\nSWEEP SUNDAY starts now. Post your board."
+    },
+    {
+     "platform": "threads",
+     "caption": "All 18 dailies. One day. Nobody has swept it yet.\n\nSWEEP SUNDAY starts now. Finish every daily and share your sweep board. Family record to beat: zero, so far."
+    }
+   ]
+  },
+  {
+   "id": "b49c1d32-6fb1-58a3-a7d0-3a9c132800bb",
+   "title": "Sweep Sunday debut (Facebook)",
+   "kind": "ritual",
+   "date": "2026-10-18",
+   "time": "11:30",
+   "slot": "fb",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "sweep share card",
+   "beat": "SWEEP SUNDAY debut",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "facebook",
+     "caption": "SWEEP SUNDAY starts now.\n\nAll 18 dailies, one day, one sweep board to show for it. Nobody has swept it yet. Set the family record and share your board in the comments."
+    }
+   ]
+  },
+  {
+   "id": "d1103d7d-c962-5bef-93a8-6385dabc8509",
+   "title": "Monday Masters debut",
+   "kind": "ritual",
+   "date": "2026-10-19",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "mon-masters title art",
+   "beat": "MONDAY MASTERS debut",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "New week. Zero points. The crown is open.\n\nMONDAY MASTERS: the weekly race just reset. Come take the seat."
+    },
+    {
+     "platform": "threads",
+     "caption": "New week. Zero points. The crown is open.\n\nMONDAY MASTERS: the weekly race just reset, and everyone starts level. Play your dailies, climb the board and see who holds the crown by Sunday."
+    }
+   ]
+  },
+  {
+   "id": "a7c6a65f-1a96-5689-857e-551128d44e12",
+   "title": "Word of the Day quiz debut: PUNCH",
+   "kind": "wotd",
+   "date": "2026-10-20",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "storeShot capture",
+   "beat": "WOTD quiz day",
+   "note": null,
+   "wotd": {
+    "date": "2026-10-20",
+    "word": "PUNCH",
+    "answer": "a"
+   },
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Word of the Day: PUNCH (noun)\n\n(a) A hit with the fist\n(b) The loose, slack part of a rope\n(c) The spelling-code name for the number 3\n\nNo lookups. Answer in the replies tonight."
+    },
+    {
+     "platform": "threads",
+     "caption": "Word of the Day: PUNCH (noun)\n\n(a) A hit with the fist\n(b) The loose, slack part of a rope\n(c) The spelling-code name for the number 3\n\nNo lookups. Pick one, then take the same quiz in the app. Answer in the replies tonight."
+    }
+   ]
+  },
+  {
+   "id": "bd70e182-2105-56a4-9fe5-7fd43a551a45",
+   "title": "[Needs capture] 18 Days ep.1: OctoWord",
+   "kind": "video",
+   "date": "2026-10-20",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "storeShot capture",
+   "beat": "WOTD quiz day",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 1: OctoWord.\n\nEight boards, one keyboard. Every guess lands on all eight at once, and you get 13 to clear them. Watch the cascade.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 1: OctoWord.\n\nEight boards, one keyboard. Every guess lands on all eight at once, and you get 13 to clear them. Watch the cascade.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "570c3a01-096d-558e-8933-244b394a4662",
+   "title": "Muddle Wednesday debut",
+   "kind": "muddle",
+   "date": "2026-10-21",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "Muddle cartoon bank",
+   "beat": "MUDDLE WEDNESDAY debut",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's Muddle: four words, one punchline, one cartoon. Caption it before you scroll."
+    },
+    {
+     "platform": "threads",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's Muddle: four scrambled words, one punchline, one cartoon. Caption it in the replies before you scroll. Today's Muddle is waiting in the app."
+    }
+   ]
+  },
+  {
+   "id": "c35527c4-906c-51f1-be9b-25b04be1277e",
+   "title": "Muddle Wednesday debut: caption this",
+   "kind": "muddle",
+   "date": "2026-10-21",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "Muddle cartoon bank",
+   "beat": "MUDDLE WEDNESDAY debut",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's Muddle: four words, one punchline, one cartoon. Caption it in the comments before you scroll.\n\nToday's Muddle is live and the joke is still waiting for you. Play free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's Muddle: four words, one punchline, one cartoon. Caption it in the comments before you scroll. Today's Muddle is live and the joke is still waiting for you."
+    },
+    {
+     "platform": "threads",
+     "caption": "MUDDLE WEDNESDAY. Yesterday's cartoon is up. Caption it before you scroll, then go solve today's Muddle."
+    }
+   ]
+  },
+  {
+   "id": "5082362a-47d3-54c0-b2d0-e7e8f3a7eb82",
+   "title": "Pin: How to play OctoWord",
+   "kind": "pin",
+   "date": "2026-10-21",
+   "time": "13:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/guides/octoword",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "MUDDLE WEDNESDAY debut",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "How to play OctoWord, the eight-board daily word puzzle on Wordocious: every guess you type lands on all eight boards at once, and you get 13 guesses to solve them all. Watch the boards fill in and cascade as the words fall. A free daily brain workout for serious word-game fans."
+    }
+   ]
+  },
+  {
+   "id": "35529f63-4aef-59dd-8701-00f91d27637d",
+   "title": "Pin: Word card, INERT",
+   "kind": "pin",
+   "date": "2026-10-21",
+   "time": "15:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/word/2026-09-27",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "MUDDLE WEDNESDAY debut",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Word of the Day: INERT (adjective). Unable to move or act; inanimate. Grow your vocabulary with a new word every morning on Wordocious, and browse the archive of every past word."
+    }
+   ]
+  },
+  {
+   "id": "1212dcdf-6ff2-5e66-9d93-1a18c6e7bf6b",
+   "title": "Pin: Cast art, D",
+   "kind": "pin",
+   "date": "2026-10-21",
+   "time": "17:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "MUDDLE WEDNESDAY debut",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Meet D, the studious one in the Wordocious cast. D hosts OctoWord and Crosswordocious, and wears the glasses to prove it. Ten letter characters host every corner of the free daily puzzle app."
+    }
+   ]
+  },
+  {
+   "id": "e8668a15-dbe0-5bb6-a785-bfb6f54d62b2",
+   "title": "WOTD quiz LOSER + Hubbub pangram tease",
+   "kind": "wotd",
+   "date": "2026-10-22",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "WOTD card / Hubbub",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": {
+    "date": "2026-10-22",
+    "word": "LOSER",
+    "answer": "b"
+   },
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Word of the Day: LOSER (noun)\n\n(a) Something baked from dough\n(b) One who fails to win\n(c) Wild, uninhibited fun\n\nNo lookups. Answer tonight. Hubbub today: seven letters hide a pangram."
+    },
+    {
+     "platform": "threads",
+     "caption": "Word of the Day: LOSER (noun)\n\n(a) Something baked from dough\n(b) One who fails to win\n(c) Wild, uninhibited fun\n\nNo lookups. Answer in the replies tonight.\n\nAnd in Hubbub today: seven letters, one hub, and a pangram that uses all of them. Find it."
+    }
+   ]
+  },
+  {
+   "id": "ea4250dd-6b52-5867-8ffd-3bffe6aec58c",
+   "title": "Pin: How to play Starsweep",
+   "kind": "pin",
+   "date": "2026-10-22",
+   "time": "13:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/guides/starsweep",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "How to play Starsweep, the daily logic puzzle on Wordocious: place one star in every row, every column and every color region, with no two stars touching. No guessing needed, and a wrong star tells you right away. A free daily puzzle for logic fans."
+    }
+   ]
+  },
+  {
+   "id": "7608cf0f-ded3-522b-921b-bf085c8a7799",
+   "title": "Pin: Word card, WEDGE",
+   "kind": "pin",
+   "date": "2026-10-22",
+   "time": "15:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/word/2026-09-16",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Word of the Day: WEDGE (noun). A piece of wood or metal, thick at one edge and thin at the other, used to split things or hold them in place. A new word every morning on Wordocious, with the full archive of past words."
+    }
+   ]
+  },
+  {
+   "id": "91798f51-7986-5f71-9bcc-e733f4bf6904",
+   "title": "Pin: Cast art, O",
+   "kind": "pin",
+   "date": "2026-10-22",
+   "time": "17:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Meet Ollie, the cheerful O in the Wordocious cast. Ollie hosts QuadWord and Hubbub, and is the third rung on the bot ladder in VS Battle. Ten letter characters, one free daily puzzle app."
+    }
+   ]
+  },
+  {
+   "id": "599bcfd0-3db4-5e62-bf50-f60071ea819b",
+   "title": "[Needs capture] 18 Days ep.2: Starsweep",
+   "kind": "video",
+   "date": "2026-10-22",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "WOTD card / Hubbub",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 2: Starsweep.\n\nOne star per row, column and color. Tap wrong and it tells you.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 2: Starsweep.\n\nOne star per row, column and color. Tap wrong and it tells you.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "04833a93-315b-5a50-a4b7-c4aedaf84013",
+   "title": "Friday's Finest",
+   "kind": "ritual",
+   "date": "2026-10-23",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "share cards",
+   "beat": "FRIDAY'S FINEST — best board",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "FRIDAY'S FINEST.\n\nThe best board of the week. Think yours beats it? Post it and make your case."
+    },
+    {
+     "platform": "threads",
+     "caption": "FRIDAY'S FINEST.\n\nThe best board of the week goes here. Think yours beats it? Share your board in the replies and make your case."
+    }
+   ]
+  },
+  {
+   "id": "8eef1597-b228-5cce-a529-fc7badbcee31",
+   "title": "Friday's Finest",
+   "kind": "ritual",
+   "date": "2026-10-23",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "share cards",
+   "beat": "FRIDAY'S FINEST — best board",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "FRIDAY'S FINEST.\n\nThe best board of the week, and one very smug player behind it. Think yours beats it? Share your board in the comments and make your case.\n\nPlay today's puzzles free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "FRIDAY'S FINEST.\n\nThe best board of the week, and one very smug player behind it. Think yours beats it? Share your board in the comments and make your case."
+    },
+    {
+     "platform": "threads",
+     "caption": "FRIDAY'S FINEST. The best board of the week. Think yours beats it? Make your case."
+    }
+   ]
+  },
+  {
+   "id": "89fbc791-123c-5ee2-9690-910ea19398d5",
+   "title": "[Needs capture] 18 Days ep.3: Muddle",
+   "kind": "video",
+   "date": "2026-10-23",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "share cards",
+   "beat": "FRIDAY'S FINEST — best board",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 3: Muddle.\n\nUnscramble four words, then spell the pun from their circled letters. Every puzzle comes with a cartoon.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 3: Muddle.\n\nUnscramble four words, then spell the pun from their circled letters. Every puzzle comes with a cartoon.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "85a8e2dc-f2c6-5ce8-839f-486f87a4126f",
+   "title": "Cast Saturday: Beat Webster",
+   "kind": "cast",
+   "date": "2026-10-24",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "cast art",
+   "beat": "Cast Saturday — bot ladder lore (\"Beat Webster\")",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Ten bots. Rip is a pushover. Webster is not.\n\nNobody has cleared the ladder. First to do it gets their mascot on our feed."
+    },
+    {
+     "platform": "threads",
+     "caption": "Ten bots. Rip is a pushover. Webster is not.\n\nThe VS bot ladder runs from Rip all the way to Webster, the boss. Nobody has cleared it. First to do it gets their mascot on our feed. Beat Webster."
+    }
+   ]
+  },
+  {
+   "id": "ad205b22-7c82-5191-a249-00dcbbd7f971",
+   "title": "[Needs capture] Cast Saturday video: Beat Webster",
+   "kind": "video",
+   "date": "2026-10-24",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "cast art",
+   "beat": "Cast Saturday — bot ladder lore (\"Beat Webster\")",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "Ten bots. Rip is a pushover. Webster is not.\n\nNobody has cleared the ladder. First to do it gets their mascot on our feed.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "Ten bots. Rip is a pushover. Webster is not.\n\nNobody has cleared the ladder. First to do it gets their mascot on our feed.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "ed5c865b-565d-5be9-90ee-3142edbbfe7e",
+   "title": "Sweep Sunday",
+   "kind": "ritual",
+   "date": "2026-10-25",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "sweep share card",
+   "beat": "SWEEP SUNDAY — sweep all 18",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "SWEEP SUNDAY.\n\nCan you sweep all 18? One day, every daily, one board to prove it. Post yours."
+    },
+    {
+     "platform": "threads",
+     "caption": "SWEEP SUNDAY.\n\nCan you sweep all 18? One day, every daily, one board to prove it. Post your sweep board and see who in the family cracks first."
+    }
+   ]
+  },
+  {
+   "id": "de989153-828b-5d83-ba5d-9af31c4ed1cb",
+   "title": "Sweep Sunday (Facebook)",
+   "kind": "ritual",
+   "date": "2026-10-25",
+   "time": "11:30",
+   "slot": "fb",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "sweep share card",
+   "beat": "SWEEP SUNDAY — sweep all 18",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "facebook",
+     "caption": "SWEEP SUNDAY.\n\nCan you sweep all 18 dailies today? One day, one sweep board to prove it, and family bragging rights on the line. Share your board in the comments."
+    }
+   ]
+  },
+  {
+   "id": "9dc7192c-10de-5cfb-a9e8-c77d737afc8f",
+   "title": "Monday Masters: race reset",
+   "kind": "ritual",
+   "date": "2026-10-26",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "mon-masters title art",
+   "beat": "MONDAY MASTERS — race reset",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "MONDAY MASTERS.\n\nNew week. Zero points. The crown is open. Last week's champion is on the Leaderboard. Come take it."
+    },
+    {
+     "platform": "threads",
+     "caption": "MONDAY MASTERS.\n\nNew week. Zero points. The crown is open. Last week's champion is on the Leaderboard tab, and the weekly race just reset for everyone. Come take the seat."
+    }
+   ]
+  },
+  {
+   "id": "0f3807e1-1b31-5663-98df-bc693aa32470",
+   "title": "Product Hunt day (set the PH link first)",
+   "kind": "launch",
+   "date": "2026-10-27",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "landscape",
+   "asset_hint": "storeShot capture",
+   "beat": "PRODUCT HUNT LAUNCH (fallback Nov 10)",
+   "note": "Retarget this post link (admin Marketing, slug p-<id8>-x) to the live Product Hunt listing before approving. If PH slips to Nov 10, move the post.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Wordocious is on Product Hunt today: 18 daily puzzle games, one score, live head-to-head.\n\nCome say hi in the comments. We read every one."
+    },
+    {
+     "platform": "threads",
+     "caption": "Wordocious is on Product Hunt today: 18 daily puzzle games with one score, live head-to-head, and a cast with opinions.\n\nCome say hi in the comments. We are two founders and we read every one."
+    }
+   ]
+  },
+  {
+   "id": "f3760f0a-f72a-5a99-a010-b3759be42e81",
+   "title": "Product Hunt day (set the PH link first)",
+   "kind": "launch",
+   "date": "2026-10-27",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "storeShot capture",
+   "beat": "PRODUCT HUNT LAUNCH (fallback Nov 10)",
+   "note": "Retarget this post link to the live Product Hunt listing before approving (and put the listing in the IG bio that day).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "We are on Product Hunt today.\n\nWordocious: 18 daily puzzle games, one score, live head-to-head, and a cast with opinions. Two founders, ten weeks of building, one very competitive family.\n\nCome say hi in the comments on the listing, link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "We are on Product Hunt today.\n\nWordocious: 18 daily puzzle games with one score, live head-to-head, and a cast with opinions. Two founders, ten weeks of building, one very competitive family. Come say hi in the comments on the listing."
+    },
+    {
+     "platform": "threads",
+     "caption": "We are on Product Hunt today: 18 daily puzzle games, one score, live head-to-head. Come say hi in the comments."
+    }
+   ]
+  },
+  {
+   "id": "e2fc09e7-342c-5479-9048-960f856d5ff7",
+   "title": "[Needs capture] Product Hunt day cut: 18 games in 30s (set the PH link first)",
+   "kind": "video",
+   "date": "2026-10-27",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "storeShot capture",
+   "beat": "PRODUCT HUNT LAUNCH (fallback Nov 10)",
+   "note": "Needs a vertical video (TikTok + Reels). Retarget this post link to the live Product Hunt listing before approving.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 games in 30 seconds. One score.\n\nWe are on Product Hunt today. Come say hi in the comments on the listing, link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 games in 30 seconds. One score.\n\nWe are on Product Hunt today. Come say hi in the comments on the listing, link in bio."
+    }
+   ]
+  },
+  {
+   "id": "7f5511e0-102c-521d-a308-2dcb719071e1",
+   "title": "Costume contest opens: Dress your mascot",
+   "kind": "season",
+   "date": "2026-10-28",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "halloween",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "Dressing Room captures",
+   "beat": "Costume contest opens (Oct 28-30)",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Dress your mascot. Share the card.\n\nThe three best costumes get featured on Halloween. The pumpkin hat is free all week."
+    },
+    {
+     "platform": "threads",
+     "caption": "Dress your mascot. Share the card.\n\nOpen the Dressing Room, put your mascot in a costume and share the card. The three best get featured on Halloween. The pumpkin hat is free all week."
+    }
+   ]
+  },
+  {
+   "id": "f47383f2-c53b-50fa-ac57-8f96b7e0d4bc",
+   "title": "Costume contest brief + examples",
+   "kind": "season",
+   "date": "2026-10-28",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "halloween",
+    "costumecontest",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "Dressing Room captures",
+   "beat": "Costume contest opens (Oct 28-30)",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "Dress your mascot.\n\nThe Dressing Room is open for Halloween. Pick a costume, share your mascot's card and tag us. Three best costumes get featured on Halloween, and the pumpkin hat is free all week.\n\nContest runs Oct 28 to 30. Play free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "Dress your mascot.\n\nThe Dressing Room is open for Halloween. Pick a costume, share your mascot's card and post it in the comments. The three best costumes get featured on Halloween, and the pumpkin hat is free all week. The contest runs Oct 28 to 30."
+    },
+    {
+     "platform": "threads",
+     "caption": "Dress your mascot. Pick a costume in the Dressing Room, share the card, and the three best get featured on Halloween. Contest runs Oct 28 to 30."
+    }
+   ]
+  },
+  {
+   "id": "67585632-1e1b-5a7b-b952-f18c8a5c6b0f",
+   "title": "Costume contest reminder",
+   "kind": "season",
+   "date": "2026-10-29",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "halloween",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "WOTD card / Hubbub",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Two days left to dress your mascot.\n\nShare your card and we will repost the best. Three get featured on Halloween. Also: today's Hubbub hides a pangram."
+    },
+    {
+     "platform": "threads",
+     "caption": "Two days left in the costume contest.\n\nDress your mascot, share the card, and we will repost the best entries. Three get featured on Halloween.\n\nAlso: today's Hubbub hides a pangram that uses all seven letters. Find it."
+    }
+   ]
+  },
+  {
+   "id": "5a2495e5-c3d0-5fbd-9889-8967504db593",
+   "title": "Pin: How to play Hubbub",
+   "kind": "pin",
+   "date": "2026-10-29",
+   "time": "13:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/guides/hubbub",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "How to play Hubbub, the daily seven-letter word puzzle on Wordocious: make words of four letters or more from seven letters around a hub, climb the ranks, and hunt for the pangram that uses every letter. A free daily word game with a scoreboard."
+    }
+   ]
+  },
+  {
+   "id": "cddca6f0-d0a5-5ca6-a6dd-e41d53306ef4",
+   "title": "Pin: Word card, TUNIC",
+   "kind": "pin",
+   "date": "2026-10-29",
+   "time": "15:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/word/2026-09-06",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Word of the Day: TUNIC (noun). A garment worn over the torso, with or without sleeves. A new word every morning on Wordocious, plus an archive of every past word."
+    }
+   ]
+  },
+  {
+   "id": "2f08e162-0ddb-560f-898a-9ec6639ca526",
+   "title": "Pin: Cast art, R",
+   "kind": "pin",
+   "date": "2026-10-29",
+   "time": "17:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Meet R, the easygoing one in the Wordocious cast. R is Rip, the first rung on the bot ladder, and hosts Muddle, the daily scramble-and-pun puzzle. Ten letter characters host every corner of the free daily puzzle app."
+    }
+   ]
+  },
+  {
+   "id": "0dffbc5c-ec98-5416-926a-e4a05e1f5101",
+   "title": "[Needs capture] 18 Days ep.4: Hubbub",
+   "kind": "video",
+   "date": "2026-10-29",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "WOTD card / Hubbub",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 4: Hubbub.\n\nSeven letters, one hub. Make words of four letters or more, climb the ranks, and find the pangram that uses them all.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 4: Hubbub.\n\nSeven letters, one hub. Make words of four letters or more, climb the ranks, and find the pangram that uses them all.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "fd6f0eed-3902-5abb-a231-19d46cf8648f",
+   "title": "Halloween Eve: themed puzzles",
+   "kind": "season",
+   "date": "2026-10-30",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "halloween",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "holiday title art (HEROES)",
+   "beat": "HALLOWEEN EVE themed puzzles (all games)",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "HALLOWEEN EVE.\n\nToday's daily puzzles are dressed up too. Themed boards are live in the games. Play before the ghosts do."
+    },
+    {
+     "platform": "threads",
+     "caption": "HALLOWEEN EVE.\n\nToday's daily puzzles are dressed up too. Themed boards are live across the daily games, and the cast is in full costume. Play before the ghosts do."
+    }
+   ]
+  },
+  {
+   "id": "1cb60717-99de-5f84-bbdf-b9d775102c7a",
+   "title": "Halloween Eve + Friday's Finest",
+   "kind": "season",
+   "date": "2026-10-30",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "halloween",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "holiday title art (HEROES)",
+   "beat": "HALLOWEEN EVE themed puzzles (all games)",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "HALLOWEEN EVE and FRIDAY'S FINEST.\n\nThe daily puzzles are in costume today, with themed boards live in the games. Share your best board in the comments and make your case.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "HALLOWEEN EVE and FRIDAY'S FINEST.\n\nThe daily puzzles are in costume today, with themed boards live in the games. Share your best board in the comments and make your case."
+    },
+    {
+     "platform": "threads",
+     "caption": "HALLOWEEN EVE. The daily puzzles are in costume today. Themed boards are live across the games."
+    }
+   ]
+  },
+  {
+   "id": "7cd1294e-d8a1-54f4-81ac-cf0dfe0e2bac",
+   "title": "[Needs capture] Halloween Eve special: themed boards montage",
+   "kind": "video",
+   "date": "2026-10-30",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "holiday title art (HEROES)",
+   "beat": "HALLOWEEN EVE themed puzzles (all games)",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "HALLOWEEN EVE.\n\nEvery daily puzzle put on a costume. Themed boards are live in the games today.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "HALLOWEEN EVE.\n\nEvery daily puzzle put on a costume. Themed boards are live in the games today.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "293cf4e9-7bd7-598f-affe-ae26ef0be6f6",
+   "title": "Halloween: themed puzzles + contest winners (needs winners)",
+   "kind": "season",
+   "date": "2026-10-31",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "halloween",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "landscape",
+   "asset_hint": "winner share cards",
+   "beat": "HALLOWEEN — themed puzzles + contest winners",
+   "note": "Attach the winners image first; the caption assumes three winners are chosen and approved.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "HALLOWEEN.\n\nThemed puzzles are live in the games, and our three favorite mascot costumes are below. Congrats to the winners. Everyone else: there is always next year."
+    },
+    {
+     "platform": "threads",
+     "caption": "HALLOWEEN.\n\nThemed puzzles are live across the games, and our three favorite mascot costumes from the contest are below. Congrats to the winners. Everyone else: there is always next year."
+    }
+   ]
+  },
+  {
+   "id": "7f984e39-15ec-53f9-86c9-d53c67bf495f",
+   "title": "Three winning mascots (needs winners)",
+   "kind": "season",
+   "date": "2026-10-31",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "halloween",
+    "costumecontest",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "winner share cards",
+   "beat": "HALLOWEEN — themed puzzles + contest winners",
+   "note": "Attach the winner cards and credit the players (with permission) before approving.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "HALLOWEEN.\n\nThree winners, three very good costumes. Congratulations to everyone who dressed a mascot this week. Themed puzzles are live in the games all day.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "HALLOWEEN.\n\nThree winners, three very good costumes. Congratulations to everyone who dressed a mascot this week. Themed puzzles are live in the games all day."
+    },
+    {
+     "platform": "threads",
+     "caption": "HALLOWEEN. Three winners, three very good costumes. Congrats to everyone who dressed a mascot this week."
+    }
+   ]
+  },
+  {
+   "id": "c6144d6c-464e-5267-8c58-7e18295bc91f",
+   "title": "[Needs capture] Halloween cast video: costume winners",
+   "kind": "video",
+   "date": "2026-10-31",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "winner share cards",
+   "beat": "HALLOWEEN — themed puzzles + contest winners",
+   "note": "Needs a vertical video (TikTok + Reels). Needs the real winners; edit the caption if the contest results differ.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "HALLOWEEN.\n\nThree winners, three very good mascot costumes. Congrats to everyone who dressed up this week.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "HALLOWEEN.\n\nThree winners, three very good mascot costumes. Congrats to everyone who dressed up this week.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "c718dd69-7ef2-54eb-9341-39a09f06f3da",
+   "title": "The cast cleans up: icon reverts (confirm it shipped)",
+   "kind": "season",
+   "date": "2026-11-01",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "landscape",
+   "asset_hint": "icon art A/B",
+   "beat": "ICON REVERTS (~2.8.x) — \"the cast cleans up\"",
+   "note": "Approve only after the icon revert is live in the stores; attach the before/after icon art.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "The cast cleaned up.\n\nHalloween is over, the icon is back to purple, and everyone is pretending the candy never happened."
+    },
+    {
+     "platform": "threads",
+     "caption": "The cast cleaned up.\n\nHalloween is over, the icon is back to purple, and everyone is pretending the candy never happened. The games are still here. So is the scoreboard."
+    }
+   ]
+  },
+  {
+   "id": "ec30d2eb-1508-5c4d-bfff-4b436046a35d",
+   "title": "Sweep Sunday (Facebook)",
+   "kind": "ritual",
+   "date": "2026-11-01",
+   "time": "11:30",
+   "slot": "fb",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "icon art A/B",
+   "beat": "ICON REVERTS (~2.8.x) — \"the cast cleans up\"",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "facebook",
+     "caption": "SWEEP SUNDAY.\n\nHalloween is over. The 18 dailies are not. Can you sweep them all today? Share your sweep board in the comments."
+    }
+   ]
+  },
+  {
+   "id": "a549b59b-8221-5d0d-b2b4-a31854949cce",
+   "title": "[Needs capture] Cast gag: cleaning up after Halloween",
+   "kind": "video",
+   "date": "2026-11-01",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "icon art A/B",
+   "beat": "ICON REVERTS (~2.8.x) — \"the cast cleans up\"",
+   "note": "Needs a vertical video (TikTok + Reels). Approve only after the icon revert has shipped.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "The cast cleaned up.\n\nHalloween is over. The candy never happened.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "The cast cleaned up.\n\nHalloween is over. The candy never happened.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "84a60b26-b749-531c-9fab-42a8b4acbd88",
+   "title": "Monday Masters: race reset",
+   "kind": "ritual",
+   "date": "2026-11-02",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "mon-masters title art",
+   "beat": "MONDAY MASTERS — race reset",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "MONDAY MASTERS.\n\nNew week. Zero points. The crown is open. Last week's champion is on the Leaderboard. Come take it."
+    },
+    {
+     "platform": "threads",
+     "caption": "MONDAY MASTERS.\n\nNew week. Zero points. The weekly race just reset and everyone starts level. Last week's champion is on the Leaderboard tab. Come take the crown."
+    }
+   ]
+  },
+  {
+   "id": "49c5ec30-36da-534c-a4f3-1c425029cd35",
+   "title": "Word of the Day quiz: WHICH",
+   "kind": "wotd",
+   "date": "2026-11-03",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "storeShot capture",
+   "beat": "WOTD quiz day",
+   "note": null,
+   "wotd": {
+    "date": "2026-11-03",
+    "word": "WHICH",
+    "answer": "a"
+   },
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Word of the Day: WHICH (determiner)\n\n(a) What, of those mentioned or implied\n(b) Enough or more than enough\n(c) The place where a crowd gathers\n\nNo lookups. Answer tonight."
+    },
+    {
+     "platform": "threads",
+     "caption": "Word of the Day: WHICH (determiner)\n\n(a) What, of those mentioned or implied\n(b) Enough or more than enough\n(c) The place where a crowd gathers\n\nNo lookups. Pick one, then take the same quiz in the app. Answer in the replies tonight."
+    }
+   ]
+  },
+  {
+   "id": "60454b4f-72c9-54f2-9e44-6d2cbcf97a61",
+   "title": "[Needs capture] 18 Days ep.5: Kindred",
+   "kind": "video",
+   "date": "2026-11-03",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "storeShot capture",
+   "beat": "WOTD quiz day",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 5: Kindred.\n\nSixteen words, four hidden groups of four. Find what each group has in common before four mistakes.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 5: Kindred.\n\nSixteen words, four hidden groups of four. Find what each group has in common before four mistakes.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "1ecb83ca-225b-5e5d-a847-9ec81d54ffa3",
+   "title": "Muddle Wednesday",
+   "kind": "muddle",
+   "date": "2026-11-04",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "Muddle cartoon bank",
+   "beat": "MUDDLE WEDNESDAY",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's Muddle: four words, one punchline, one cartoon. Caption it before you scroll."
+    },
+    {
+     "platform": "threads",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's cartoon is up. Four scrambled words, one punchline. Caption it in the replies, then go solve today's Muddle."
+    }
+   ]
+  },
+  {
+   "id": "0c150df6-b5aa-5293-ac28-7b59b243fb02",
+   "title": "Muddle Wednesday: caption this",
+   "kind": "muddle",
+   "date": "2026-11-04",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "Muddle cartoon bank",
+   "beat": "MUDDLE WEDNESDAY",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's cartoon, four scrambled words and one punchline. Caption it in the comments before you scroll.\n\nToday's Muddle is live. Play free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's cartoon, four scrambled words and one punchline. Caption it in the comments before you scroll. Today's Muddle is live."
+    },
+    {
+     "platform": "threads",
+     "caption": "MUDDLE WEDNESDAY. Yesterday's cartoon is up. Caption it before you scroll."
+    }
+   ]
+  },
+  {
+   "id": "70eb079b-bb12-5700-9bef-952d56f9d331",
+   "title": "WOTD quiz FLUNG + Hubbub pangram tease",
+   "kind": "wotd",
+   "date": "2026-11-05",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "WOTD card / Hubbub",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": {
+    "date": "2026-11-05",
+    "word": "FLUNG",
+    "answer": "a"
+   },
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Word of the Day: FLUNG\n\nIt is the past tense of FLING. A fling is...\n(a) An act of throwing\n(b) A short toast\n(c) A four-footed animal\n\nAnswer tonight. Hubbub: seven letters, one pangram."
+    },
+    {
+     "platform": "threads",
+     "caption": "Word of the Day: FLUNG, the past tense of FLING. So what is a fling?\n\n(a) An act of throwing\n(b) A short toast\n(c) A four-footed animal\n\nNo lookups. Answer in the replies tonight.\n\nAnd today's Hubbub has seven letters and a pangram that uses them all. Find it."
+    }
+   ]
+  },
+  {
+   "id": "43a47c1a-a313-5187-88f6-16fc10ae93ac",
+   "title": "Pin: How to play Muddle",
+   "kind": "pin",
+   "date": "2026-11-05",
+   "time": "13:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/guides/muddle",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "How to play Muddle, the daily word-scramble and pun puzzle on Wordocious: unscramble four words, then spell the punchline from their circled letters to finish the joke. A cartoon goes with every puzzle. Free to play every day."
+    }
+   ]
+  },
+  {
+   "id": "ab0a2e11-fb0b-58ed-9acb-c9d2e6a7698f",
+   "title": "Pin: Word card, SHOVE",
+   "kind": "pin",
+   "date": "2026-11-05",
+   "time": "15:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/word/2026-10-04",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Word of the Day: SHOVE (verb). To push, especially roughly or with force. A new word every morning on Wordocious, with the archive of every past word."
+    }
+   ]
+  },
+  {
+   "id": "69af1e81-6a02-55f1-8081-27f42b7a41b3",
+   "title": "Pin: Cast art, C",
+   "kind": "pin",
+   "date": "2026-11-05",
+   "time": "17:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Meet C, the explorer in the Wordocious cast. C hosts Deliverance and Codebreaker, and is the detective of the group. Ten letter characters host every corner of the free daily puzzle app."
+    }
+   ]
+  },
+  {
+   "id": "87c9a558-c905-5abc-b175-4d0a2f9d61ed",
+   "title": "[Needs capture] 18 Days ep.6: Letter Ladder",
+   "kind": "video",
+   "date": "2026-11-05",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "WOTD card / Hubbub",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 6: Letter Ladder.\n\nChange one letter at a time to get from the start word to the end word. Beat par.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 6: Letter Ladder.\n\nChange one letter at a time to get from the start word to the end word. Beat par.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "49797a18-4383-5e5f-be30-28395d96ea99",
+   "title": "Friday's Finest",
+   "kind": "ritual",
+   "date": "2026-11-06",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "share cards",
+   "beat": "FRIDAY'S FINEST — best board",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "FRIDAY'S FINEST.\n\nThe best board of the week. Think yours beats it? Post it and make your case."
+    },
+    {
+     "platform": "threads",
+     "caption": "FRIDAY'S FINEST.\n\nThe best board of the week goes here. Think yours beats it? Share your board in the replies and make your case."
+    }
+   ]
+  },
+  {
+   "id": "459e2bf3-d8b6-56e1-93d1-5791de281c1e",
+   "title": "Friday's Finest",
+   "kind": "ritual",
+   "date": "2026-11-06",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "share cards",
+   "beat": "FRIDAY'S FINEST — best board",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "FRIDAY'S FINEST.\n\nThe best board of the week, and one very smug player behind it. Think yours beats it? Share your board in the comments.\n\nPlay today's puzzles free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "FRIDAY'S FINEST.\n\nThe best board of the week, and one very smug player behind it. Think yours beats it? Share your board in the comments."
+    },
+    {
+     "platform": "threads",
+     "caption": "FRIDAY'S FINEST. The best board of the week. Think yours beats it? Make your case."
+    }
+   ]
+  },
+  {
+   "id": "800f7a80-b4eb-5767-87aa-61824a572218",
+   "title": "[Needs capture] 18 Days ep.7: Spyglass",
+   "kind": "video",
+   "date": "2026-11-06",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "share cards",
+   "beat": "FRIDAY'S FINEST — best board",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 7: Spyglass.\n\nTen themed words hidden in a 10 by 10 grid, and the list is hidden too. Find them from the theme and race the clock.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 7: Spyglass.\n\nTen themed words hidden in a 10 by 10 grid, and the list is hidden too. Find them from the theme and race the clock.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "4a5ab3a2-148c-5892-b21c-82e71eadb8d6",
+   "title": "Cast Saturday: Cosmo opens bold",
+   "kind": "cast",
+   "date": "2026-11-07",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "cast art",
+   "beat": "Cast / seasonal day",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Meet Cosmo, rung five on the bot ladder.\n\nBold openers, big swings, no fear. Beat Cosmo and the boss is only five rungs up."
+    },
+    {
+     "platform": "threads",
+     "caption": "Meet Cosmo, rung five on the bot ladder.\n\nBold openers, big swings, no fear. Beat Cosmo and the boss, Webster, is only five rungs up."
+    }
+   ]
+  },
+  {
+   "id": "e7fa2ff1-c54f-5bbd-8e5f-00a2a973ba78",
+   "title": "[Needs capture] Cast Saturday video: Cosmo",
+   "kind": "video",
+   "date": "2026-11-07",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "cast art",
+   "beat": "Cast / seasonal day",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "Meet Cosmo, rung five on the bot ladder.\n\nBold openers, big swings, no fear. Beat Cosmo and the boss is only five rungs up.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "Meet Cosmo, rung five on the bot ladder.\n\nBold openers, big swings, no fear. Beat Cosmo and the boss is only five rungs up.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "5305c8fe-0eaa-5c93-8883-59b6cb3d7c1d",
+   "title": "Diwali themed puzzles",
+   "kind": "season",
+   "date": "2026-11-08",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "holiday title art",
+   "beat": "DIWALI themed puzzles",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Happy Diwali to everyone celebrating.\n\nToday's puzzles are dressed for the festival of lights. Themed boards are live in the daily games."
+    },
+    {
+     "platform": "threads",
+     "caption": "Happy Diwali to everyone celebrating.\n\nToday's puzzles are dressed for the festival of lights, with themed boards live across the daily games. Wishing you a bright one."
+    }
+   ]
+  },
+  {
+   "id": "6b738e88-42e6-5823-941c-6781cf85362a",
+   "title": "Sweep Sunday + Diwali (Facebook)",
+   "kind": "ritual",
+   "date": "2026-11-08",
+   "time": "11:30",
+   "slot": "fb",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "holiday title art",
+   "beat": "DIWALI themed puzzles",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "facebook",
+     "caption": "Happy Diwali to everyone celebrating. Today's puzzles are dressed for the festival of lights.\n\nIt is also SWEEP SUNDAY: can you finish all 18 dailies today? Share your sweep board in the comments."
+    }
+   ]
+  },
+  {
+   "id": "96657fa1-6b82-5b8b-b65b-4f9a2c839d3e",
+   "title": "Monday Masters: race reset",
+   "kind": "ritual",
+   "date": "2026-11-09",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "mon-masters title art",
+   "beat": "MONDAY MASTERS — race reset",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "MONDAY MASTERS.\n\nNew week. Zero points. The crown is open. Last week's champion is on the Leaderboard. Come take it."
+    },
+    {
+     "platform": "threads",
+     "caption": "MONDAY MASTERS.\n\nNew week. Zero points. The weekly race just reset and everyone starts level. Last week's champion is on the Leaderboard tab. Come take the crown."
+    }
+   ]
+  },
+  {
+   "id": "376b1f20-da7d-5253-9a4f-92b9c8a290b6",
+   "title": "Word of the Day quiz: WATER",
+   "kind": "wotd",
+   "date": "2026-11-10",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "storeShot capture",
+   "beat": "PH fallback slot (only if Oct 27 slipped)",
+   "note": null,
+   "wotd": {
+    "date": "2026-11-10",
+    "word": "WATER",
+    "answer": "c"
+   },
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Word of the Day: WATER (noun)\n\n(a) Praise and accolades\n(b) A pleasant, spicy smell\n(c) A clear liquid compound of hydrogen and oxygen\n\nNo lookups. Answer tonight."
+    },
+    {
+     "platform": "threads",
+     "caption": "Word of the Day: WATER (noun)\n\n(a) Praise and accolades\n(b) A pleasant, spicy smell\n(c) A clear liquid compound of hydrogen and oxygen\n\nNo lookups. Pick one, then take the same quiz in the app. Answer in the replies tonight."
+    }
+   ]
+  },
+  {
+   "id": "57d91e0f-d3d4-56ec-8188-e14d8eb44bf6",
+   "title": "[Needs capture] 18 Days ep.8: Codebreaker",
+   "kind": "video",
+   "date": "2026-11-10",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "storeShot capture",
+   "beat": "PH fallback slot (only if Oct 27 slipped)",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 8: Codebreaker.\n\nA famous saying in a letter-for-letter code. Work out which letter stands for which and crack it.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 8: Codebreaker.\n\nA famous saying in a letter-for-letter code. Work out which letter stands for which and crack it.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "a7e7311b-afa5-57df-b8f4-4e630206e5c9",
+   "title": "Veterans Day themed puzzles",
+   "kind": "season",
+   "date": "2026-11-11",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "veteransday",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "Muddle cartoon bank",
+   "beat": "VETERANS DAY themed puzzles",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Veterans Day.\n\nThank you to everyone who served. Today's puzzles carry a themed board in the daily games."
+    },
+    {
+     "platform": "threads",
+     "caption": "Veterans Day.\n\nThank you to everyone who served. Today's puzzles carry a themed board in the daily games."
+    }
+   ]
+  },
+  {
+   "id": "cb60cd7a-1e8f-5be8-a804-e725a2f076d4",
+   "title": "Muddle Wednesday + Veterans Day",
+   "kind": "muddle",
+   "date": "2026-11-11",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "Muddle cartoon bank",
+   "beat": "VETERANS DAY themed puzzles",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's cartoon, four scrambled words and one punchline. Caption it in the comments before you scroll.\n\nToday is also Veterans Day. Thank you to everyone who served.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's cartoon, four scrambled words and one punchline. Caption it in the comments before you scroll.\n\nToday is also Veterans Day. Thank you to everyone who served."
+    },
+    {
+     "platform": "threads",
+     "caption": "MUDDLE WEDNESDAY. Yesterday's cartoon is up. Caption it before you scroll. And thank you to everyone who served this Veterans Day."
+    }
+   ]
+  },
+  {
+   "id": "22b7ef24-d79e-5279-9045-ac6e283e21fd",
+   "title": "WOTD quiz OTHER + Hubbub pangram tease",
+   "kind": "wotd",
+   "date": "2026-11-12",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "WOTD card / Hubbub",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": {
+    "date": "2026-11-12",
+    "word": "OTHER",
+    "answer": "b"
+   },
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Word of the Day: OTHER (adjective)\n\n(a) Containing nuts\n(b) Second\n(c) Strong and sturdy\n\nNo lookups. Answer tonight. Hubbub today: seven letters, one pangram."
+    },
+    {
+     "platform": "threads",
+     "caption": "Word of the Day: OTHER (adjective)\n\n(a) Containing nuts\n(b) Second\n(c) Strong and sturdy\n\nNo lookups. Answer in the replies tonight.\n\nAnd today's Hubbub has seven letters and a pangram that uses them all. Find it."
+    }
+   ]
+  },
+  {
+   "id": "f4f91ed9-feec-559e-b565-4cc51b29c445",
+   "title": "Pin: How to play Kindred",
+   "kind": "pin",
+   "date": "2026-11-12",
+   "time": "13:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/guides/kindred",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "How to play Kindred, the daily grouping puzzle on Wordocious: sixteen words hide four groups of four, and you have to find what each group has in common before you run out of mistakes. A free daily puzzle for pattern spotters."
+    }
+   ]
+  },
+  {
+   "id": "9e64320a-dd51-535e-a722-173181a02f39",
+   "title": "Pin: Word card, QUAKE",
+   "kind": "pin",
+   "date": "2026-11-12",
+   "time": "15:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/word/2026-10-12",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Word of the Day: QUAKE (noun). A trembling or shaking. A new word every morning on Wordocious, with the archive of every past word."
+    }
+   ]
+  },
+  {
+   "id": "6f1c4a03-f37c-5955-b439-d4a2e81ed34f",
+   "title": "Pin: Cast art, U",
+   "kind": "pin",
+   "date": "2026-11-12",
+   "time": "17:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Meet U, the calm one in the Wordocious cast. U hosts Seven and Sudocious, and stays serene under the longest words and the trickiest grids. Ten letter characters host every corner of the free daily puzzle app."
+    }
+   ]
+  },
+  {
+   "id": "501cf065-7cce-575c-91d1-7d0aa960f603",
+   "title": "[Needs capture] 18 Days ep.9: Sudocious",
+   "kind": "video",
+   "date": "2026-11-12",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "WOTD card / Hubbub",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 9: Sudocious.\n\nThe classic number grid, the Wordocious way. One Medium puzzle a day, three mistakes, pencil notes.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 9: Sudocious.\n\nThe classic number grid, the Wordocious way. One Medium puzzle a day, three mistakes, pencil notes.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "39b7cdd3-d272-583b-afc2-58ea9d464645",
+   "title": "Player of the Week (needs a real player post)",
+   "kind": "ritual",
+   "date": "2026-11-13",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "landscape",
+   "asset_hint": "share cards",
+   "beat": "First \"Player of the Week\" repost (if UGC exists)",
+   "note": "Only approve if a real player has shared a board and given permission in-thread. Attach their card.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "PLAYER OF THE WEEK.\n\nThis board came from one of you, and it is very good. Share yours and you might be next."
+    },
+    {
+     "platform": "threads",
+     "caption": "PLAYER OF THE WEEK.\n\nThis board came from one of you, and it is very good. Share yours with permission and you might be next."
+    }
+   ]
+  },
+  {
+   "id": "d820ca70-38f4-580e-853c-8dd265b05856",
+   "title": "Player of the Week (needs a real player post)",
+   "kind": "ritual",
+   "date": "2026-11-13",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "share cards",
+   "beat": "First \"Player of the Week\" repost (if UGC exists)",
+   "note": "Only approve if a real player has shared a board and given permission in-thread. Credit them by name.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "PLAYER OF THE WEEK.\n\nThis board came from one of you, and it is very good. Share yours in the comments, with your permission to feature it, and you might be next.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "PLAYER OF THE WEEK.\n\nThis board came from one of you, and it is very good. Share yours in the comments, with your permission to feature it, and you might be next."
+    },
+    {
+     "platform": "threads",
+     "caption": "PLAYER OF THE WEEK. This board came from one of you, and it is very good. You might be next."
+    }
+   ]
+  },
+  {
+   "id": "818d138a-9931-5bb4-a3c1-97caa2658d17",
+   "title": "[Needs capture] 18 Days ep.10: Crosswordocious",
+   "kind": "video",
+   "date": "2026-11-13",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "share cards",
+   "beat": "First \"Player of the Week\" repost (if UGC exists)",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 10: Crosswordocious.\n\nA themed crossword where every clue is a familiar saying with one word missing.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 10: Crosswordocious.\n\nA themed crossword where every clue is a familiar saying with one word missing.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "13874b19-3ce1-5a08-91c9-3ce93b2f3418",
+   "title": "Cast Saturday: Opal is dramatic",
+   "kind": "cast",
+   "date": "2026-11-14",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "cast art",
+   "beat": "Cast / seasonal day",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Meet Opal, rung four on the bot ladder.\n\nA little dramatic. Every win is a standing ovation, every loss is a tragedy. Beat her anyway."
+    },
+    {
+     "platform": "threads",
+     "caption": "Meet Opal, rung four on the bot ladder.\n\nA little dramatic. Every win is a standing ovation, every loss is a tragedy. She also hosts Kindred. Beat her anyway."
+    }
+   ]
+  },
+  {
+   "id": "1abb30c6-374e-5b84-9f25-875c22f96bc4",
+   "title": "[Needs capture] Cast Saturday video: Opal",
+   "kind": "video",
+   "date": "2026-11-14",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "cast art",
+   "beat": "Cast / seasonal day",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "Meet Opal, rung four on the bot ladder.\n\nA little dramatic. Every win is a standing ovation, every loss is a tragedy. Beat her anyway.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "Meet Opal, rung four on the bot ladder.\n\nA little dramatic. Every win is a standing ovation, every loss is a tragedy. Beat her anyway.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "c7c6683c-e190-54ce-a6bc-fe25778f779a",
+   "title": "Sweep Sunday",
+   "kind": "ritual",
+   "date": "2026-11-15",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "sweep share card",
+   "beat": "SWEEP SUNDAY — sweep all 18",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "SWEEP SUNDAY.\n\nCan you sweep all 18? One day, every daily, one board to prove it. Post yours."
+    },
+    {
+     "platform": "threads",
+     "caption": "SWEEP SUNDAY.\n\nCan you sweep all 18? One day, every daily, one board to prove it. Post your sweep board and see who in the family cracks first."
+    }
+   ]
+  },
+  {
+   "id": "c26a76f8-d4c4-549d-a011-6a3e4b26a515",
+   "title": "Sweep Sunday (Facebook)",
+   "kind": "ritual",
+   "date": "2026-11-15",
+   "time": "11:30",
+   "slot": "fb",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "sweep share card",
+   "beat": "SWEEP SUNDAY — sweep all 18",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "facebook",
+     "caption": "SWEEP SUNDAY.\n\nCan you sweep all 18 dailies today? One day, one sweep board to prove it, and family bragging rights on the line. Share your board in the comments."
+    }
+   ]
+  },
+  {
+   "id": "4552635b-84ef-51ce-8667-d1248b16eb27",
+   "title": "Thanksgiving build reveal (move to the ship date)",
+   "kind": "season",
+   "date": "2026-11-16",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "landscape",
+   "asset_hint": "season flip recording",
+   "beat": "THANKSGIVING BUILD REVEAL (date = build ship; adjust)",
+   "note": "The date follows the Thanksgiving build shipping. Reschedule to the release day and approve only once it is live.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "The app knows what month it is. Again.\n\nThanksgiving has arrived in Wordocious. Open the app and see what the cast is wearing."
+    },
+    {
+     "platform": "threads",
+     "caption": "The app knows what month it is. Again.\n\nThanksgiving has arrived in Wordocious. Open the app and see what the cast is wearing, then start the family league before Thursday."
+    }
+   ]
+  },
+  {
+   "id": "d2f34992-27bb-5e4f-b53d-47c3897afe75",
+   "title": "[Needs capture] Thanksgiving transformation reveal (move to the ship date)",
+   "kind": "video",
+   "date": "2026-11-16",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "season flip recording",
+   "beat": "THANKSGIVING BUILD REVEAL (date = build ship; adjust)",
+   "note": "Needs a vertical video (TikTok + Reels). The date follows the Thanksgiving build shipping.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "The app knows what month it is. Again.\n\nThanksgiving has arrived in Wordocious. Open the app and see what the cast is wearing.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "The app knows what month it is. Again.\n\nThanksgiving has arrived in Wordocious. Open the app and see what the cast is wearing.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "6b248516-72aa-52ed-b554-99d558a8dcac",
+   "title": "Family-league push: start it before Thursday",
+   "kind": "post",
+   "date": "2026-11-17",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "storeShot capture",
+   "beat": "Family-league push opens (thru Nov 24)",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Thanksgiving rule: whoever loses the family league does the dishes.\n\nSet yours up before Thursday. Invites are one link."
+    },
+    {
+     "platform": "threads",
+     "caption": "Thanksgiving rule: whoever loses the family league does the dishes.\n\nSet yours up before Thursday. Add your family as friends, race the same daily puzzles, and let the scoreboard settle it. Invites are one link."
+    }
+   ]
+  },
+  {
+   "id": "9782a4e4-1ebb-5d4d-a24b-491635cd278b",
+   "title": "[Needs capture] 18 Days ep.11: QuadWord",
+   "kind": "video",
+   "date": "2026-11-17",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "storeShot capture",
+   "beat": "Family-league push opens (thru Nov 24)",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 11: QuadWord.\n\nFour boards, nine shared guesses. Every word you type hits all four.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 11: QuadWord.\n\nFour boards, nine shared guesses. Every word you type hits all four.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "23f9718d-4cd3-58c3-af45-eadfc16106ce",
+   "title": "Muddle Wednesday",
+   "kind": "muddle",
+   "date": "2026-11-18",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "Muddle cartoon bank",
+   "beat": "MUDDLE WEDNESDAY",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's Muddle: four words, one punchline, one cartoon. Caption it before you scroll."
+    },
+    {
+     "platform": "threads",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's cartoon is up. Four scrambled words, one punchline. Caption it in the replies, then go solve today's Muddle."
+    }
+   ]
+  },
+  {
+   "id": "7a8bd0fb-8100-55a5-a82a-3058dbab93e7",
+   "title": "Muddle Wednesday: caption this",
+   "kind": "muddle",
+   "date": "2026-11-18",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "Muddle cartoon bank",
+   "beat": "MUDDLE WEDNESDAY",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's cartoon, four scrambled words and one punchline. Caption it in the comments before you scroll.\n\nToday's Muddle is live. Play free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "MUDDLE WEDNESDAY.\n\nYesterday's cartoon, four scrambled words and one punchline. Caption it in the comments before you scroll. Today's Muddle is live."
+    },
+    {
+     "platform": "threads",
+     "caption": "MUDDLE WEDNESDAY. Yesterday's cartoon is up. Caption it before you scroll."
+    }
+   ]
+  },
+  {
+   "id": "5381e9c4-2720-5557-b81c-811dac01319c",
+   "title": "WOTD quiz TOPIC + Hubbub pangram tease",
+   "kind": "wotd",
+   "date": "2026-11-19",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "WOTD card / Hubbub",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": {
+    "date": "2026-11-19",
+    "word": "TOPIC",
+    "answer": "c"
+   },
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Word of the Day: TOPIC (noun)\n\n(a) Blunt and thick-edged\n(b) Pinkish\n(c) A subject or theme\n\nNo lookups. Answer tonight. Hubbub today: seven letters, one pangram."
+    },
+    {
+     "platform": "threads",
+     "caption": "Word of the Day: TOPIC (noun)\n\n(a) Blunt and thick-edged\n(b) Pinkish\n(c) A subject or theme\n\nNo lookups. Answer in the replies tonight.\n\nAnd today's Hubbub has seven letters and a pangram that uses them all. Find it."
+    }
+   ]
+  },
+  {
+   "id": "1266986f-83d6-55ef-91dc-4a6b5e51d501",
+   "title": "Pin: How to play Codebreaker",
+   "kind": "pin",
+   "date": "2026-11-19",
+   "time": "13:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/guides/codebreaker",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "How to play Codebreaker, the daily cipher puzzle on Wordocious: a well-known saying is written in a letter-for-letter code, and you work out which letter stands for which to crack it. A free daily puzzle for detectives and word lovers."
+    }
+   ]
+  },
+  {
+   "id": "207555dd-d7bb-5ff7-9983-83c7fd9f6e82",
+   "title": "Pin: Word card, BAKER",
+   "kind": "pin",
+   "date": "2026-11-19",
+   "time": "15:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/word/2026-09-08",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Word of the Day: BAKER (noun). A person who bakes and sells bread, cakes and similar items. A new word every morning on Wordocious, with the archive of every past word."
+    }
+   ]
+  },
+  {
+   "id": "1a8b632c-2749-5de6-b842-15a5bc1fcac0",
+   "title": "Pin: Cast art, S",
+   "kind": "pin",
+   "date": "2026-11-19",
+   "time": "17:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Meet S, the fast one in the Wordocious cast. S is Scoot, rung nine on the VS bot ladder, and hosts Gauntlet and Starsweep. Ten letter characters host every corner of the free daily puzzle app."
+    }
+   ]
+  },
+  {
+   "id": "e47eccc8-9aff-5ba5-8928-fd981864c1ee",
+   "title": "[Needs capture] Pocket games spotlight: RPS and Tic-Tac-Tile",
+   "kind": "video",
+   "date": "2026-11-19",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "WOTD card / Hubbub",
+   "beat": "WOTD + Hubbub pangram tease",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "Pocket games for the table.\n\nRock Paper Scissors and Tic-Tac-Tile, free against your friends in the app. Thanksgiving dinner just got a second round.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "Pocket games for the table.\n\nRock Paper Scissors and Tic-Tac-Tile, free against your friends in the app. Thanksgiving dinner just got a second round.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "ec4c8ed4-5047-5ad5-bcd2-28e8f42bf50b",
+   "title": "Friday's Finest",
+   "kind": "ritual",
+   "date": "2026-11-20",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "share cards",
+   "beat": "FRIDAY'S FINEST — best board",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "FRIDAY'S FINEST.\n\nThe best board of the week. Think yours beats it? Post it and make your case."
+    },
+    {
+     "platform": "threads",
+     "caption": "FRIDAY'S FINEST.\n\nThe best board of the week goes here. Think yours beats it? Share your board in the replies and make your case."
+    }
+   ]
+  },
+  {
+   "id": "e6a3953e-fcd7-5cb1-859d-9f634b8aa9c7",
+   "title": "Friday's Finest",
+   "kind": "ritual",
+   "date": "2026-11-20",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "share cards",
+   "beat": "FRIDAY'S FINEST — best board",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "FRIDAY'S FINEST.\n\nThe best board of the week, and one very smug player behind it. Think yours beats it? Share your board in the comments.\n\nPlay today's puzzles free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "FRIDAY'S FINEST.\n\nThe best board of the week, and one very smug player behind it. Think yours beats it? Share your board in the comments."
+    },
+    {
+     "platform": "threads",
+     "caption": "FRIDAY'S FINEST. The best board of the week. Think yours beats it? Make your case."
+    }
+   ]
+  },
+  {
+   "id": "c5407b97-bd74-5ec7-b84b-1a0132a1bf65",
+   "title": "[Needs capture] 18 Days ep.12: Succession",
+   "kind": "video",
+   "date": "2026-11-20",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "share cards",
+   "beat": "FRIDAY'S FINEST — best board",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 12: Succession.\n\nFour boards solved strictly in order, and your guesses carry forward.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 12: Succession.\n\nFour boards solved strictly in order, and your guesses carry forward.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "d5693b57-9104-5b2f-adac-33df5746eaf6",
+   "title": "Cast Saturday: Thanksgiving costumes (needs the Thanksgiving build)",
+   "kind": "cast",
+   "date": "2026-11-21",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "landscape",
+   "asset_hint": "cast art",
+   "beat": "Cast Saturday — Thanksgiving costumes",
+   "note": "Approve only once the Thanksgiving kit is live and the cast art shows the costumes.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "The whole cast dressed for Thanksgiving.\n\nTen letters, ten costumes, one table. Start your family league before Thursday."
+    },
+    {
+     "platform": "threads",
+     "caption": "The whole cast dressed for Thanksgiving.\n\nTen letters, ten costumes, one table. Start your family league before Thursday and let the scoreboard decide who does the dishes."
+    }
+   ]
+  },
+  {
+   "id": "bcbb7511-bde3-5a4e-9a69-a4c4fc155233",
+   "title": "[Needs capture] Family smack-talk skit",
+   "kind": "video",
+   "date": "2026-11-21",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "cast art",
+   "beat": "Cast Saturday — Thanksgiving costumes",
+   "note": "Needs a vertical video (TikTok + Reels). The skit features the family league; film with the Thanksgiving build if it has shipped.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "Thanksgiving rule: whoever loses the family league does the dishes.\n\nStart yours before Thursday. Invites are one link.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "Thanksgiving rule: whoever loses the family league does the dishes.\n\nStart yours before Thursday. Invites are one link.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "c3b4b235-0fcb-5fdf-85b7-ab1307e24eef",
+   "title": "Sweep Sunday",
+   "kind": "ritual",
+   "date": "2026-11-22",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "sweep share card",
+   "beat": "SWEEP SUNDAY — sweep all 18",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "SWEEP SUNDAY.\n\nCan you sweep all 18? One day, every daily, one board to prove it. Post yours."
+    },
+    {
+     "platform": "threads",
+     "caption": "SWEEP SUNDAY.\n\nCan you sweep all 18? One day, every daily, one board to prove it. Post your sweep board and see who in the family cracks first."
+    }
+   ]
+  },
+  {
+   "id": "81448e8a-bbf0-5004-bea1-63a1c04355b5",
+   "title": "Sweep Sunday (Facebook)",
+   "kind": "ritual",
+   "date": "2026-11-22",
+   "time": "11:30",
+   "slot": "fb",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "sweep share card",
+   "beat": "SWEEP SUNDAY — sweep all 18",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "facebook",
+     "caption": "SWEEP SUNDAY.\n\nCan you sweep all 18 dailies today? Thanksgiving is Thursday, so settle the family bragging rights early. Share your sweep board in the comments."
+    }
+   ]
+  },
+  {
+   "id": "21cec54c-651c-5e7b-975d-32a7667d177c",
+   "title": "Monday Masters: race reset",
+   "kind": "ritual",
+   "date": "2026-11-23",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "mon-masters title art",
+   "beat": "MONDAY MASTERS — race reset",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "MONDAY MASTERS.\n\nNew week. Zero points. The crown is open. Last week's champion is on the Leaderboard. Come take it."
+    },
+    {
+     "platform": "threads",
+     "caption": "MONDAY MASTERS.\n\nNew week. Zero points. The weekly race just reset and everyone starts level. Last week's champion is on the Leaderboard tab. Come take the crown."
+    }
+   ]
+  },
+  {
+   "id": "154ec392-22ea-535d-83cc-4e07d38fa96f",
+   "title": "Final family-league call + gift a shield",
+   "kind": "post",
+   "date": "2026-11-24",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "storeShot capture",
+   "beat": "WOTD quiz day",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Last call for family leagues. Thanksgiving is Thursday.\n\nGift a streak shield to the cousin who always forgets, then beat them anyway."
+    },
+    {
+     "platform": "threads",
+     "caption": "Last call for family leagues. Thanksgiving is Thursday.\n\nAdd your family as friends, gift a streak shield to the cousin who always forgets, then beat them anyway. Invites are one link."
+    }
+   ]
+  },
+  {
+   "id": "89e458e5-1d88-5e0d-813f-a5cf4879345e",
+   "title": "[Needs capture] 18 Days ep.13: Deliverance",
+   "kind": "video",
+   "date": "2026-11-24",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "storeShot capture",
+   "beat": "WOTD quiz day",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 13: Deliverance.\n\nFour boards already in trouble. Finish what the prefills started.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 13: Deliverance.\n\nFour boards already in trouble. Finish what the prefills started.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "bbf43e05-d538-5607-8028-e5bdb6e0e759",
+   "title": "Thanksgiving Eve themed puzzles",
+   "kind": "season",
+   "date": "2026-11-25",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "thanksgiving",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "Muddle cartoon bank",
+   "beat": "THANKSGIVING EVE themed puzzles",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "THANKSGIVING EVE.\n\nTraveling today? Today's themed puzzles fit in the gap between the airport and the guest room."
+    },
+    {
+     "platform": "threads",
+     "caption": "THANKSGIVING EVE.\n\nTraveling today? Today's themed puzzles fit in the gap between the airport and the guest room. Quick dailies, one score, no cooking required."
+    }
+   ]
+  },
+  {
+   "id": "82469689-c22a-5bff-92c0-80415a574117",
+   "title": "Muddle Wednesday: Thanksgiving Eve",
+   "kind": "muddle",
+   "date": "2026-11-25",
+   "time": "11:30",
+   "slot": "fb",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "Muddle cartoon bank",
+   "beat": "THANKSGIVING EVE themed puzzles",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "facebook",
+     "caption": "MUDDLE WEDNESDAY on Thanksgiving Eve.\n\nYesterday's cartoon, four scrambled words and one punchline. Caption it in the comments before you scroll. Today's themed puzzles are live too."
+    }
+   ]
+  },
+  {
+   "id": "496bd243-1297-5965-ac42-517bf630e130",
+   "title": "Thanksgiving: loser does the dishes",
+   "kind": "season",
+   "date": "2026-11-26",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "thanksgiving",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "holiday title art",
+   "beat": "THANKSGIVING — themed puzzles, biggest family day",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Loser does the dishes.\n\nHappy Thanksgiving from the whole cast. Today's themed puzzles are live. Settle it at the table."
+    },
+    {
+     "platform": "threads",
+     "caption": "Loser does the dishes.\n\nHappy Thanksgiving from the whole cast. Today's themed puzzles are live in the daily games. Settle it at the table."
+    }
+   ]
+  },
+  {
+   "id": "6239398b-9db8-50bc-9de5-516c78e6cd74",
+   "title": "Thanksgiving: the family post",
+   "kind": "season",
+   "date": "2026-11-26",
+   "time": "11:30",
+   "slot": "fb",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "holiday title art",
+   "beat": "THANKSGIVING — themed puzzles, biggest family day",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "facebook",
+     "caption": "Happy Thanksgiving from the whole Wordocious cast.\n\nLoser does the dishes. Today's themed puzzles are live in the daily games, so pull up a chair, compare scores at the table and let the scoreboard do the talking. Bring your family."
+    }
+   ]
+  },
+  {
+   "id": "7aeeddc8-d21e-5839-9048-a9f507224750",
+   "title": "Pin: How to play Letter Ladder",
+   "kind": "pin",
+   "date": "2026-11-26",
+   "time": "13:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/guides/letter-ladder",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "THANKSGIVING — themed puzzles, biggest family day",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "How to play Letter Ladder, the daily word-chain puzzle on Wordocious: change one letter at a time to climb from the start word to the end word in as few moves as par. A free daily puzzle for word tinkerers."
+    }
+   ]
+  },
+  {
+   "id": "f612c51b-004d-5b1d-a4a0-51ef50991bec",
+   "title": "Pin: Word card, PLANT",
+   "kind": "pin",
+   "date": "2026-11-26",
+   "time": "15:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/word/2026-09-18",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "THANKSGIVING — themed puzzles, biggest family day",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Word of the Day: PLANT (noun). An organism that is not an animal, especially one that makes its own food from sunlight. A new word every morning on Wordocious, with the archive of every past word."
+    }
+   ]
+  },
+  {
+   "id": "eaf900f0-5f95-56f7-b827-973804363333",
+   "title": "Pin: Cast art, I",
+   "kind": "pin",
+   "date": "2026-11-26",
+   "time": "17:00",
+   "slot": "pin",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "pin",
+   "asset_hint": "evergreen",
+   "beat": "THANKSGIVING — themed puzzles, biggest family day",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "pinterest",
+     "caption": "Meet I, the tall one in the Wordocious cast. I hosts the Word of the Day, Succession and Letter Ladder. Ten letter characters host every corner of the free daily puzzle app."
+    }
+   ]
+  },
+  {
+   "id": "2a67268e-0749-5474-9ab9-ff088ea7346b",
+   "title": "[Needs capture] Thanksgiving-table clip",
+   "kind": "video",
+   "date": "2026-11-26",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "holiday title art",
+   "beat": "THANKSGIVING — themed puzzles, biggest family day",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "Loser does the dishes.\n\nHappy Thanksgiving from the whole cast. Settle it at the table.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "Loser does the dishes.\n\nHappy Thanksgiving from the whole cast. Settle it at the table.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "b099637c-e225-5bf9-b472-b9ace5152361",
+   "title": "Pro value: $59.99 a year",
+   "kind": "post",
+   "date": "2026-11-27",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/pro",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "share cards",
+   "beat": "Annual Pro positioning ($59.99 = $5/mo, 18 games)",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Free is the whole daily game. Wordocious Pro is for the people who want more.\n\n$59.99 a year, about $5 a month: unlimited replays of all 18 games. Or $6.99 a month, or a $1 day pass."
+    },
+    {
+     "platform": "threads",
+     "caption": "Every daily is free. Wordocious Pro is for the players who want more.\n\n$59.99 a year, about $5 a month: unlimited replays of all 18 games, VS in every mode, streak shields and the full cast on demand. Or $6.99 a month, or a $1 day pass."
+    }
+   ]
+  },
+  {
+   "id": "c751a187-036c-5323-b081-23e0db851338",
+   "title": "Pro value card: $59.99 a year",
+   "kind": "post",
+   "date": "2026-11-27",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/pro",
+   "paused": false,
+   "size": "portrait",
+   "asset_hint": "share cards",
+   "beat": "Annual Pro positioning ($59.99 = $5/mo, 18 games)",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "Every daily is free. Pro is for the players who want more.\n\nWordocious Pro: $59.99 a year, about $5 a month, for unlimited replays of all 18 games, VS in every mode, 4 streak shields each billing period and the whole cast on demand. Prefer to start small? $6.99 a month, or a $1 day pass.\n\nSee Pro: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "Every daily is free. Pro is for the players who want more.\n\nWordocious Pro: $59.99 a year, about $5 a month, for unlimited replays of all 18 games, VS in every mode, 4 streak shields each billing period and the whole cast on demand. Prefer to start small? $6.99 a month, or a $1 day pass."
+    },
+    {
+     "platform": "threads",
+     "caption": "Every daily is free. Pro is for the players who want more: $59.99 a year (about $5 a month), $6.99 a month, or a $1 day pass."
+    }
+   ]
+  },
+  {
+   "id": "231a1c9b-bc31-55e5-9058-cfca606267ad",
+   "title": "[Needs capture] 18 Days ep.14: Gauntlet",
+   "kind": "video",
+   "date": "2026-11-27",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "share cards",
+   "beat": "Annual Pro positioning ($59.99 = $5/mo, 18 games)",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "18 Days of Wordocious, episode 14: Gauntlet.\n\nFive escalating stages, 21 boards, one run. The endurance test.\n\nFree daily: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "18 Days of Wordocious, episode 14: Gauntlet.\n\nFive escalating stages, 21 boards, one run. The endurance test.\n\nFree daily: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "820a422b-d443-5596-9bfd-57b006679ad6",
+   "title": "Cast Saturday: Umi matches your form",
+   "kind": "cast",
+   "date": "2026-11-28",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": false,
+   "size": "landscape",
+   "asset_hint": "cast art",
+   "beat": "45-day wrap prep",
+   "note": null,
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "Meet Umi, rung six on the bot ladder.\n\nUmi plays like you play. Warm up well and Umi gets sharp. Slack off and she does too. Fair, a little annoying, impossible to blame."
+    },
+    {
+     "platform": "threads",
+     "caption": "Meet Umi, rung six on the bot ladder.\n\nUmi matches your form. Warm up well and Umi gets sharp. Slack off and she does too. Fair, and a little annoying."
+    }
+   ]
+  },
+  {
+   "id": "1957db86-9e2b-574b-ad74-bbdc531a9d5d",
+   "title": "[Needs capture] Cast Saturday video: Umi",
+   "kind": "video",
+   "date": "2026-11-28",
+   "time": "18:00",
+   "slot": "video",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "cast art",
+   "beat": "45-day wrap prep",
+   "note": "Needs a vertical video (TikTok + Reels).",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "tiktok",
+     "caption": "Meet Umi, rung six on the bot ladder.\n\nUmi plays like you play. Warm up well and Umi gets sharp. Slack off and she does too.\n\nPlay free: link in bio."
+    },
+    {
+     "platform": "instagram",
+     "caption": "Meet Umi, rung six on the bot ladder.\n\nUmi plays like you play. Warm up well and Umi gets sharp. Slack off and she does too.\n\nPlay free: link in bio."
+    }
+   ]
+  },
+  {
+   "id": "29e983fe-e2bb-582a-a781-cef9e112d7cb",
+   "title": "Day 45 wrap: numbers in the post (fill them)",
+   "kind": "post",
+   "date": "2026-11-29",
+   "time": "08:00",
+   "slot": "x",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "landscape",
+   "asset_hint": "sweep share card",
+   "beat": "DAY 45 — wrap: 45 days in numbers + December preview",
+   "note": "Replace every [BRACKET] with the real number from the KPI tab before approving; unpause only then.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "x",
+     "caption": "45 days of Wordocious, in numbers.\n\n[PLAYERS] players. [GAMES] games played. Longest streak: [STREAK] days. December preview: stay tuned."
+    },
+    {
+     "platform": "threads",
+     "caption": "45 days of Wordocious, in numbers.\n\n[PLAYERS] players. [GAMES] games played. Longest streak: [STREAK] days. Thank you to everyone who played, shared and trash-talked. December preview: stay tuned."
+    }
+   ]
+  },
+  {
+   "id": "a6b5bb45-ed18-5b72-870b-bb0ca44121d3",
+   "title": "Day 45 wrap card (fill the numbers)",
+   "kind": "post",
+   "date": "2026-11-29",
+   "time": "11:30",
+   "slot": "feed",
+   "hashtags": [
+    "wordgames",
+    "dailypuzzle",
+    "puzzlegames",
+    "wordocious"
+   ],
+   "link_target": "https://wordocious.com/",
+   "paused": true,
+   "size": "portrait",
+   "asset_hint": "sweep share card",
+   "beat": "DAY 45 — wrap: 45 days in numbers + December preview",
+   "note": "Replace every [BRACKET] with the real number from the KPI tab before approving; unpause only then.",
+   "wotd": null,
+   "targets": [
+    {
+     "platform": "instagram",
+     "caption": "45 days of Wordocious.\n\n[PLAYERS] players, [GAMES] games played, and a longest streak of [STREAK] days. Thank you for playing, sharing and trash-talking.\n\nDecember preview coming soon. Play free: link in bio."
+    },
+    {
+     "platform": "facebook",
+     "caption": "45 days of Wordocious.\n\n[PLAYERS] players, [GAMES] games played, and a longest streak of [STREAK] days. Thank you for playing, sharing and trash-talking. December preview coming soon."
+    },
+    {
+     "platform": "threads",
+     "caption": "45 days of Wordocious. [PLAYERS] players, [GAMES] games played. Thank you for playing, sharing and trash-talking."
+    }
+   ]
+  }
+ ]
+}
