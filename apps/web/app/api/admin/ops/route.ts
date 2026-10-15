@@ -3,8 +3,8 @@ import { verifyAdmin } from '@/lib/admin-auth';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { sweepAll } from '@/lib/supabase-sweep';
 
-// Operational health: webhook ledger, anti-cheat watchlist, VS match health,
-// and cron heartbeats.
+// Operational health: anti-cheat watchlist, VS match health, and cron heartbeats.
+// (The store webhook ledger moved to /api/admin/store-feed, Pro & Gifts > Store feed.)
 //
 // Anti-cheat thresholds come from guard_precision.sql (manual-migration
 // 20260723000003): the DB clamps are deliberately loose (solo composite ≤
@@ -34,12 +34,7 @@ export async function GET(request: NextRequest) {
   const since14 = new Date(now - 14 * 86400000).toISOString();
   const since30 = new Date(now - 30 * 86400000).toISOString().slice(0, 10);
 
-  const [webhooksRes, suspectsRes, matchesRes, heartbeatsRes] = await Promise.all([
-    // Windowed, not top-N: per-day counts derived from a recency LIMIT
-    // silently understate busy days. 2000 is a declared safety bound far above
-    // current volume; if it's ever hit the subtitle math breaks visibly, not
-    // quietly.
-    admin.from('store_webhook_events').select('event_id, source, processed_at').gte('processed_at', since14).order('processed_at', { ascending: false }).limit(2000),
+  const [suspectsRes, matchesRes, heartbeatsRes] = await Promise.all([
     admin
       .from('daily_results')
       .select('user_id, day, game_mode, play_type, composite_score, guess_count, total_boards, time_seconds, vs_games, profiles(username)')
@@ -57,17 +52,6 @@ export async function GET(request: NextRequest) {
     ).then((data) => ({ data })),
     admin.from('system_heartbeats').select('*'),
   ]);
-
-  // Webhook activity by day/source (the ledger records successes only —
-  // a FAILED webhook never lands here, so the signal is silence, not errors).
-  const webhookByDay = new Map<string, { appstore: number; playstore: number }>();
-  for (const e of webhooksRes.data ?? []) {
-    const d = String(e.processed_at).slice(0, 10);
-    if (!webhookByDay.has(d)) webhookByDay.set(d, { appstore: 0, playstore: 0 });
-    const c = webhookByDay.get(d)!;
-    if (e.source === 'appstore') c.appstore++;
-    else c.playstore++;
-  }
 
   // Anti-cheat: annotate why each row was flagged, then drop rows whose only
   // "reason" turns out to be legitimate.
@@ -133,10 +117,6 @@ export async function GET(request: NextRequest) {
   });
 
   return NextResponse.json({
-    webhooks: {
-      recent: (webhooksRes.data ?? []).slice(0, 20),
-      byDay: [...webhookByDay.entries()].map(([day, c]) => ({ day, ...c })).sort((a, b) => (a.day < b.day ? 1 : -1)),
-    },
     suspects,
     vsHealth,
     crons,

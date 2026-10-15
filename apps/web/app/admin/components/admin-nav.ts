@@ -1,7 +1,7 @@
 import {
-  LayoutDashboard, TrendingUp, Users, Shield, CalendarCheck, Gamepad2, Puzzle, Swords,
-  HeartHandshake, Trophy, CreditCard, DollarSign, Gift, Megaphone, BellRing, ToggleLeft,
-  Ghost, MessageSquareText, Activity, Wrench, Palette, Clapperboard, AudioLines, type LucideIcon,
+  LayoutDashboard, TrendingUp, Users, CalendarCheck, Gamepad2, Puzzle, Swords,
+  HeartHandshake, Trophy, CreditCard, DollarSign, Megaphone, BellRing, ToggleLeft,
+  Ghost, Activity, Wrench, Palette, Clapperboard, AudioLines, type LucideIcon,
 } from 'lucide-react';
 
 export interface AdminNavItem {
@@ -34,17 +34,16 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     title: 'Monetization',
     items: [
-      { href: '/admin/payments', label: 'Pro & Payments', icon: CreditCard, blurb: 'Pro members, Stripe, store events' },
       { href: '/admin/revenue', label: 'Revenue', icon: DollarSign, blurb: 'Subscriptions, ads, store revenue, expenses' },
-      { href: '/admin/referrals', label: 'Referrals & Gifts', icon: Gift, blurb: 'Gift a week of Pro pipeline' },
+      { href: '/admin/pro', label: 'Pro & Gifts', icon: CreditCard, blurb: 'Pro members, Stripe, gift-a-week invites, store events' },
     ],
   },
   {
     title: 'Growth',
     items: [
-      { href: '/admin/marketing', label: 'Marketing', icon: Megaphone, blurb: 'Links, signups by source, shares, push campaigns' },
+      { href: '/admin/marketing', label: 'Marketing', icon: Megaphone, blurb: 'Links, signups by source, shares' },
       { href: '/admin/studio', label: 'Social Studio', icon: Clapperboard, blurb: 'Marketing calendar: review posts with JP, they publish once both approve' },
-      { href: '/admin/messaging', label: 'Messaging', icon: BellRing, blurb: 'Announcements and push devices' },
+      { href: '/admin/messaging', label: 'Messaging & Push', icon: BellRing, blurb: 'Announcements, push campaigns, push health, push copy' },
     ],
   },
   {
@@ -57,9 +56,8 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     title: 'Players',
     items: [
-      { href: '/admin/users', label: 'Users', icon: Users, blurb: 'Search players, Pro, bans, achievements' },
-            { href: '/admin/moderation', label: 'Moderation', icon: Shield, blurb: 'Bans, new accounts, audit log' },
-    ],
+      { href: '/admin/users', label: 'Users & Moderation', icon: Users, blurb: 'Search players, new accounts, bans, audit log' },
+          ],
   },
   {
     title: 'Games & Puzzles',
@@ -92,7 +90,6 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     items: [
       { href: '/admin/flags', label: 'Feature Flags', icon: ToggleLeft, blurb: 'Remote kill switches and launches' },
       { href: '/admin/seasons', label: 'Seasons', icon: Ghost, blurb: 'Halloween status and preview' },
-      { href: '/admin/push-copy', label: 'Push Copy', icon: MessageSquareText, blurb: 'Preview every push message' },
     ],
   },
   {

@@ -17,7 +17,7 @@ export default function AdminFlagsPage() {
       />
       <FlagsCard />
       <Callout>
-        Every change is written to the admin audit log (Moderation). The season skins are not a flag: they follow the calendar (see Seasons).
+        Every change is written to the admin audit log (Users & Moderation, Audit log tab). The season skins are not a flag: they follow the calendar (see Seasons).
       </Callout>
     </div>
   );

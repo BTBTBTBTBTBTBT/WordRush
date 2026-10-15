@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Activity, AlertTriangle, Webhook, Swords, ExternalLink } from 'lucide-react';
-import { DrillCard, useDrill } from '../components/drill-panel';
+import { Activity, AlertTriangle, Swords, ExternalLink } from 'lucide-react';
+import { DrillCard } from '../components/drill-panel';
 import Link from 'next/link';
 import { modeLabel } from '@/lib/mode-labels';
 import { PageHeader } from '../components/admin-ui';
@@ -10,10 +10,6 @@ import { PageHeader } from '../components/admin-ui';
 // Operational health — the "is anything quietly broken" page: cron heartbeats,
 // the store-webhook ledger, an anti-cheat watchlist, and VS match health.
 interface OpsData {
-  webhooks: {
-    recent: { event_id: string; source: string; processed_at: string }[];
-    byDay: { day: string; appstore: number; playstore: number }[];
-  };
   suspects: { userId: string; username: string; day: string; mode: string; playType: string; score: number; reasons: string[] }[];
   vsHealth: {
     matches14d: number;
@@ -34,7 +30,6 @@ const CRON_STYLES: Record<string, string> = {
 };
 
 export default function AdminOpsPage() {
-  const drill = useDrill();
   const [data, setData] = useState<OpsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,7 +48,7 @@ export default function AdminOpsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Ops Health" subtitle={<>
-          Is anything quietly broken: cron heartbeats, the store-webhook ledger, the anti-cheat watchlist and VS match health.
+          Is anything quietly broken: cron heartbeats, the anti-cheat watchlist and VS match health.
           Feature flags and the content runway moved to{' '}
           <Link href="/admin/flags" className="font-bold text-purple-700">Feature Flags</Link> and{' '}
           <Link href="/admin/daily?tab=banks" className="font-bold text-purple-700">Content banks</Link>.
@@ -135,45 +130,6 @@ export default function AdminOpsPage() {
             </tbody>
           </table>
         )}
-      </div>
-
-      {/* Webhook ledger */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-xs font-black text-gray-400 uppercase tracking-wide flex items-center gap-2 mb-2">
-            <Webhook className="w-3.5 h-3.5" /> Store webhooks by day
-          </p>
-          {data.webhooks.byDay.length === 0 ? (
-            <p className="text-xs font-bold text-gray-300">No webhook events recorded</p>
-          ) : (
-            <div className="space-y-1">
-              {data.webhooks.byDay.slice(0, 10).map((d) => (
-                <button type="button" key={d.day} onClick={() => drill({ metric: 'webhooks', day: d.day })}
-                  className="w-full flex justify-between text-sm hover:bg-gray-50 rounded px-1 -mx-1 py-0.5">
-                  <span className="font-bold text-gray-500">{d.day}</span>
-                  <span className="font-black text-gray-900">{d.appstore} App Store · {d.playstore} Play</span>
-                </button>
-              ))}
-            </div>
-          )}
-          <p className="text-[11px] font-bold text-gray-300 mt-3">
-            The ledger records processed events only — a failing webhook shows up as silence here while
-            subscriptions are active, not as an error row.
-          </p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-xs font-black text-gray-400 uppercase tracking-wide mb-2">Latest events</p>
-          <div className="space-y-1 max-h-64 overflow-y-auto">
-            {data.webhooks.recent.map((e) => (
-              <div key={e.event_id} className="flex justify-between text-xs">
-                <span className="font-bold text-gray-500 truncate max-w-[50%]">{e.event_id}</span>
-                <span className="font-black text-gray-700">{e.source}</span>
-                <span className="font-bold text-gray-400">{new Date(e.processed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
-              </div>
-            ))}
-            {data.webhooks.recent.length === 0 && <p className="text-xs font-bold text-gray-300">None yet</p>}
-          </div>
-        </div>
       </div>
     </div>
   );

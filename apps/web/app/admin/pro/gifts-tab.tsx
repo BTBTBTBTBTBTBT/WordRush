@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Gift, Users, Crown, Percent, CalendarPlus, Ban } from 'lucide-react';
+import { Gift, Users, Crown, Percent, CalendarPlus, Ban, Hourglass } from 'lucide-react';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { useDrill } from '../components/drill-panel';
-import { PageHeader } from '../components/admin-ui';
+import { TabIntro, ReloadButton, ErrorNote } from '../components/admin-ui';
 
 interface ReferralRow {
   id: string;
@@ -27,6 +27,7 @@ interface ReferralStats {
   converted: number;
   conversionRate: number;
   proDaysGranted: number;
+  awaitingPay?: number;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -37,22 +38,25 @@ const STATUS_BADGE: Record<string, string> = {
   revoked: 'bg-red-50 text-red-600',
 };
 
-export default function AdminReferralsPage() {
+export default function GiftsTab() {
   const drill = useDrill();
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [rows, setRows] = useState<ReferralRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
 
-  const load = () =>
-    fetch('/api/admin/referrals')
-      .then((r) => r.json())
+  const load = () => {
+    setFailed(false);
+    return fetch('/api/admin/referrals')
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((data) => {
         setStats(data.stats ?? null);
         setRows(data.referrals ?? []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => { setFailed(true); setLoading(false); });
+  };
 
   useEffect(() => { load(); }, []);
 
@@ -65,17 +69,15 @@ export default function AdminReferralsPage() {
     });
     if (!ok) return;
     setRevoking(id);
-    await fetch(`/api/admin/referrals/${id}/revoke`, { method: 'POST' });
+    const res = await fetch(`/api/admin/referrals/${id}/revoke`, { method: 'POST' }).catch(() => null);
     setRevoking(null);
-    load();
+    if (!res || !res.ok) setFailed(true);
+    else load();
   };
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <PageHeader title="Referrals & Gifts" />
-        <div className="h-40 bg-gray-100 rounded animate-pulse" />
-      </div>
+      <div className="h-40 bg-gray-100 rounded-xl animate-pulse" />
     );
   }
 
@@ -86,14 +88,18 @@ export default function AdminReferralsPage() {
     { label: 'Subscribed', value: stats.converted, icon: Crown, color: 'text-amber-600 bg-amber-50', drill: { metric: 'referrals', key: 'converted' } },
     { label: 'Join → Sub Rate', value: `${stats.conversionRate}%`, icon: Percent, color: 'text-pink-600 bg-pink-50', drill: { metric: 'referrals', key: 'converted' } },
     { label: 'Pro Days Granted', value: stats.proDaysGranted, icon: CalendarPlus, color: 'text-indigo-600 bg-indigo-50', drill: { metric: 'referrals', key: 'redeemed' } },
+    ...(stats.awaitingPay != null ? [{ label: 'Awaiting Pay', value: stats.awaitingPay, icon: Hourglass, color: 'text-orange-600 bg-orange-50', drill: { metric: 'referrals', key: 'awaiting' } }] : []),
   ] : [];
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Referrals & Gifts" subtitle="Gift a week of Pro: friends get 7 days of Pro; inviters earn +3 days per join (first 5), +4 shields at 3 joins, and a free month per monthly subscription — 3 free months per annual." />
+      <TabIntro actions={<ReloadButton onClick={() => { setLoading(true); load(); }} loading={loading} />}>
+        Gift a week of Pro: friends get 7 days of Pro; inviters earn +3 days per join (first 5), +4 shields at 3 joins, and a free month per monthly subscription — 3 free months per annual. Awaiting Pay is a redeemed trial whose inviter reward fires on the friend&apos;s first paid invoice.
+      </TabIntro>
+      {failed && <ErrorNote>Something did not load or save. <button type="button" onClick={() => { setLoading(true); load(); }} className="underline">Try again</button></ErrorNote>}
 
       {/* Stat cards — same grid as the dashboard */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         {statCards.map(({ label, value, icon: Icon, color, drill: dp }) => (
           <button
             type="button" key={label} disabled={!dp} onClick={() => dp && drill(dp)}
@@ -114,8 +120,7 @@ export default function AdminReferralsPage() {
           All Invites (latest 200)
         </h2>
         {rows.length === 0 ? (
-          <p className="text-sm text-gray-400 font-medium">No invites yet — the profile page&apos;s
-            &quot;Gift Pro to Friends&quot; panel creates them.</p>
+          <p className="text-sm text-gray-400 font-medium">No invites yet — the profile page&apos;s &quot;Gift Pro to Friends&quot; panel creates them.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

@@ -32,6 +32,10 @@ const nextConfig = {
       { source: '/admin/avatars', destination: '/admin/progression?tab=avatars', permanent: false },
       { source: '/admin/releases', destination: '/admin/engineering?tab=releases', permanent: false },
       { source: '/admin/portal', destination: '/admin/engineering?tab=portal', permanent: false },
+      { source: '/admin/payments', destination: '/admin/pro?tab=members', permanent: false },
+      { source: '/admin/referrals', destination: '/admin/pro?tab=gifts', permanent: false },
+      { source: '/admin/push-copy', destination: '/admin/messaging?tab=copy', permanent: false },
+      { source: '/admin/moderation', destination: '/admin/users?tab=new', permanent: false },
       { source: '/admin/onboarding', destination: '/admin/metrics?tab=activation', permanent: false },
       // Mark scrub 2026-08-11 (§210): our routes must never wear a competitor
       // mark. Old paths 301 so shipped deep links, bookmarks, and indexed

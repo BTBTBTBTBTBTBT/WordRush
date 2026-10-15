@@ -85,7 +85,7 @@ export default function AdminDashboard() {
     { label: 'Pocket games', value: fmt(o?.pocketActive), sub: `in progress · ${fmt(o?.pocket7)} new this week`, icon: <Gamepad2 className="w-3.5 h-3.5" />, href: '/admin/social' },
     { label: 'VS challenges · 7d', value: fmt(o?.challenges7), sub: `Bot of the Day: ${bot.name}`, icon: <Swords className="w-3.5 h-3.5" />, href: '/admin/vs' },
     { label: 'Reactions · 7d', value: fmt(o?.reactions7), sub: 'clap, fire, wow, grr, rematch', icon: <SmilePlus className="w-3.5 h-3.5" />, href: '/admin/social' },
-    { label: 'Gifts redeemed', value: fmt(o?.giftsRedeemed), sub: 'a week of Pro, all time', icon: <Gift className="w-3.5 h-3.5" />, href: '/admin/referrals' },
+    { label: 'Gifts redeemed', value: fmt(o?.giftsRedeemed), sub: 'a week of Pro, all time', icon: <Gift className="w-3.5 h-3.5" />, href: '/admin/pro?tab=gifts' },
   ];
 
   const sortedModes = stats ? Object.entries(stats.modePopularity).sort((a, b) => b[1] - a[1]) : [];

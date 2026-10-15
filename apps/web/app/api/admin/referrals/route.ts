@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
   const referrals = rows ?? [];
   // Stats over EVERY invite, not just the 200 listed below (the cards used to
   // read the list, so they silently stopped growing past 200 invites).
-  const all = await sweepAll<{ status: string; expires_at: string; converted_plan: string | null }>((f, t) =>
-    admin.from('referrals').select('status, expires_at, converted_plan').order('id').range(f, t),
+  const all = await sweepAll<{ status: string; expires_at: string; converted_plan: string | null; reward_granted_at: string | null }>((f, t) =>
+    admin.from('referrals').select('status, expires_at, converted_plan, reward_granted_at').order('id').range(f, t),
   );
   const userIds = Array.from(new Set(
     referrals.flatMap((r) => [r.inviter_id, r.invitee_id]).filter(Boolean) as string[],
@@ -44,6 +44,9 @@ export async function GET(request: NextRequest) {
   ).length;
   const redeemed = count('redeemed') + count('converted');
   const converted = count('converted');
+  // Redeemed trials whose conversion reward has not fired: inviters still waiting
+  // on their friend's first paid invoice (was on the Payments page).
+  const awaitingPay = all.filter((r) => r.status === 'redeemed' && !r.reward_granted_at).length;
   // Pro-days given away: 7/redemption to the friend, +3 instant to the
   // inviter (approximation: cap nuances ignored), 30/60 per conversion.
   const proDaysGranted = redeemed * (7 + 3)
@@ -58,6 +61,7 @@ export async function GET(request: NextRequest) {
       converted,
       conversionRate: redeemed > 0 ? Math.round((converted / redeemed) * 100) : 0,
       proDaysGranted,
+      awaitingPay,
     },
     referrals: referrals.map((r) => ({
       id: r.id,

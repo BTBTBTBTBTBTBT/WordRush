@@ -1,28 +1,28 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { MessageSquareText, Bell } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '@wordle-duel/core';
-import { PageHeader, Section, Callout } from '../components/admin-ui';
+import { TabIntro, Section, Callout } from '../components/admin-ui';
 
-// admin > Content & Ops > Push Copy: every push / reminder message from the ONE
+// Messaging & Push > Copy: every push / reminder message from the ONE
 // shared bank (packages/core push-copy.ts, used by the web server pushes and
 // the native local reminders), rendered with sample values. Read-only: the
 // copy changes in code (pinned by push-copy-fixtures.json), never here.
 
+// '' means no sender is wired yet (the line is in the bank; shown as an UNSENT badge).
 const SENT_BY: Record<PushKind, string> = {
   friendBeat: 'Friends: a friend beat your time (friends/beat-check)',
   yourTurn: 'Pocket games: a friend moved (friends/games/move)',
   streakReminder: 'iOS + Android local streak reminder',
-  shieldUsed: 'In the bank; no sender wired yet',
+  shieldUsed: '',
   challengeReceived: 'VS challenge or friends challenge sent to you',
   friendRequest: 'Friends: a new friend request',
-  giftReceived: 'In the bank; no sender wired yet',
-  dailyReady: 'Daily reminder cron (14:00 UTC)',
+  giftReceived: '',
+  dailyReady: 'Daily reminder cron',
 };
 
-export default function AdminPushCopyPage() {
+export default function CopyTab() {
   const [name, setName] = useState('Jasson');
   const [game, setGame] = useState('Classic');
   const [days, setDays] = useState(12);
@@ -30,11 +30,9 @@ export default function AdminPushCopyPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Push Copy"
-        icon={MessageSquareText}
-        subtitle="Every push and reminder in the cast voice, from the one shared copy bank that web, iOS and Android all use. Change the sample values to preview."
-      />
+      <TabIntro>
+        Every push and reminder in the cast voice, from the one shared copy bank that web, iOS and Android all use. Change the sample values to preview. Read-only: the copy changes in code.
+      </TabIntro>
 
       <Section title="Sample values">
         <div className="flex flex-wrap gap-3">
@@ -55,7 +53,11 @@ export default function AdminPushCopyPage() {
           <div key={k} className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-mono font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">{k}</span>
-              <span className="text-[11px] font-semibold text-gray-400 text-right">{SENT_BY[k] ?? ''}</span>
+              {SENT_BY[k] ? (
+                <span className="text-[11px] font-semibold text-gray-400 text-right">{SENT_BY[k]}</span>
+              ) : (
+                <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded uppercase" title="The line is in the bank but nothing sends it yet">Unsent</span>
+              )}
             </div>
             {/* A lock-screen style preview */}
             <div className="rounded-2xl bg-gray-100 px-3 py-2.5 flex gap-2.5 items-start">
@@ -71,7 +73,7 @@ export default function AdminPushCopyPage() {
       </div>
 
       <Callout>
-        Some senders put the line in the title instead of the body (friend beat, your turn, VS challenge). Broadcast campaigns with custom text are on <Link href="/admin/marketing" className="font-bold text-purple-700">Marketing</Link>; a test push to your own devices is on <Link href="/admin/messaging" className="font-bold text-purple-700">Messaging</Link>.
+        Some senders put the line in the title instead of the body (friend beat, your turn, VS challenge). Custom broadcast text is on the Campaigns tab; the daily reminder goes out at 14:00 UTC (see Push health).
       </Callout>
     </div>
   );

@@ -14,9 +14,6 @@ export const runtime = 'nodejs';
  *   - stripe: live subscriptions + recent payments straight from the Stripe API
  *     (server-side secret; nothing sensitive reaches the browser beyond what an
  *     agent needs — emails, amounts, statuses, dashboard ids).
- *   - webhookEvents: the store_webhook_events ledger, newest first. It is an
- *     idempotency ledger (event id + source only), so it serves here as a
- *     liveness feed proving Apple/Google notifications are arriving.
  */
 export async function GET(request: NextRequest) {
   const auth = await verifyAdmin(request);
@@ -51,15 +48,7 @@ export async function GET(request: NextRequest) {
     return { data: rows, error: null };
   };
 
-  const [proRes, eventsRes, referralsRes] = await Promise.all([
-    loadActivePro(),
-    admin
-      .from('store_webhook_events')
-      .select('event_id, source, processed_at')
-      .order('processed_at', { ascending: false })
-      .limit(25),
-    admin.from('referrals').select('status, redeemed_at, reward_granted_at, expires_at'),
-  ]);
+  const proRes = await loadActivePro();
 
   // A failed page would otherwise show a silently short list.
   if (proRes.error) {
@@ -72,20 +61,13 @@ export async function GET(request: NextRequest) {
   }));
 
   // Forward-looking Pro lifecycle: who is ABOUT to expire (CS gets ahead of
-  // "my Pro vanished" tickets), plus the referral-gift pipeline state.
-  const refs = referralsRes.data || [];
+  // "my Pro vanished" tickets). The referral-gift pipeline counts live on Pro &
+  // Gifts > Gifts (/api/admin/referrals); the store webhook ledger on
+  // Store feed (/api/admin/store-feed).
   const lifecycle = {
     expiringSoon: proUsers
       .filter((p) => p.pro_expires_at && p.pro_expires_at <= soonIso)
       .map((p) => ({ username: p.username, expiresAt: p.pro_expires_at, rail: p.rail })),
-    referrals: {
-      pending: refs.filter((r) => r.status === 'pending').length,
-      redeemed: refs.filter((r) => r.status === 'redeemed').length,
-      converted: refs.filter((r) => r.status === 'converted').length,
-      // Redeemed trials whose conversion reward hasn't fired — inviters still
-      // waiting on their friend's first paid invoice.
-      awaitingConversion: refs.filter((r) => r.status === 'redeemed' && !r.reward_granted_at).length,
-    },
   };
 
   // Live Stripe data — degrade gracefully when the key isn't configured (local
@@ -136,7 +118,6 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     proUsers,
-    webhookEvents: eventsRes.data || [],
     stripe,
     lifecycle,
   });
