@@ -17,7 +17,13 @@ import type { PodiumPlace } from '@/components/leaderboard/podium';
 export const PODIUM_FIGURE_SCALE = 2;
 export const PODIUM_FOOT_OVERLAP = 12;
 
-export function PodiumFigure({ place, tone, size, ring }: { place: PodiumPlace; tone: number; size: number; ring?: string }) {
+export function PodiumFigure({ place, tone, size, ring, planted = false, crown = true }: {
+  place: PodiumPlace; tone: number; size: number; ring?: string;
+  /** One-image podium: the figure's box ends exactly at its feet (no overlap into a step below). */
+  planted?: boolean;
+  /** False: no crown on first place (a Friends race nobody has scored in yet). */
+  crown?: boolean;
+}) {
   const livingOn = useLivingMascotOn();
   const look = usePlayerAvatar({
     name: place.username, userId: place.userId, url: place.avatarUrl, accent: place.avatar?.accent,
@@ -27,16 +33,16 @@ export function PodiumFigure({ place, tone, size, ring }: { place: PodiumPlace; 
     const big = size * PODIUM_FIGURE_SCALE;
     const posed = { ...look.config, pose: avatarPlacePose(tone) };
     return (
-      <span className="relative block" style={{ width: big, height: big, lineHeight: 0, marginBottom: -PODIUM_FOOT_OVERLAP, zIndex: 1 }}>
+      <span className="relative block" style={{ width: big, height: big, lineHeight: 0, marginBottom: planted ? 0 : -PODIUM_FOOT_OVERLAP, zIndex: 1 }}>
         <MascotAvatar config={posed as typeof look.config} initial={look.initial} size={big} cutout living />
-        {tone === 1 && <Icon3D name="crown" size={34} style={{ position: 'absolute', left: '50%', top: -big * 0.05, marginLeft: -17, zIndex: 2 }} />}
+        {tone === 1 && crown && <Icon3D name="crown" size={34} style={{ position: 'absolute', left: '50%', top: -big * 0.05, marginLeft: -17, zIndex: 2 }} />}
       </span>
     );
   }
   // the framed tile: the first place's crown floats above it, as before
   return (
     <>
-      {tone === 1 && <Icon3D name="crown" size={26} style={{ marginBottom: -8, position: 'relative', zIndex: 2 }} />}
+      {tone === 1 && crown && <Icon3D name="crown" size={26} style={{ marginBottom: -8, position: 'relative', zIndex: 2 }} />}
       <BoardAvatar url={place.avatarUrl} name={place.username} userId={place.userId} level={place.level} size={size} ring={ring} {...place.avatar} />
     </>
   );

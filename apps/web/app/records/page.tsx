@@ -631,7 +631,7 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
           />
         ) : (
           <div>
-            <Podium places={lbPodium} accent={color} />
+            <Podium places={lbPodium} />
             {lbSplit.rest.map(({ entry, rank }, i) => (
               <BoardRow
                 key={entry.user_id}
@@ -760,7 +760,7 @@ function YesterdayPodium({ mode, playType, userId }: { mode: string; playType: '
           ) : (
             // BJ4: yesterday's top three on the podium (open spots when fewer), the rest as rows.
             <div>
-              <Podium places={yPodium} accent={accent} label="Yesterday's top three" />
+              <Podium places={yPodium} label="Yesterday's top three" />
               {ySplit.rest.map(({ entry, rank }, i) => (
                 <BoardRow
                   key={entry.user_id}

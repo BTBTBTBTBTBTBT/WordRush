@@ -3,7 +3,7 @@ import { Mascot } from '@/components/ui/mascot';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { CastButton } from '@/components/ui/cast-button';
 import type { MascotId } from '@/lib/mascots';
-import { PodiumPedestal } from '@/components/leaderboard/podium';
+import { artSrc } from '@/lib/art';
 import { HeadingArt, type HeadingSlug } from '@/components/ui/heading-art';
 import { useAuth } from '@/lib/auth-context';
 
@@ -49,21 +49,12 @@ export function GuestChipTile({ c }: { c: GuestChip }) {
   );
 }
 
+/** The sign-in pitch's sample podium: the one-image stadium podium with its three blank panels (a faded preview). */
 function Podium() {
-  const steps = [
-    { rank: 2, h: 56 },
-    { rank: 1, h: 78 },
-    { rank: 3, h: 42 },
-  ];
   return (
-    <div className="flex items-end gap-2">
-      {steps.map((s) => (
-        <div key={s.rank} className="flex flex-col items-center gap-1" style={{ width: 78 }}>
-          {s.rank === 1 && <Icon3D name="crown" size={28} />}
-          <PodiumPedestal place={s.rank} height={s.h} />
-        </div>
-      ))}
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={artSrc('art-podium-stage')} alt="" width={300} height={200} decoding="async" draggable={false}
+      className="select-none pointer-events-none" style={{ width: 300, maxWidth: '100%', height: 'auto', aspectRatio: '1.5' }} />
   );
 }
 

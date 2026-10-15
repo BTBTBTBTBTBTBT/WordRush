@@ -311,6 +311,9 @@ export type NightArtName =
   | `art-toggle-${'light' | 'dark'}-${'track' | 'switch' | 'thumb-on' | 'thumb-off' | 'knob' | 'switch-on'}`
   | `art-podium-${1 | 2 | 3}${'' | '-plain'}`
   | 'art-podium-floor'
+  // 2.8 one-image podium (stadium + 3 steps + blank panels, 1536x1024) and the Halloween curtain-stage celebration card art (1586x992)
+  | 'art-podium-stage'
+  | 'art-celebration-stage-halloween'
   // 2.8 item 11b: the Leaderboard stage (clouds, floor disc, Yesterday ledge, sunburst light, compact Your board pill)
   | `art-lb-${string}`
   // 2.8 item 41: the What's new tour's illustration frame + page dots
@@ -758,6 +761,8 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-podium-3': [300, 159],
   'art-podium-3-plain': [300, 159],
   'art-podium-floor': [1080, 184],
+  'art-podium-stage': [1536, 1024],
+  'art-celebration-stage-halloween': [1586, 992],
   'art-lb-clouds': [420, 149],
   'art-lb-floor-disc': [418, 151],
   'art-lb-ledge': [394, 160],

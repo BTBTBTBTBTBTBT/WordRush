@@ -64,9 +64,11 @@ describe('2.8 surfaces render without accessibility violations', () => {
     expect(checkA11y(`<div role="heading" aria-level="2" aria-label="ALL 8 DAILIES WON TODAY!">${line}</div>`)).toEqual([]);
   });
 
-  it('the podium pedestal and floor art are decorative', async () => {
-    const { PodiumPedestal, PodiumFloor } = await import('@/components/leaderboard/podium');
-    const html = render(h('div', null, h(PodiumPedestal, { place: 1, height: 74, label: 1 }), h(PodiumPedestal, { place: 2, height: 54, label: 5 }), h(PodiumFloor, {})));
+  it('the one-image podium art is decorative and its steps read as a labelled group', async () => {
+    const { Podium } = await import('@/components/leaderboard/podium');
+    const html = render(h(Podium, { label: 'Top three', places: [{ key: 'a', rank: 1, userId: 'a', username: 'Ann', isMe: false, points: '2,589', detail: '2 guesses · 1m 10s' }] }));
+    expect(html).toContain('role="group"');
+    expect(html).toContain('Open spot');
     expect(checkA11y(html)).toEqual([]);
   });
 

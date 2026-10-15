@@ -50,9 +50,8 @@ import { QuickPlaySheet } from './quick-play-sheet';
 import { FlameCount, FrCard, FriendAvatar, GameIconSquare, Pill, PocketGameCard, QuietAction, QuietText, Sheet, cardStyle } from './friends-ui';
 import { GREEN_CANDY, InviteSentCard, NewFriendsModal, PendingPill, ShieldNotice, type InvitePerson } from './invite-screens';
 import { WATCHED_REQUESTS_KEY, giftShareText, inviteShareText, parseWatched, trackRequests } from '@/lib/invite-screens';
-import { FR_LOOK, frBar, frSurface, podiumSlots, rowStripe } from '@/lib/friends-look';
-import { PODIUM_FLOOR_RISE, PodiumFloor, PodiumGlow, PodiumPedestal } from '@/components/leaderboard/podium';
-import { podiumTone } from '@/lib/leaderboard-podium';
+import { FR_LOOK, frBar, frSurface, rowStripe } from '@/lib/friends-look';
+import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
 import { ART_SIZE, artSrc, poseArt } from '@/lib/art';
 import { softMix } from '@/lib/soft-surface';
 import { LevelBadge } from '@/components/badges/badge-art';
@@ -300,49 +299,24 @@ export function FriendsPanel() {
   type RaceRow = (typeof standings)[number] & { badge?: string | null };
   const GOLD_BADGE = '#F5B82E';
 
-  /** The shared podium (gold / silver / bronze steps, letter-tile avatars); the crown on first place once the race has points. */
-  const renderPodium = (rows: RaceRow[], started: boolean, crownLabel: string) => (
-    <div className="relative grid grid-cols-3 items-end gap-2" style={{ padding: `8px 8px ${PODIUM_FLOOR_RISE}px` }}>
-      <PodiumFloor inset={8} />
-      {podiumSlots(rows.length).map((slot) => {
-        const e = rows[slot.index];
-        return (
-          <Link
-            key={e.id}
-            href={e.me ? '/profile' : `/profile/${e.id}`}
-            className="relative grid justify-items-center min-w-0"
-            style={{ gridColumn: slot.column, gridRow: 1, gap: 3, isolation: 'isolate' }}
-          >
-            <PodiumGlow tone={podiumTone(slot.place)} figureHeight={slot.avatar} top={(slot.place === 1 && started ? 18 : 0) + slot.avatar / 2} />
-            {slot.place === 1 && started && (
-              <Icon3D name="crown" size={24} className="relative" style={{ marginBottom: -6, zIndex: 2 }} label={crownLabel} />
-            )}
-            <FriendAvatar
-              // Your own entry is labeled "You" but its tile shows your real initials + accent (§20).
-              name={e.me && profile ? profile.username : e.username}
-              userId={e.id}
-              url={e.avatar_url}
-              config={e.avatar_config}
-              castId={e.avatar_cast_id}
-              frame={e.avatar_frame}
-              pro={e.is_pro}
-              accent={e.me ? (profile as { accent_color?: string | null } | null)?.accent_color ?? null : null}
-              size={slot.avatar}
-            />
-            {/* The ink is a --fr-* variable: it turns light under a dark season card (Halloween night). */}
-            <span className="text-[12px] font-black truncate max-w-full" style={{ color: FR_LOOK.ink }}>{e.username}</span>
-            <SoftNum size={12}>{e.pts.toLocaleString()}</SoftNum>
-            {/* Today's highlight, gold under the points: both parts stack on two lines (FLAWLESS / 89-DAY STREAK). */}
-            {raceBadgeLines(e.badge).map((line) => (
-              <span key={line} className="block text-[9.5px] font-black text-center leading-[1.1] max-w-full" style={{ color: GOLD_BADGE, letterSpacing: 0.4, marginTop: -1 }}>{line}</span>
-            ))}
-            <span className="w-full" aria-label={`${ordinal(slot.place)} place`}>
-              <PodiumPedestal place={slot.place} height={slot.step} />
-            </span>
-          </Link>
-        );
-      })}
-    </div>
+  /** The shared one-image podium (core PODIUM_ART): the real mascots standing on the three steps, points + the day's highlights in the panels; the crown on first place once the race has points. */
+  const renderPodium = (rows: RaceRow[], started: boolean, label: string) => (
+    <Podium
+      label={label}
+      places={rows.slice(0, 3).map((e, i): PodiumPlace => ({
+        key: e.id, rank: i + 1, userId: e.id,
+        // Your own entry is labeled "You" but its mascot shows your real initial + accent (§20).
+        username: e.me && profile ? profile.username : e.username,
+        avatarUrl: e.avatar_url, avatarEmoji: e.avatar_emoji, level: e.level, isMe: e.me, crown: started,
+        avatar: {
+          config: e.avatar_config, castId: e.avatar_cast_id, frame: e.avatar_frame, pro: e.is_pro,
+          accent: e.me ? (profile as { accent_color?: string | null } | null)?.accent_color ?? null : null,
+        },
+        points: e.pts.toLocaleString(),
+        // Today's highlight under the points (FLAWLESS / 89-DAY STREAK): the panel's two small lines.
+        detail: raceBadgeLines(e.badge).join(' · '),
+      }))}
+    />
   );
 
   /** Rows 4th onward: the top 5, then the "All friends · N more" fold. */
@@ -620,7 +594,7 @@ export function FriendsPanel() {
           ))}
           {/* The podium (the Leaderboard's): gold / silver / bronze steps, letter-tile
               avatars, the crown on first place once the race has points. */}
-          {renderPodium(podium, raceStarted, 'Leads the week')}
+          {renderPodium(podium, raceStarted, 'Weekly race: top three')}
           {renderRankRows(standings, showAllWeek, () => setShowAllWeek((v) => !v), FR_LOOK.gold, FR_LOOK.goldInk)}
           {!raceStarted && (
             <p className="text-center text-[10.5px] font-bold" style={{ color: FR_LOOK.goldInk }}>Race resets Mondays — first daily takes the lead.</p>
@@ -641,7 +615,7 @@ export function FriendsPanel() {
             ENDS IN {midnightClock(new Date(now))}
           </span>
         </div>
-        {renderPodium(todayStandings.slice(0, 3), todayStarted, 'Leads today')}
+        {renderPodium(todayStandings.slice(0, 3), todayStarted, 'Today’s race: top three')}
         {renderRankRows(todayStandings, showAllToday, () => setShowAllToday((v) => !v), FR_LOOK.pink, FR_LOOK.bannerClock)}
         {!todayStarted && (
           <p className="text-center text-[10.5px] font-bold" style={{ color: FR_LOOK.bannerClock }}>First daily of the day takes the lead.</p>

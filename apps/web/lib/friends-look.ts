@@ -80,43 +80,6 @@ export function raceChipColor(row: { rank: number; points: number; me: boolean }
   return row.me ? RACE_YOU : RACE_REST;
 }
 
-export interface PodiumSlot {
-  /** Index into the standings (0 = first place). */
-  index: number;
-  place: 1 | 2 | 3;
-  /** Grid column: 2nd left, 1st center, 3rd right. */
-  column: 1 | 2 | 3;
-  /** Step height in px. */
-  step: number;
-  /** Step gradient, top → bottom. */
-  from: string;
-  to: string;
-  /** Avatar size in px (first place is bigger). */
-  avatar: number;
-}
-
-const STEPS: Record<1 | 2 | 3, Omit<PodiumSlot, 'index' | 'place' | 'column'>> = {
-  1: { step: 62, from: '#ffd66b', to: '#f5a524', avatar: 48 },
-  2: { step: 46, from: '#e4e8f0', to: '#aab3c5', avatar: 40 },
-  3: { step: 34, from: '#ffc9a0', to: '#d9844a', avatar: 40 },
-};
-const COLUMN: Record<1 | 2 | 3, 1 | 2 | 3> = { 1: 2, 2: 1, 3: 3 };
-
-/**
- * The podium's slots for `count` standings, in display order (2nd, 1st, 3rd),
- * only the places that exist; each keeps its own column so first place stays
- * centered even with two entrants.
- */
-export function podiumSlots(count: number): PodiumSlot[] {
-  const n = Math.max(0, Math.min(3, Math.floor(count)));
-  return [1, 0, 2]
-    .filter((i) => i < n)
-    .map((i) => {
-      const place = (i + 1) as 1 | 2 | 3;
-      return { index: i, place, column: COLUMN[place], ...STEPS[place] };
-    });
-}
-
 // ── K1 · Moments as in-app notices (docs/FINISH_SPEC.md K1) ─────────────────
 // Each moment is a tinted card in its event's color with a top bar, the
 // sender's letter tile, a small cast pose that fits the event, the headline in

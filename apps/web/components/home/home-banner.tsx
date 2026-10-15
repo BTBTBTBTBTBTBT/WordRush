@@ -69,6 +69,7 @@ const LOOP_ART = 'art-scene-unlimited-loop' as const;
 /** Founder 10-10: the swept day's live cast (O cheering, S flexing, W waving) and the Halloween idle scene's costumed O, W, R. */
 const SWEEP_TRIO = ['art-pose-o1-cheer', 'art-pose-s-flex', 'art-pose-w-wave'] as const;
 const HALLOWEEN_TRIO = ['art-halloween-o1', 'art-halloween-w', 'art-halloween-r'] as const;
+const FLAWLESS_TRIO = ['art-pose-d-cheer', 'art-pose-o2-cheer', 'art-pose-i-cheer'] as const;
 
 
 /** The thumb's inset inside the candy track's rim. */
@@ -270,6 +271,11 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   const seasonSlot = !!seasonBannerArt && !tierArt;
   const halloweenIdle = seasonBannerArt === 'art-scene-banner-halloween';
   const seasonArt = seasonSlot && seasonArtOk;
+  // 2.8 (founder 10-15, Halloween only): the stage card. The curtain-stage art is drawn behind the strip + trio row (it carries its own
+  // valance + curtains, so the card's drawn cap / cobweb step aside) and the animated trio's feet land in its three spotlight pools
+  // (core CELEBRATION_STAGE). Outside Halloween (or on the standard look) the card is exactly as before.
+  const stage = season === 'halloween' && !!look;
+  const stageTrio = tierArt && content.art === 'tier' ? (tierArt.art === 'art-scene-banner-flawless' ? FLAWLESS_TRIO : SWEEP_TRIO) : HALLOWEEN_TRIO;
 
 
   // Z: fixed-width segments, one font weight in both states; only the thumb slides.
@@ -342,10 +348,10 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         boxShadow: double ? '0 0 26px rgba(245,158,11,0.8)' : look?.glow ? '0 0 12px var(--season-glow)' : onPageShadow('0 4px 14px rgba(76,29,149,0.08)'),
       }}
     >
-      {look?.cobweb && <SeasonCobweb />}
+      {look?.cobweb && !stage && <SeasonCobweb />}
       {/* G4: the swept / flawless banner's own top bar (gold / pink). BJ6 round 3: a host day
           wears the brand candy frosting cap instead (the game cards' trim, purple → pink). */}
-      {tierArt
+      {stage ? null : tierArt
         ? <div aria-hidden="true" className="relative" style={{ height: slots.topBar, background: unlimited ? UNLIMITED_BAR : tierArt.bar, transition: 'background 160ms ease-out' }} />
         : <BrandCap height={slots.topBar} season={!!look?.cap} />}
       {/* BJ6 round 3 flair: a few tiny cast-color confetti dots in the empty top corners, mirrored. */}
@@ -371,6 +377,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           progress rows + Play next on the right. On phones these wrappers are display: contents (nothing moves). */}
       <div className="hb-body">
       <div className="hb-left">
+      <StageFrame on={stage} topBar={slots.topBar} trio={stageTrio} celebrating={!!tierArt && content.art === 'tier'}>
       <div className={`${look ? '' : 'banner-frost '}relative flex flex-col`} style={{ gap: BANNER_SLOT.stripGap, padding: `${slots.stripTop}px 12px ${BANNER_SLOT.stripBottom}px` }}>
       <div className="flex items-center gap-1">
       <div className="flex-1 min-w-0">
@@ -411,7 +418,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           </div>
         </div>
       </div>
-      {tierArt && (
+      {tierArt && !stage && (
         // Z: one art box in both modes — today's celebration art sizes it; in
         // Unlimited U's loop crossfades in over the same box.
         <div className="relative shrink-0" style={{ width: Math.round((TIER_ART_H * ART_SIZE[tierArt.art][0]) / ART_SIZE[tierArt.art][1]), maxWidth: '46%', height: slots.artHeight }}>
@@ -482,12 +489,14 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
             className={`relative ${halloweenIdle ? '' : 'idle-life'}`}
             style={{ height: SEASON_ART_H, width: 'auto', maxWidth: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(76, 29, 149, 0.18))', ...(halloweenIdle ? { display: 'none' } : idleLifeStyle()) }}
           />
-          {halloweenIdle && seasonArtOk && (
+          {halloweenIdle && seasonArtOk && !stage && (
             // Founder 10-10: the idle Halloween scene is alive: the costumed O, W, R sway slow and spooky (no sparkles, 0.7 s tempo, +-3 deg).
             <CelebrationTrio images={HALLOWEEN_TRIO} bunting={false} sparkles={false} tempo={0.7} swayDegrees={3} style={{ width: '100%', maxWidth: 420, height: SEASON_ART_H }} />
           )}
         </div>
       )}
+      {stage && tierArt && <div aria-hidden="true" style={{ height: SEASON_ART_H + 6 }} />}
+      </StageFrame>
       </div>
       <div className="hb-right">
       {/* BJ6 round 3 flair: the two progress rows sit in one soft lavender band — the card reads as two zones. */}
@@ -582,6 +591,24 @@ function SeasonCobweb() {
 const CAP_TRIM = { viewW: 360, drip: 4, bumps: 16 } as const;
 
 /** The brand candy frosting cap (the game cards' trim shape, purple → pink, with a glossy lip). */
+/**
+ * The Halloween stage card's frame (core CELEBRATION_STAGE): the curtain-stage art cover-fit behind the strip + trio row (a static
+ * image, decoded once; no per-frame work), the trio over it with its feet in the spotlight pools, the content on top. Off: a
+ * fragment, so the card is exactly as before.
+ */
+function StageFrame({ on, topBar, trio, celebrating, children }: { on: boolean; topBar: number; trio: readonly string[]; celebrating: boolean; children: React.ReactNode }) {
+  if (!on) return <>{children}</>;
+  return (
+    <div className="relative" style={{ paddingTop: topBar }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={artSrc('art-celebration-stage-halloween')} alt="" aria-hidden="true" width={1586} height={992} decoding="async" draggable={false}
+        className="absolute inset-0 w-full h-full select-none pointer-events-none" style={{ objectFit: 'cover', zIndex: 0 }} />
+      <CelebrationTrio className="pointer-events-none" style={{ position: 'absolute', inset: 0, zIndex: 1 }} images={trio} bunting={false} sparkles={celebrating} tempo={celebrating ? 0.42 : 0.7} swayDegrees={celebrating ? 4 : 3} stage />
+      <div className="relative" style={{ zIndex: 2 }}>{children}</div>
+    </div>
+  );
+}
+
 function BrandCap({ height, season = false }: { height: number; season?: boolean }) {
   const gid = `bcap${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   if (season) {

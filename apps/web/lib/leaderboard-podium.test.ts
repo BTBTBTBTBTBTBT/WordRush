@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { PODIUM_GLOW, PODIUM_SPARKLES, PODIUM_STEP_HEIGHT, podiumColumn, podiumSlots, podiumTone, rowBadge, solvedLine, splitPodium, type Ranked } from './leaderboard-podium';
+import { podiumColumn, podiumSlots, podiumTone, rowBadge, solvedLine, splitPodium, type Ranked } from './leaderboard-podium';
 
 const rows = (...ranks: number[]): Ranked<string>[] => ranks.map((rank, i) => ({ entry: `p${i}`, rank }));
 
@@ -41,11 +41,9 @@ describe('podiumColumn / podiumTone', () => {
     expect([0, 1, 2].map(podiumColumn)).toEqual([2, 1, 3]);
   });
 
-  it('gives ties the same metal and the steps their heights', () => {
+  it('gives ties the same metal', () => {
     expect([1, 1, 3].map(podiumTone)).toEqual(['gold', 'gold', 'bronze']);
     expect(podiumTone(2)).toBe('silver');
-    expect(PODIUM_STEP_HEIGHT.gold).toBeGreaterThan(PODIUM_STEP_HEIGHT.silver);
-    expect(PODIUM_STEP_HEIGHT.silver).toBeGreaterThan(PODIUM_STEP_HEIGHT.bronze);
   });
 });
 
@@ -109,20 +107,5 @@ describe('BJ4: the podium for N results (open spots)', () => {
       expect({ filled: split.podium.length, open: split.open }).toEqual(c.layout);
       expect(podiumSlots(c.ranks).filter((s) => s.kind === 'place')).toHaveLength(c.layout.filled);
     }
-  });
-});
-
-describe('podium glow', () => {
-  it('gives each metal its own hue, gold the only one with sparkles', () => {
-    const cores = [PODIUM_GLOW.gold.core, PODIUM_GLOW.silver.core, PODIUM_GLOW.bronze.core];
-    expect(new Set(cores).size).toBe(3);
-    const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-    const [sr, , sb] = rgb(PODIUM_GLOW.silver.core);
-    expect(sb).toBeGreaterThan(sr);
-    const [br, bg, bb] = rgb(PODIUM_GLOW.bronze.core);
-    expect(br).toBeGreaterThan(bg);
-    expect(bg).toBeGreaterThan(bb);
-    for (const g of Object.values(PODIUM_GLOW)) expect(g.alpha).toBeGreaterThan(0.5);
-    expect(PODIUM_SPARKLES.length).toBeGreaterThanOrEqual(3);
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  FR_LOOK, MEDAL, MOMENT_POSES, RACE_REST, RACE_YOU, frBar, frSurface, momentAccent, momentKey, momentPoses, numberRuns, podiumSlots,
+  FR_LOOK, MEDAL, MOMENT_POSES, RACE_REST, RACE_YOU, frBar, frSurface, momentAccent, momentKey, momentPoses, numberRuns,
   raceChipColor, rowStripe,
 } from './friends-look';
 import { POSE_ART_NAMES } from './art';
@@ -55,27 +55,6 @@ describe('raceChipColor', () => {
   it('marks you purple off the podium', () => {
     expect(raceChipColor({ rank: 5, points: 0, me: true }, true)).toBe(RACE_YOU);
     expect(raceChipColor({ rank: 4, points: 120, me: false }, true)).toBe(RACE_REST);
-  });
-});
-
-describe('podiumSlots', () => {
-  it('lays out 2nd, 1st, 3rd with first place centered and tallest', () => {
-    const s = podiumSlots(5);
-    expect(s.map((x) => x.place)).toEqual([2, 1, 3]);
-    expect(s.map((x) => x.index)).toEqual([1, 0, 2]);
-    expect(s.map((x) => x.column)).toEqual([1, 2, 3]);
-    const first = s.find((x) => x.place === 1)!;
-    expect(first.step).toBeGreaterThan(s.find((x) => x.place === 2)!.step);
-    expect(s.find((x) => x.place === 2)!.step).toBeGreaterThan(s.find((x) => x.place === 3)!.step);
-    expect(first.avatar).toBeGreaterThan(s.find((x) => x.place === 3)!.avatar);
-    expect(first.to).toBe(MEDAL.gold);
-  });
-
-  it('only draws the places that exist, keeping their columns', () => {
-    expect(podiumSlots(2).map((x) => [x.place, x.column])).toEqual([[2, 1], [1, 2]]);
-    expect(podiumSlots(1).map((x) => [x.place, x.column])).toEqual([[1, 2]]);
-    expect(podiumSlots(0)).toEqual([]);
-    expect(podiumSlots(-3)).toEqual([]);
   });
 });
 

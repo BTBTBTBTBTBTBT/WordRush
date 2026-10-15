@@ -66,50 +66,15 @@ export function podiumTone(rank: number): PodiumTone {
   return rank <= 1 ? 'gold' : rank === 2 ? 'silver' : 'bronze';
 }
 
-/** A step's height (px) by metal (mockup `.s1` 74, `.s2` 54, `.s3` 40). */
-export const PODIUM_STEP_HEIGHT: Record<PodiumTone, number> = { gold: 64, silver: 47, bronze: 35 };
-
-/** The compact podium's step heights (Yesterday's small copy, founder 10-09; iOS PodiumView compact 62 / 46 / 34). */
-export const PODIUM_STEP_HEIGHT_COMPACT: Record<PodiumTone, number> = { gold: 62, silver: 46, bronze: 34 };
-
-/**
- * Podium glow (2.8 TestFlight feedback: "a glow behind the characters so they stand out"): the soft radial light behind
- * each standing figure, one clearly different hue per metal — gold (warm, with twinkling sparkles), silver (cool blue-white),
- * bronze (copper orange). `core` is the glow's bright center, `alpha` its peak opacity, `scale` its diameter as a multiple
- * of the figure's height. Mirrored hex-for-hex on iOS (PodiumGlow) and Android (PodiumGlow).
- */
-export const PODIUM_GLOW: Record<PodiumTone, { core: string; alpha: number; scale: number }> = {
-  gold: { core: '#FFC93C', alpha: 0.8, scale: 1.55 },
-  silver: { core: '#B4C8EE', alpha: 0.75, scale: 1.4 },
-  bronze: { core: '#F28A3B', alpha: 0.7, scale: 1.4 },
-};
-
-/** The gold glow's twinkling sparkles: position (% of the glow box), size (px) and animation delay (s). Static under calm motion. */
-export const PODIUM_SPARKLES: ReadonlyArray<{ x: number; y: number; size: number; delay: number }> = [
-  { x: 14, y: 30, size: 9, delay: 0 },
-  { x: 86, y: 24, size: 7, delay: 0.7 },
-  { x: 24, y: 74, size: 6, delay: 1.3 },
-  { x: 80, y: 68, size: 8, delay: 0.35 },
-];
-
 /** The place number a metal stands for (gold 1, silver 2, bronze 3). */
 export const PODIUM_TONE_PLACE: Record<PodiumTone, 1 | 2 | 3> = { gold: 1, silver: 2, bronze: 3 };
 
-/**
- * The pedestal art (10-03, docs/design/brand/podium): `art-podium-N` wears its numeral;
- * a step whose label isn't its metal's number takes the plain pedestal (the label drawn on it).
- */
-export function podiumPedestalArt(place: number, label?: number): `art-podium-${1 | 2 | 3}${'' | '-plain'}` {
-  const p = (place <= 1 ? 1 : place === 2 ? 2 : 3) as 1 | 2 | 3;
-  return label === undefined || label === p ? `art-podium-${p}` : `art-podium-${p}-plain`;
-}
-
-/** The sprites every podium shows first (the numbered pedestals + the floor plate). */
-export const PODIUM_PRELOAD = ['art-podium-1', 'art-podium-2', 'art-podium-3', 'art-podium-floor'] as const;
+/** The image every podium shows first (the one-image stadium podium; core PODIUM_ART). */
+export const PODIUM_PRELOAD = ['art-podium-stage'] as const;
 
 let podiumPreloaded = false;
 /**
- * Warm the podium sprites into the image cache (decoded off the main thread via
+ * Warm the podium image into the image cache (decoded off the main thread via
  * `img.decode()`) when the Leaderboard / Home first mount, so the podium never pops in.
  */
 export function preloadPodiumArt(src: (name: string) => string): void {
