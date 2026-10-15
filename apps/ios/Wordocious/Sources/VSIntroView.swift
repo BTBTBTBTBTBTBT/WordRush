@@ -55,6 +55,9 @@ struct VSMatchIntroView: View {
     /// FINISH_SPEC §D3: a CPU bot's kind, in-character hello (nil for people / the ghost).
     var banter: String? = nil
     let onDone: () -> Void
+    /// Slice 5 (iPad): the card's content grows 1.6x and the card widens to 760; phones keep 1 and 420.
+    @Environment(\.widthClass) private var widthClass
+    private var k: CGFloat { widthClass == .compact ? 1 : 1.6 }
 
     // Staggered slam — the two cards clash a beat apart rather than landing
     // simultaneously, which reads more fluid than a single hard snap.
@@ -110,10 +113,26 @@ struct VSMatchIntroView: View {
     /// The versus card (§D3): you (your avatar / letter tile) vs them (a bot in its
     /// "ready" pose, or the person's avatar), names, the candy VS lettering, and the
     /// bot's hello line or the head-to-head.
+    /// Phones: the card is capped at 420 and tinted as before. iPad: the tint sits on the 760 content itself
+    /// (tinting the capped frame let the greedy top bar paint the full page width).
     private var window: some View {
+        let bar = purple ? VsLobbyKit.purpleBar : VsLobbyKit.tealBar
+        return Group {
+            if widthClass == .compact {
+                windowBody.frame(maxWidth: 420)
+                    .vsTinted(accent, bar: bar, tint: 0.10, line: 0.3)
+            } else {
+                windowBody
+                    .vsTinted(accent, bar: bar, tint: 0.10, line: 0.3)
+                    .frame(maxWidth: 760)
+            }
+        }
+    }
+
+    private var windowBody: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                HeadingArtView(.matchfound, height: 30, maxWidth: 200, alignment: .leading)   // BJ16
+                HeadingArtView(.matchfound, height: 30 * k, maxWidth: 200 * k, alignment: .leading)   // BJ16
                 Spacer(minLength: 6)
                 VSModeChip(mode: mode)
             }
@@ -124,7 +143,7 @@ struct VSMatchIntroView: View {
                     playerCard(me)
                         .offset(x: meSlammed ? 0 : -260)
                         .opacity(meSlammed ? 1 : 0)
-                    VSLettering()
+                    VSLettering(size: 56 * k)
                         .scaleEffect(vsPopped ? 1 : 0.01)
                         .opacity(vsPopped ? 1 : 0)
                     playerCard(opp)
@@ -139,7 +158,7 @@ struct VSMatchIntroView: View {
                         .opacity(h2hShown ? 1 : 0)
                 } else if opponent != nil, let h2h = headToHead {
                     Text(HeadToHeadService.headToHeadLine(opponentName: opp.username, h2h))
-                        .font(Brand.font(12, .heavy)).foregroundStyle(subInk)
+                        .font(Brand.font(12 * k, .heavy)).foregroundStyle(subInk)
                         .multilineTextAlignment(.center)
                         .offset(y: h2hShown ? 0 : 8)
                         .opacity(h2hShown ? 1 : 0)
@@ -147,8 +166,6 @@ struct VSMatchIntroView: View {
             }
             .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 18)
         }
-        .frame(maxWidth: 420)
-        .vsTinted(accent, bar: purple ? VsLobbyKit.purpleBar : VsLobbyKit.tealBar, tint: 0.10, line: 0.3)
     }
 
     /// The opponent's own color (a cast bot's), else the window accent.
@@ -168,23 +185,23 @@ struct VSMatchIntroView: View {
         return VStack(spacing: 7) {
             if let m {
                 // A cast bot stands in character, ready to play.
-                PoseImage(m, "ready", height: 96)
-                    .frame(height: 96)
+                PoseImage(m, "ready", height: 96 * k)
+                    .frame(height: 96 * k)
             } else {
                 // Avatar + ring share one frame and are rasterized into a single
                 // layer, so the ring can never drift off the photo mid-slam.
                 ZStack {
-                    VSPlayerAvatar(url: p.avatarUrl, username: p.username, botArt: p.botArt, size: 72)
+                    VSPlayerAvatar(url: p.avatarUrl, username: p.username, botArt: p.botArt, size: 72 * k)
                     // §20: rounded-square ring on a letter tile.
                     AvatarOutline(tile: p.botArt == nil && AvatarView.showsTile(p.avatarUrl)).strokeBorder(.white, lineWidth: 3)
                 }
-                .frame(width: 72, height: 72)
+                .frame(width: 72 * k, height: 72 * k)
                 .drawingGroup()
                 .shadow(color: accent.opacity(0.22), radius: 6, x: 0, y: 3)
-                .frame(height: 96)
+                .frame(height: 96 * k)
             }
             Text(p.username.uppercased())
-                .font(Brand.font(13, .black)).tracking(0.4).foregroundStyle(headInk)
+                .font(Brand.font(13 * k, .black)).tracking(0.4).foregroundStyle(headInk)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             if let subtitle = p.subtitle {
@@ -198,9 +215,9 @@ struct VSMatchIntroView: View {
 
     private func chip(_ text: String, accent: Color) -> some View {
         Text(text)
-            .font(Brand.font(10, .black)).foregroundStyle(VsLobbyKit.titleInk)
+            .font(Brand.font(10 * k, .black)).foregroundStyle(VsLobbyKit.titleInk)
             .lineLimit(1).minimumScaleFactor(0.7)
-            .padding(.horizontal, 9).padding(.vertical, 3)
+            .padding(.horizontal, 9 * k).padding(.vertical, 3 * k)
             .background(Capsule().fill(accent.vsWash(0.16)))
             .overlay(Capsule().stroke(accent.vsWash(0.4), lineWidth: 1))
     }

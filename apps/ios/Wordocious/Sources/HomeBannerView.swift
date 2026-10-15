@@ -31,6 +31,8 @@ struct HomeBannerView: View {
     let onShare: () -> Void
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    /// Slice 4 add-on: the tablet selector rows scale their tiles with the row (see BannerSpreadRow.proportional).
+    @Environment(\.widthClass) private var widthClass
     /// FINISH_SPEC §R3 (founder 10-02): free players see the switch too; UNLIMITED
     /// wears a PRO pill and opens the G1 Go Pro paywall, then switches once Pro.
     @State private var showPro = false
@@ -515,10 +517,11 @@ struct HomeBannerView: View {
                     .lineLimit(1).minimumScaleFactor(0.8)
                 Spacer(minLength: 4)
             }
-            BannerSpreadRow(slots: tileSlots, maxTile: 40, minGap: 4) {
+            BannerSpreadRow(slots: tileSlots, maxTile: 40, minGap: 4, proportional: widthClass != .compact) {
                 ForEach(r.modes) { m in
                     BannerTile(mode: m, result: unlimited ? nil : m.dbKey.flatMap { byMode[$0] },
-                               unlimited: unlimited, radius: 8, iconSize: 0) { onOpen(m) }
+                               unlimited: unlimited, radius: widthClass == .compact ? 8 : 19, iconSize: 0,
+                               proportional: widthClass != .compact) { onOpen(m) }
                 }
             }
             .frame(maxWidth: .infinity)
@@ -545,6 +548,8 @@ private struct BannerTile: View {
     let unlimited: Bool
     let radius: CGFloat
     let iconSize: CGFloat
+    /// Tablet rows: the W / L badge scales with the tile (phones keep its fixed 13 pt).
+    var proportional: Bool = false
     let onTap: () -> Void
 
     var body: some View {
@@ -555,7 +560,8 @@ private struct BannerTile: View {
                 if !unlimited, let result {
                     // 2.8 item 8: the ONE game-tile style (the Sudocious finish screen's picker tile):
                     // the game's color wash + top band, and today's W / L badge in the corner.
-                    PickerTile(accent: accent, result: result.completed, radius: radius, bar: 3, badge: 13) { side in
+                    PickerTile(accent: accent, result: result.completed, radius: radius, bar: 3, badge: 13,
+                               badgeRatio: proportional ? PickerTile<EmptyView>.tabletBadgeRatio : nil) { side in
                         BannerGlyph(icon: mode.icon, ink: accent, accent: accent, solid: false,
                                     size: iconSize > 0 ? iconSize : floor(side * 0.56))
                     }
@@ -592,9 +598,16 @@ struct BannerSpreadRow: Layout {
     var slots: Int = 10
     var maxTile: CGFloat = 36 // BH3: up to 36 (10 across still fit)
     var minGap: CGFloat = 5
+    /// Slice 4 add-on (tablets): no tile cap; the tile and its gap keep the phone's proportion (gap = 13% of a
+    /// tile), so the row fills the page width edge to edge at a larger size.
+    var proportional: Bool = false
+    static let proportionalGap: CGFloat = 0.13
 
     func tile(_ width: CGFloat) -> CGFloat {
         let n = CGFloat(max(slots, 1))
+        if proportional {
+            return max(18, floor(width / (n + Self.proportionalGap * (n - 1))))
+        }
         return max(18, min(maxTile, floor((width - minGap * (n - 1)) / n)))
     }
 

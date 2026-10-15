@@ -202,9 +202,12 @@ struct CandyButtonStyle: ButtonStyle {
         case medium
         /// A small pill / round button (34 pt, 1-pt outline).
         case small
+        /// Item 1: the guide card's button on tablets (1.3x the large pill).
+        case hero
 
         var height: CGFloat {
             switch self {
+            case .hero: return 68
             case .large: return 52
             case .medium: return 42
             case .small: return 34
@@ -212,6 +215,7 @@ struct CandyButtonStyle: ButtonStyle {
         }
         var fontSize: CGFloat {
             switch self {
+            case .hero: return 22
             case .large: return 17
             case .medium: return 15
             case .small: return 13

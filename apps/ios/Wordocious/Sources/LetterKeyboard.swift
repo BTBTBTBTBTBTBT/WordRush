@@ -38,9 +38,19 @@ struct LetterKeyboard: View {
         "ASDFGHJKL".map { String($0) },
         "ZXCVBNM".map { String($0) },
     ]
-    private var keyHeight: CGFloat { keyHeightOverride.map { min($0, layout == "michael" ? 44 : 52) } ?? (layout == "michael" ? 44 : 52) }
+    /// §AG tablet slice 3: keys are 1.2x on medium/expanded (they read small across a 640 pt column); phones unchanged.
+    @Environment(\.widthClass) private var widthClass
+    private var keyHeight: CGFloat {
+        (keyHeightOverride.map { min($0, layout == "michael" ? 44 : 52) } ?? (layout == "michael" ? 44 : 52))
+            * (widthClass == .compact ? 1 : 1.3)
+    }
 
     var body: some View {
+        // §AG tablet slice 2: the key rows cap at the 640 pt column on iPad (phones pass through).
+        keyRows.tabletColumn(max: tabletKeyboardMaxWidth)
+    }
+
+    private var keyRows: some View {
         VStack(spacing: 7) {
             ForEach(0..<rows.count, id: \.self) { r in
                 HStack(spacing: 5) {

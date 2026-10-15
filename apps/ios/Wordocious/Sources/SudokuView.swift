@@ -163,6 +163,8 @@ final class SudokuVM: ObservableObject {
 
 struct SudokuView: View {
     @StateObject private var vm: SudokuVM
+    /// §AG tablet slice 3: the board takes the leftover height on medium/expanded.
+    @Environment(\.widthClass) private var widthClass
     /// Pro Unlimited "Play Again" / difficulty switch — HomeView swaps in a fresh seed.
     var onPlayAgain: ((SudokuDifficulty) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
@@ -195,6 +197,8 @@ struct SudokuView: View {
                     result
                 }
                 .padding(.horizontal, 10)
+                .environment(\.helperScale, tabletChromeScale(widthClass))
+                .tabletPage()
             } else {
                 VStack(spacing: 8) {
                     header
@@ -208,15 +212,20 @@ struct SudokuView: View {
                             .allowsHitTesting(slots.showsPicker)
                             .accessibilityHidden(!slots.showsPicker)
                     }
-                    Spacer(minLength: 4)
+                    // §AG tablet slice 3: on medium/expanded the board is the only flexible child (the Spacers would
+                    // split the band and leave the grid ~1/3 of it); phones keep the Spacers unchanged.
+                    if widthClass == .compact { Spacer(minLength: 4) }
                     board.padding(.horizontal, 6)
-                    Spacer(minLength: 4)
+                        .frame(maxHeight: widthClass == .compact ? nil : .infinity)
+                    if widthClass == .compact { Spacer(minLength: 4) }
                     // // §BI9: the feedback popup hangs from the line under the board — never over the title art or the board.
                     StagedSlot(key: "sudokuPad", estimate: 180) {   // BJ14
                         SudokuPad(vm: vm).padding(.bottom, 6).gameFeedbackToast(vm.toast, alignment: .top)
                     }
                 }
                 .padding(.horizontal, 10)
+                .environment(\.helperScale, tabletChromeScale(widthClass))
+                .tabletPage()
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {
@@ -270,10 +279,10 @@ struct SudokuView: View {
             BubbleLabel(ModeStyle.title(.sudoku), color: sudokuAccent, size: 27, minScale: 0.5, alignment: .center)
                 .soloGameTitle(.sudoku)
             HStack(spacing: 8) {
-                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-                Text(difficultyLabel[vm.state.difficulty] ?? "Medium").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted) }
+                Text(difficultyLabel[vm.state.difficulty] ?? "Medium").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                 HStack(spacing: 3) {
-                    Text("Mistakes").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                    Text("Mistakes").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                     ForEach(0..<SUDOKU_MAX_MISTAKES, id: \.self) { i in
                         Circle().fill(i < vm.mistakes ? Color(hex: 0xDC2626) : Theme.borderLight).frame(width: 8, height: 8)
                     }
@@ -286,7 +295,7 @@ struct SudokuView: View {
                             Image(systemName: "clock").font(.system(size: 9))
                             Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").monospacedDigit()
                         }
-                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                        .font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                     }
                 }
             }
@@ -384,6 +393,8 @@ struct SudokuBoardView: View {
     var tray = false
     let onSelect: (Int) -> Void
 
+    /// §AG tablet slice 3: the grid grows to the 640 pt column on medium/expanded ("boards fill the screen").
+    @Environment(\.widthClass) private var widthClass
     private let rule = Color(hex: 0xC4B5FD), heavy = Color(hex: 0x4C1D95)
     private let selectedFill = Color(hex: 0xDDD6FE), sameFill = Color(hex: 0xEDE9FE)
     private let player = Color(hex: 0x7C3AED), hint = Color(hex: 0x8B5CF6), wrong = Color(hex: 0xDC2626)
@@ -400,7 +411,7 @@ struct SudokuBoardView: View {
             let cell = CGFloat(BoardSizing.fitTile(widthUnits: 9, heightUnits: 9,
                                                    width: Double(geo.size.width - pad / CGFloat(BoardSizing.widthFill)),
                                                    height: Double(geo.size.height - (pad + lip) / CGFloat(BoardSizing.heightFill)),
-                                                   maxTile: 420 / 9, minTile: 10))
+                                                   maxTile: Double(widthClass == .compact ? 420 : tabletPageMaxWidth) / 9, minTile: 10))
             let side = cell * 9
             // Founder 10-10 ("hard to see the separation of the 9 boards"): real gaps between the 3 × 3 boxes; the cells
             // shrink to make room so the board keeps its size.
@@ -443,7 +454,7 @@ struct SudokuBoardView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
-        .frame(maxWidth: 420)
+        .frame(maxWidth: widthClass == .compact ? 420 : tabletPageMaxWidth)   // §AG tablet slice 3 (Half B): the board fills the tablet page
         .accessibilityLabel("\(sudokuTitle) board")
     }
 
@@ -556,6 +567,7 @@ struct SudokuPad: View {
             }
         }
         .padding(.horizontal, 2)
+        .tabletColumn(max: tabletKeyboardMaxWidth)   // §AG tablet slice 2: tool bar + digit pad cap at the 640 pt column on iPad
         // Hardware keys (founder, 2026-09-30): web sudoku-game keydown — 1–9
         // place, Delete / 0 erase, N notes, H hint, ⌘Z undo, arrows move.
         .hardwareKeyboard(enabled: !vm.isFinished) { key in

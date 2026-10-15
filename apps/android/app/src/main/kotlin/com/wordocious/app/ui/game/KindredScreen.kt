@@ -1,6 +1,9 @@
 package com.wordocious.app.ui.game
 
 import com.wordocious.app.ui.gameBackground
+import com.wordocious.app.ui.gamePageFor
+import com.wordocious.app.ui.rememberWidthClass
+import com.wordocious.app.ui.chromeScale
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -389,7 +392,7 @@ fun KindredScreen(
             // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
             KindredFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
-            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.fillMaxSize().gamePageFor(rememberWidthClass()), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 KindredHeader(session)
                 // The grid is the hero (founder, 2026-09-28, on the real build: a content-sized
                 // 4×4 at the top left the bottom half of the phone empty). The band between the
@@ -412,10 +415,12 @@ fun KindredScreen(
                     val tileH = HintLayout.kindredTileHeight(
                         bandH = maxHeight.value, rows = rows, solved = s.solved.size, revealedLabels = revealedLabels.size,
                         chipSlotH = (chipSlot + gap).value, trayPad = KINDRED_TRAY_PAD.value, trayLip = GameTrayStyle.LIP.value, gap = gap.value,
+                        maxTile = kindredTileMax(),
                     ).dp
                     Column(
                         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(gap),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = if (rememberWidthClass() == com.wordocious.app.ui.WidthClass.COMPACT) Arrangement.spacedBy(gap) else Arrangement.spacedBy(gap, Alignment.CenterVertically),
                     ) {
                         RevealedChips(revealedLabels, chipSlot)
                         TileGrid(session, tileH)
@@ -423,7 +428,7 @@ fun KindredScreen(
                         // Solved groups stack UNDER the grid in solve order, newest at the bottom,
                         // so the tiles never get pushed down as you solve (founder, 2026-09-28).
                         if (s.solved.isNotEmpty()) {
-                            Column(Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Column(Modifier.widthIn(max = kindredMaxW()).fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 s.solved.forEach { g -> GroupBar(g) }
                             }
                         }
@@ -454,21 +459,38 @@ fun KindredScreen(
     }
 }
 
+/** Tablet: the widest a Kindred block gets (the game page on MEDIUM / EXPANDED; the 420 dp phone column). */
+@Composable
+private fun kindredMaxW(): androidx.compose.ui.unit.Dp =
+    if (rememberWidthClass() == com.wordocious.app.ui.WidthClass.COMPACT) 420.dp else com.wordocious.app.ui.tabletPageMaxWidth
+
+/** Tablet: a tile may grow to its share of the page width (4 tiles per row), so the grid fills the page. */
+@Composable
+private fun kindredTileMax(): Float {
+    val wc = rememberWidthClass()
+    if (wc == com.wordocious.app.ui.WidthClass.COMPACT) return HintLayout.KINDRED_TILE_MAX
+    val w = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat()
+    val page = minOf(w - com.wordocious.app.ui.tabletPageMargin(wc).value * 2f, com.wordocious.app.ui.tabletPageMaxWidth.value)
+    return ((page - 56f) / 4f).coerceAtLeast(HintLayout.KINDRED_TILE_MIN)
+}
+
 @Composable
 private fun KindredHeader(session: KindredSession) {
     val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
+    val cs = com.wordocious.app.ui.chromeScale(rememberWidthClass())
+    val meta = (12f * cs).sp
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("GROUPS") { Text("KINDRED", fontSize = 24.sp, fontWeight = FontWeight.Black, color = GROUPS_ACCENT, fontFamily = Nunito) }
         Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            session.holidayTitle?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = GROUPS_ACCENT) }
-            Text(session.groupsLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Text(session.mistakesLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = meta, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            session.holidayTitle?.let { Text(it, fontSize = meta, fontWeight = FontWeight.Bold, color = GROUPS_ACCENT) }
+            Text(session.groupsLabel, fontSize = meta, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text(session.mistakesLabel, fontSize = meta, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             @Suppress("UNUSED_EXPRESSION") tick
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
-                Text(clockText(session.elapsed), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp * cs))
+                Text(clockText(session.elapsed), fontSize = meta, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
         }
     }
@@ -527,7 +549,7 @@ internal fun GroupBar(group: GroupsGroup, revealed: Boolean = false) {
 @Composable
 internal fun KindredFinishedBars(solved: List<GroupsGroup>, unsolved: List<GroupsGroup>, modifier: Modifier = Modifier) {
     GameTray(
-        GROUPS_ACCENT, modifier.widthIn(max = 420.dp).fillMaxWidth(), state = finishTray(true, unsolved.isEmpty()),
+        GROUPS_ACCENT, modifier.widthIn(max = kindredMaxW()).fillMaxWidth(), state = finishTray(true, unsolved.isEmpty()),
         padding = androidx.compose.foundation.layout.PaddingValues(KINDRED_TRAY_PAD),
     ) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -549,7 +571,7 @@ private fun kindredChipSlotHeight(): androidx.compose.ui.unit.Dp =
  */
 @Composable
 private fun RevealedChips(groups: List<GroupsGroup>, slotHeight: androidx.compose.ui.unit.Dp) {
-    Box(Modifier.widthIn(max = 420.dp).fillMaxWidth().height(slotHeight), contentAlignment = Alignment.Center) {
+    Box(Modifier.widthIn(max = kindredMaxW()).fillMaxWidth().height(slotHeight), contentAlignment = Alignment.Center) {
     if (groups.isNotEmpty()) Row(
         Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -579,7 +601,7 @@ private fun TileGrid(session: KindredSession, tileH: Dp) {
     val ringed = s.pairs.flatten().filter { it in s.tiles }.toSet()
     // L the grid sits in the shared game tray.
     Column(
-        Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp).shakeOnReject(session.shakeKey)
+        Modifier.widthIn(max = kindredMaxW()).fillMaxWidth().padding(horizontal = 4.dp).shakeOnReject(session.shakeKey)
             .gameTray(GROUPS_ACCENT, padding = androidx.compose.foundation.layout.PaddingValues(KINDRED_TRAY_PAD)),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -604,7 +626,8 @@ private val DARK_WORD_CARD = TileLook(
 private fun WordTile(word: String, tileH: Dp, selected: Boolean, ringed: Boolean, onTap: () -> Unit) {
     // The label scales with the tile (founder, 2026-09-28): normal words
     // clamp(tile × 0.22, 12–15 sp), long words (> 8 chars) clamp(tile × 0.18, 10–13 sp).
-    val base = if (word.length > 8) (tileH.value * 0.18f).coerceIn(10f, 13f).sp else (tileH.value * 0.22f).coerceIn(12f, 15f).sp
+    val wordScale = when (rememberWidthClass()) { com.wordocious.app.ui.WidthClass.EXPANDED -> 1.8f; com.wordocious.app.ui.WidthClass.MEDIUM -> 1.4f; else -> 1f }
+    val base = (if (word.length > 8) (tileH.value * 0.18f).coerceIn(10f, 13f) else (tileH.value * 0.22f).coerceIn(12f, 15f)).times(wordScale).sp
     // Shrink-to-fit on ONE line (Doug, Android, 2026-09-26: PRESENCE broke as
     // "PRESENC / E" at his font scale). The old three-step size table could not
     // know the tile width or the user's font scale; now the text lays out at the
@@ -645,7 +668,7 @@ private fun WordTile(word: String, tileH: Dp, selected: Boolean, ringed: Boolean
 private fun ProgressRail(s: GroupsState) {
     val found = s.solved.size
     Row(
-        Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp),
+        Modifier.widthIn(max = kindredMaxW()).fillMaxWidth().padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
@@ -684,7 +707,7 @@ private fun MistakeDots(mistakes: Int) {
 /** A8 a game control: a small candy button with its icon; [dim] = nothing to do (taps ignored, as before). */
 @Composable
 private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, reserve: String? = null, count: Int = 0, onClick: () -> Unit) =
-    PadAction(label, icon, onClick = onClick, color = color, dim = dim, reserveLabel = reserve, count = count)
+    PadAction(label, icon, onClick = onClick, color = color, dim = dim, reserveLabel = reserve, count = count, scale = com.wordocious.app.ui.chromeScale(rememberWidthClass()))
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 

@@ -361,6 +361,8 @@ fun HelperButton(
     fill: Boolean = false,
     height: Dp = 34.dp,
     contentDescription: String = text ?: "",
+    /** Tablet: the pill, its label and icon grow by this factor (1 = the phone size). */
+    scale: Float = 1f,
 ) {
     // Inside a game EVERY helper takes the game's accent (a state reads by [selected], never by hue); off a game [tint].
     // Season preview: in season the helpers take the season's button tint (registry palette), an explicit
@@ -374,21 +376,22 @@ fun HelperButton(
         if (spent) base.spent(if (dark) 0.5f else 0.25f) else base
     }
     val art = icon ?: vector?.let { FamIcon.of(it) }
+    val pillH = height * scale
     FamPill(
-        onClick, modifier, height, c.fill, c.fillPressed, c.ink, enabled, used, circle, fill,
-        padStart = height * 0.34f, padEnd = height * 0.42f, contentDescription = contentDescription,
+        onClick, modifier, pillH, c.fill, c.fillPressed, c.ink, enabled, used, circle, fill,
+        padStart = pillH * 0.34f, padEnd = pillH * 0.42f, contentDescription = contentDescription,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
             when {
-                art != null -> FamIconImage(art, c.ink, if (circle) 20.dp else 18.dp)
-                vector != null -> Icon(vector, null, tint = c.ink, modifier = Modifier.size(if (circle) 18.dp else 15.dp))
+                art != null -> FamIconImage(art, c.ink, (if (circle) 20.dp else 18.dp) * scale)
+                vector != null -> Icon(vector, null, tint = c.ink, modifier = Modifier.size((if (circle) 18.dp else 15.dp) * scale))
             }
             leading?.invoke()
             if (!circle && !text.isNullOrEmpty()) {
-                if (LocalNaturalLabels.current) FamLabel(text, 12.5f, c.ink)
-                else Box(Modifier.weight(1f, fill = false)) { FamLabel(text, 12.5f, c.ink) }
+                if (LocalNaturalLabels.current) FamLabel(text, 12.5f * scale, c.ink)
+                else Box(Modifier.weight(1f, fill = false)) { FamLabel(text, 12.5f * scale, c.ink) }
             }
-            if (!circle && trailing != null) FamLabel(trailing, 12.5f, c.ink)
+            if (!circle && trailing != null) FamLabel(trailing, 12.5f * scale, c.ink)
         }
     }
 }
@@ -406,16 +409,18 @@ fun QuietButton(
     fill: Boolean = false,
     enabled: Boolean = true,
     contentDescription: String = text,
+    /** Tablet: the pill and its label grow by this factor (1 = the phone size). */
+    scale: Float = 1f,
 ) {
     val dark = WTheme.isDark
-    val h = when (size) { CandySize.LARGE -> 44.dp; CandySize.MEDIUM -> 40.dp; CandySize.SMALL -> 34.dp }
+    val h = (when (size) { CandySize.LARGE -> 44.dp; CandySize.MEDIUM -> 40.dp; CandySize.SMALL -> 34.dp }) * scale
     // Season preview: the quiet pill takes the season's quiet tint (registry palette).
     val season = seasonPalette()?.quietTint ?: ThemeKit.quietTint()
     val sc = season?.let { remember(it, dark) { helperColors(it, dark) } }
     val face = sc?.fill ?: if (dark) Color(0xFF3B3163) else Color(0xFFECE4FF)
     val pressedFace = sc?.fillPressed ?: if (dark) Color(0xFF463A74) else Color(0xFFE2D7FF)
     val ink = sc?.ink ?: if (dark) Color(0xFFDDD0FF) else Color(0xFF5B21B6)
-    val fs = if (size == CandySize.SMALL) 12.5f else 13.5f
+    val fs = (if (size == CandySize.SMALL) 12.5f else 13.5f) * scale
     FamPill(
         onClick, modifier, h, face, pressedFace, ink, enabled, used = false, circle = false, stretch = fill,
         padStart = h * 0.45f, padEnd = h * 0.45f, contentDescription = contentDescription,

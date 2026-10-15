@@ -252,7 +252,7 @@ struct FriendsPanelView: View {
                 }
                 .padding(16)
             }
-            .wideColumn(.page)   // §AG: iPad column, centered on the wallpaper
+            .tabletColumn()   // §AG: iPad column, centered on the wallpaper
             .pageBackground(.friends, lightOnly: true)
             .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
             .toolbar {
@@ -1488,6 +1488,7 @@ struct FriendsScreenView: View {
                             .softSheet(isPresented: $showAuth) { AuthView() }
                     }
                 }
+                .tabletPage()   // slice 4: the tab page width (header + content), wallpaper stays full-bleed
                 .frame(maxHeight: .infinity, alignment: .top)
                 .pageBackground(.friends, lightOnly: true)
                 // navigationTitle stays for the next push's back label.
@@ -1495,6 +1496,7 @@ struct FriendsScreenView: View {
                 .toolbar(.hidden, for: .navigationBar)
             } else {
                 scroll(proxy)
+                    .tabletColumn()
                     .pageBackground(.friends, lightOnly: true)
                     // navigationTitle stays for the next push's back label; the
                     // headline in the scroll is the visible title.

@@ -221,6 +221,8 @@ struct HubView: View {
     var onPlayAgain: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    /// §AG tablet slice 3: the honeycomb grows on medium/expanded.
+    @Environment(\.widthClass) private var widthClass
     @State private var adShown = false
     @State private var showOverlay = false
     @State private var showGuide = false
@@ -245,13 +247,14 @@ struct HubView: View {
         ZStack {
             PageBackground(tint: .forGame(.hub))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.showResults {
-                results.padding(.horizontal, 10)
+                results.padding(.horizontal, 10).tabletPage()
             } else {
                 VStack(spacing: 8) {
                     header()
                     board
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if confirmEnd {
@@ -330,9 +333,12 @@ struct HubView: View {
     private func helper(_ label: String, _ symbol: String, tint: Color? = nil, primary: Bool = false,
                         action: @escaping () -> Void) -> some View {
         Button(action: action) { CandyLabel(title: label, symbol: symbol) }
-            .buttonStyle(HelperButtonStyle(tint: tint, selected: primary))
+            .buttonStyle(HelperButtonStyle(tint: tint, selected: primary, scale: controlScale))
             .accessibilityLabel(label)
     }
+
+    /// §AG tablet slice 4: the helper pills, rank bar and End puzzle grow ×1.4 on medium/expanded (phones 1.0).
+    private var controlScale: CGFloat { widthClass == .compact ? 1 : Self.tabletControlScale }
 
     /// The shuffle as a staggered tile flip (item 32): the six outer hexes turn over about Y, 220 ms each, 36 ms apart
     /// (~400 ms in all), and the letter swaps at the midpoint when the hex is edge-on; the center stays. GPU transforms only.
@@ -369,20 +375,20 @@ struct HubView: View {
             BubbleLabel("HUBBUB", color: hubAccent, size: 27, minScale: 0.5, alignment: .center)
                 .soloGameTitle(.hub)
             HStack(spacing: 8) {
-                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
+                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted) }
                 // The one "N/M words · pts" line (hubWordsLabel); results say it in the result line instead.
                 if counts {
-                    Text(hubWordsLabel(vm.state)).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                    Text("\(vm.state.points)/\(vm.state.max) pts").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                    Text(hubWordsLabel(vm.state)).font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
+                    Text("\(vm.state.points)/\(vm.state.max) pts").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                 }
                 if !vm.state.ended {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
                             Image(systemName: "clock").font(.system(size: 9)); Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").monospacedDigit()
                             // The clock keeps counting the hunt after Hubbub; say so (founder, 2026-09-28).
-                            if vm.state.status == .won { Text("· playing on").font(Brand.caption(10)) }
+                            if vm.state.status == .won { Text("· playing on").font(Brand.caption(10 * tabletChromeScale(widthClass))) }
                         }
-                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                        .font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                     }
                 }
             }
@@ -391,25 +397,25 @@ struct HubView: View {
 
     /// `points: false` on the board, where the header already says "N/M pts".
     private func rankBar(points: Bool = true) -> some View {
-        let s = vm.state, rank = s.rank
+        let s = vm.state, rank = s.rank, k = controlScale
         let next: String? = rank < 9 ? "\(hubRankThreshold(rank + 1, max: s.max) - s.points) to \(HUB_RANKS[rank + 1].name)" : "maximum"
         return VStack(spacing: 4) {
             HStack {
-                Text(s.rankName).font(Brand.font(12, .black)).foregroundStyle(hubAccent)
+                Text(s.rankName).font(Brand.font(12 * k, .black)).foregroundStyle(hubAccent)
                 Spacer()
                 HStack(spacing: 3) {
-                    if points { Text("\(s.points)").softNumber(13) }
-                    Text(points ? "pts · \(next ?? "")" : (next ?? "")).font(Brand.caption(11)).foregroundStyle(FinishInk.secondary)
+                    if points { Text("\(s.points)").softNumber(13 * k) }
+                    Text(points ? "pts · \(next ?? "")" : (next ?? "")).font(Brand.caption(11 * k)).foregroundStyle(FinishInk.secondary)
                 }
             }
             HStack(spacing: 4) {
                 ForEach(0..<HUB_RANKS.count, id: \.self) { i in
-                    Capsule().fill(i <= rank ? hubAccent : PuzKit.face(hubAccent, 0.16)).frame(height: 8)
+                    Capsule().fill(i <= rank ? hubAccent : PuzKit.face(hubAccent, 0.16)).frame(height: 8 * k)
                         .overlay(i == HUB_SOLVED_RANK ? Capsule().stroke(hubAccent.opacity(0.5), lineWidth: 2) : nil)
                 }
             }
         }
-        .frame(maxWidth: 420).padding(.horizontal, 4)
+        .frame(maxWidth: 420 * k).padding(.horizontal, 4)
         .accessibilityLabel("Rank \(s.rankName), \(s.points) of \(s.max) points")
     }
 
@@ -481,16 +487,19 @@ struct HubView: View {
     private static let boardRowSpacing: CGFloat = 8
     private static let boardFixedRows = 7               // rows around the cluster band
     private static let tileMin: CGFloat = 64, tileMax: CGFloat = 100
+    /// §AG tablet slice 4: the honeycomb's cap on medium/expanded, and the control scale that goes with it.
+    private static let tileMaxTablet: CGFloat = 240
+    static let tabletControlScale: CGFloat = 1.4
     /// The hint pair's tint (web: #f5a524).
     private static let hintAmber = Color(hex: 0xF5A524)
 
-    private static func tileSide(boardHeight h: CGFloat) -> CGFloat {
-        let reserved = rankBarHeight + entryLineHeight + controlRowHeight * 2 + foundHeaderHeight + endLinkHeight + trayHeight + boardRowSpacing * CGFloat(boardFixedRows)
+    private static func tileSide(boardHeight h: CGFloat, maxTile: CGFloat = HubView.tileMax, controlScale k: CGFloat = 1) -> CGFloat {
+        let reserved = rankBarHeight * k + entryLineHeight + controlRowHeight * 2 * k + foundHeaderHeight + endLinkHeight * k + trayHeight + boardRowSpacing * CGFloat(boardFixedRows)
         // FINISH_SPEC §B5: the shared sizing rule over the honeycomb's height
         // (three hexes tall plus gaps ≈ 2.9 pieces; 3.3 leaves the found-words room).
         return CGFloat(BoardSizing.fitTile(widthUnits: 1, heightUnits: 3.3, fixedHeight: Double(reserved),
                                            width: .infinity, height: Double(h), heightFill: 1,
-                                           maxTile: Double(tileMax), minTile: Double(tileMin))).rounded(.down)
+                                           maxTile: Double(maxTile), minTile: Double(tileMin))).rounded(.down)
     }
 
     /// The word in progress: 28 pt bold, center letter in the accent, placeholder when
@@ -542,7 +551,10 @@ struct HubView: View {
     private var board: some View {
         let s = vm.state
         return GeometryReader { geo in
-            let side = Self.tileSide(boardHeight: geo.size.height)
+            // §AG tablet slice 4: the honeycomb grows to 160 pt on medium/expanded (phones keep the 100 pt cap).
+            let side = Self.tileSide(boardHeight: geo.size.height,
+                                     maxTile: widthClass == .compact ? Self.tileMax : Self.tileMaxTablet,
+                                     controlScale: controlScale)
             let pending = s.hinted.filter { !s.found.contains($0) }
             VStack(spacing: Self.boardRowSpacing) {
                 rankBar(points: false)  // the header already says "N/M pts"
@@ -596,7 +608,7 @@ struct HubView: View {
                 if s.status == .won { helper("Finish", "flag", primary: true) { vm.end() } }
                 else {
                     Button { withAnimation(Theme.animation(.easeOut(duration: 0.18))) { confirmEnd = true } } label: { CandyLabel(title: "End puzzle", symbol: "flag") }
-                        .buttonStyle(QuietButtonStyle(size: .small))
+                        .buttonStyle(QuietButtonStyle(size: .small, scale: controlScale))
                         .accessibilityLabel("End puzzle and see answers")
                 }
             }

@@ -56,8 +56,7 @@ android {
 
     buildTypes {
         debug { buildConfigField("boolean", "POCKET_DEMO", "true") }
-        // The baseline-profile plugin's release-like, debug-signed variant (perf measuring): never shipped.
-        matching { it.name == "benchmarkRelease" }.configureEach { buildConfigField("boolean", "POCKET_DEMO", "true") }
+        // benchmarkRelease (the baseline-profile plugin's release-like, debug-signed perf variant) is set per variant below.
         release {
             // R8 shrink + optimize, no renaming (-dontobfuscate in proguard-rules.pro keeps
             // Sentry traces readable); unused resources dropped (founder, 2026-09-29).
@@ -79,6 +78,15 @@ android {
 
     packaging {
         resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    }
+}
+
+// The perf/playthrough demo harness (BuildConfig.POCKET_DEMO) on the benchmarkRelease variant: the baseline-profile plugin
+// creates that build type with initWith(release) AFTER our buildTypes block, so a buildTypes-level buildConfigField (or a
+// matching{}.configureEach) is overwritten back to false. Per variant, the value sticks. Perf-only: never the shipped release.
+androidComponents {
+    onVariants(selector().withBuildType("benchmarkRelease")) { variant ->
+        variant.buildConfigFields.put("POCKET_DEMO", com.android.build.api.variant.BuildConfigField("boolean", true, null))
     }
 }
 

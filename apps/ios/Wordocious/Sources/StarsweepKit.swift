@@ -333,8 +333,10 @@ struct StarsweepTool: View {
     /// §BI22: a used count (Hint) — the gold corner coin on the circle, never in the caption.
     var count: Int = 0
     let action: () -> Void
+    @Environment(\.widthClass) private var widthClass
 
     var body: some View {
+        // Slice 5 (R3, Half B): the round tools and their captions scale on tablets (1.15x MEDIUM, 1.3x EXPANDED).
         VStack(spacing: 3) {
             Button(action: action) {
                 StarsweepToolIcon(symbol: symbol)
@@ -346,11 +348,12 @@ struct StarsweepTool: View {
             .accessibilityLabel(count > 0 ? "\(label) (\(count) used)" : label)
             .accessibilityAddTraits(active ? .isSelected : [])
             Text(label)
-                .font(Brand.font(10, .heavy))
+                .font(Brand.font(10 * tabletChromeScale(widthClass), .heavy))
                 .foregroundStyle(dim ? FinishInk.secondary.opacity(0.55) : (active ? FinishInk.purple : FinishInk.secondary))
                 .lineLimit(1).minimumScaleFactor(0.75)
                 .accessibilityHidden(true)
         }
+        .environment(\.helperScale, tabletChromeScale(widthClass))
         .frame(maxWidth: .infinity)
     }
 }

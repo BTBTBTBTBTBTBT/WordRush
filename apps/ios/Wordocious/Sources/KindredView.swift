@@ -220,6 +220,7 @@ final class KindredVM: ObservableObject {
 }
 
 struct KindredView: View {
+    @Environment(\.widthClass) private var widthClass
     @StateObject private var vm: KindredVM
     /// Pro Unlimited "Play Again" — HomeView swaps in a fresh seed.
     var onPlayAgain: (() -> Void)? = nil
@@ -247,6 +248,11 @@ struct KindredView: View {
         CGFloat(HintLayout.kindredTileHeight(band: Double(band), tiles: tiles, solvedBars: bars,
                                              revealedCategories: named, trayLip: Double(GameTray.lip)))
     }
+    /// Half B (tablets): the tiles grow to the band. The rail, the chip slot and room for four solved bars
+    /// stay reserved below the grid, so the tiles never move as groups are solved (phones keep the Core cap).
+    private static func tabletTileHeight(band: CGFloat) -> CGFloat {
+        max(56, ((band - 300) / 4).rounded(.down) - 6)
+    }
 
     var body: some View {
         ZStack {
@@ -264,7 +270,7 @@ struct KindredView: View {
                         }
                         // §L: the finished groups on the tray (won purple / lost slate).
                         .gameTray(accent: kindredAccent, state: vm.state.status == .won ? .won : .lost, padding: 8)
-                        .frame(maxWidth: 420)
+                        .frame(maxWidth: widthClass == .compact ? 420 : tabletPageMaxWidth)
                         .frame(maxWidth: .infinity, minHeight: size.height)
                     }
                 } dock: {
@@ -274,6 +280,7 @@ struct KindredView: View {
                     result
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             } else {
                 VStack(spacing: 8) {
                     header
@@ -285,7 +292,7 @@ struct KindredView: View {
                     // the first layout pass — same approach as Hubbub's cluster.
                     GeometryReader { geo in
                         let revealed = vm.revealedLabels
-                        let tileH = Self.tileHeight(band: geo.size.height, tiles: vm.state.tiles.count, bars: vm.state.solved.count, named: revealed.count)
+                        let tileH = widthClass == .compact ? Self.tileHeight(band: geo.size.height, tiles: vm.state.tiles.count, bars: vm.state.solved.count, named: revealed.count) : Self.tabletTileHeight(band: geo.size.height)
                         ScrollView {
                             VStack(spacing: 8) {
                                 // §BI22: the named categories' slot is always there (one line,
@@ -313,7 +320,7 @@ struct KindredView: View {
                                     }
                                 }
                             }
-                            .frame(maxWidth: 420)
+                            .frame(maxWidth: widthClass == .compact ? 420 : tabletPageMaxWidth)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 4)
                         }
@@ -331,13 +338,14 @@ struct KindredView: View {
                             PuzCandyAction(title: "Name a category", symbol: "tag", variant: .amber, fullWidth: true) { SoundManager.shared.playKeyTap(); vm.hintLabel() }
                             PuzCandyAction(title: "Show a pair", symbol: "link", variant: .pink, fullWidth: true, count: vm.state.hintsUsed) { SoundManager.shared.playKeyTap(); vm.hintPair() }
                         }
-                        .frame(maxWidth: 420)
+                        .frame(maxWidth: widthClass == .compact ? 420 : tabletKeyboardMaxWidth)
                     }
                     // §BI9: the feedback popup hangs from the controls under the board — never over the title art or the board.
                     .gameFeedbackToast(vm.toast, alignment: .top)
                     .padding(.bottom, 10)
                 }
                 .padding(.horizontal, 10)
+                .tabletPage()
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {
@@ -407,17 +415,17 @@ struct KindredView: View {
             BubbleLabel("KINDRED", color: kindredAccent, size: 27, minScale: 0.5, alignment: .center)
                 .soloGameTitle(.groups)
             HStack(spacing: 8) {
-                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-                if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(kindredAccent) }
-                Text("\(vm.state.solved.count)/\(GROUPS_TOTAL_BOARDS) groups").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                Text(vm.mistakesLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted) }
+                if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(kindredAccent) }
+                Text("\(vm.state.solved.count)/\(GROUPS_TOTAL_BOARDS) groups").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
+                Text(vm.mistakesLabel).font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                 if !vm.isFinished {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
                             Image(systemName: "clock").font(.system(size: 9))
                             Text(timeText(vm.elapsed, clock: true))
                         }
-                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                        .font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                     }
                 }
             }
@@ -542,12 +550,15 @@ struct KindredTileGrid: View {
     @ObservedObject var vm: KindredVM
     /// Scaled by the board to fill its band (founder, 2026-09-28); 56 was the fixed height before.
     var tileHeight: CGFloat = 56
+    @Environment(\.widthClass) private var widthClass
 
     var body: some View {
         let s = vm.state
         let ringed = vm.ringed
-        let fontNormal = min(15, max(12, (tileHeight * 0.22).rounded()))
-        let fontLong = min(13, max(10, (tileHeight * 0.18).rounded()))
+        // Slice 5 (R3, Half B): the words read big on tablets (1.8x EXPANDED, 1.4x MEDIUM); long words still autoshrink.
+        let wordScale: CGFloat = widthClass == .expanded ? 1.8 : (widthClass == .medium ? 1.4 : 1)
+        let fontNormal = min(15, max(12, (tileHeight * 0.22).rounded())) * wordScale
+        let fontLong = min(13, max(10, (tileHeight * 0.18).rounded())) * wordScale
         // Founder (2026-09-25, on build 191): the pair ring was cut off at the screen edge.
         // A lazy grid clips to its own bounds, and the ring is drawn 3 pt OUTSIDE the tile, so
         // the outer columns lost it. Every cell now carries a 3 pt transparent margin (the grid

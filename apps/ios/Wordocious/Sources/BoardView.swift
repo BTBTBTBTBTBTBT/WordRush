@@ -719,6 +719,8 @@ struct BoardLayout: View {
     @ObservedObject var vm: GameViewModel
     var availableWidth: CGFloat
     var fitHeight: CGFloat? = nil
+    /// §AG tablet slice 3: word tiles may grow past the phone's 84 pt cap on medium/expanded.
+    @Environment(\.widthClass) private var widthClass
     /// §L: sit the single board on the shared game tray. Default = live play only
     /// (`fitHeight` set); the finished recaps are trayed by their own call sites.
     var tray: Bool? = nil
@@ -939,6 +941,7 @@ struct BoardLayout: View {
         let lip = trayed ? GameTray.lip + 4 : 0
         return CGFloat(BoardSizing.squareTile(columns: vm.wordLength, rows: rowsPerBoard,
                                               width: Double(availableWidth - pad / CGFloat(BoardSizing.widthFill)),
-                                              height: fitHeight.map { Double($0 - (pad + lip) / CGFloat(BoardSizing.heightFill)) }))
+                                              height: fitHeight.map { Double($0 - (pad + lip) / CGFloat(BoardSizing.heightFill)) },
+                                              maxTile: widthClass == .compact ? 84 : 160))
     }
 }

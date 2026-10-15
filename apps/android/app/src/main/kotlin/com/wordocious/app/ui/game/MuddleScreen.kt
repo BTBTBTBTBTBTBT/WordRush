@@ -1,6 +1,10 @@
 package com.wordocious.app.ui.game
 
 import com.wordocious.app.ui.gameBackground
+import com.wordocious.app.ui.gamePageFor
+import com.wordocious.app.ui.tabletPageMaxWidth
+import com.wordocious.app.ui.tabletPageMargin
+import com.wordocious.app.ui.GAME_TITLE_ART_HEADER_MAX
 import android.app.Activity
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -80,6 +84,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import com.wordocious.app.ui.WidthClass
+import com.wordocious.app.ui.rememberWidthClass
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -188,10 +194,33 @@ private data class MuddleSizes(
     val captionSp: androidx.compose.ui.unit.TextUnit, val captionLine: androidx.compose.ui.unit.TextUnit,
     /** Short phones: the locked punchline is ONE line (label left, pattern rings right). */
     val lockedOneLine: Boolean = false,
+    /** Tablet: the in-row hint circle's diameter (34 dp on a phone). */
+    val hintBtn: Dp = 34.dp,
 )
 private val MUDDLE_REGULAR = MuddleSizes(34.dp, 24.dp, 22.dp, 20.dp, 28.dp, 18.dp, 30.dp, 22.dp, 44.dp, 30.dp, 28.dp, 14.sp, 18.sp)
 private val MUDDLE_SHORT = MuddleSizes(32.dp, 22.dp, 22.dp, 20.dp, 24.dp, 18.dp, 28.dp, 22.dp, 40.dp, 28.dp, 26.dp, 13.sp, 16.sp, lockedOneLine = true)
-private fun muddleSizesFor(screenHeightDp: Int) = if (screenHeightDp < SHORT_SCREEN_DP) MUDDLE_SHORT else MUDDLE_REGULAR
+/**
+ * Tablet scale (R3) for Muddle's sizes: the widest word row (six scrambled chips + six answer
+ * tiles, 282 dp at phone size) fills about 90% of the page, between 1.6x and 2.6x. Phones 1x.
+ */
+@Composable
+private fun muddleTabletScale(wc: WidthClass): Float {
+    if (wc == WidthClass.COMPACT) return 1f
+    val screenW = LocalConfiguration.current.screenWidthDp
+    val page = minOf(screenW - tabletPageMargin(wc).value, tabletPageMaxWidth.value)
+    return ((page * 0.9f - 42f) / 282f).coerceIn(1.6f, 2.6f)
+}
+private fun muddleSizesFor(screenHeightDp: Int, k: Float = 1f): MuddleSizes {
+    val base = if (screenHeightDp < SHORT_SCREEN_DP) MUDDLE_SHORT else MUDDLE_REGULAR
+    if (k == 1f) return base
+    return base.copy(
+        tile = base.tile * k, chip = base.chip * k, coin = base.coin * k, trayChip = base.trayChip * k,
+        hintRow = base.hintRow * k, hintBtn = base.hintBtn * k, hintCircle = base.hintCircle * k,
+        smallTile = base.smallTile * k, smallChip = base.smallChip * k, line = base.line * k, ring = base.ring * k,
+        // Tablet (R3): the caption under the picture is 1.3x.
+        captionSp = (base.captionSp.value * 1.3f).sp, captionLine = (base.captionLine.value * 1.3f).sp,
+    )
+}
 private val LocalMuddleSizes = androidx.compose.runtime.compositionLocalOf { MUDDLE_REGULAR }
 @Composable private fun wordTile(): Dp = LocalMuddleSizes.current.tile
 /** Gap between the active word's tiles. */
@@ -441,6 +470,8 @@ fun MuddleScreen(
     onOpenLeaderboard: ((GameMode) -> Unit)? = null,
 ) {
     val session = remember(seed) { MuddleSession(seed, isDaily) }
+    // Tablet slice 4: the play column is 640 dp on MEDIUM/EXPANDED (phones 420 dp, unchanged).
+    val tablet = rememberWidthClass() != WidthClass.COMPACT
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val isPro = AuthService.isProActive
@@ -499,14 +530,15 @@ fun MuddleScreen(
             // compact header · the stage (cartoon + caption ALWAYS shown at the top, the rows
             // under them, scrolling internally only if they must) · Delete · Clear · keyboard.
             val screenH = LocalConfiguration.current.screenHeightDp
-            val sizes = muddleSizesFor(screenH)
+            val sizes = muddleSizesFor(screenH, muddleTabletScale(rememberWidthClass()))
             androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides sizes) {
-                Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(Modifier.fillMaxSize().gamePageFor(rememberWidthClass()), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     MuddleHeader(session, compact = true)
                     val puzzle = session.puzzle
                     MuddleStage(
-                        Modifier.weight(1f).fillMaxWidth().widthIn(max = 420.dp),
-                        cap = screenH.dp * CARTOON_SCREEN_FRACTION, fill = true,
+                        Modifier.weight(1f).fillMaxWidth().widthIn(max = if (tablet) tabletPageMaxWidth else 420.dp),
+                        // Tablet slice 5: the picture grows to the page width (its 4:3 height is the only other limit).
+                        cap = if (tablet) screenH.dp else screenH.dp * CARTOON_SCREEN_FRACTION, fill = true, centerCartoon = tablet,
                         cartoon = { h -> CartoonPanel(puzzle?.cartoon, puzzle?.altText ?: "Cartoon", height = h) },
                         caption = { Caption(session.state, finished = false) },
                         rows = { MuddlePuzzle(session, finished = false, onFinished) },
@@ -534,6 +566,9 @@ fun MuddleScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MuddleHeader(session: MuddleSession, compact: Boolean) {
+    // Tablet slice 5 (R4): the title art, its band and the meta line scale with the tablet header.
+    val wc = rememberWidthClass()
+    val chrome = com.wordocious.app.ui.chromeScale(wc)
     val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     val s = session.state
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = if (compact) 0.dp else 2.dp)) {
@@ -553,8 +588,20 @@ private fun MuddleHeader(session: MuddleSession, compact: Boolean) {
             // 44 dp, clear of Home on the left and sound + help on the right) so the cartoon gets
             // the height; the one meta line follows under the row.
             val res = com.wordocious.app.ui.gameTitleArtResForKey("SCRAMBLE")
-            Box(Modifier.fillMaxWidth().height(HEADER_BAND).padding(top = GAME_CONTROLS_INSET).padding(horizontal = HEADER_ART_INSET), contentAlignment = Alignment.Center) {
-                if (res != null) com.wordocious.app.ui.FittedGameTitleArt(res, com.wordocious.app.ui.gameTitleLabelForKey("SCRAMBLE"), maxHeight = HEADER_ART_MAX)
+            // Tablet (R4): the title's cap is the shared game-header cap x the title scale (2x on EXPANDED), beside the corner buttons.
+            // Founder 10-14: the tablet title is at most 110 dp tall and 60% of the page wide.
+            val tabletTitle = wc != WidthClass.COMPACT
+            val titleMax = if (tabletTitle) com.wordocious.app.ui.TABLET_TITLE_HEIGHT_MAX else HEADER_ART_MAX
+            val top = GAME_CONTROLS_INSET * chrome
+            Box(
+                Modifier.fillMaxWidth().height(if (tabletTitle) titleMax + top else HEADER_BAND).padding(top = top)
+                    .padding(horizontal = if (tabletTitle) 80.dp else HEADER_ART_INSET),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (res != null) com.wordocious.app.ui.FittedGameTitleArt(
+                    res, com.wordocious.app.ui.gameTitleLabelForKey("SCRAMBLE"), maxHeight = titleMax,
+                    widthCap = com.wordocious.app.ui.tabletTitleWidthCap(wc),
+                )
                 else fallback()
             }
         } else {
@@ -562,14 +609,14 @@ private fun MuddleHeader(session: MuddleSession, compact: Boolean) {
             com.wordocious.app.ui.GameHeaderTitle("SCRAMBLE") { fallback() }
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = if (compact) 0.dp else 48.dp)) {
-            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
-            session.holidayTitle?.let { Text(it, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = MUDDLE_ACCENT, maxLines = 1) }
-            Text("${scrambleBoardsSolved(s)}/$SCRAMBLE_TOTAL_BOARDS solved", fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
-            Text("${session.checksLabel} · ${SCRAMBLE_MAX_CHECKS - s.checks} left", fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
+            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = (11 * chrome).sp, lineHeight = (14 * chrome).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
+            session.holidayTitle?.let { Text(it, fontSize = (11 * chrome).sp, lineHeight = (14 * chrome).sp, fontWeight = FontWeight.Bold, color = MUDDLE_ACCENT, maxLines = 1) }
+            Text("${scrambleBoardsSolved(s)}/$SCRAMBLE_TOTAL_BOARDS solved", fontSize = (11 * chrome).sp, lineHeight = (14 * chrome).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
+            Text("${session.checksLabel} · ${SCRAMBLE_MAX_CHECKS - s.checks} left", fontSize = (11 * chrome).sp, lineHeight = (14 * chrome).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
             @Suppress("UNUSED_EXPRESSION") tick
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(10.dp))
-                Text(clockText(session.elapsed), fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
+                Text(clockText(session.elapsed), fontSize = (11 * chrome).sp, lineHeight = (14 * chrome).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
             }
         }
     }
@@ -592,6 +639,8 @@ private fun MuddleStage(
     cap: Dp,
     fill: Boolean,
     gap: Dp = 4.dp,
+    /** Tablet: the cartoon + caption block sits centered in the free height above the rows (no dead band above the rows). */
+    centerCartoon: Boolean = false,
     cartoon: @Composable (Dp) -> Unit,
     caption: @Composable () -> Unit,
     rows: @Composable () -> Unit,
@@ -617,11 +666,15 @@ private fun MuddleStage(
         val cartoonH = cartoonP.maxOfOrNull { it.height } ?: 0
         val used = cartoonH + gapPx + captionH + gapPx + rowsH
         val height = if (fill) total else minOf(used, total)
+        // The free height (play only): phones center the rows below the caption; tablets split it, half above the cartoon
+        // and half between the caption and the rows, so the cartoon block sits in the middle of the space above the rows.
+        val free = if (fill) (height - used).coerceAtLeast(0) else 0
+        val lead = if (fill && centerCartoon) free / 2 else 0
+        val slack = when { !fill -> 0; centerCartoon -> free - lead; else -> free / 2 }
         layout(w, height) {
-            cartoonP.forEach { it.place(0, 0) }
-            captionP.forEach { it.place(0, cartoonH + gapPx) }
-            val top = cartoonH + gapPx + captionH + gapPx
-            val slack = if (fill) ((height - top - rowsH) / 2).coerceAtLeast(0) else 0
+            cartoonP.forEach { it.place(0, lead) }
+            captionP.forEach { it.place(0, lead + cartoonH + gapPx) }
+            val top = lead + cartoonH + gapPx + captionH + gapPx
             rowsP.forEach { it.place(0, top + slack) }
         }
     }
@@ -646,7 +699,7 @@ private fun MuddlePuzzle(session: MuddleSession, finished: Boolean, onFinished: 
     // The expanded word: the selected row while it is an open word, else the game's next open word.
     val expanded = if (session.row in 0 until SCRAMBLE_FINAL && !s.solved[session.row]) session.row
         else scrambleActiveRow(s)?.takeIf { it < SCRAMBLE_FINAL && !s.solved[it] }
-    Box(Modifier.fillMaxWidth().widthIn(max = 420.dp)) {
+    Box(Modifier.fillMaxWidth().widthIn(max = if (rememberWidthClass() != WidthClass.COMPACT) tabletPageMaxWidth else 420.dp)) {
     Column(
         Modifier.fillMaxWidth().gameTray(MUDDLE_ACCENT, trayState, padding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 4.dp)),
         verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -858,7 +911,7 @@ private fun Caption(s: ScrambleState, finished: Boolean) {
         ),
         fontSize = LocalMuddleSizes.current.captionSp, lineHeight = LocalMuddleSizes.current.captionLine, fontWeight = FontWeight.ExtraBold, color = WTheme.text, fontFamily = Nunito, textAlign = TextAlign.Center,
         maxLines = 4, overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.widthIn(max = 420.dp).padding(horizontal = 6.dp),
+        modifier = Modifier.widthIn(max = if (rememberWidthClass() != WidthClass.COMPACT) tabletPageMaxWidth else 420.dp).padding(horizontal = 6.dp),
     )
 }
 
@@ -1127,10 +1180,11 @@ private fun FinalRow(
 private fun HintCircle(icon: ImageVector, description: String, onClick: () -> Unit) {
     // Founder 10-10: gold outlines (the gold letter tiles' color), not candy fills; 34 dp, the 2 dp ring may overhang the
     // slim hint row by a dp or two.
-    Box(Modifier.size(width = 40.dp, height = LocalMuddleSizes.current.hintRow), contentAlignment = Alignment.Center) {
+    val hb = LocalMuddleSizes.current.hintBtn
+    Box(Modifier.size(width = hb + 6.dp, height = LocalMuddleSizes.current.hintRow), contentAlignment = Alignment.Center) {
         com.wordocious.app.ui.GoldOutlineIconButton(
             icon = com.wordocious.app.ui.FamIcon.of(icon), fallback = icon,
-            contentDescription = description, onClick = onClick, size = 34.dp,
+            contentDescription = description, onClick = onClick, size = hb,
         )
     }
 }

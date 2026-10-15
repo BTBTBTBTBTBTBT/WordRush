@@ -135,6 +135,8 @@ fun PadAction(
     reserveLabel: String? = null,
     /** BI22: hints / checks used, shown as the corner badge (0 = none). */
     count: Int = 0,
+    /** Tablet: the helper pill grows by this factor (1 = the phone size). */
+    scale: Float = 1f,
 ) {
     // The button family: a HELPER pill in the game's accent (off a game a non-purple [color]'s tint); [active] =
     // the selected helper (solid tint, white ink); the icon is its 3D family art when it has one.
@@ -144,13 +146,13 @@ fun PadAction(
         if (reserveLabel == null) {
             HelperButton(
                 label, onClick = { if (!dim) onClick() }, tint = tint, vector = icon, selected = active,
-                enabled = !dim, contentDescription = description,
+                enabled = !dim, contentDescription = description, scale = scale,
             )
         } else {
-            ReservedWidth(reserve = { HelperButton(reserveLabel, onClick = {}, tint = tint, vector = icon, selected = active, enabled = false) }) {
+            ReservedWidth(reserve = { HelperButton(reserveLabel, onClick = {}, tint = tint, vector = icon, selected = active, enabled = false, scale = scale) }) {
                 HelperButton(
                     label, onClick = { if (!dim) onClick() }, tint = tint, vector = icon, selected = active, fill = true,
-                    enabled = !dim, contentDescription = description,
+                    enabled = !dim, contentDescription = description, scale = scale,
                 )
             }
         }
@@ -243,10 +245,10 @@ fun HintCandy(
 }
 
 /** A pill row that never clips: laid out at its natural width, then scaled down as a whole (taps included) when the
- *  screen is narrower — founder 10-14 bug: Starsweep's fourth pill ("Hint") was cut to "H" on a 411 dp Android phone.
- *  The pills' labels take their natural width here (LocalNaturalLabels), so the unbounded measure never drops their text. */
+ *  screen is narrower — founder 10-14 bug: Starsweep's fourth pill ("Hint") was cut to "H" on a 411 dp Android phone. */
 @Composable
 fun ShrinkToFitRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    // The pills' labels take their natural width here (LocalNaturalLabels), so the row is measured unbounded and never loses its text.
     Layout({ androidx.compose.runtime.CompositionLocalProvider(com.wordocious.app.ui.LocalNaturalLabels provides true) { content() } }, modifier) { measurables, c ->
         val p = measurables.first().measure(Constraints(maxHeight = c.maxHeight))
         val k = if (c.hasBoundedWidth && p.width > c.maxWidth) c.maxWidth.toFloat() / p.width else 1f

@@ -153,7 +153,9 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
         }
 
         Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            // Tablet slice 6: the page margin sits INSIDE the scroll (a swipe in the margin scrolls); phones: 0 extra.
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(start = 16.dp + tabletPageInset(rememberWidthClass()), end = 16.dp + tabletPageInset(rememberWidthClass()), bottom = 16.dp),
             // BJ7: 12 between sections (was 18).
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {

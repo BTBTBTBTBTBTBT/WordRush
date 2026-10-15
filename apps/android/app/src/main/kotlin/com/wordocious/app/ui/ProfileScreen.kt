@@ -485,10 +485,9 @@ fun ProfileScreen(
         // BJ1: the page swipe watches the whole list (the list's own vertical scroll consumes
         // vertical drags first, so only a clearly sideways swipe ever switches the game).
         modifier = Modifier.fillMaxSize().pageBackground(PageTint.STATS)
-            .then(swipeModifier)
-            .padding(horizontal = 16.dp),
+            .then(swipeModifier),
         state = listState,
-        contentPadding = PaddingValues(bottom = TAB_CONTENT_BOTTOM_PAD + 8.dp), // AS3
+        contentPadding = PaddingValues(start = 16.dp + tabletPageInset(rememberWidthClass()), end = 16.dp + tabletPageInset(rememberWidthClass()), bottom = TAB_CONTENT_BOTTOM_PAD + 8.dp), // AS3
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { Spacer(Modifier.height(8.dp)) }
@@ -2147,10 +2146,12 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
                     s.peakHour?.let { add(Triple("Peak Hour", hourLabelUpper(it), Icons.Filled.Bolt)) }
                     if (wordFacts) s.luckyWord?.let { add(Triple("Lucky Word", it, Icons.Filled.Star)) }
                 }
-                cells.chunked(2).forEach { row ->
+                // Tablet slice 4: three across on EXPANDED, two otherwise.
+                val statColumns = if (rememberWidthClass() == WidthClass.EXPANDED) 3 else 2
+                cells.chunked(statColumns).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         row.forEach { (label, value, icon) -> ProStatCell(label, value, icon, gold, Modifier.weight(1f)) }
-                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                        repeat(statColumns - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
                 if (wordFacts && s.nemesisWord != null && s.nemesisLosses >= 2) {

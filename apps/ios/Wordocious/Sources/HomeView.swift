@@ -363,7 +363,21 @@ struct HomeView: View {
         unlimitedCounts = await HomeStreaksService.unlimitedCountsToday()
     }
 
-    private let columns = [GridItem(.flexible(), spacing: HomeCardSpec.gap), GridItem(.flexible(), spacing: HomeCardSpec.gap)]
+    /// Slice 4: the card grids run 3 across on EXPANDED (iPad landscape / large iPad), 2 otherwise.
+    @Environment(\.widthClass) private var widthClass
+    private var gridColumnCount: Int { widthClass == .expanded ? 3 : 2 }
+    private var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: HomeCardSpec.gap), count: gridColumnCount) }
+
+    /// Slice 5: tablets center a short trailing row (CenteredRowGrid); phones keep the LazyVGrid unchanged.
+    private func cardGrid<Content: View>(_ spacing: CGFloat, @ViewBuilder _ content: () -> Content) -> some View {
+        Group {
+            if widthClass == .compact {
+                LazyVGrid(columns: columns, spacing: spacing) { content() }
+            } else {
+                AnyLayout(CenteredRowGrid(columns: gridColumnCount, spacing: spacing)) { content() }
+            }
+        }
+    }
 
     /// §AJ: the footer Home tab pops this stack (token) and scrolls to the top.
     @ObservedObject private var tabRouter = TabRouterModel.shared
@@ -397,13 +411,13 @@ struct HomeView: View {
                             SectionTitleArt(.dailies, compact: true)
                                 .overlay(alignment: .trailing) { GameOrderTitleAccessory(section: .dailies, editing: $editingOrder, store: orderStore) }
                             if editingOrder == .dailies { GameOrderEditBar(section: .dailies, editing: $editingOrder, store: orderStore) }
-                            LazyVGrid(columns: columns, spacing: HomeCardSpec.gap) {
+                            cardGrid(HomeCardSpec.gap) {
                                 ForEach(wordModes) { mode in
                                     card(mode).reorderableTile(id: mode.id, section: .dailies, editing: $editingOrder, dragging: $draggingTile,
                                                                targeted: $targetedTile, ids: wordModes.map(\.id), store: orderStore)
                                 }
                             }
-                            .homeCardNames(wordModes.map(\.title))
+                            .homeCardNames(wordModes.map(\.title), columns: gridColumnCount)
                             // Founder 10-10: a drag dropped OFF a tile never reaches performDrop. Leaving (or switching)
                             // edit mode saves the live order and clears the stuck drag, so no tile keeps the lifted fade.
                             .onChange(of: editingOrder) { _ in
@@ -418,13 +432,13 @@ struct HomeView: View {
                                     .overlay(alignment: .trailing) { GameOrderTitleAccessory(section: .puzzles, editing: $editingOrder, store: orderStore) }
                                     .id(Self.puzzlesAnchor)
                                 if editingOrder == .puzzles { GameOrderEditBar(section: .puzzles, editing: $editingOrder, store: orderStore) }
-                                LazyVGrid(columns: columns, spacing: HomeCardSpec.gap) {
+                                cardGrid(HomeCardSpec.gap) {
                                     ForEach(puzzleModes) { mode in
                                         card(mode).reorderableTile(id: mode.id, section: .puzzles, editing: $editingOrder, dragging: $draggingTile,
                                                                    targeted: $targetedTile, ids: puzzleModes.map(\.id), store: orderStore)
                                     }
                                 }
-                                .homeCardNames(puzzleModes.map(\.title))
+                                .homeCardNames(puzzleModes.map(\.title), columns: gridColumnCount)
                             }
                             WordOfTheDayView()
                             if let vs = visibleHomeModes.first(where: { $0.id == "vs" }) {
@@ -468,7 +482,7 @@ struct HomeView: View {
                     }
                     }
                 }
-                .wideColumn(.page)   // §AG: iPad column, centered on the wallpaper
+                .tabletPage()   // slice 4: the tab page (1000 pt max, 32/24 pt margins), centered on the wallpaper
 
                 if let m = limitModal {
                     ModeLimitModal(mode: m,

@@ -52,6 +52,7 @@ struct InfoPage: View {
                     }
                 }
                 .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
+                .sheetColumn(phoneMax: nil)
             }
         }
         .toolbar(.hidden, for: .navigationBar)

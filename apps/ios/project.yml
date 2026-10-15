@@ -93,6 +93,10 @@ targets:
         UIApplicationSupportsIndirectInputEvents: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # §AG tablet slice 1: iPad runs portrait only and full screen (no Split View / Slide Over yet).
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+        UIRequiresFullScreen: true
         UIAppFonts:
           - Nunito.ttf
         # Communication Notifications (item 34): the app declares the intent the push service donates.
@@ -139,7 +143,7 @@ targets:
         MARKETING_VERSION: "2.8.2"
         CURRENT_PROJECT_VERSION: "259"
         SWIFT_VERSION: "5.9"
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"   # §AG tablet slice 1: iPhone + iPad (native iPad layout)
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Required by the LevelPlay SDK (Objective-C categories inside the
         # xcframework); its Package.swift documents that SPM cannot set it.

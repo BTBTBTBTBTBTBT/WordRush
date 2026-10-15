@@ -304,7 +304,7 @@ private fun DailyRecordsTab(
     val shareScope = androidx.compose.runtime.rememberCoroutineScope()
     var sharingLb by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = LB_SIDE)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = LB_SIDE + tabletPageInset(rememberWidthClass()))) {
         Spacer(Modifier.height(4.dp))
         RecordsBanner(daily = true, onDaily = { if (!it) onTab(1) }, selected = selectedMode, onSelect = { select(mode = it) }, bleed = LB_SIDE)
         Spacer(Modifier.height(LB_CARD_GAP))
@@ -619,7 +619,7 @@ private fun AllTimeTab(
     val modeRecords = records.filter { it.gameMode == selectedMode }
     val accent = if (isSweep) LB_SWEEP_GOLD else (modeCardForKey(selectedMode)?.accent ?: Color(0xFF7C3AED))
 
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = LB_SIDE)) {
+    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = LB_SIDE + tabletPageInset(rememberWidthClass()))) {
         item {
             Spacer(Modifier.height(4.dp))
             RecordsBanner(

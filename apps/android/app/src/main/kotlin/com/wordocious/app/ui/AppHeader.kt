@@ -106,7 +106,9 @@ private fun CastTitle(pro: Boolean, modifier: Modifier = Modifier) {
     // soft elliptical ground shadow in the page accent (~14%, blurred by its own falloff).
     val accent = LocalPageTint.current?.accent ?: Color(0xFF7C3AED)
     Box(
+        // Tablet slice 4: the row grows with the page but stops at 820 dp (phones never reach the cap).
         modifier.fillMaxWidth(CAST_ROW_WIDTH_FRACTION)
+            .widthIn(max = CAST_ROW_MAX_WIDTH)
             .drawBehind {
                 val w = size.width * 0.92f
                 val h = 14.dp.toPx()
@@ -674,3 +676,6 @@ private fun FlawlessPopup(days: Int, onDismiss: () -> Unit) {
 
 /** FINISH_SPEC N3: the cast row's share of the screen width (centered, not edge to edge). */
 const val CAST_ROW_WIDTH_FRACTION = 0.9f
+
+/** Tablet slice 4: the widest the cast row gets on a wide page (dp). */
+val CAST_ROW_MAX_WIDTH = 820.dp

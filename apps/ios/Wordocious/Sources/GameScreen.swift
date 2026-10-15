@@ -8,6 +8,7 @@ struct GameScreen: View {
     @StateObject private var vm: GameViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.widthClass) private var widthClass
     @State private var adShown = false
     @State private var showVictory = false
     @State private var showGuide = false
@@ -158,7 +159,7 @@ struct GameScreen: View {
                 }
             }
             .padding(.horizontal, 10)
-            .wideColumn(.game)   // §AG: iPad keeps the phone column, centered on the wallpaper
+            .tabletPage()   // slice 5: the game page (1000 pt max, 32/24 pt margins); the keyboard keeps its 820 cap
 
             // FINISH_SPEC §B4: the controls row tucked right under the status bar —
             // Home on the left; sound + help on the right (every game, Gauntlet too).
@@ -337,12 +338,12 @@ struct GameScreen: View {
                 .soloGameTitle(mode, fallbackInset: 52)
             // FINISH_SPEC §B4: the status line sits right under the title art.
             HStack(spacing: 12) {
-                Text(progressLabel).font(Brand.font(12, .heavy)).foregroundStyle(Self.statusInk)
+                Text(progressLabel).font(Brand.font(12 * tabletChromeScale(widthClass), .heavy)).foregroundStyle(Self.statusInk)
                 if !vm.stageCleared {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 3) {
-                            Image(systemName: "clock").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: 0x60A5FA))
-                            Text(timeString).font(Brand.font(12, .heavy)).monospacedDigit().foregroundStyle(Self.statusInk)
+                            Image(systemName: "clock").font(.system(size: 11 * tabletChromeScale(widthClass), weight: .bold)).foregroundStyle(Color(hex: 0x60A5FA))
+                            Text(timeString).font(Brand.font(12 * tabletChromeScale(widthClass), .heavy)).monospacedDigit().foregroundStyle(Self.statusInk)
                         }
                     }
                 }
@@ -356,10 +357,11 @@ struct GameScreen: View {
     private var gauntletHeader: some View {
         VStack(spacing: 2) {
             GauntletArtHeader(stageCount: vm.gauntletStageCount, current: vm.gauntletCurrentIndex,
-                              cleared: Set(vm.gauntletCompletedIndices), stageName: vm.gauntletStageName)
+                              cleared: Set(vm.gauntletCompletedIndices), stageName: vm.gauntletStageName,
+                              scale: widthClass == .compact ? 1 : 1.6)
             HStack(spacing: 12) {
                 Text(vm.gauntletStageName)
-                    .font(Brand.font(13, .black))
+                    .font(Brand.font(13 * tabletChromeScale(widthClass), .black))
                     .foregroundStyle(LinearGradient(colors: Self.gauntletStageGradient(vm.gauntletStageName),
                                                     startPoint: .leading, endPoint: .trailing))
                     .lineLimit(1)
@@ -367,15 +369,15 @@ struct GameScreen: View {
                     if vm.boardCount > 1 {
                         let solved = vm.boards.filter { $0.status == .won }.count
                         HStack(spacing: 3) {
-                            Icon3D(.trophy, size: 12)
-                            Text("\(solved)/\(vm.boardCount)").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                            Icon3D(.trophy, size: 12 * tabletChromeScale(widthClass))
+                            Text("\(solved)/\(vm.boardCount)").font(Brand.caption(11 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                         }
                     }
-                    Text("\(vm.rowsUsed)/\(vm.maxGuesses) guesses").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                    Text("\(vm.rowsUsed)/\(vm.maxGuesses) guesses").font(Brand.caption(11 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 3) {
                             Image(systemName: "clock").font(.system(size: 10)).foregroundStyle(Color(hex: 0x60A5FA))
-                            Text(timeString).font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                            Text(timeString).font(Brand.caption(11 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                         }
                     }
                 }
@@ -733,11 +735,13 @@ struct GauntletArtHeader: View {
     let current: Int
     let cleared: Set<Int>
     let stageName: String
+    /// Tablets: the header art grows with the page (the medallions scale with it).
+    var scale: CGFloat = 1
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let h = GauntletHeaderSpec.height
+        let h = GauntletHeaderSpec.height * scale
         let w = (h * GauntletHeaderSpec.aspect).rounded()
         let medals = GauntletHeaderSpec.medals(stageCount: stageCount, current: current, cleared: cleared)
         ZStack(alignment: .topLeading) {

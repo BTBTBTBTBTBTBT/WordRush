@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.game
 
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -141,6 +143,13 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit, startExpanded: Boolean = f
         // The popup paints its own scrim (PopupScrim): no second window dim behind it.
         com.wordocious.app.ui.EdgeToEdgeDialogWindow(dimAmount = 0f)
         PopupScrim(onTap = close) {
+            // Founder 10-14: on tablets the per-game card is 1.3x (fonts, icons, button, padding, pose). The card's
+            // 400 dp width becomes 520 dp, under the 560 dp tablet cap; a phone keeps its density untouched.
+            val d = LocalDensity.current
+            val tabletCard = com.wordocious.app.ui.rememberWidthClass() != com.wordocious.app.ui.WidthClass.COMPACT
+            androidx.compose.runtime.CompositionLocalProvider(
+                LocalDensity provides (if (tabletCard) Density(d.density * GUIDE_TABLET_SCALE, d.fontScale) else d),
+            ) {
             BoxWithConstraints(Modifier.fillMaxSize().systemBarsPadding()) {
                 val viewport = maxHeight
                 Column(
@@ -151,6 +160,7 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit, startExpanded: Boolean = f
                 ) {
                     GuideCard(mode, title, accent, steps, g, close, startExpanded)
                 }
+            }
             }
         }
     }
@@ -250,6 +260,9 @@ private fun GuideCard(
         if (host != null) GuideHostPose(host, accent)
     }
 }
+
+/** Tablet per-game card scale (founder 10-14: 1.3x). */
+private const val GUIDE_TABLET_SCALE = 1.3f
 
 /** The title art's height cap inside the popup card. */
 private val GUIDE_TITLE_ART_MAX = 60.dp

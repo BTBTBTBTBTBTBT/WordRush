@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -85,32 +86,44 @@ fun GuestPitch(
     /** False when the page's own title art already names it (the VS guest gate): no heading here. */
     showTitle: Boolean = true,
 ) {
+    // Tablet pitch (founder 10-14): the page width with its margins inside, the cast, tiles and text
+    // 1.6x (the podium 2x, the subtitle 1.3x). A phone keeps the 20 dp gutter and its sizes.
+    val wc = rememberWidthClass()
+    val tablet = wc != WidthClass.COMPACT
+    val screenW = LocalConfiguration.current.screenWidthDp.dp
+    val pageW = minOf(screenW - tabletPageMargin(wc) * 2, tabletPageMaxWidth)
+    val tileW = minOf((pageW - 32.dp) / 3, 240.dp)
     Column(
-        modifier.fillMaxSize().padding(horizontal = 20.dp).padding(bottom = TAB_CONTENT_BOTTOM_PAD),
+        (if (tablet) modifier.fillMaxSize().tabletPageFor(wc) else modifier.fillMaxSize().padding(horizontal = 20.dp))
+            .padding(bottom = TAB_CONTENT_BOTTOM_PAD),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy((-18).dp)) {
-            hosts.forEach { Mascot(it, if (hosts.size > 1) 104.dp else 120.dp, motion = MascotMotion.POP) }
+        val art = if (tablet) 1.6f else 1f
+        Row(horizontalArrangement = Arrangement.spacedBy((-18).dp * art)) {
+            hosts.forEach { Mascot(it, (if (hosts.size > 1) 104.dp else 120.dp) * art, motion = MascotMotion.POP) }
         }
         Spacer(Modifier.height(10.dp))
         if (!showTitle) {
             Unit
         } else if (heading != null) {
-            HeadingArt(heading, height = 36.dp, maxWidth = 320.dp, contentDescription = title)
+            HeadingArt(heading, height = 36.dp * art, maxWidth = 320.dp * art, contentDescription = title)
         } else {
-            PageTitleText(title, accent = colors, fontSize = 28.sp, maxLines = 1)
+            PageTitleText(title, accent = colors, fontSize = 28.sp * art, maxLines = 1)
         }
         Text(
-            subtitle, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = subColor,
+            subtitle, fontSize = if (tablet) 19.5.sp else 15.sp, fontWeight = FontWeight.SemiBold, color = subColor,
             textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp, start = 12.dp, end = 12.dp),
         )
         when (preview) {
             is GuestPreview.Chips -> Row(
-                Modifier.padding(top = 20.dp).alpha(0.72f).clearAndSetSemantics { },
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) { preview.chips.forEach { GuestChipTile(it) } }
-            GuestPreview.Podium -> GuestPodium(Modifier.padding(top = 20.dp).alpha(0.72f).clearAndSetSemantics { })
+                Modifier.padding(top = 20.dp * art).alpha(0.72f).clearAndSetSemantics { },
+                horizontalArrangement = Arrangement.spacedBy(if (tablet) 16.dp else 10.dp),
+            ) { preview.chips.forEach { GuestChipTile(it, art, if (tablet) tileW else 92.dp) } }
+            GuestPreview.Podium -> GuestPodium(
+                Modifier.padding(top = 20.dp * art).alpha(0.72f).clearAndSetSemantics { },
+                if (tablet) 2f else 1f,
+            )
             GuestPreview.None -> Unit
         }
         // BJ15: THE primary button is the cast button (SIGN IN lettering), as on the sign-in screen.
@@ -150,12 +163,12 @@ private fun GlossFace(accent: Color, width: Dp, height: Dp, corner: Dp, content:
 }
 
 @Composable
-private fun GuestChipTile(c: GuestChip) {
-    GlossFace(c.accent, 92.dp, 88.dp, 16.dp) {
+private fun GuestChipTile(c: GuestChip, art: Float = 1f, width: Dp = 92.dp * art) {
+    GlossFace(c.accent, width, 88.dp * art, 16.dp * art) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon3D(c.icon, 24.dp)
-            Text(c.value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White, fontFamily = Nunito)
-            Text(c.label, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.9f),
+            Icon3D(c.icon, 24.dp * art)
+            Text(c.value, fontSize = 20.sp * art, fontWeight = FontWeight.Black, color = Color.White, fontFamily = Nunito)
+            Text(c.label, fontSize = 9.sp * art, fontWeight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.9f),
                 letterSpacing = 0.4.sp, maxLines = 1, fontFamily = Nunito)
         }
     }
@@ -163,13 +176,13 @@ private fun GuestChipTile(c: GuestChip) {
 
 /** The Leaderboard's preview: a mini podium (2 · 1 · 3), the crown on first. */
 @Composable
-private fun GuestPodium(modifier: Modifier) {
+private fun GuestPodium(modifier: Modifier, art: Float = 1f) {
     val steps = listOf(2 to 56.dp, 1 to 78.dp, 3 to 42.dp)
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp * art), verticalAlignment = Alignment.Bottom) {
         steps.forEach { (rank, h) ->
-            Column(Modifier.width(78.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (rank == 1) Icon3D(Icon3DName.CROWN, 28.dp)
-                PodiumPedestal(rank, h)
+            Column(Modifier.width(78.dp * art), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp * art)) {
+                if (rank == 1) Icon3D(Icon3DName.CROWN, 28.dp * art)
+                PodiumPedestal(rank, h * art)
             }
         }
     }

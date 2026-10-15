@@ -70,6 +70,23 @@ internal fun homeTileSize(rowWidth: Float, slots: Int): Float {
     return ((rowWidth - HOME_TILE_GAP_MIN * (n - 1)) / n).coerceIn(0f, HOME_TILE_MAX)
 }
 
+/** Tablet slice 4: a phone row of 320 dp is the reference the tablet rows scale from. */
+internal const val HOME_TILE_PHONE_REF_ROW = 320f
+
+/**
+ * Tablet slice 4 (founder 10-14): on MEDIUM / EXPANDED the tiles scale with the row, not capped at
+ * [HOME_TILE_MAX]. The gap grows in the same proportion as on a 320 dp phone row, so the row still
+ * fills edge to edge with the phone's tile-to-gap look.
+ */
+internal fun homeTileSizeTablet(rowWidth: Float, slots: Int): Float {
+    val n = slots.coerceAtLeast(1)
+    val gap = HOME_TILE_GAP_MIN * rowWidth / HOME_TILE_PHONE_REF_ROW
+    return ((rowWidth - gap * (n - 1)) / n).coerceAtLeast(0f)
+}
+
+/** The phone's tile size at a 320 dp row with 10 slots: the base the tablet badges and corners scale from. */
+internal val HOME_TILE_PHONE_REF_TILE = (HOME_TILE_PHONE_REF_ROW - HOME_TILE_GAP_MIN * 9) / 10f
+
 /** The two progress rows' tint band (lavender ~10%): the card reads as two zones. */
 internal val HOME_ROWS_TINT = Color(0xFF7C3AED).copy(alpha = 0.07f)
 

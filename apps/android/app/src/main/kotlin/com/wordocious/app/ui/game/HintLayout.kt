@@ -70,11 +70,12 @@ object HintLayout {
         bandH: Float, rows: Int, solved: Int, revealedLabels: Int,
         chipSlotH: Float, trayPad: Float, trayLip: Float,
         gap: Float = 8f, railH: Float = 24f, barH: Float = 56f, barGap: Float = 6f, rowGap: Float = 6f,
+        maxTile: Float = KINDRED_TILE_MAX,
     ): Float {
         val r = rows.coerceAtLeast(1)
         val barsH = (barH + barGap) * solved
         val gapsH = 8f /* column vertical padding */ + gap /* grid → rail */ + trayPad * 2 + trayLip +
             (if (solved > 0) gap else 0f) /* rail → bars */ + rowGap * (r - 1) + chipSlotH
-        return ((bandH - railH - barsH - gapsH) / r).coerceIn(KINDRED_TILE_MIN, KINDRED_TILE_MAX)
+        return ((bandH - railH - barsH - gapsH) / r).coerceIn(KINDRED_TILE_MIN, maxTile)
     }
 }

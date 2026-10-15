@@ -298,12 +298,19 @@ private fun PickerRow(
     if (tiles.isEmpty()) return
     // Founder 10-09: exactly Home's banner rows: ONE tile size (max 40) sized so [slots] tiles fit with at least [gap], and each
     // row spread edge to edge with even gaps (first flush left, last flush right).
+    // Tablet slice 4 (founder 10-14): on a tablet the tiles scale with the row (no 40 dp cap; the gap in the same
+    // proportion as on a phone), and the corner and W / L badge scale with the tile. Phones are unchanged.
+    val tablet = rememberWidthClass() != WidthClass.COMPACT
     BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 1.dp)) {
         val n = slots.coerceAtLeast(1)
-        val size = kotlin.math.floor((maxWidth.value - gap.value * (n - 1)) / n).coerceIn(18f, 40f).dp
+        val size = if (tablet) {
+            val g = gap.value * maxWidth.value / HOME_TILE_PHONE_REF_ROW
+            ((maxWidth.value - g * (n - 1)) / n).coerceAtLeast(18f).dp
+        } else kotlin.math.floor((maxWidth.value - gap.value * (n - 1)) / n).coerceIn(18f, 40f).dp
+        val scale = if (tablet) size.value / HOME_TILE_PHONE_REF_TILE else 1f
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             tiles.forEach { t ->
-                PickerTileBox(t, Modifier.size(size), t.key == selected, onSelect, corner, badge, badgeShown, sweepLabel)
+                PickerTileBox(t, Modifier.size(size), t.key == selected, onSelect, corner * scale, badge, badgeShown, sweepLabel, scale)
             }
         }
     }
@@ -320,6 +327,8 @@ private fun PickerTileBox(
     badge: ((String) -> Boolean?)?,
     badgeShown: ((String) -> Boolean)?,
     sweepLabel: String,
+    /** Tablet slice 4: the badge's scale against a phone tile (1 on phones). */
+    scale: Float = 1f,
 ) {
             Box(
                 modifier
@@ -350,8 +359,8 @@ private fun PickerTileBox(
                     val won = badge(t.key)
                     if (won != null || badgeShown != null) {
                         ResultBadge(
-                            won, size = 14.dp,
-                            modifier = Modifier.align(Alignment.TopEnd).offset(x = 3.dp, y = (-3).dp),
+                            won, size = 14.dp * scale,
+                            modifier = Modifier.align(Alignment.TopEnd).offset(x = 3.dp * scale, y = (-3).dp * scale),
                         )
                     }
                 }

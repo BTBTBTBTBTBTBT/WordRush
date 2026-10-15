@@ -246,7 +246,7 @@ fun HomeScreen(
                 }
                 .verticalScroll(homeScroll)
                 .padding(top = HOME_HOST_OVERHANG)
-                .padding(horizontal = 16.dp).padding(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
+                .padding(horizontal = 16.dp + tabletPageInset(rememberWidthClass())).padding(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Proportional line boxes for the whole page (see homeTightTextStyle):
@@ -883,11 +883,18 @@ private fun ModeCardGrid(
     section: com.wordocious.core.GameOrderSection = com.wordocious.core.GameOrderSection.DAILIES,
 ) {
     val ids = cards.map { it.id }
+    // Tablet slice 4: three across on EXPANDED (the wider page); two on MEDIUM and phones.
+    val columns = if (rememberWidthClass() == WidthClass.EXPANDED) 3 else 2
     // FINISH_SPEC BH2: 10 dp gaps both ways between the compact cards. BJ18: one name size per grid.
-    CardNameSizeScope(cards.map { it.title }) {
+    CardNameSizeScope(cards.map { it.title }, columns = columns) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(HomeCardSpec.GAP.dp)) {
-    cards.chunked(2).forEach { rowCards ->
+    cards.chunked(columns).forEach { rowCards ->
         Row(horizontalArrangement = Arrangement.spacedBy(HomeCardSpec.GAP.dp), modifier = Modifier.fillMaxWidth()) {
+            // Tablet slice 5: a short trailing row is centered (the free slots split evenly on both sides; the card width
+            // stays the full row's). A phone keeps the cards at the start of the row.
+            val missing = columns - rowCards.size
+            val centerRow = rememberWidthClass() != WidthClass.COMPACT && missing > 0
+            if (centerRow) Spacer(Modifier.weight(missing / 2f))
             rowCards.forEach { card ->
                 val completion = card.dbKey?.let { completions[it] }
                 val shownCompletion = if (unlimitedMode) null else completion
@@ -898,7 +905,8 @@ private fun ModeCardGrid(
                     unlimited = unlimitedMode, onVs = {},
                 ) { onOpen(card) }
             }
-            if (rowCards.size == 1) Spacer(Modifier.weight(1f))
+            if (centerRow) Spacer(Modifier.weight(missing / 2f))
+            else repeat(columns - rowCards.size) { Spacer(Modifier.weight(1f)) }
         }
     }
     }

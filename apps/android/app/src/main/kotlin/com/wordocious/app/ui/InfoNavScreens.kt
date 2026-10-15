@@ -418,7 +418,7 @@ private fun LetterCandyTile(letter: String, size: androidx.compose.ui.unit.Dp, f
 private fun WordDetail(w: WordsService.Entry, wotd: Boolean, onDone: () -> Unit, onBack: () -> Unit) {
     val word = w.word.uppercase()
     OverlayScaffold(word, onDone = onDone, onBack = onBack, art = if (wotd) TitleArt.WOTD else TitleArt.WORDS, pageHeadline = wotd) {
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Column(Modifier.tabletColumnFor(rememberWidthClass(), 760.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             GuideHeroCard(WOTD_CARD_ACCENT, spacing = 8.dp) {
                 GuideHostHero(MascotId.I, WOTD_CARD_ACCENT, 96.dp)
                 Text(

@@ -254,7 +254,7 @@ struct ProfileTab: View {
                 }
                 // BI23: the header stays at the top whatever the branch's height.
                 .frame(maxHeight: .infinity, alignment: .top)
-                .wideColumn(.page)   // §AG: iPad column, centered on the wallpaper
+                .tabletPage()   // slice 4: the tab page width, centered on the wallpaper
             }
             .environment(\.pageTint, .stats)
             .toolbar(.hidden, for: .navigationBar)

@@ -1,6 +1,10 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.WidthClass
 import com.wordocious.app.ui.gameBackground
+import com.wordocious.app.ui.gamePageFor
+import com.wordocious.app.ui.chromeScale
+import com.wordocious.app.ui.rememberWidthClass
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -381,7 +385,7 @@ fun HubScreen(
             // FINISH_SPEC R2: the one-screen results screen (header · strip · words · dock).
             HubFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
-            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.fillMaxSize().gamePageFor(rememberWidthClass()), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 HubHeader(session)
                 HubBoard(session)
             }
@@ -403,20 +407,22 @@ private fun HubHeader(session: HubSession, counts: Boolean = true) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("HUB") { Text("HUBBUB", fontSize = 24.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT, fontFamily = Nunito) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        // Tablet: the meta line grows with the page (chromeScale; 1 on a phone).
+        val mk = chromeScale(rememberWidthClass())
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp * mk), verticalAlignment = Alignment.CenterVertically) {
+            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = (12f * mk).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             // The one "N/M words · pts" line (hubWordsLabel). On results the strip carries the
             // word count, so the header drops both rather than say them twice.
             if (counts) {
-                Text(hubWordsLabel(session.state), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                Text("${session.state.points}/${session.state.max} pts", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Text(hubWordsLabel(session.state), fontSize = (12f * mk).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Text("${session.state.points}/${session.state.max} pts", fontSize = (12f * mk).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
             if (!session.state.ended) {
                 @Suppress("UNUSED_EXPRESSION") tick
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp * mk)) {
+                    Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp * mk))
                     val s = session.elapsed
-                    Text("${s / 60}:${"%02d".format(s % 60)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    Text("${s / 60}:${"%02d".format(s % 60)}", fontSize = (12f * mk).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     // After the win the clock keeps moving while the player chases a higher rank — say so.
                     if (session.state.status == HubStatus.WON) Text("· playing on", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted.copy(alpha = 0.8f))
                 }
@@ -426,17 +432,17 @@ private fun HubHeader(session: HubSession, counts: Boolean = true) {
 }
 
 @Composable
-private fun RankBar(session: HubSession, points: Boolean = true) {
+private fun RankBar(session: HubSession, points: Boolean = true, scale: Float = 1f) {
     val s = session.state; val rank = s.rank
     val next = if (rank < 9) "${hubRankThreshold(rank + 1, s.max) - s.points} to ${HUB_RANKS[rank + 1].first}" else "maximum"
-    Column(Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(Modifier.widthIn(max = 420.dp * scale).fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(s.rankName, fontSize = 12.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT)
-            Text(if (points) "${s.points} pts · $next" else next, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text(s.rankName, fontSize = (12f * scale).sp, fontWeight = FontWeight.Black, color = HUB_ACCENT)
+            Text(if (points) "${s.points} pts · $next" else next, fontSize = (11f * scale).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             for (i in HUB_RANKS.indices) Box(
-                Modifier.weight(1f).height(8.dp).clip(CircleShape).background(if (i <= rank) HUB_ACCENT else com.wordocious.app.ui.accentLine(HUB_ACCENT, 0.24f))
+                Modifier.weight(1f).height(8.dp * scale).clip(CircleShape).background(if (i <= rank) HUB_ACCENT else com.wordocious.app.ui.accentLine(HUB_ACCENT, 0.24f))
                     .then(if (i == HUB_SOLVED_RANK) Modifier.border(2.dp, HUB_ACCENT.copy(alpha = 0.5f), CircleShape) else Modifier),
             )
         }
@@ -534,8 +540,8 @@ private fun ChipRows(session: HubSession, words: List<String>, dim: Boolean = fa
 
 /** A8 a hive control: a small candy button with its icon (Enter the purple primary). */
 @Composable
-private fun Capsule(label: String, icon: ImageVector, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, onClick: () -> Unit) =
-    PadAction(label, icon, onClick = onClick, color = color)
+private fun Capsule(label: String, icon: ImageVector, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, scale: Float = 1f, onClick: () -> Unit) =
+    PadAction(label, icon, onClick = onClick, color = color, scale = scale)
 
 // Founder layout rule (plan §12, 2026-09-24): the hive is the hero and scales to
 // the screen. FINISH_SPEC J1: it is a honeycomb of glossy hexes (the gold center +
@@ -567,19 +573,28 @@ private val HUB_TRAY_PAD = 10.dp
 @Composable
 private fun HubBoard(session: HubSession) {
     val s = session.state
+    // Tablet slice 4 (iOS d4d56caba): on MEDIUM/EXPANDED the helper pills, End puzzle and the rank bar grow x1.4 and the
+    // hive may grow to 160 dp; the reserved heights of those rows scale with them. Phones (COMPACT) are unchanged.
+    val wide = rememberWidthClass() != WidthClass.COMPACT
+    // Tablet: the controls grow 1.3x on EXPANDED (chromeScale; 1.2x on MEDIUM), 1 on a phone.
+    val k = if (wide) chromeScale(rememberWidthClass()) else 1f
     BoxWithConstraints(Modifier.fillMaxSize().navigationBarsPadding()) {
         // Seven gaps: rank→entry→cluster→controls→hints→header→chips→end. The found-word
         // header and at least two chip rows are reserved BEFORE the hive is sized, so the
         // found words always show (the hive gives way first, down to a 60 dp side); any
         // height beyond that goes back to the flow.
-        val fixed = HUB_RANK_BAR_H + HUB_ENTRY_H + HUB_CONTROL_ROW_H * 2 + HUB_END_LINK_H + HUB_FOUND_HEADER_H + HUB_FOUND_MIN_H + HUB_ROW_GAP * 7 + 6.dp
+        val fixed = HUB_RANK_BAR_H * k + HUB_ENTRY_H + HUB_CONTROL_ROW_H * 2 * k + HUB_END_LINK_H * k + HUB_FOUND_HEADER_H + HUB_FOUND_MIN_H + HUB_ROW_GAP * 7 + 6.dp
         val trayW = HUB_TRAY_PAD * 2
         val trayH = HUB_TRAY_PAD * 2 + GameTrayStyle.LIP
-        val side = Honeycomb.sideFor((maxWidth - trayW).value, (maxHeight - fixed - trayH).value).dp.coerceIn(60.dp, 112.dp)
+        // Tablet slice 2: the hive may grow past the phone's 112 dp cell cap on MEDIUM/EXPANDED.
+        // Tablet: the hive's width is about 80% of the page (the hex side ~ 0.32 x the page width, 2.52 sides wide); the height
+        // left over still wins when the window is short, so a bigger cap never pushes the controls off.
+        val hubMaxSide = if (wide) (if (rememberWidthClass() == WidthClass.EXPANDED) 320.dp else 240.dp) else 112.dp
+        val side = Honeycomb.sideFor((maxWidth - trayW).value, (maxHeight - fixed - trayH).value).dp.coerceIn(60.dp, hubMaxSide)
         val band = side * Honeycomb.height() + trayH
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(HUB_ROW_GAP)) {
             // The header already says "N/M pts" on the board.
-            RankBar(session, points = false)
+            RankBar(session, points = false, scale = k)
             HubEntryLine(session)
             val o = session.outer.toList() + List(maxOf(0, 6 - session.outer.size)) { ' ' }
             val enabled = !s.ended
@@ -588,11 +603,11 @@ private fun HubBoard(session: HubSession) {
                 HubHoneycomb(session.centre, o, side, HUB_ACCENT, enabled, trayPadding = HUB_TRAY_PAD, state = hubTrayState(s), shuffleTick = session.shuffleTick) { session.type(it) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Capsule("Delete", Icons.AutoMirrored.Filled.Backspace) { session.delete() }
-                Capsule("Shuffle", Icons.Filled.Shuffle) { session.shuffle() }
+                Capsule("Delete", Icons.AutoMirrored.Filled.Backspace, scale = k) { session.delete() }
+                Capsule("Shuffle", Icons.Filled.Shuffle, scale = k) { session.shuffle() }
                 // Enter is the primary: the solid tint (family helper, selected look), the 3D enter art.
                 com.wordocious.app.ui.HelperButton(
-                    "Enter", onClick = { session.submit() }, icon = com.wordocious.app.ui.FamIcon.ENTER, selected = true, contentDescription = "Enter",
+                    "Enter", onClick = { session.submit() }, icon = com.wordocious.app.ui.FamIcon.ENTER, selected = true, contentDescription = "Enter", scale = k,
                 )
             }
             // The hint pair: smaller game-tinted helpers (30 dp) with the 3D hint / eye art.
@@ -601,11 +616,11 @@ private fun HubBoard(session: HubSession) {
             var revealArmed by remember { mutableStateOf(false) }
             LaunchedEffect(revealArmed) { if (revealArmed) { kotlinx.coroutines.delay(3000); revealArmed = false } }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                com.wordocious.app.ui.HelperButton("Starts with…", onClick = { session.hintStart() }, icon = com.wordocious.app.ui.FamIcon.HINT, height = 30.dp)
+                com.wordocious.app.ui.HelperButton("Starts with…", onClick = { session.hintStart() }, icon = com.wordocious.app.ui.FamIcon.HINT, height = 30.dp, scale = k)
                 com.wordocious.app.ui.HelperButton(
                     if (revealArmed) "Tap again to reveal" else "Reveal a word",
                     onClick = { if (revealArmed) { revealArmed = false; session.hintReveal() } else revealArmed = true },
-                    icon = com.wordocious.app.ui.FamIcon.EYE, height = 30.dp,
+                    icon = com.wordocious.app.ui.FamIcon.EYE, height = 30.dp, scale = k,
                 )
             }
             // BI22: the pending "Starts with…" hints are NOT a row in this column any more (that row
@@ -633,13 +648,13 @@ private fun HubBoard(session: HubSession) {
             // Pinned at the very bottom; the navigation-bar inset is respected by the BoxWithConstraints above.
             // Won: "Finish" is the same as the card's "I'm done" — ends the game at the recorded time.
             // A8: candy buttons, never a text link.
-            if (s.status == HubStatus.WON) Capsule("Finish", Icons.Filled.Flag, color = com.wordocious.app.ui.CandyColor.PURPLE) { session.end() }
+            if (s.status == HubStatus.WON) Capsule("Finish", Icons.Filled.Flag, color = com.wordocious.app.ui.CandyColor.PURPLE, scale = k) { session.end() }
             else {
                 // 2.8 item 32: a quiet small family button (not the long pill) with a designed confirm.
                 var confirmEnd by remember { mutableStateOf(false) }
                 com.wordocious.app.ui.QuietButton(
                     "End puzzle", onClick = { confirmEnd = true }, size = com.wordocious.app.ui.CandySize.SMALL,
-                    icon = com.wordocious.app.ui.FamIcon.FLAG, contentDescription = "End puzzle and see answers",
+                    icon = com.wordocious.app.ui.FamIcon.FLAG, contentDescription = "End puzzle and see answers", scale = k,
                 )
                 if (confirmEnd) {
                     androidx.compose.material3.AlertDialog(

@@ -180,6 +180,17 @@ struct PocketBoardArt<Content: View>: View {
     /// Founder 10-13: when set, the board is narrowed (aspect kept) so it is no taller than this.
     var maxHeight: CGFloat? = nil
     @ViewBuilder var content: (_ scale: CGFloat) -> Content
+    @Environment(\.widthClass) private var widthClass
+
+    /// Slice 5 (pocket games on iPad): the board's width cap grows with the tablet page (phones unchanged). The max height
+    /// (Pass the Puzzle, Word Chain fit above the keyboard) is NOT scaled: it already states the room left on screen.
+    private var boardScale: CGFloat {
+        switch widthClass {
+        case .compact: return 1
+        case .medium: return 1.5
+        case .expanded: return 1.9
+        }
+    }
 
     var body: some View {
         Image(art).resizable().interpolation(.high)
@@ -193,7 +204,7 @@ struct PocketBoardArt<Content: View>: View {
                         .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
                 }
             }
-            .frame(maxWidth: maxHeight.map { min(maxWidth, max(120, $0) * pixels.width / pixels.height) } ?? maxWidth)
+            .frame(maxWidth: maxHeight.map { min(maxWidth * boardScale, max(120, $0) * pixels.width / pixels.height) } ?? maxWidth * boardScale)
             .frame(maxWidth: .infinity)
     }
 }

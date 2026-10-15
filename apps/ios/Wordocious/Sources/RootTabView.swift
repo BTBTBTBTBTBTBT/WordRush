@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WordociousCore
 
 /// 4-tab shell with a custom bottom nav that matches the web BottomNav
@@ -177,6 +178,12 @@ struct RootTabView: View {
             .tag(Tab.friends).tabItem { Label("Friends", systemImage: "person.2") }
         }
         .toolbar(.hidden, for: .tabBar)
+        // §AG tablet slice 1: iPadOS 18+ draws a top tab strip for a TabView unless the
+        // tab style is forced to the bar style; the custom BottomNav stays the only nav.
+        .modifier(BarOnlyTabStyle())
+        // §AG tablet slice 1: the system's own tab bar (iPad draws it at the top) is hidden
+        // through UIKit; the custom BottomNav stays the only navigation. Zero-size, no input.
+        .background(HideSystemTabBar().frame(width: 0, height: 0).allowsHitTesting(false))
         #if DEBUG
         // FINISH_SPEC BJ3: the perf tour's presenter (idle unless `-perfTour`).
         .background { PerfTourHost { tabSelection.wrappedValue = Self.tab($0) } }
@@ -515,6 +522,55 @@ extension View {
 /// it), a soft page-tinted gradient (lilac Home, warm Leaderboard, blue Stats, pink
 /// Friends) with a faint top line, and the home-indicator area is part of the bar.
 /// Each tab icon squishes on tap.
+/// Invisible UIKit hook: finds the UITabBarController that backs the TabView and hides
+/// its own bar (iPad's top strip). iOS 18+ uses `isTabBarHidden`; older systems hide the bar view.
+private struct HideSystemTabBar: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> HideVC { HideVC() }
+    func updateUIViewController(_ vc: HideVC, context: Context) { vc.hideSystemBar() }
+
+    final class HideVC: UIViewController {
+        override func loadView() { view = UIView(); view.isUserInteractionEnabled = false }
+        override func viewDidAppear(_ animated: Bool) { super.viewDidAppear(animated); hideSystemBar() }
+        override func didMove(toParent parent: UIViewController?) { super.didMove(toParent: parent); hideSystemBar() }
+
+        func hideSystemBar() {
+            var current: UIViewController? = self
+            while let c = current {
+                if let tbc = c as? UITabBarController { apply(tbc); return }
+                current = c.parent
+            }
+            if let root = view.window?.rootViewController, let tbc = Self.findTabBarController(root) { apply(tbc) }
+        }
+
+        private static func findTabBarController(_ vc: UIViewController) -> UITabBarController? {
+            if let t = vc as? UITabBarController { return t }
+            for child in vc.children { if let t = findTabBarController(child) { return t } }
+            if let presented = vc.presentedViewController { return findTabBarController(presented) }
+            return nil
+        }
+
+        private func apply(_ tbc: UITabBarController) {
+            if #available(iOS 18.0, *) {
+                tbc.isTabBarHidden = true
+            } else {
+                tbc.tabBar.isHidden = true
+            }
+        }
+    }
+}
+
+/// iOS 18+ `.tabBarOnly` keeps iPad's TabView from switching to its top tab strip.
+/// Earlier systems and iPhone already use the bar style, so they pass through.
+private struct BarOnlyTabStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.tabViewStyle(.tabBarOnly)
+        } else {
+            content
+        }
+    }
+}
+
 private struct BottomNav: View {
     @Binding var selection: RootTabView.Tab
     // Pending friend-request badge on Friends (Tier 1, Aug 11; moved from Profile
@@ -524,6 +580,7 @@ private struct BottomNav: View {
     // minus what they've already seen (FriendsBadgeStore); opening Friends clears it.
     @ObservedObject private var badge = FriendsBadgeStore.shared
     @Environment(\.accessibilityReduceMotion) private var envReduce
+    @Environment(\.widthClass) private var widthClass
     /// The Friends icon's happy wiggle when a new item arrives (±8°, 2 swings).
     @State private var wiggle: Double = 0
     /// The badge's spring-in (scale 0 → 1.15 → 1).
@@ -537,6 +594,8 @@ private struct BottomNav: View {
         #if DEBUG
         let _ = PerfTour.flag("printChanges") ? Self._printChanges() : ()
         #endif
+        // Slice 4: the bar runs edge to edge on every size class (phones and tablets alike);
+        // the four items share the width evenly.
         HStack(spacing: 0) {
             item(.home, .tabHome, "Home")
             item(.leaderboard, .tabLeaderboard, "Leaderboard")
@@ -589,7 +648,7 @@ private struct BottomNav: View {
         }
     }
 
-    /// Opaque, page-tinted, a faint top line and a soft upward shadow.
+    /// Opaque, page-tinted, a faint top line and a soft upward shadow. Square edge to edge.
     private var bar: some View {
         LinearGradient(colors: tint, startPoint: .top, endPoint: .bottom)
             .overlay(alignment: .top) {
@@ -610,7 +669,7 @@ private struct BottomNav: View {
             Haptics.tap()
         } label: {
             VStack(spacing: 2) {
-                Icon3D(icon, size: 28)
+                Icon3D(icon, size: 28 * tabletChromeScale(widthClass))
                     .saturation(active ? 1 : 0.6)
                     .opacity(active ? 1 : 0.55)
                     .rotationEffect(.degrees(t == .friends ? wiggle : 0), anchor: .bottom)
@@ -623,14 +682,14 @@ private struct BottomNav: View {
                         }
                     }
                 Text(label)
-                    .font(Brand.font(11, active ? .black : .heavy))
+                    .font(Brand.font(11 * tabletChromeScale(widthClass), active ? .black : .heavy))
                     .foregroundStyle(active ? (SeasonKit.surfaces?.card != nil ? Color(hex: 0xFDBA74) : (ThemeKit.tabInk ?? Color(hex: 0x6D28D9)))
                                      : (Theme.isDark ? Theme.textMuted : Color(hex: 0x8A78AD)))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 // The selected tab's underline pill (a clear slot otherwise, so no tab shifts).
                 Capsule().fill(active ? (SeasonKit.surfaces?.card != nil ? Color(hex: 0xF97316) : (ThemeKit.tabInk ?? Color(hex: 0x7C3AED))) : .clear)
-                    .frame(width: 22, height: 3)
+                    .frame(width: 22 * tabletChromeScale(widthClass), height: 3)
                     .padding(.top, 1)
             }
             .frame(maxWidth: .infinity)

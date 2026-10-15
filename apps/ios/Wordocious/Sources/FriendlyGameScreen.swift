@@ -13,6 +13,7 @@ struct FriendlyGameScreen: View {
     @State private var gameId: String
     @State private var game: FriendlyGameView?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.widthClass) private var widthClass
 
     @State private var loadError: String?
     @State private var sending = false
@@ -130,9 +131,10 @@ struct FriendlyGameScreen: View {
                 }
                 .onChange(of: vp.size.height) { h in if !fitSettled { viewportH = h } }
                 }
-                if g.isActive, case .pass(let p) = g.state { passKeyboard(g, p).layoutLog("pinned") }
-                if g.isActive, case .ghost(let gs) = g.state { ghostKeyboard(g, gs).layoutLog("pinned") }
-                if g.isActive, case .chain(let c) = g.state { chainInputArea(g, c).layoutLog("pinned") }
+                // Slice 5: the pinned letter keyboards cap at the 820 keyboard width on tablets (keys grow, the page does not).
+                if g.isActive, case .pass(let p) = g.state { passKeyboard(g, p).modifier(PinnedKeyboardBottom()).tabletColumn(max: tabletKeyboardMaxWidth).layoutLog("pinned") }
+                if g.isActive, case .ghost(let gs) = g.state { ghostKeyboard(g, gs).modifier(PinnedKeyboardBottom()).tabletColumn(max: tabletKeyboardMaxWidth).layoutLog("pinned") }
+                if g.isActive, case .chain(let c) = g.state { chainInputArea(g, c).modifier(PinnedKeyboardBottom()).tabletColumn(max: tabletKeyboardMaxWidth).layoutLog("pinned") }
             } else if let loadError {
                 Spacer()
                 // O3 when the game is gone, R unplugged for any other error
@@ -150,6 +152,9 @@ struct FriendlyGameScreen: View {
                 Spacer()
             }
         }
+        // Slice 5 (R1/R2, iPad): the whole pocket screen (header, game, pinned keyboard) sits on the tablet page; the wallpaper
+        // below stays full-bleed. COMPACT is a no-op.
+        .tabletPage()
         // §A1: the Friends wallpaper (light, like the Friends tab), never plain white.
         .background(PageBackground(tint: .friends, lightOnly: true).ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
@@ -158,7 +163,7 @@ struct FriendlyGameScreen: View {
         // Wave 3 (item 9): ONE themed button. Resign lives in the Friends tab's more menu now.
         .overlay { if confirmClose { leaveCard } }
         .animation(Theme.reduceMotion ? nil : .easeOut(duration: 0.18), value: confirmClose)
-        .softSheet(isPresented: $showHelp) { if let kind { PocketHelpSheet(kind: kind) } }
+        .softSheet(isPresented: $showHelp) { if let kind { PocketHelpSheet(kind: kind).tabletSheet() } }
         .firstPlayPocket(kind: kind, show: $showHelp)
         #if DEBUG
         // Perf harness (PocketDemo): a local game the tour plays through this screen's own input path.
@@ -434,30 +439,33 @@ struct FriendlyGameScreen: View {
     // MARK: Top bar
 
     private var topBar: some View {
-        ZStack {
-            HStack(spacing: 6) {
+        // Slice 5 (R4, iPad): the title art is ~2x its phone height on EXPANDED (1.6x MEDIUM), the corner buttons 1.3x.
+        let tt = tabletTitleScale(widthClass)
+        let ch = tabletChromeScale(widthClass)
+        return ZStack {
+            HStack(spacing: 6 * tt) {
                 // ART_SPEC §9: the pocket game's 3D icon beside its title.
-                if let kind, kind.pocketArt != nil { FriendlyGameIcon(kind: kind, size: 28, glow: false) }
+                if let kind, kind.pocketArt != nil { FriendlyGameIcon(kind: kind, size: 28 * tt, glow: false) }
                 // Founder 10-10: the title is BIG custom lettering in the game's own accent (one line, shrinks between the X and the ?).
                 BubbleTextView(text: (game?.title ?? "").uppercased(), palette: .accent(gameAccent),
-                               maxSize: 32, minSize: 18, animated: true)
-                    .frame(height: 44)
+                               maxSize: 32 * tt, minSize: 18 * tt, animated: true)
+                    .frame(height: 44 * tt)
             }
-            .padding(.horizontal, 52)
+            .padding(.horizontal, 52 * ch)
             HStack {
-                HeaderCircleButton(.symbol("xmark"), label: "Close") {
+                HeaderCircleButton(.symbol("xmark"), size: PageHeaderStyle.circle * ch, label: "Close") {
                     if game?.isActive == true { confirmClose = true } else { dismiss() }
                 }
                 Spacer()
                 // Wave 3 (9c): the "?" in the top-right corner, same control as every other game's header.
                 if kind != nil {
-                    HeaderCircleButton(.icon(.help), size: 44, iconSize: HeaderControl.gameIcon, label: "How to play") {
+                    HeaderCircleButton(.icon(.help), size: 44 * ch, iconSize: HeaderControl.gameIcon * ch, label: "How to play") {
                         showHelp = true
                     }
                 }
             }
         }
-        .padding(.horizontal, 8).padding(.top, 4).frame(height: 48)
+        .padding(.horizontal, 8).padding(.top, 4).frame(height: 48 * tt)
     }
 
     /// The fixed-height slot under the score window (see `body`).
@@ -771,11 +779,14 @@ struct FriendlyGameScreen: View {
         let me = g.me
         let mine = r.picks[me]?.pick
         let theirs = r.picks[me.other]
+        // Slice 5 (iPad): the arena band, the hands and the pick cards grow so the page is filled, not sparse
+        // (2x EXPANDED, 1.6x MEDIUM; phones 1).
+        let s: CGFloat = widthClass == .compact ? 1 : (widthClass == .expanded ? 2 : 1.6)
         VStack(spacing: 14) {
             if let last = r.rounds.last {
                 let reveal = RpsReveal(round: r.rounds.count, mine: last[me], theirs: last[me.other],
                           winner: last.winner.map { $0 == me ? 1 : 2 } ?? 0, them: themName,
-                          accent: gameAccent, myColor: myColor, themColor: themColor)
+                          accent: gameAccent, myColor: myColor, themColor: themColor, scale: s)
                     .id(r.rounds.count)
                     .frame(maxWidth: .infinity)
                 // Founder 10-13: with the ring and the audience wallpaper the card is the arena itself (no tray around it).
@@ -786,7 +797,7 @@ struct FriendlyGameScreen: View {
                 }
             } else if PocketArt.ring != nil && PocketArt.rpsBackdrop != nil {
                 // Before the first round the same arena stands empty, so the first reveal never pushes the picks down.
-                RpsArenaEmpty()
+                RpsArenaEmpty(scale: s)
             }
             if g.isActive {
                 VStack(spacing: 6) {
@@ -799,19 +810,19 @@ struct FriendlyGameScreen: View {
                             if theirs == nil {
                                 if Theme.reduceMotion {
                                     Image(PocketArt.rps(.rock)).resizable().interpolation(.high).scaledToFit()
-                                        .frame(width: 80, height: 80).opacity(0.6)
+                                        .frame(width: 80 * s, height: 80 * s).opacity(0.6)
                                 } else {
                                     TimelineView(.periodic(from: .now, by: 0.42)) { ctx in
                                         let i = Int(ctx.date.timeIntervalSinceReferenceDate / 0.42) % RpsPick.allCases.count
                                         Image(PocketArt.rps(RpsPick.allCases[i])).resizable().interpolation(.high).scaledToFit()
-                                            .frame(width: 80, height: 80)
+                                            .frame(width: 80 * s, height: 80 * s)
                                             .opacity(0.75)
                                     }
                                 }
                             } else {
                                 Image(hidden).resizable().interpolation(.high).scaledToFill()
-                                    .frame(width: 92, height: 116, alignment: .bottom)
-                                    .frame(width: 92, height: 74, alignment: .bottom)
+                                    .frame(width: 92 * s, height: 116 * s, alignment: .bottom)
+                                    .frame(width: 92 * s, height: 74 * s, alignment: .bottom)
                                     .clipped()
                             }
                             }
@@ -824,36 +835,36 @@ struct FriendlyGameScreen: View {
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                                     .strokeBorder(Color.white.opacity(0.7), style: StrokeStyle(lineWidth: 2, dash: [5, 4]))
                                     .padding(8)
-                                PocketBubble(text: "?", color: .white, size: 44, palette: PlayerTint.platePalette(lightInk: true))
+                                PocketBubble(text: "?", color: .white, size: 44 * s, palette: PlayerTint.platePalette(lightInk: true))
                             }
                         }
                     }
-                    .frame(width: 92, height: 112)
+                    .frame(width: 92 * s, height: 112 * s)
                     .shadow(color: FriendsKit.ink.opacity(0.12), radius: 6, y: 3)
                     if theirs != nil {
                         HStack(spacing: 5) {
-                            Image(systemName: "checkmark.circle.fill").font(.system(size: 14, weight: .black)).foregroundStyle(FriendsKit.green)
+                            Image(systemName: "checkmark.circle.fill").font(.system(size: 14 * s, weight: .black)).foregroundStyle(FriendsKit.green)
                                 .accessibilityHidden(true)
-                            PocketBubble(text: "\(themName) picked", color: FriendsKit.green, size: 14, names: [themName], nameColor: themColor)
+                            PocketBubble(text: "\(themName) picked", color: FriendsKit.green, size: 14 * s, names: [themName], nameColor: themColor)
                         }
                     } else {
-                        PocketBubble(text: "\(themName) is picking...", color: FriendsInk.muted, size: 14, names: [themName], nameColor: themColor)
+                        PocketBubble(text: "\(themName) is picking...", color: FriendsInk.muted, size: 14 * s, names: [themName], nameColor: themColor)
                     }
                 }
                 VStack(spacing: 8) {
                     heading("Your pick").layoutLog("picks")
-                    HStack(spacing: 10) {
+                    HStack(spacing: 10 * s) {
                         ForEach(RpsPick.allCases, id: \.self) { p in
                             let selected = mine == p
                             let rps = FriendsKit.tileAccent(.rps)
                             Button { send(.rps(p)) } label: {
                                 VStack(spacing: 4) {
-                                    Image(art(p)).resizable().interpolation(.high).scaledToFit().frame(width: 70, height: 70)
+                                    Image(art(p)).resizable().interpolation(.high).scaledToFit().frame(width: 70 * s, height: 70 * s)
                                         .accessibilityHidden(true)   // §AB: the word below names it
-                                    PocketBubble(text: p.rawValue, color: rps, size: 14,
+                                    PocketBubble(text: p.rawValue, color: rps, size: 14 * s,
                                                  palette: (selected || Theme.isDark) ? PlayerTint.platePalette(lightInk: true) : nil, minScale: 0.5)
                                 }
-                                .frame(maxWidth: .infinity).frame(height: 114)
+                                .frame(maxWidth: .infinity).frame(height: 114 * s)
                                 // §A1: tinted pick cards (selected = filled purple).
                                 .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
                                     .fill(selected ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xA66BFF), FriendsKit.purple], startPoint: .top, endPoint: .bottom))
@@ -1803,6 +1814,8 @@ struct RpsReveal: View {
     let accent: Color
     let myColor: Color
     let themColor: Color
+    /// Slice 5 (iPad): 2 EXPANDED, 1.6 MEDIUM, 1 on phones; scales the arena band, the hands, the labels and the burst.
+    var scale: CGFloat = 1
     @State private var flipped = Theme.reduceMotion
     /// Founder 10-10 (suspense): the "ROCK, PAPER, SCISSORS, SHOOT!" beat before the reveal — both fists pump three
     /// times as the words pop in, then both cards turn over at once. -1 = not started, 0-2 = the pumps, 3 = SHOOT.
@@ -1812,6 +1825,7 @@ struct RpsReveal: View {
     private static let words = ["ROCK...", "PAPER...", "SCISSORS...", "SHOOT!"]
     /// The arena card's fixed height (founder 10-13: nothing moves when a round is played).
     static let arenaHeight: CGFloat = 150
+    private var arenaH: CGFloat { Self.arenaHeight * scale }
 
     /// The arena: the ring across the card's full width and the audience wallpaper behind it.
     private var arena: Bool { PocketArt.ring != nil && PocketArt.rpsBackdrop != nil }
@@ -1820,55 +1834,55 @@ struct RpsReveal: View {
         VStack(spacing: 6) {
             if arena {
                 // White with a soft dark shadow so it reads over the wallpaper.
-                PocketBubble(text: "Round \(round)", color: .white, size: 15, palette: PlayerTint.platePalette(lightInk: true))
+                PocketBubble(text: "Round \(round)", color: .white, size: 15 * scale, palette: PlayerTint.platePalette(lightInk: true))
                     .shadow(color: Color(hex: 0x1A0536).opacity(0.7), radius: 3, y: 1)
                     .padding(.top, 8)
             } else {
-                PocketBubble(text: "Round \(round)", color: accent, size: 15)
+                PocketBubble(text: "Round \(round)", color: accent, size: 15 * scale)
             }
-            HStack(spacing: 18) {
+            HStack(spacing: 18 * scale) {
                 card(mine, label: "YOU", win: winner == 1, tint: FriendsKit.purple, ink: myColor)
                 ZStack {
                     // Wave 3: the clash burst pops between the hands as they flip over.
                     if let burst = PocketArt.clashBurst {
                         Image(burst).resizable().interpolation(.high).scaledToFit()
-                            .frame(width: 52, height: 52)
+                            .frame(width: 52 * scale, height: 52 * scale)
                             .scaleEffect(flipped ? 1 : 0.4)
                             .opacity(flipped ? 1 : 0)
                             .accessibilityHidden(true)
                     }
                     if flipped {
-                        PocketBubble(text: winner == 0 ? "TIE" : "VS", color: accent, size: 15, minScale: 0.5)
+                        PocketBubble(text: winner == 0 ? "TIE" : "VS", color: accent, size: 15 * scale, minScale: 0.5)
                     } else if beat >= 0 {
                         PocketBubble(text: Self.words[min(beat, 3)], color: beat == 3 ? Color(hex: 0xF5B82E) : accent,
-                                     size: beat == 3 ? 17 : 13, minScale: 0.35)
+                                     size: (beat == 3 ? 17 : 13) * scale, minScale: 0.35)
                             .id(beat)
                             .transition(.scale(scale: 0.5).combined(with: .opacity))
                     }
                 }
-                .frame(width: 40)
+                .frame(width: 40 * scale)
                 card(theirs, label: them.uppercased(), win: winner == 2, tint: FriendsKit.amber, ink: themColor)
             }
             // Founder 10-12: the hands square off inside a wrestling ring (was the purple arena plate), there for the whole
             // countdown, not only after the flip. The ring art is open at the front (cut just past the star, founder 10-12), so the
             // canvas runs to the card's bottom edge and the hands stand inside it: a little room above for the ropes, none below.
-            .padding(.top, PocketArt.ring == nil ? 0 : 20)
-            .padding(.bottom, PocketArt.ring == nil ? 0 : 2)
+            .padding(.top, PocketArt.ring == nil ? 0 : 20 * scale)
+            .padding(.bottom, PocketArt.ring == nil ? 0 : 2 * scale)
             .background(alignment: .bottom) {
                 if !arena, let ring = PocketArt.ring {
                     Image(ring).resizable().interpolation(.high).scaledToFit()
-                        .frame(width: 330)
+                        .frame(width: 330 * scale)
                         .accessibilityHidden(true)
                 } else if !arena, let plate = PocketArt.arenaPlate {
                     Image(plate).resizable().interpolation(.high).scaledToFit()
-                        .frame(width: 270).offset(y: 14)
+                        .frame(width: 270 * scale).offset(y: 14 * scale)
                         .opacity(flipped ? 0.9 : 0)
                         .accessibilityHidden(true)
                 }
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: arena ? Self.arenaHeight : nil, alignment: .bottom)
+        .frame(height: arena ? arenaH : nil, alignment: .bottom)
         // Founder 10-13: the ring spans the card edge to edge, bottom-aligned, over the audience wallpaper (aspect-fill),
         // corners clipped to the card.
         .background(alignment: .bottom) {
@@ -1921,53 +1935,55 @@ struct RpsReveal: View {
             // In the ring the hands are the outlined art (the plain hand + a baked plum outline and drop shadow), scaled so the
             // visible hand keeps its size, on a static soft contact shadow on the mat (founder 10-13).
             let outlined = arena && PocketArt.rpsRing(p) != nil && PocketArt.rpsRing(.rock) != nil
+            let box: CGFloat = 58 * scale
             ZStack(alignment: .bottom) {
                 if outlined {
                     Ellipse().fill(RadialGradient(colors: [Color(hex: 0x28084F).opacity(0.4), Color(hex: 0x28084F).opacity(0)],
                                                   center: .center, startRadius: 0, endRadius: 30))
-                        .frame(width: 62, height: 14)
+                        .frame(width: 62 * scale, height: 14 * scale)
                         .offset(y: 4)
                         .accessibilityHidden(true)
                 }
                 RpsTurnArt(angle: turn, front: outlined ? PocketArt.rpsRing(p)! : PocketArt.rps(p),
                            back: outlined ? PocketArt.rpsRing(.rock)! : PocketArt.rps(.rock),
-                           frontSize: outlined ? PocketArt.rpsRingSize(p, box: 58) : nil,
-                           backSize: outlined ? PocketArt.rpsRingSize(.rock, box: 58) : nil)
-                    .frame(width: 58, height: 58)
+                           frontSize: outlined ? PocketArt.rpsRingSize(p, box: box) : nil,
+                           backSize: outlined ? PocketArt.rpsRingSize(.rock, box: box) : nil)
+                    .frame(width: box, height: box)
                     .offset(y: flipped ? 0 : bob)
                     .accessibilityLabel(flipped ? p.rawValue.capitalized : "Hidden pick")   // §AB: the pick, not the asset name
             }
-            .frame(width: 58, height: 58)
+            .frame(width: box, height: box)
             Group {
                 if arena {
                     // On the ring's lilac mat the player color washed out (founder 10-13): deep plum plain caps instead.
-                    Text(PocketType.clean(label)).font(Brand.font(13, .black)).tracking(0.4)
+                    Text(PocketType.clean(label)).font(Brand.font(13 * scale, .black)).tracking(0.4)
                         .foregroundColor(Color(hex: 0x3B0F75))
                         .lineLimit(1).minimumScaleFactor(0.4)
-                        .frame(height: 12 * 1.3)
+                        .frame(height: 12 * 1.3 * scale)
                 } else {
-                    PocketBubble(text: label, color: ink, size: 12, minScale: 0.4, hug: false)
+                    PocketBubble(text: label, color: ink, size: 12 * scale, minScale: 0.4, hug: false)
                 }
             }
-                .frame(width: 74)
+                .frame(width: 74 * scale)
                 .opacity(win ? 1 : 0.75)
         }
-        .frame(width: 84, height: 92)
+        .frame(width: 84 * scale, height: 92 * scale)
         .modifier(RpsCardBox(inRing: PocketArt.ring != nil, win: win && flipped, tint: tint))
     }
 }
 
 /// The empty arena shown before the first round (same size as the reveal card).
 private struct RpsArenaEmpty: View {
+    var scale: CGFloat = 1
     var body: some View {
         VStack {
-            PocketBubble(text: "Round 1", color: .white, size: 15, palette: PlayerTint.platePalette(lightInk: true))
+            PocketBubble(text: "Round 1", color: .white, size: 15 * scale, palette: PlayerTint.platePalette(lightInk: true))
                 .shadow(color: Color(hex: 0x1A0536).opacity(0.7), radius: 3, y: 1)
                 .padding(.top, 8)
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: RpsReveal.arenaHeight)
+        .frame(height: RpsReveal.arenaHeight * scale)
         .background(alignment: .bottom) {
             if let ring = PocketArt.ring {
                 Image(ring).resizable().interpolation(.high).scaledToFit().frame(maxWidth: .infinity).accessibilityHidden(true)
@@ -1998,6 +2014,19 @@ private struct RpsCardBox: ViewModifier {
                     .shadow(color: win ? tint.opacity(0.6) : Color(hex: 0x4C1D95).opacity(0.08), radius: win ? 10 : 4, y: 2))
                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(win ? tint : tint.vsWash(0.32), lineWidth: win ? 2 : 1.5))
+        }
+    }
+}
+
+/// Slice 5 (iPad): the pinned letter keyboards clear the home indicator. On tablets the keyboard gets 20 pt more bottom room
+/// and its bed runs under the bottom safe area, so the bottom key row never sits on the indicator. Phones are untouched.
+private struct PinnedKeyboardBottom: ViewModifier {
+    @Environment(\.widthClass) private var widthClass
+    func body(content: Content) -> some View {
+        if widthClass == .compact {
+            content
+        } else {
+            content.padding(.bottom, 20).background(FriendlyGameScreen.keyboardBed.ignoresSafeArea(edges: .bottom))
         }
     }
 }
@@ -2037,6 +2066,8 @@ private struct SpinningCoin: View {
     /// Founder 10-13: the coin floats over the velvet stage in front of the theater backdrop (the card is drawn here; the
     /// backdrop is clipped to the card, the coin and its flight are not).
     var staged = false
+    /// Founder 10-14 (iPad): the card grows with the stage so the coin never rides up into the turn line / score card.
+    @Environment(\.widthClass) private var widthClass
     @State private var angle: Double = 0
     @State private var hop: CGFloat = 0
     @State private var squash: CGFloat = 1
@@ -2111,7 +2142,14 @@ private struct SpinningCoin: View {
     /// The Call It card: theater wallpaper (aspect-fill, clipped to the card's corners), the round velvet stage across
     /// ~90% of the width at the bottom, and the coin centered over the stage's top with headroom above it.
     private func stagedCard(backdrop: String, stage: String, landed: CoinFace) -> some View {
-        let cardHeight: CGFloat = 256
+        // Phones: the fixed 256 pt card (unchanged). Tablets (founder 10-14: "the coin looked blocked by Your turn" and the
+        // waiting line's mascot): the stage spans ~90% of a ~1000 pt page, so the card is sized from it — the stage, the coin
+        // (1.6x) resting on its top surface, and the same share of headroom the phone card has above the coin.
+        let tablet = widthClass != .compact
+        let coinScale: CGFloat = tablet ? 0.76 * 1.6 : 0.76
+        let pageW = min(tabletPageMaxWidth, UIScreen.main.bounds.width)
+        let tabletStageH = pageW * 0.9 * PocketBoard.coinStagePixels.height / PocketBoard.coinStagePixels.width
+        let cardHeight: CGFloat = tablet ? (8 + tabletStageH * 0.6 + 160 * coinScale + 64) : 256
         return GeometryReader { geo in
             let w = geo.size.width
             let stageW = w * 0.9
@@ -2128,7 +2166,7 @@ private struct SpinningCoin: View {
                 // The coin rests on the stage's top surface (about a third of the way down the stage art).
                 coinStack(landed: landed)
                     .frame(width: 150, height: 160)
-                    .scaleEffect(0.76, anchor: .bottom)
+                    .scaleEffect(coinScale, anchor: .bottom)
                     .padding(.bottom, 8 + stageH * 0.6)
             }
             .frame(width: w, height: cardHeight, alignment: .bottom)

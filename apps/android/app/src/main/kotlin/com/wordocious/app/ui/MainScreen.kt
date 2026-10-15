@@ -152,6 +152,9 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
     // color by MainScreen (dockedTabBarExtension), so it reads as part of the bar. Each
     // tab icon squishes on tap.
     val look = tabBarLook(selected)
+    // Tablet slice 5: icons, labels and the active underline grow 1.3x on EXPANDED (1.2x MEDIUM) so the full-width bar isn't thin.
+    val tk = chromeScale(rememberWidthClass())
+    // Tablet slice 4: the bar spans the whole window on every width class (the same bar as a phone).
     Row(
         Modifier.fillMaxWidth()
             .drawBehind {
@@ -163,7 +166,7 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
             }
             .background(Brush.verticalGradient(listOf(look.top, look.bottom)))
             .drawBehind { drawRect(look.line, size = Size(size.width, 1.dp.toPx())) }
-            .padding(top = 8.dp, start = 6.dp, end = 6.dp, bottom = 4.dp),
+            .padding(top = 8.dp * tk, start = 6.dp, end = 6.dp, bottom = 4.dp * tk),
     ) {
         TABS.forEachIndexed { i, tab ->
             val active = selected == i
@@ -189,7 +192,7 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                     // Selected = full color; unselected = the same icon at 55% opacity and
                     // 60% saturation (game-kit.html `.tab img`).
                     Icon3D(
-                        tab.icon, 29.dp,
+                        tab.icon, 29.dp * tk,
                         alpha = if (active) 1f else 0.55f,
                         colorFilter = if (active) null else Icon3DMuted,
                     )
@@ -204,14 +207,14 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                 }
                 // Founder 10-10 (readability): "Leaderboard" lost its "d" at a 1.3x font scale on a narrow phone; it now steps down to fit.
                 FitText(
-                    tab.label, fontSize = 11.sp, modifier = Modifier.clearAndSetSemantics { }, minScale = 0.7f,
+                    tab.label, fontSize = (11f * tk).sp, modifier = Modifier.clearAndSetSemantics { }, minScale = 0.7f,
                     fontWeight = if (active) FontWeight.Black else FontWeight.ExtraBold,
                     color = if (active) (if (WTheme.season?.card != null) Color(0xFFFDBA74) else Color(0xFF6D28D9))
                         else if (WTheme.isDark) WTheme.textMuted else Color(0xFF8A78AD),
                 )
                 // The selected tab's 3 dp purple underline pill under its label.
                 Box(
-                    Modifier.size(width = 22.dp, height = 3.dp).clip(CircleShape)
+                    Modifier.size(width = 22.dp * tk, height = 3.dp * tk).clip(CircleShape)
                         .background(if (!active) Color.Transparent else if (WTheme.season?.card != null) Color(0xFFF97316) else HeaderInk.tabSelected),
                 )
             }
@@ -601,6 +604,8 @@ fun MainScreen() {
         publicProfileId != null -> PageTint.HOME
         else -> tabPageTint(selectedTab)
     }
+    // Tablet slice 1: the window's width class (COMPACT = phone, untouched by every tablet modifier below).
+    val widthClass = rememberWidthClass()
     Box(Modifier.fillMaxSize().dockedTabBarExtension(!covered, selectedTab)) {
       // The page background reaches behind the status bar and the shared header; each tab
       // and pushed page repaints the same window-anchored pixels behind its own content.
@@ -635,8 +640,8 @@ fun MainScreen() {
                 val headerScrolls = remember { List(4) { HeaderScrollState() } }
                 androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                     // Shared header on EVERY tab (wordmark + PRO + Help + Settings + streak/shield).
-                    // FINISH_SPEC AG: inside the page column on a tablet (the cast stays 90% of it).
-                    Box(Modifier.fillMaxWidth().contentColumn()) {
+                    // FINISH_SPEC AG: inside the page on a tablet (the cast stays 90% of it, capped at 820 dp).
+                    Box(Modifier.fillMaxWidth().tabletPageFor(widthClass)) {
                         AppHeader(
                             onSettings = { showSettings = true },
                             onNav = { infoRoute = it },
@@ -660,13 +665,13 @@ fun MainScreen() {
                         visitedTabs.forEach { tab ->
                             val activeTab = tab == selectedTab
                             val tabHidden = remember(tab) { androidx.compose.runtime.derivedStateOf { coveredState.value || selectedTab != tab } }
-                            // FINISH_SPEC AG: a centered ~600 dp page column on a tablet (phones untouched).
+                            // Tablet slice 4: the tabs fill a wider page (min(width - margins, 1000 dp)) on MEDIUM/EXPANDED; phones untouched.
                             // AQ2: one scroll watcher per tab — ambient loops hold still while any list in it moves.
                             val scrollWatch = remember(tab) { ScrollActivity() }
                             val headerScroll = headerScrolls[tab.coerceIn(0, 3)]
                             // A re-tap scrolls the tab to the top: the header expands again.
                             androidx.compose.runtime.LaunchedEffect(tabReselect.getOrElse(tab) { 0 }) { headerScroll.reset() }
-                            Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab()).contentColumn()
+                            Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab())
                                 .nestedScroll(scrollWatch).nestedScroll(headerScroll)
                                 .then(if (activeTab) Modifier.headerScrollFade(headerScroll) else Modifier)) {
                               androidx.compose.runtime.CompositionLocalProvider(LocalTabHidden provides tabHidden, LocalScrollActive provides scrollWatch.active, LocalPageTint provides tabPageTint(tab), LocalTabReselect provides tabReselect.getOrElse(tab) { 0 }) {
@@ -1181,7 +1186,10 @@ fun MainScreen() {
         } else if (showSettings) {
             androidx.activity.compose.BackHandler { showSettings = false }
             androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().pageBackground(PageTint.HOME).statusBarsPadding()) {
-                SettingsScreen(onDone = { showSettings = false }, onOpenInfo = { infoRoute = it })
+                // Tablet slice 1: Settings sits in the same centered column as the tabs (its margin is inside its scroll, slice 6).
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+                    SettingsScreen(onDone = { showSettings = false }, onOpenInfo = { infoRoute = it })
+                }
             }
         }
       } }

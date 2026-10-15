@@ -234,7 +234,8 @@ fun PostGameScreen(
 
     Box(modifier = Modifier.fillMaxSize().gameBackground { appBackground() }.statusBarsPadding()) {
         FinishedScreen(
-            horizontalPadding = 12.dp,
+            // Tablet slice 5 (Half A part 4): the finished page uses the tablet page (phone: 12 dp, unchanged).
+            horizontalPadding = 12.dp + com.wordocious.app.ui.tabletPageInset(com.wordocious.app.ui.rememberWidthClass()),
             header = {
                 if (mode == GameMode.PROPERNOUNDLE) {
                     // iOS ProperNoundleView keeps its IN-PLAY header on the finished
@@ -527,7 +528,7 @@ internal fun ScoreBreakdownCard(
     // dashed dividers, purple values and a big soft total. iOS caps it at 400 pt.
     com.wordocious.app.ui.TintedCard(
         accent = Color(0xFF7C3AED),
-        modifier = Modifier.widthIn(max = 400.dp).fillMaxWidth(),
+        modifier = Modifier.widthIn(max = com.wordocious.app.ui.textCardMax(400.dp)).fillMaxWidth(),
         tint = if (WTheme.isDark) WTheme.surface else com.wordocious.app.ui.FinishInk.lavender,
         line = if (WTheme.isDark) WTheme.border else com.wordocious.app.ui.FinishInk.lavenderLine,
         bar = Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFFA855F7))),
@@ -642,7 +643,7 @@ internal fun NextDailyRow(
     // FINISH_SPEC B6 / A8: the CTAs are glossy candy buttons with icons — gold (amber)
     // next daily, purple leaderboard, soft (peach) Unlimited — squishing on press.
     Column(
-        Modifier.widthIn(max = 440.dp).fillMaxWidth(),
+        Modifier.widthIn(max = com.wordocious.app.ui.textCardMax(440.dp)).fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -718,7 +719,7 @@ internal fun DefinitionCard(word: String, showTiles: Boolean = false) {
     val dark = WTheme.isDark
     com.wordocious.app.ui.TintedCard(
         accent = green,
-        modifier = Modifier.widthIn(max = 440.dp).fillMaxWidth(),
+        modifier = Modifier.widthIn(max = com.wordocious.app.ui.textCardMax(440.dp, 560.dp)).fillMaxWidth(),
         tint = if (dark) WTheme.surface else Color(0xFFECFAF2),
         line = if (dark) WTheme.border else Color(0xFFC9EFDA),
         bar = Brush.horizontalGradient(listOf(green, Color(0xFF5ED59A))),

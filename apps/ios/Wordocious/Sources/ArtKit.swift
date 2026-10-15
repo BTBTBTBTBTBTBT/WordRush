@@ -399,6 +399,8 @@ struct GameTitleArtView: View {
     /// The slot's floor (44 pt in game headers so short names don't look tiny).
     var minHeight: CGFloat = 0
     var maxWidth: CGFloat = .infinity
+    /// Slice 5 (R4): the art takes at most this share of the offered width (1 = no cap). Tablet solo titles use 0.6.
+    var maxWidthFraction: CGFloat = 1
     var alignment: HorizontalAlignment = .center
     /// Game headers: the corner buttons' vertical center measured from the header's
     /// top. The art is pushed down (never up) so its center meets the buttons'.
@@ -417,7 +419,8 @@ struct GameTitleArtView: View {
         // Season preview: the season's lettering at the same box rules (its own aspect).
         let shown = SeasonKit.title(asset)
         WidthFitLayout(aspect: ArtAsset.aspect(shown) ?? 4, minHeight: minHeight, maxHeight: maxHeight,
-                       maxWidth: maxWidth, leading: alignment == .leading, centerY: centerY) {
+                       maxWidth: maxWidth, leading: alignment == .leading, centerY: centerY,
+                       widthFraction: maxWidthFraction) {
             Image(shown)
                 .resizable()
                 .interpolation(.high)
@@ -443,11 +446,13 @@ private struct WidthFitLayout: Layout {
     let maxWidth: CGFloat
     let leading: Bool
     let centerY: CGFloat?
+    /// Slice 5: the art never takes more than this share of the offered width.
+    let widthFraction: CGFloat
 
     private var idealWidth: CGFloat { min(maxWidth, maxHeight * aspect) }
 
     private func art(width: CGFloat) -> CGSize {
-        let w = max(0, min(width, idealWidth))
+        let w = max(0, min(width * widthFraction, idealWidth))
         return CGSize(width: w, height: w / aspect)
     }
 

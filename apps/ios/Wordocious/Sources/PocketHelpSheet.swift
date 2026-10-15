@@ -15,6 +15,9 @@ struct PocketHelpSheet: View {
     @State private var firstPlay = false
     @State private var opened = false
     @State private var shown = false
+    /// Slice 5 (iPad): the card's content grows 1.3x (as the game intro cards do); phones keep 1.
+    @Environment(\.widthClass) private var widthClass
+    private var k: CGFloat { widthClass == .compact ? 1 : 1.3 }
 
     private var still: Bool { Mascots.reduceMotion(envReduceMotion) }
     private var accent: Color { FriendsKit.tileAccent(kind) }
@@ -25,7 +28,7 @@ struct PocketHelpSheet: View {
                 if let help = PocketHelp.help[kind] {
                     card(help)
                         .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
-                        .frame(maxWidth: 520)
+                        .frame(maxWidth: widthClass == .compact ? 520 : 560)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -50,7 +53,7 @@ struct PocketHelpSheet: View {
         let shape = RoundedRectangle(cornerRadius: 28, style: .continuous)
         return VStack(spacing: 14) {
             title(help)
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 14 * k) {
                 ForEach(Array(help.steps.enumerated()), id: \.offset) { i, step in
                     stepRow(i + 1, step)
                         .opacity(shown ? 1 : 0)
@@ -58,7 +61,7 @@ struct PocketHelpSheet: View {
                         .animation(still ? nil : .easeOut(duration: 0.3).delay(0.05 * Double(i)), value: shown)
                 }
             }
-            .padding(14)
+            .padding(14 * k)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(accent.vsWash(0.10)))
             line(art: .asset("art-badge-trophy"), text: help.win)
@@ -89,23 +92,23 @@ struct PocketHelpSheet: View {
         let art = FriendsKit.pocketTitleAsset(kind)
         if ArtAsset.exists(art) {
             Image(art).resizable().interpolation(.high).scaledToFit()
-                .frame(maxWidth: .infinity, maxHeight: 76)
+                .frame(maxWidth: .infinity, maxHeight: 76 * k)
                 .accessibilityLabel(help.title).accessibilityAddTraits(.isHeader)
         } else {
-            LiveHeadline(text: help.title, palette: .friends, size: 30, maxLines: 1, minimumScale: 0.5)
+            LiveHeadline(text: help.title, palette: .friends, size: 30 * k, maxLines: 1, minimumScale: 0.5)
                 .frame(maxWidth: .infinity)
         }
     }
 
     private func stepRow(_ n: Int, _ step: PocketHelpStep) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            PocketBubble(text: "\(n)", color: .white, size: 15, palette: PlayerTint.platePalette(lightInk: true), fixed: true)
-                .frame(width: 26, height: 26)
+        HStack(alignment: .top, spacing: 12 * k) {
+            PocketBubble(text: "\(n)", color: .white, size: 15 * k, palette: PlayerTint.platePalette(lightInk: true), fixed: true)
+                .frame(width: 26 * k, height: 26 * k)
                 .background(Circle().fill(LinearGradient(colors: [accent.mixed(over: .white, 0.35), accent],
                                                          startPoint: .top, endPoint: .bottom)))
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 8) {
-                Text(step.text).font(Brand.font(14, .heavy)).foregroundStyle(FriendsInk.heading)
+            VStack(alignment: .leading, spacing: 8 * k) {
+                Text(step.text).font(Brand.font(14 * k, .heavy)).foregroundStyle(FriendsInk.heading)
                     .fixedSize(horizontal: false, vertical: true)
                 picture(step.picture)
             }
@@ -116,16 +119,16 @@ struct PocketHelpSheet: View {
 
     /// The step's tiny picture: the art pieces left to right, a small joiner word between two pieces.
     private func picture(_ pic: PocketHelpPicture) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 6 * k) {
             ForEach(Array(pic.art.enumerated()), id: \.offset) { i, name in
                 if i > 0, i - 1 < pic.joiners.count {
-                    PocketBubble(text: pic.joiners[i - 1], color: accent, size: 13, fixed: true)
+                    PocketBubble(text: pic.joiners[i - 1], color: accent, size: 13 * k, fixed: true)
                 }
                 if ArtAsset.exists(name) {
                     // Founder 10-13: a one-piece picture is a whole board (ring, # grid, trays): shown big, aspect kept.
                     let board = pic.art.count == 1
                     Image(name).resizable().interpolation(.high).scaledToFit()
-                        .frame(width: board ? 220 : 40, height: board ? 96 : 40).accessibilityHidden(true)
+                        .frame(width: (board ? 220 : 40) * k, height: (board ? 96 : 40) * k).accessibilityHidden(true)
                 }
             }
         }
@@ -135,17 +138,17 @@ struct PocketHelpSheet: View {
     private enum LineArt { case asset(String), icon(Icon3DName) }
 
     private func line(art: LineArt, text: String) -> some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: 8 * k) {
             Group {
                 switch art {
                 case .asset(let name):
-                    Image(name).resizable().interpolation(.high).scaledToFit().frame(width: 22, height: 22)
+                    Image(name).resizable().interpolation(.high).scaledToFit().frame(width: 22 * k, height: 22 * k)
                 case .icon(let icon):
-                    Icon3D(icon, size: 22)
+                    Icon3D(icon, size: 22 * k)
                 }
             }
-            .frame(width: 24).accessibilityHidden(true)
-            Text(text).font(Brand.font(13, .bold)).foregroundStyle(FriendsInk.heading)
+            .frame(width: 24 * k).accessibilityHidden(true)
+            Text(text).font(Brand.font(13 * k, .bold)).foregroundStyle(FriendsInk.heading)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 2)
             Spacer(minLength: 0)

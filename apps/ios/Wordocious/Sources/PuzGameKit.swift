@@ -178,6 +178,7 @@ struct PuzHop: ViewModifier {
 /// A small candy action (Delete · Clear · Shuffle · Hint …) used in the game
 /// control rows: the shared §A8 small pill.
 struct PuzCandyAction: View {
+    @Environment(\.widthClass) private var widthClass
     let title: String
     var symbol: String? = nil
     var variant: CandyButtonStyle.Variant = .purple
@@ -204,6 +205,8 @@ struct PuzCandyAction: View {
             }
         }
         .hintCountBadge(count)
+        // Slice 5 (R3, Half B): every candy pill row scales once here on tablets (1.15x MEDIUM, 1.3x EXPANDED).
+        .environment(\.helperScale, tabletChromeScale(widthClass))
         .accessibilityLabel(count > 0 ? "\(title) (\(count) used)" : title)
     }
 }

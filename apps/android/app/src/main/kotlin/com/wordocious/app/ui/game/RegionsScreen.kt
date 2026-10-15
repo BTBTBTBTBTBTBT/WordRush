@@ -71,6 +71,13 @@ import com.wordocious.app.ui.tintedPill
 import com.wordocious.app.ui.formatGuessStat
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.app.ui.WidthClass
+import com.wordocious.app.ui.chromeScale
+import com.wordocious.app.ui.gamePageFor
+import com.wordocious.app.ui.rememberWidthClass
+import com.wordocious.app.ui.tabletPageMaxWidth
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.unit.Dp
 import com.wordocious.core.GameMode
 import com.wordocious.core.REGIONS_MAX_MISTAKES
 import com.wordocious.core.RegionsAction
@@ -341,16 +348,24 @@ fun RegionsScreen(
             // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
             RegionsFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
-            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            val wc = rememberWidthClass()
+            Column(Modifier.fillMaxSize().gamePageFor(wc), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 RegionsHeader(session)
                 if (!isDaily && isPro && onPlayAgain != null) SizePicker(session.n) { onPlayAgain(it) }
-                Spacer(Modifier.weight(1f))
-                RegionsBoard(session.state, session.focused, revealSolution = false) { session.tap(it, onFinished) }
-                Spacer(Modifier.weight(1f))
+                if (wc == WidthClass.COMPACT) {
+                    Spacer(Modifier.weight(1f))
+                    RegionsBoard(session.state, session.focused, revealSolution = false) { session.tap(it, onFinished) }
+                    Spacer(Modifier.weight(1f))
+                } else {
+                    // Tablet: the board grows to the page width (1000 dp cap) or the height left over, whichever is smaller.
+                    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        RegionsBoard(session.state, session.focused, revealSolution = false, side = minOf(maxWidth, maxHeight, tabletPageMaxWidth)) { session.tap(it, onFinished) }
+                    }
+                }
                 val remaining = session.remaining
                 Text(
                     if (remaining == session.n && session.state.history.isEmpty()) "Tap for a black star · double-tap to play it" else "$remaining star${if (remaining == 1) "" else "s"} left",
-                    fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    fontSize = (11f * chromeScale(wc)).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                 )
                 RegionsPad(session, onFinished)
                 Spacer(Modifier.height(6.dp))
@@ -372,24 +387,26 @@ private fun RegionsHeader(session: RegionsSession) {
     val tick by produceState(0, session.isFinished) {
         while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ }
     }
+    // Tablet: the meta line grows 1.3x (chromeScale; 1 on a phone).
+    val k = chromeScale(rememberWidthClass())
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("REGIONS") { Text("STARSWEEP", fontSize = 24.sp, fontWeight = FontWeight.Black, color = REGIONS_ACCENT, fontFamily = Nunito) }
-        Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Text(session.sizeLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Mistakes", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp * k), verticalAlignment = Alignment.CenterVertically) {
+            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = (12f * k).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text(session.sizeLabel, fontSize = (12f * k).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Row(horizontalArrangement = Arrangement.spacedBy(3.dp * k), verticalAlignment = Alignment.CenterVertically) {
+                Text("Mistakes", fontSize = (12f * k).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 repeat(REGIONS_MAX_MISTAKES) { i ->
-                    Box(Modifier.size(8.dp).clip(CircleShape).background(if (i < session.state.mistakes) Color(0xFFDC2626) else WTheme.borderLight))
+                    Box(Modifier.size(8.dp * k).clip(CircleShape).background(if (i < session.state.mistakes) Color(0xFFDC2626) else WTheme.borderLight))
                 }
             }
             if (!session.isFinished) {
                 @Suppress("UNUSED_EXPRESSION") tick
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp * k)) {
+                    Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp * k))
                     val s = session.elapsed
-                    Text("${s / 60}:${"%02d".format(s % 60)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    Text("${s / 60}:${"%02d".format(s % 60)}", fontSize = (12f * k).sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
             }
         }
@@ -411,13 +428,13 @@ private fun SizePicker(current: Int, onPick: (Int) -> Unit) {
 /** FINISH_SPEC H + L: the Starsweep board — pastel candy region tiles, soft seams, the
  *  star / cross art, inside the shared game tray (StarsweepBoard.kt). */
 @Composable
-fun RegionsBoard(state: RegionsState, focused: Int?, revealSolution: Boolean, onTap: (Int) -> Unit) {
+fun RegionsBoard(state: RegionsState, focused: Int?, revealSolution: Boolean, side: Dp? = null, onTap: (Int) -> Unit) {
     val trayState = when (state.status) {
         RegionsStatus.WON -> TrayState.WON
         RegionsStatus.LOST -> TrayState.LOST
         else -> TrayState.PLAYING
     }
-    StarsweepBoard(state, focused, revealSolution, trayState, onTap)
+    StarsweepBoard(state, focused, revealSolution, trayState, onTap, side = side)
 }
 
 // ── Pad ─────────────────────────────────────────────────────────────────────
@@ -427,15 +444,17 @@ fun RegionsBoard(state: RegionsState, focused: Int?, revealSolution: Boolean, on
 @Composable
 private fun RegionsPad(session: RegionsSession, onFinished: () -> Unit) {
     val s = session.state
-    ShrinkToFitRow(Modifier.padding(horizontal = 2.dp)) { Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        PadAction("Undo", Icons.AutoMirrored.Filled.Undo, onClick = { session.undo(onFinished) }, dim = s.history.isEmpty())
-        PadAction("Erase", Icons.AutoMirrored.Filled.Backspace, onClick = { session.erase(onFinished) }, dim = !session.canErase)
-        PadAction("Auto-cross", Icons.Filled.Close, onClick = { session.toggleAutoCross(onFinished) }, active = s.autoCross)
+    // Tablet: the four helper pills grow 1.3x (chromeScale; 1 on a phone), spacing with them.
+    val k = chromeScale(rememberWidthClass())
+    ShrinkToFitRow(Modifier.padding(horizontal = 2.dp)) { Row(horizontalArrangement = Arrangement.spacedBy(6.dp * k)) {
+        PadAction("Undo", Icons.AutoMirrored.Filled.Undo, onClick = { session.undo(onFinished) }, dim = s.history.isEmpty(), scale = k)
+        PadAction("Erase", Icons.AutoMirrored.Filled.Backspace, onClick = { session.erase(onFinished) }, dim = !session.canErase, scale = k)
+        PadAction("Auto-cross", Icons.Filled.Close, onClick = { session.toggleAutoCross(onFinished) }, active = s.autoCross, scale = k)
         // BI22: a fixed "Hint" label; the used count is the corner badge (an overlay).
         PadAction(
             "Hint", Icons.Filled.Lightbulb,
             onClick = { session.hint(onFinished) }, color = com.wordocious.app.ui.CandyColor.AMBER,
-            count = s.hintsUsed,
+            count = s.hintsUsed, scale = k,
         )
     } }
 }

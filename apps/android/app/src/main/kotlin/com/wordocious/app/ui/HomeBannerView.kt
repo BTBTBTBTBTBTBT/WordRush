@@ -488,9 +488,13 @@ private fun BannerGroupRow(
         // BI21: one tile size for every row — at most 32 dp, sized so [tileSlots] tiles fit
         // with 5 dp gaps — and the row spreads edge to edge (first flush left, last flush
         // right, equal gaps), so the 8- and 10-tile rows end flush.
+        // Tablet slice 4: on a tablet the row scales with the page (no 36 dp cap); phones keep the cap.
+        val tabletRow = rememberWidthClass() != WidthClass.COMPACT
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             // BJ6 round 3: as large as fits — both rows the same size, ≥ 4 dp gaps, up to 36.
-            val size = homeTileSize(maxWidth.value, tileSlots).dp
+            val size = (if (tabletRow) homeTileSizeTablet(maxWidth.value, tileSlots) else homeTileSize(maxWidth.value, tileSlots)).dp
+            // The W / L badge, the corner and the badge's nudge scale with the tile (1 on a phone).
+            val tileScale = if (tabletRow) size.value / HOME_TILE_PHONE_REF_TILE else 1f
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 row.cards.forEach { card ->
                     BannerTile(
@@ -498,7 +502,8 @@ private fun BannerGroupRow(
                         result = if (unlimited) null else card.dbKey?.let { completions[it] },
                         unlimited = unlimited,
                         size = size,
-                        radius = 8.dp,
+                        radius = 8.dp * tileScale,
+                        scale = tileScale,
                         onClick = { onOpen(card) },
                     )
                 }
@@ -527,6 +532,8 @@ private fun BannerTile(
     unlimited: Boolean,
     size: Dp,
     radius: Dp,
+    /** Tablet slice 4: the badge's scale against a phone tile (1 on phones). */
+    scale: Float = 1f,
     onClick: () -> Unit,
 ) {
     val accent = card.accent
@@ -587,8 +594,8 @@ private fun BannerTile(
       }
         if (!unlimited && result != null) {
             ResultBadge(
-                result.completed, size = 13.dp,
-                modifier = Modifier.align(Alignment.TopEnd).offset(x = 3.dp, y = (-3).dp),
+                result.completed, size = 13.dp * scale,
+                modifier = Modifier.align(Alignment.TopEnd).offset(x = 3.dp * scale, y = (-3).dp * scale),
             )
         }
     }

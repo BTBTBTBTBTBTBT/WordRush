@@ -289,6 +289,7 @@ final class CrosswordVM: ObservableObject {
 }
 
 struct CrosswordView: View {
+    @Environment(\.widthClass) private var widthClass
     @StateObject private var vm: CrosswordVM
     /// Pro Unlimited "Play Again" — HomeView swaps in a fresh seed.
     var onPlayAgain: (() -> Void)? = nil
@@ -357,7 +358,7 @@ struct CrosswordView: View {
                             CrosswordActiveClueBar(entry: vm.activeEntry) { vm.toggleDirection() }
                             CrosswordCluesToggle(showing: vm.showClues) { SoundManager.shared.playKeyTap(); vm.showClues.toggle() }
                         }
-                        .frame(maxWidth: 700)
+                        .frame(maxWidth: widthClass == .compact ? 700 : tabletKeyboardMaxWidth)
                         // §A8: candy pills — purple Check, amber Letter, pink Word, peach
                         // Reveal all (pink once armed). §BI22: one row of equal quarters on the
                         // widest phones, else two rows of halves — chosen by the SCREEN, never
@@ -481,13 +482,14 @@ struct CrosswordView: View {
         VStack(spacing: 2) {
             Group {
                 if let art = GameTitleArt.forMode(.crossword) {
-                    GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 44, minHeight: 0)
+                    GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 44 * tabletTitleScale(widthClass), minHeight: 0)
                 } else {
                     BubbleLabel("CROSSWORDOCIOUS", color: crosswordAccent, size: 23, minScale: 0.5, alignment: .center)
                 }
             }
-            .frame(height: GameCornerButton.rowHeight - GameCornerButton.topInset)
-            .padding(.horizontal, 44 + GameCornerButton.sideInset + 4)
+            // Half B (R4): the title art and the controls row scale on tablets (phones unchanged: 44 pt art, 48 pt row).
+            .frame(height: max(GameCornerButton.headerRowHeight(widthClass) - GameCornerButton.topInset, 44 * tabletTitleScale(widthClass)))
+            .padding(.horizontal, 44 * tabletChromeScale(widthClass) + GameCornerButton.sideInset + 4)
             BubbleOneLine(text: vm.state.title.uppercased(), palette: .accent(crosswordAccent), size: 15, minScale: 0.5)
                 .lineLimit(1).minimumScaleFactor(0.7).padding(.horizontal, 12)
             metaLine
@@ -496,17 +498,17 @@ struct CrosswordView: View {
 
     private var metaLine: some View {
         HStack(spacing: 8) {
-            if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-            if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(crosswordAccent) }
-            Text("\(vm.filled)/\(vm.total) letters").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-            Text(vm.checksLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+            if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted) }
+            if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(crosswordAccent) }
+            Text("\(vm.filled)/\(vm.total) letters").font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
+            Text(vm.checksLabel).font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
             if !vm.isFinished {
                 TimelineView(.periodic(from: .now, by: 1)) { _ in
                     HStack(spacing: 2) {
                         Image(systemName: "clock").font(.system(size: 9))
                         Text(timeText(vm.elapsed, clock: true))
                     }
-                    .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                    .font(Brand.caption(12 * tabletChromeScale(widthClass))).foregroundStyle(Theme.textMuted)
                 }
             }
         }
@@ -586,17 +588,21 @@ struct CrosswordGridView: View {
     var minCell: CGFloat = 8
 
     private let gap: CGFloat = 3
+    /// §AG tablet slice 3: on medium/expanded the grid grows to the 640 pt column (cap 72 pt a cell); phones keep 42.
+    @Environment(\.widthClass) private var widthClass
 
     /// Cell side that fits the grid's columns AND (when given) rows, capped like the
     /// web (42 pt) — BI18 / FINISH_SPEC §B5 (CrosswordFit, unit-tested; fixed 3-pt
     /// gaps). The tray's padding comes off the width; its padding + lip and the
     /// selection ring's room off the height.
     private var cell: CGFloat {
-        CGFloat(CrosswordFit.cell(columns: vm.state.w, rows: vm.state.h,
-                                  width: Double(width ?? UIScreen.main.bounds.width - 40), height: maxHeight.map(Double.init),
+        let offered = width ?? UIScreen.main.bounds.width - 40
+        let tablet = widthClass != .compact
+        return CGFloat(CrosswordFit.cell(columns: vm.state.w, rows: vm.state.h,
+                                  width: Double(tablet ? min(offered, tabletColumnMaxWidth) : offered), height: maxHeight.map(Double.init),
                                   chromeX: Double(tray ? GameTray.padding * 2 : 0),
                                   chromeY: Double((tray ? GameTray.padding * 2 + GameTray.lip : 0) + 6),
-                                  gap: Double(gap), minCell: Double(minCell)))
+                                  gap: Double(gap), maxCell: tablet ? 72 : CrosswordFit.maxCell, minCell: Double(minCell)))
     }
 
     var body: some View {

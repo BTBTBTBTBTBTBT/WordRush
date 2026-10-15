@@ -1,6 +1,8 @@
 package com.wordocious.app.ui.game
 
 import com.wordocious.app.ui.gameBackground
+import com.wordocious.app.ui.gamePageFor
+import com.wordocious.app.ui.rememberWidthClass
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -392,7 +394,7 @@ fun CodebreakerScreen(
             // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
             CodebreakerFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
-            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.fillMaxSize().gamePageFor(rememberWidthClass()), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 CodebreakerHeader(session)
                 // The board + frequency strip block is centered in the band between the
                 // header and the capsule row; capsules and keyboard stay pinned below.
@@ -442,17 +444,19 @@ private fun CodebreakerHeader(session: CodebreakerSession) {
     val codes = cryptogramCodeLetters(s.cipher)
     val resolved = codes.count { it in s.locked || !s.mapping[it].isNullOrEmpty() }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
+        val cs = com.wordocious.app.ui.chromeScale(rememberWidthClass())
+        val meta = (12f * cs).sp
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("CRYPTOGRAM") { Text("CODEBREAKER", fontSize = 24.sp, fontWeight = FontWeight.Black, color = CRYPTOGRAM_ACCENT, fontFamily = Nunito) }
         Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            session.holidayTitle?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CRYPTOGRAM_ACCENT) }
-            Text("$resolved/${codes.size} letters", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Text(session.checksLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = meta, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            session.holidayTitle?.let { Text(it, fontSize = meta, fontWeight = FontWeight.Bold, color = CRYPTOGRAM_ACCENT) }
+            Text("$resolved/${codes.size} letters", fontSize = meta, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text(session.checksLabel, fontSize = meta, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             @Suppress("UNUSED_EXPRESSION") tick
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
-                Text(clockText(session.elapsed), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp * cs))
+                Text(clockText(session.elapsed), fontSize = meta, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
         }
     }
@@ -489,14 +493,17 @@ private const val CIPHER_TRAY_V = 10f
 
 /** Code letter under a cell: 10 sp at the floor, 14 sp at the 64 dp top end. */
 internal fun cipherCodeSp(cell: Float): Float =
-    (10f + (cell - CIPHER_FONT_FLOOR) / (CIPHER_CELL_MAX - CIPHER_FONT_FLOOR) * 4f).coerceIn(10f, 14f)
+    (10f + (cell - CIPHER_FONT_FLOOR) / (CIPHER_CELL_MAX - CIPHER_FONT_FLOOR) * 4f).coerceIn(10f, 14f) * cipherTabletK(cell)
+
+/** Tablet: a cell bigger than the phone's 64 dp top end scales its type with it (1 on a phone). */
+internal fun cipherTabletK(cell: Float): Float = maxOf(1f, cell / CIPHER_CELL_MAX)
 
 /** Frequency chip text: 11 sp at the floor, 14 sp at the 64 dp top end. */
 internal fun cipherChipSp(cell: Float): Float =
-    (11f + (cell - CIPHER_FONT_FLOOR) / (CIPHER_CELL_MAX - CIPHER_FONT_FLOOR) * 3f).coerceIn(11f, 14f)
+    (11f + (cell - CIPHER_FONT_FLOOR) / (CIPHER_CELL_MAX - CIPHER_FONT_FLOOR) * 3f).coerceIn(11f, 14f) * cipherTabletK(cell)
 
 /** Punctuation between cells, as plain bold text: 18 sp up to the old compact cells, growing with the cell. */
-internal fun cipherPunctSp(cell: Float): Float = (cell * 0.45f).coerceIn(18f, 28f)
+internal fun cipherPunctSp(cell: Float): Float = (cell * 0.45f).coerceIn(18f, 28f) * cipherTabletK(cell)
 
 internal fun cipherLineGap(cell: Float): Float = maxOf(CIPHER_LINE_GAP_MIN, cell * CIPHER_LINE_GAP_RATIO)
 
@@ -558,8 +565,8 @@ internal data class CipherFit(val cell: Float, val lines: Int, val fits: Boolean
 /** Cell side for a band of [width] × [height] dp: 64 → 40 in 4 dp steps until the wrapped cipher plus the
  *  strip fit the height and the widest word fits the width. Below 40 only a too-wide word may push further
  *  (to 20). [fits] false = even the floor overflows the height; the caller then scrolls instead of centering. */
-internal fun cipherCellFit(words: List<String>, codeCount: Int, freqDigits: Int, width: Float, height: Float, fontScale: Float, withStrip: Boolean = true): CipherFit {
-    var cell = CIPHER_CELL_MAX
+internal fun cipherCellFit(words: List<String>, codeCount: Int, freqDigits: Int, width: Float, height: Float, fontScale: Float, withStrip: Boolean = true, maxCell: Float = CIPHER_CELL_MAX): CipherFit {
+    var cell = maxCell
     while (true) {
         val lines = cipherLineCount(words, cell, width)
         val wide = (words.maxOfOrNull { cipherWordWidth(it, cell) } ?: 0f) > width
@@ -585,12 +592,13 @@ private fun CipherBand(session: CodebreakerSession, modifier: Modifier) {
         val codeCount = remember(s.cipher) { cryptogramCodeLetters(s.cipher).size }
         val freqDigits = remember(s.cipher) { (cryptogramFrequencies(s.cipher).values.maxOrNull() ?: 1).toString().length }
         // The board caps at 480 dp wide, sits in its tray and pads 4 dp a side; wrap against that, not the raw band.
-        val innerWidth = minOf(maxWidth, 480.dp) - 8.dp - (CIPHER_TRAY_H * 2).dp
+        val innerWidth = minOf(maxWidth, cipherBoardMax()) - 8.dp - (CIPHER_TRAY_H * 2).dp
         val trayHeight = CIPHER_TRAY_V * 2 + GameTrayStyle.LIP.value
         // The strip is pinned BELOW the band (founder, 2026-09-26: always visible over the
         // keyboard, never scrolled away), so the board alone has to fit this height.
+        val cellMax = cipherMaxCell()
         val fit = remember(s.cipher, maxWidth, maxHeight, fontScale) {
-            cipherCellFit(words, codeCount, freqDigits, innerWidth.value, maxHeight.value - trayHeight, fontScale, withStrip = false)
+            cipherCellFit(words, codeCount, freqDigits, innerWidth.value, maxHeight.value - trayHeight, fontScale, withStrip = false, maxCell = cellMax)
         }
         Column(
             Modifier.fillMaxSize().then(if (fit.fits) Modifier else Modifier.verticalScroll(rememberScrollState())),
@@ -601,6 +609,17 @@ private fun CipherBand(session: CodebreakerSession, modifier: Modifier) {
             // "S used for two code letters" is an overlay toast now (founder 10-08), not a line in the layout.
         }
     }
+}
+
+/** Tablet: the cipher board grows to the game page (480 dp on a phone) and its cell to 100 dp (EXPANDED) / 84 dp (MEDIUM). */
+@Composable
+private fun cipherBoardMax(): Dp = if (rememberWidthClass() == com.wordocious.app.ui.WidthClass.COMPACT) 480.dp else com.wordocious.app.ui.tabletPageMaxWidth
+
+@Composable
+private fun cipherMaxCell(): Float = when (rememberWidthClass()) {
+    com.wordocious.app.ui.WidthClass.EXPANDED -> 150f
+    com.wordocious.app.ui.WidthClass.MEDIUM -> 120f
+    else -> CIPHER_CELL_MAX
 }
 
 /** The given letters: a solid glossy tile in the game's amber-brown. */
@@ -660,7 +679,7 @@ internal fun CipherBoard(s: CryptogramState, selected: String?, finished: Boolea
     val dark = WTheme.isDark
     // L the saying sits in the shared game tray (purple when cracked, slate when revealed).
     BoxWithConstraints(
-        Modifier.fillMaxWidth().widthIn(max = 480.dp).gameTray(
+        Modifier.fillMaxWidth().widthIn(max = cipherBoardMax()).gameTray(
             CRYPTOGRAM_ACCENT, finishTray(s.status != CryptogramStatus.PLAYING, s.status == CryptogramStatus.WON),
             padding = androidx.compose.foundation.layout.PaddingValues(horizontal = CIPHER_TRAY_H.dp, vertical = CIPHER_TRAY_V.dp),
         ),
@@ -747,7 +766,7 @@ private fun FrequencyStrip(session: CodebreakerSession, chipSp: TextUnit = 11.sp
 /** A8 a game control: a small candy button with its icon; [dim] = not yet (taps ignored, as before). */
 @Composable
 private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, reserve: String? = null, count: Int = 0, onClick: () -> Unit) =
-    PadAction(label, icon, onClick = onClick, color = color, dim = dim, reserveLabel = reserve, count = count)
+    PadAction(label, icon, onClick = onClick, color = color, dim = dim, reserveLabel = reserve, count = count, scale = com.wordocious.app.ui.chromeScale(rememberWidthClass()))
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 

@@ -1,6 +1,9 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.WidthClass
 import com.wordocious.app.ui.gameBackground
+import com.wordocious.app.ui.rememberWidthClass
+import com.wordocious.app.ui.gamePageFor
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -506,7 +509,7 @@ fun CrosswordScreen(
             // height for its real cols × rows, the clue bar and the keyboard pinned. The clue list
             // sits behind the Clues toggle beside the clue bar (it scrolls inside the band).
             val shortScreen = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 700
-            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.fillMaxSize().gamePageFor(rememberWidthClass()), verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 CrosswordPlayHeader(session)
                 if (session.showClues) {
                     Column(
@@ -659,6 +662,8 @@ internal fun CrosswordGrid(
     for (e in s.entries) { val start = e.r * s.w + e.c; if (start !in numbers) numbers[start] = e.n }
     val wrongCells = s.lastWrong.toSet()
     val small = maxCell < 42.dp
+    // Tablet slice 2: the play cell grows to 72 dp on MEDIUM/EXPANDED (iOS parity); phones keep 42.
+    val cellCap = if (maxCell >= 42.dp && rememberWidthClass() != WidthClass.COMPACT) (if (rememberWidthClass() == WidthClass.EXPANDED) 96.dp else 84.dp) else maxCell
     val gap = if (small) 2.dp else 3.dp
     val trayPad = if (small) 7.dp else 10.dp
     val dark = WTheme.isDark
@@ -670,9 +675,9 @@ internal fun CrosswordGrid(
             val chrome = (trayPad + GameTrayStyle.BORDER).value * 2f
             BoardSizing.crosswordCell(
                 maxWidth.value, maxHeight.value.takeIf { constraints.hasBoundedHeight }, s.w, s.h, gap.value,
-                chromeX = chrome, chromeY = chrome + GameTrayStyle.LIP.value + 6f, maxCell = maxCell.value,
+                chromeX = chrome, chromeY = chrome + GameTrayStyle.LIP.value + 6f, maxCell = cellCap.value,
             ).dp
-        } else ((maxWidth - trayPad * 2 - gap * (s.w - 1)) / s.w).coerceAtMost(maxCell)
+        } else ((maxWidth - trayPad * 2 - gap * (s.w - 1)) / s.w).coerceAtMost(cellCap)
         // Letters and clue numbers scale with the cell (BI18: readable down to the 14 dp floor).
         val glyph = if (fitHeight) maxOf(cell.value * 0.46f, minOf(11f, cell.value * 0.56f)).coerceAtMost(19f)
             else (cell.value * 0.46f).coerceIn(if (small) 9f else 12f, 19f)

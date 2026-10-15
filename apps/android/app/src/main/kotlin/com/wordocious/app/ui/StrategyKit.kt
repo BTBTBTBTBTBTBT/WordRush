@@ -538,7 +538,8 @@ fun StrategyArticleBody(
 ) {
     val a = e.article
     val accent = e.accent
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+    // Tablet slice 5 (Half A part 4): the reading column is capped at 760 dp on tablets (phone: unchanged).
+    Column(Modifier.tabletColumnFor(rememberWidthClass(), 760.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
         FamilyCard(accent) {
             HostReadyPose(e.host, accent, 104.dp)
             EntryTitleArt(e, 60.dp)
@@ -626,7 +627,7 @@ fun HowToPlayBody(
     /** BI24: the fetch came back empty — the caller draws its offline state, so no loader. */
     loadFailed: Boolean = false,
 ) {
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+    Column(Modifier.tabletColumnFor(rememberWidthClass(), 760.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
         FamilyCard(BRAND) {
             HostReadyPose(MascotId.W, BRAND, 104.dp)
             Text(

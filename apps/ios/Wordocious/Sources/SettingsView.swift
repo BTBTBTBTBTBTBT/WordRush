@@ -232,6 +232,7 @@ struct SettingsView: View {
                     .padding(.horizontal, 16).padding(.vertical, 12)
                 }
                 }
+                .tabletPage(max: tabletSheetMaxWidth)   // slice 5: the page width (header + rows), wallpaper stays full-bleed; item 2: a sheet's column (760)
             }
             .toolbar(.hidden, for: .navigationBar)
             .onChange(of: dailyReminder) { on in
@@ -266,7 +267,7 @@ struct SettingsView: View {
             }
             .familyNotice("Couldn't delete account", isPresented: $deleteError,
                           message: "Please try again or contact support@wordocious.com.")
-            .softSheet(item: $infoKind) { InfoPage($0).presentationDetents([.large]) }
+            .softSheet(item: $infoKind) { InfoPage($0).presentationDetents([.large]).tabletSheet() }
             .fullScreenCover(isPresented: $showTour) {
                 OnboardingView(replay: true) { play in
                     showTour = false

@@ -90,8 +90,13 @@ fun VsBotsPage(
     }
     Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
         VsNavBar("BOTS", onBack = onBack, heading = com.wordocious.app.ui.Heading.BOTS) { VsModeChip(playMode) }
+        // Tablet (slice 5): the ladder is the tablet page (tabletPageInset, inside the scroll) at 1.3x; a phone keeps 16 dp at 1x.
+        val wc = com.wordocious.app.ui.rememberWidthClass()
+        val k = com.wordocious.app.ui.tabletPageScale(wc)
+        com.wordocious.app.ui.ScaledChrome(k) {
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(horizontal = if (wc == com.wordocious.app.ui.WidthClass.COMPACT) 16.dp else com.wordocious.app.ui.tabletPageInset(wc) / k),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             BotOfTheDayCard(botOfDay.id, prog.botOfDayToday(today), prog.botOfDayStreak) {
@@ -170,6 +175,7 @@ fun VsBotsPage(
                 }
             }
             Spacer(Modifier.height(24.dp))
+        }
         }
     }
 }

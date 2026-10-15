@@ -40,6 +40,7 @@ extension CandyButtonStyle.Size {
     /// The cast skin heights: s 32 · m 44 · l 56.
     var castHeight: CGFloat {
         switch self {
+        case .hero: return 73
         case .large: return 56
         case .medium: return 44
         case .small: return 32
@@ -47,6 +48,7 @@ extension CandyButtonStyle.Size {
     }
     var castKey: String {
         switch self {
+        case .hero: return "l"
         case .large: return "l"
         case .medium: return "m"
         case .small: return "s"

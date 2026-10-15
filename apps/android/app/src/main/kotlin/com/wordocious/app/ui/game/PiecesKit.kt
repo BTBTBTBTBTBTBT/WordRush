@@ -512,19 +512,19 @@ fun PieceResultCard(won: Boolean, title: String, note: String? = null, pills: @C
  * game answers it, e.g. "Reveal unlocks at 5:00").
  */
 @Composable
-fun PieceAction(label: String, icon: ImageVector, onClick: () -> Unit, color: CandyColor = CandyColor.PEACH, faded: Boolean = false, reserveLabel: String? = null, count: Int = 0) {
+fun PieceAction(label: String, icon: ImageVector, onClick: () -> Unit, color: CandyColor = CandyColor.PEACH, faded: Boolean = false, reserveLabel: String? = null, count: Int = 0, scale: Float = 1f) {
     // The button family: a HELPER pill in the game's accent (off a game a non-purple [color]'s tint), 3D icon art.
     val tint = color.takeIf { it != CandyColor.PURPLE && it != CandyColor.PEACH }?.helperTint()
     val description = hintCountDescription(label, count)
     // BI22: the used count is a corner badge (overlay); a changing label keeps its widest width.
     androidx.compose.foundation.layout.Box {
         if (reserveLabel == null) {
-            com.wordocious.app.ui.HelperButton(label, onClick = onClick, modifier = Modifier.alpha(if (faded) 0.55f else 1f), tint = tint, vector = icon, contentDescription = description)
+            com.wordocious.app.ui.HelperButton(label, onClick = onClick, modifier = Modifier.alpha(if (faded) 0.55f else 1f), tint = tint, vector = icon, contentDescription = description, scale = scale)
         } else {
             ReservedWidth(
-                reserve = { com.wordocious.app.ui.HelperButton(reserveLabel, onClick = {}, tint = tint, vector = icon) },
+                reserve = { com.wordocious.app.ui.HelperButton(reserveLabel, onClick = {}, tint = tint, vector = icon, scale = scale) },
                 modifier = Modifier.alpha(if (faded) 0.55f else 1f),
-            ) { com.wordocious.app.ui.HelperButton(label, onClick = onClick, tint = tint, vector = icon, fill = true, contentDescription = description) }
+            ) { com.wordocious.app.ui.HelperButton(label, onClick = onClick, tint = tint, vector = icon, fill = true, contentDescription = description, scale = scale) }
         }
         HintCountBadge(count, Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-7).dp))
     }
