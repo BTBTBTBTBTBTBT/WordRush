@@ -157,7 +157,10 @@
   "art": {
     "aspect": 1.5,
     "plantPt": 5,
-    "nameGapPt": 8,
+    "nameGapPt": 12,
+    "headTop": 0.04,
+    "crownRise": 0.05,
+    "crownGapPt": 10,
     "shadowWidth": 0.9,
     "scoreHeight": 0.29,
     "detailHeight": 0.19,
@@ -213,6 +216,63 @@
     1,
     3
   ],
+  "winnerIntro": {
+    "glow": {
+      "size": 1.5,
+      "colorRgb": [
+        255,
+        200,
+        61
+      ],
+      "fromScale": 0.85,
+      "toScale": 1,
+      "durationMs": 600,
+      "ease": [
+        0,
+        0,
+        0.58,
+        1
+      ],
+      "restOpacity": 0.5
+    },
+    "sparkles": {
+      "offsets": [
+        [
+          -0.42,
+          -0.06
+        ],
+        [
+          0.4,
+          0.02
+        ],
+        [
+          -0.24,
+          -0.34
+        ],
+        [
+          0.26,
+          -0.38
+        ]
+      ],
+      "size": 0.07,
+      "durationMs": 1200,
+      "delayMs": 300,
+      "staggerMs": 180,
+      "driftPt": 8,
+      "peakOpacity": 0.95,
+      "colorRgb": [
+        255,
+        236,
+        170
+      ]
+    },
+    "crown": {
+      "delayMs": 200,
+      "durationMs": 250,
+      "dropPt": 10,
+      "settlePt": 1.5
+    }
+  },
   "celebration": {
     "aspect": 1.5987903225806452,
     "feetX": [

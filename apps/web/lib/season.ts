@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { SEASON_IDS, currentSeason, isFeatureLive, seasonOptOutKey, type Season, type SwitchRow } from '@wordle-duel/core';
 import { artSrc, halloweenSrc } from './art';
 import { MASCOT_ART_SIZE, MASCOT_TRIM, boxAspect, boxTrimLayout, type TrimBox } from './cast-moves';
@@ -187,6 +187,8 @@ export function activeSeason(now: Date = new Date()): Season | null {
   return readSeasonOptOut() === seasonOptOutKey(season, localDateString(now)) ? null : season;
 }
 
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
 /**
  * The season for a client component. Null on the server and in the first
  * client render (so hydration matches), then the real value; re-read when the
@@ -195,7 +197,9 @@ export function activeSeason(now: Date = new Date()): Season | null {
  */
 export function useSeason(): Season | null {
   const [season, setSeason] = useState<Season | null>(null);
-  useEffect(() => {
+  // Read before the first paint (a layout effect): a season card (the Halloween stage) must not paint plain for a frame and
+  // then grow (layout shift). Server render still gives null, so hydration matches.
+  useIsoLayoutEffect(() => {
     const read = () => setSeason(activeSeason());
     read();
     const onVis = () => { if (document.visibilityState === 'visible') read(); };

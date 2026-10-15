@@ -1,6 +1,7 @@
 'use client';
 
-import { avatarPlacePose } from '@wordle-duel/core';
+import type * as React from 'react';
+import { PODIUM_ART, PODIUM_WINNER_INTRO, avatarPlacePose } from '@wordle-duel/core';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { BoardAvatar } from '@/components/leaderboard/board-rows';
@@ -17,12 +18,14 @@ import type { PodiumPlace } from '@/components/leaderboard/podium';
 export const PODIUM_FIGURE_SCALE = 2;
 export const PODIUM_FOOT_OVERLAP = 12;
 
-export function PodiumFigure({ place, tone, size, ring, planted = false, crown = true }: {
+export function PodiumFigure({ place, tone, size, ring, planted = false, crown = true, intro = false }: {
   place: PodiumPlace; tone: number; size: number; ring?: string;
   /** One-image podium: the figure's box ends exactly at its feet (no overlap into a step below). */
   planted?: boolean;
   /** False: no crown on first place (a Friends race nobody has scored in yet). */
   crown?: boolean;
+  /** The winner intro: the crown drops in gently (core PODIUM_WINNER_INTRO.crown). */
+  intro?: boolean;
 }) {
   const livingOn = useLivingMascotOn();
   const look = usePlayerAvatar({
@@ -35,7 +38,20 @@ export function PodiumFigure({ place, tone, size, ring, planted = false, crown =
     return (
       <span className="relative block" style={{ width: big, height: big, lineHeight: 0, marginBottom: planted ? 0 : -PODIUM_FOOT_OVERLAP, zIndex: 1 }}>
         <MascotAvatar config={posed as typeof look.config} initial={look.initial} size={big} cutout living />
-        {tone === 1 && crown && <Icon3D name="crown" size={34} style={{ position: 'absolute', left: '50%', top: -big * 0.05, marginLeft: -17, zIndex: 2 }} />}
+        {tone === 1 && crown && (
+          <span
+            className={intro ? 'podium-crown' : undefined}
+            style={{
+              position: 'absolute', left: '50%', top: -big * PODIUM_ART.crownRise, marginLeft: -17, zIndex: 2, lineHeight: 0,
+              ...(intro ? ({
+                '--drop': `${PODIUM_WINNER_INTRO.crown.dropPt}px`, '--settle': `${PODIUM_WINNER_INTRO.crown.settlePt}px`, opacity: 0,
+                animation: `podium-crown-in ${PODIUM_WINNER_INTRO.crown.durationMs}ms ease-out ${PODIUM_WINNER_INTRO.crown.delayMs}ms both`, willChange: 'transform, opacity',
+              } as React.CSSProperties) : null),
+            }}
+          >
+            <Icon3D name="crown" size={34} />
+          </span>
+        )}
       </span>
     );
   }

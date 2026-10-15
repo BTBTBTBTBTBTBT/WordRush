@@ -597,12 +597,16 @@ const CAP_TRIM = { viewW: 360, drip: 4, bumps: 16 } as const;
  * fragment, so the card is exactly as before.
  */
 function StageFrame({ on, topBar, trio, celebrating, children }: { on: boolean; topBar: number; trio: readonly string[]; celebrating: boolean; children: React.ReactNode }) {
+  // The box is the card (its height comes from the fixed slots, never from the image); the art is an absolute cover-fit layer that
+  // FADES in when decoded, so nothing resizes or pops on load.
+  const [artReady, setArtReady] = useState(false);
   if (!on) return <>{children}</>;
   return (
     <div className="relative" style={{ paddingTop: topBar }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={artSrc('art-celebration-stage-halloween')} alt="" aria-hidden="true" width={1586} height={992} decoding="async" draggable={false}
-        className="absolute inset-0 w-full h-full select-none pointer-events-none" style={{ objectFit: 'cover', zIndex: 0 }} />
+      <img ref={(el) => { if (el?.complete && el.naturalWidth > 0 && !artReady) setArtReady(true); }} src={artSrc('art-celebration-stage-halloween')} alt="" aria-hidden="true" width={1586} height={992} decoding="async" draggable={false}
+        onLoad={() => setArtReady(true)}
+        className="absolute inset-0 w-full h-full select-none pointer-events-none" style={{ objectFit: 'cover', zIndex: 0, opacity: artReady ? 1 : 0, transition: 'opacity 220ms ease-out' }} />
       <CelebrationTrio className="pointer-events-none" style={{ position: 'absolute', inset: 0, zIndex: 1 }} images={trio} bunting={false} sparkles={celebrating} tempo={celebrating ? 0.42 : 0.7} swayDegrees={celebrating ? 4 : 3} stage />
       <div className="relative" style={{ zIndex: 2 }}>{children}</div>
     </div>

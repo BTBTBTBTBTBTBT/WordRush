@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { openDressUp } from '@/components/profile/dress-up';
 import type { ReactNode } from 'react';
 import { type BoardAvatarData } from '@/components/leaderboard/board-rows';
-import { PODIUM_ART, PODIUM_ART_ORDER, podiumArtStep, placeWord, podiumStageCardLabel } from '@wordle-duel/core';
+import { PODIUM_ART, PODIUM_ART_ORDER, PODIUM_WINNER_INTRO, podiumArtStep, placeWord, podiumStageCardLabel } from '@wordle-duel/core';
 import { BubbleOneLine } from '@/components/ui/bubble-text';
 import { nameColorHex, secondaryColorHex } from '@/lib/player-tint';
 import { PodiumFigure } from '@/components/leaderboard/podium-figure';
@@ -154,7 +154,7 @@ function PodiumNameAbove({ place, size, width }: { place: PodiumPlace; size: num
         className="relative block hover:opacity-90 transition-opacity"
         style={{ width }}
       >
-        <span aria-hidden="true" className="absolute pointer-events-none" style={{ left: -2, right: -2, top: -6, bottom: -6, borderRadius: 999, background: alphaHex(glow, 0.55), filter: 'blur(12px)' }} />
+        <span aria-hidden="true" className="absolute pointer-events-none" style={{ left: -2, right: -2, top: -6, bottom: -2, borderRadius: 999, background: alphaHex(glow, 0.5), filter: 'blur(10px)' }} />
         <span aria-hidden="true" className="absolute pointer-events-none" style={{ left: 10, right: 10, top: 1, bottom: 1, borderRadius: 999, background: alphaHex(glow, 0.9), filter: 'blur(6px)' }} />
         <span className="relative block">
           <BubbleOneLine text={text} accent={nameColor} size={size} />
@@ -166,6 +166,49 @@ function PodiumNameAbove({ place, size, width }: { place: PodiumPlace; size: num
   );
 }
 
+/**
+ * The #1 mascot's calm load-in (core PODIUM_WINNER_INTRO): a soft gold radial glow behind the mascot that fades and scales
+ * in once and rests at low opacity, plus a few small sparkles that fade in, drift up and fade out once (staggered).
+ * Transform + opacity only; the crown's drop lives in PodiumFigure. Static glow under Reduce Motion (globals.css).
+ */
+function WinnerGlow({ feetX, feetY, size, crown }: { feetX: number; feetY: number; size: number; crown: boolean }) {
+  const { glow, sparkles } = PODIUM_WINNER_INTRO;
+  const d = size * glow.size;
+  const rgb = glow.colorRgb.join(',');
+  const sp = size * sparkles.size;
+  const cx = `${feetX * 100}%`;
+  // the mascot box is centered half its size above the planted feet
+  const cy = `calc(${feetY * 100}% + ${PODIUM_ART.plantPt}px - ${size / 2}px)`;
+  return (
+    <>
+      <div aria-hidden="true" className="absolute pointer-events-none" style={{ left: cx, top: cy, width: d, height: d, marginLeft: -d / 2, marginTop: -d / 2, zIndex: 1 }}>
+        <div
+          className="podium-glow w-full h-full"
+          style={{
+            borderRadius: '50%',
+            background: `radial-gradient(circle at center, rgba(${rgb},0.95) 0%, rgba(${rgb},0.55) 32%, rgba(${rgb},0.18) 58%, rgba(${rgb},0) 72%)`,
+            '--from-scale': glow.fromScale, '--rest': glow.restOpacity, opacity: glow.restOpacity,
+            animation: `podium-glow-in ${glow.durationMs}ms cubic-bezier(${glow.ease.join(',')}) both`, willChange: 'transform, opacity',
+          } as React.CSSProperties}
+        />
+      </div>
+      {crown && sparkles.offsets.map(([ox, oy], i) => (
+        <div key={i} aria-hidden="true" className="absolute pointer-events-none" style={{ left: cx, top: cy, width: sp, height: sp, marginLeft: ox * size - sp / 2, marginTop: oy * size - sp / 2, zIndex: 4 }}>
+          <svg
+            viewBox="0 0 24 24" width={sp} height={sp} className="podium-sparkle block"
+            style={{
+              opacity: 0, '--drift': `${sparkles.driftPt}px`, '--peak': sparkles.peakOpacity,
+              animation: `podium-sparkle ${sparkles.durationMs}ms ease-out ${sparkles.delayMs + i * sparkles.staggerMs}ms both`, willChange: 'transform, opacity',
+            } as React.CSSProperties}
+          >
+            <path d="M12 0C13 8 16 11 24 12C16 13 13 16 12 24C11 16 8 13 0 12C8 11 11 8 12 0Z" fill={`rgb(${sparkles.colorRgb.join(',')})`} />
+          </svg>
+        </div>
+      ))}
+    </>
+  );
+}
+
 /** A standing player: name, mascot (feet on the step-top center, planted a little lower), contact shadow. */
 function Standing({ place, step, w }: { place: PodiumPlace; step: 1 | 2 | 3; w: number }) {
   const tone = podiumTone(place.rank);
@@ -173,8 +216,8 @@ function Standing({ place, step, w }: { place: PodiumPlace; step: 1 | 2 | 3; w: 
   const livingOn = useLivingMascotOn();
   const { isLive } = useFlags();
   const cardOn = livingOn && isLive('podium_stage_card');
-  // 2.8 item 13: the winner's spot opens with a one-shot confetti burst (behind the living mascot switch).
-  const burstOn = livingOn && isLive('podium_burst') && step === 1;
+  // 2.8 winner intro (founder 10-15, replaces the confetti burst): a calm glow + a few sparkles + the crown's drop, once.
+  const introOn = isLive('podium_burst') && step === 1;
   const [stageOpen, setStageOpen] = React.useState(false);
   const { feet } = podiumArtStep(step);
   const size = mascotSize(w, step);
@@ -182,16 +225,19 @@ function Standing({ place, step, w }: { place: PodiumPlace; step: 1 | 2 | 3; w: 
   const nameW = Math.round(w * (first ? 0.3 : 0.27));
   const tile = Math.round(size / 2);
   const crown = place.crown !== false;
+  // The name's bottom clears the DRAWN head top (box top + headTop) by nameGapPt; a crowned winner's name instead clears the
+  // crown that rides above the box by crownGapPt. Never tucked into the box.
+  const nameGap = first && crown ? PODIUM_ART.crownRise * size + PODIUM_ART.crownGapPt : Math.max(0, PODIUM_ART.nameGapPt - PODIUM_ART.headTop * size);
   const figure = place.isMe || cardOn ? (
     // Founder 10-05 (door 1): your own place opens your Stage; with the living mascot on, anyone else's opens their mini Stage card.
     <button type="button" onClick={() => (place.isMe ? openDressUp() : setStageOpen(true))}
       aria-label={place.isMe ? 'Dress up your mascot' : podiumStageCardLabel(place.username, place.rank)}
       className="block border-0 bg-transparent p-0 cursor-pointer" style={{ lineHeight: 0 }}>
-      <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={tile} planted crown={crown} ring={place.isMe ? '#f59e0b' : undefined} />
+      <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={tile} planted crown={crown} intro={introOn} ring={place.isMe ? '#f59e0b' : undefined} />
     </button>
   ) : (
     <Link href={`/profile/${place.userId}`} tabIndex={-1} aria-hidden="true" className="block" style={{ lineHeight: 0 }}>
-      <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={tile} planted crown={crown} />
+      <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={tile} planted crown={crown} intro={introOn} />
     </Link>
   );
   const points = typeof place.points === 'string' || typeof place.points === 'number' ? String(place.points) : '';
@@ -208,15 +254,10 @@ function Standing({ place, step, w }: { place: PodiumPlace; step: 1 | 2 | 3; w: 
           background: 'radial-gradient(ellipse at center, rgba(10,0,30,0.55) 0%, rgba(10,0,30,0.3) 45%, rgba(10,0,30,0) 72%)',
         }}
       />
-      {burstOn && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img aria-hidden="true" alt="" src="/art/celebrate-burst-party.webp" width={150} draggable={false}
-          className="podium-burst absolute pointer-events-none"
-          style={{ left: `${feet.x * 100}%`, top: `calc(${feet.y * 100}% - ${size * 0.45}px)`, width: size * 1.25, marginLeft: -size * 0.625, zIndex: 1 }} />
-      )}
+      {introOn && <WinnerGlow feetX={feet.x} feetY={feet.y} size={size} crown={crown} />}
       <div
         className="absolute flex flex-col items-center"
-        style={{ left: `${feet.x * 100}%`, top: `calc(${feet.y * 100}% + ${PODIUM_ART.plantPt}px)`, transform: 'translate(-50%, -100%)', zIndex: 3, gap: PODIUM_ART.nameGapPt + (first && livingOn && crown ? 2 : 0) }}
+        style={{ left: `${feet.x * 100}%`, top: `calc(${feet.y * 100}% + ${PODIUM_ART.plantPt}px)`, transform: 'translate(-50%, -100%)', zIndex: 3, gap: nameGap }}
       >
         <PodiumNameAbove place={place} size={nameSize} width={nameW} />
         {figure}
@@ -265,7 +306,7 @@ export function Podium({ places, label = 'Top three' }: { places: PodiumPlace[];
   const w = useBoxWidth(ref);
   if (slots.length === 0) return null;
   return (
-    <div role="group" aria-label={label} ref={ref} className="relative w-full mx-auto" style={{ maxWidth: 1000, paddingTop: 'calc(13% + 8px)' }}>
+    <div role="group" aria-label={label} ref={ref} className="relative w-full mx-auto" style={{ maxWidth: 1000, paddingTop: 'calc(13% + 30px)' }}>
       <div className="relative w-full" style={{ aspectRatio: String(PODIUM_ART.aspect) }}>
         {/* the stage: static, decoded once (the soft fade melts into the page wallpaper behind it) */}
         {/* eslint-disable-next-line @next/next/no-img-element */}

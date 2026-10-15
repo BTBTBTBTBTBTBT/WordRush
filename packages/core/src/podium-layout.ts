@@ -43,8 +43,21 @@ export const PODIUM_ART = {
   aspect: 1.5,
   /** Mascot lands this many points lower than the step-top center so it looks planted. */
   plantPt: 5,
-  /** Name label floats this many points above the mascot. */
-  nameGapPt: 8,
+  /**
+   * Founder 10-15 ("the name titles need to be higher up and not blocking their heads"): the name label's BOTTOM sits this
+   * many points above the DRAWN head / hat top (the line `headTop` below), never tucked into the mascot box.
+   */
+  nameGapPt: 12,
+  /**
+   * Where the drawn head / hat top is, as a fraction of the mascot box measured from the box's top edge, for the tallest
+   * hats (web render of all 30 bodies x 46 hats x 3 poses: the visible top is 0.02 - 0.14 below the edge; tall hats 0.02-0.04,
+   * a plain head ~0.09). Use the SMALL end so a name never sinks onto a tall hat.
+   */
+  headTop: 0.04,
+  /** The first place's crown rises this fraction of the mascot box above the box's top (it rides ON the head). */
+  crownRise: 0.05,
+  /** Extra points the first place's name clears the crown by, on top of nameGapPt (name bottom -> crown top). */
+  crownGapPt: 10,
   /** Contact shadow ellipse width as a fraction of the mascot width. */
   shadowWidth: 0.9,
   /** Panel text: the score line and the two detail lines, as fractions of the panel height. */
@@ -79,4 +92,44 @@ export const CELEBRATION_STAGE = {
   feetX: [0.32, 0.5, 0.67] as readonly number[],
   /** The pools' y as a fraction of the card height. */
   footY: 0.895,
+} as const;
+
+// 2.8 winner intro (founder 10-15: "the candy corn thing comes in choppy, and not too clean"): ONE calm load-in for the #1 mascot,
+// the same in every season (no candy corn / confetti). Transform + opacity only, once per view; Reduce Motion shows the glow at
+// rest and nothing else. Times are milliseconds from the podium appearing.
+export const PODIUM_WINNER_INTRO = {
+  /** A soft radial glow behind the #1 mascot: fades in and scales up once, then rests at low opacity. */
+  glow: {
+    /** Glow diameter as a fraction of the mascot box. */
+    size: 1.5,
+    colorRgb: [255, 200, 61] as const,
+    fromScale: 0.85,
+    toScale: 1.0,
+    durationMs: 600,
+    /** Cubic-bezier ease-out (CSS ease-out). */
+    ease: [0, 0, 0.58, 1] as const,
+    restOpacity: 0.5,
+  },
+  /** A few small sparkles that fade in, drift up and fade out once. Offsets are fractions of the mascot box from its center (x right, y down). */
+  sparkles: {
+    offsets: [[-0.42, -0.06], [0.4, 0.02], [-0.24, -0.34], [0.26, -0.38]] as readonly (readonly [number, number])[],
+    /** Sparkle size as a fraction of the mascot box. */
+    size: 0.07,
+    durationMs: 1200,
+    delayMs: 300,
+    staggerMs: 180,
+    /** Points the sparkle drifts up over its life. */
+    driftPt: 8,
+    peakOpacity: 0.95,
+    colorRgb: [255, 236, 170] as const,
+  },
+  /** The crown drops in gently, with a tiny settle. */
+  crown: {
+    delayMs: 200,
+    durationMs: 250,
+    /** Starts this many points above its resting place. */
+    dropPt: 10,
+    /** Dips this many points below rest at ~70% of the move, then returns. */
+    settlePt: 1.5,
+  },
 } as const;
