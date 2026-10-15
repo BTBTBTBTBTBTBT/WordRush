@@ -28,7 +28,12 @@ const shift = (day: string, n: number) => {
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 };
-const todayUtc = () => new Date().toISOString().slice(0, 10);
+// Players' daily_results.day is their own local date, so "today" here is the viewer's local date (not UTC, which
+// rolls over at 7 PM Central and made the evening look like tomorrow with zero plays).
+const todayLocal = () => {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+};
 
 function GroupTable({ g }: { g: Group }) {
   return (
@@ -45,7 +50,7 @@ function GroupTable({ g }: { g: Group }) {
 }
 
 export default function TodayTab() {
-  const [day, setDay] = useState(todayUtc());
+  const [day, setDay] = useState(todayLocal());
   const { data, error, loading, reload } = useAdminData<DailyHealth>(`/api/admin/daily-health?day=${day}`);
   const zeroPlays = (g?: Group) => (g ? g.perMode.filter((m) => m.plays === 0).map((m) => m.label) : []);
   const silent = [...zeroPlays(data?.word), ...zeroPlays(data?.puzzles)];
@@ -57,12 +62,12 @@ export default function TodayTab() {
           <>
             <button onClick={() => setDay(shift(day, -1))} className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50" aria-label="Previous day"><ChevronLeft className="w-4 h-4" /></button>
             <input type="date" value={day} onChange={(e) => e.target.value && setDay(e.target.value)} className="text-xs font-bold border border-gray-200 rounded-lg px-2 py-1.5 bg-white" />
-            <button onClick={() => setDay(shift(day, 1))} disabled={day >= todayUtc()} className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40" aria-label="Next day"><ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => setDay(shift(day, 1))} disabled={day >= todayLocal()} className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40" aria-label="Next day"><ChevronRight className="w-4 h-4" /></button>
             <ReloadButton onClick={reload} loading={loading} />
           </>
         }
       >
-        One day of daily content, split like the Home banner: the Wordocious row (the sweep dailies) and the ten Puzzles. A daily with zero plays late in the day is the first sign a game is broken. Days are UTC.
+        One day of daily content, split like the Home banner: the Wordocious row (the sweep dailies) and the ten Puzzles. A daily with zero plays late in the day is the first sign a game is broken. Each play counts on the player&apos;s own date; today is your local date.
       </TabIntro>
       {error && <ErrorNote>{error}</ErrorNote>}
       {!data && loading && <LoadingGrid />}
