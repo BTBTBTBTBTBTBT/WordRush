@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { podiumLayout, podiumOpenSpot } from './podium-layout';
+import { podiumLayout, podiumOpenSpot, PODIUM_ART, PODIUM_ART_ORDER, podiumArtStep } from './podium-layout';
 import { resolveAvatar, isCustomPhotoUrl } from './avatar-config';
 
 describe('podiumLayout (BJ4: podium on every board from one result)', () => {
@@ -28,5 +28,29 @@ describe('resolveAvatar (BJ5: one precedence everywhere)', () => {
   it('cast hero, then seeded; the frame fills a frameless config', () => {
     expect(resolveAvatar({ username: 'd', castId: 'R', frame: 'gold' })).toMatchObject({ kind: 'cast', config: { frame: 'gold' } });
     expect(resolveAvatar({ username: 'd' }).kind).toBe('seeded');
+  });
+});
+
+describe('PODIUM_ART (one-image podium geometry; Swift/Kotlin mirror these numbers)', () => {
+  it('steps are silver-left, gold-center (tallest), bronze-right', () => {
+    expect(PODIUM_ART_ORDER).toEqual([2, 1, 3]);
+    expect(PODIUM_ART.steps.map((s) => s.place)).toEqual([2, 1, 3]);
+    expect(podiumArtStep(1).feet.y).toBeLessThan(podiumArtStep(2).feet.y);
+    expect(podiumArtStep(1).feet.y).toBeLessThan(podiumArtStep(3).feet.y);
+  });
+  it('mirrors the approved numbers', () => {
+    expect(PODIUM_ART.aspect).toBe(1.5);
+    expect(podiumArtStep(2)).toMatchObject({ feet: { x: 0.22, y: 0.435 }, panel: { x0: 0.103, x1: 0.335, y0: 0.605, y1: 0.81 } });
+    expect(podiumArtStep(1)).toMatchObject({ feet: { x: 0.5, y: 0.366 }, panel: { x0: 0.383, x1: 0.62, y0: 0.581, y1: 0.799 } });
+    expect(podiumArtStep(3)).toMatchObject({ feet: { x: 0.783, y: 0.455 }, panel: { x0: 0.667, x1: 0.902, y0: 0.615, y1: 0.81 } });
+  });
+  it('every panel sits inside the image, under its step feet', () => {
+    for (const s of PODIUM_ART.steps) {
+      expect(s.panel.x1).toBeLessThan(1);
+      expect(s.panel.y1).toBeLessThan(1);
+      expect(s.panel.y0).toBeGreaterThan(s.feet.y);
+      expect(s.feet.x).toBeGreaterThan(s.panel.x0);
+      expect(s.feet.x).toBeLessThan(s.panel.x1);
+    }
   });
 });

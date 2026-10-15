@@ -28,3 +28,42 @@ export function podiumLayout(ranks: readonly number[], size = PODIUM_SIZE): Podi
 export function podiumOpenSpot(place: number): { title: string; line: string } {
   return { title: 'Open spot', line: `Claim #${place}` };
 }
+
+// 2.8 one-image podium (founder 10-15): ONE stadium image (1536x1024) replaces the three podium blocks and
+// the per-player stat cards. Every renderer (web / iOS / Android) lays the image across the podium area
+// (height = width / aspect), stands each mascot with its feet on the step-top center, and prints the stats
+// INSIDE the blank panel under each step's number. All numbers are fractions of the image (x of width,
+// y of height); the parity fixture (podium-layout-fixtures.json "art") keeps the ports identical.
+export interface PodiumArtPoint { x: number; y: number }
+export interface PodiumArtPanel { x0: number; x1: number; y0: number; y1: number }
+export interface PodiumArtStep { place: 1 | 2 | 3; feet: PodiumArtPoint; panel: PodiumArtPanel }
+
+export const PODIUM_ART = {
+  /** Image width / height (1536 x 1024). */
+  aspect: 1.5,
+  /** Mascot lands this many points lower than the step-top center so it looks planted. */
+  plantPt: 5,
+  /** Name label floats this many points above the mascot. */
+  nameGapPt: 8,
+  /** Contact shadow ellipse width as a fraction of the mascot width. */
+  shadowWidth: 0.9,
+  /** Panel text: the score line and the two detail lines, as fractions of the panel height. */
+  scoreHeight: 0.29,
+  detailHeight: 0.19,
+  /** Dark purple on all three light satin panels: rgb(70, 30, 100). */
+  textRgb: [70, 30, 100] as const,
+  /** Left-to-right on screen: silver (2), gold (1), bronze (3). */
+  steps: [
+    { place: 2, feet: { x: 0.220, y: 0.435 }, panel: { x0: 0.103, x1: 0.335, y0: 0.605, y1: 0.810 } },
+    { place: 1, feet: { x: 0.500, y: 0.366 }, panel: { x0: 0.383, x1: 0.620, y0: 0.581, y1: 0.799 } },
+    { place: 3, feet: { x: 0.783, y: 0.455 }, panel: { x0: 0.667, x1: 0.902, y0: 0.615, y1: 0.810 } },
+  ] as readonly PodiumArtStep[],
+} as const;
+
+/** Screen order (left to right) of the places on the podium art: 2, 1, 3. */
+export const PODIUM_ART_ORDER: readonly (1 | 2 | 3)[] = [2, 1, 3];
+
+/** The art step for a place (1..3). */
+export function podiumArtStep(place: 1 | 2 | 3): PodiumArtStep {
+  return PODIUM_ART.steps.find((s) => s.place === place)!;
+}
