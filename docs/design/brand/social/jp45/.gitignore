@@ -5,3 +5,7 @@
 *.jpeg
 *.webp
 __pycache__/
+# JP-plan videos stay out of git (rendered by docs/design/brand/social/jp45/video/make-video.py + cast-scene.py)
+*.mp4
+video/_tmp/
+video/raw/

@@ -1,0 +1,111 @@
+[
+ {
+  "date": "2026-10-20",
+  "slug": "ep01-octoword",
+  "post_title": "[Needs capture] 18 Days ep.1: OctoWord",
+  "season": "halloween",
+  "notes": "18 Days episode: octo scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 11.9,
+  "captions": [
+   [
+    "OctoWord: eight boards, one keyboard.",
+    0.4,
+    10.8
+   ],
+   [
+    "Every guess lands on all eight. Watch the cascade.",
+    10.9,
+    21.4
+   ]
+  ],
+  "clips": [
+   {
+    "file": "octo.mp4",
+    "ss": 8.12,
+    "t": 21.65
+   }
+  ]
+ },
+ {
+  "date": "2026-10-23",
+  "slug": "ep03-muddle",
+  "post_title": "[Needs capture] 18 Days ep.3: Muddle",
+  "season": "halloween",
+  "notes": "18 Days episode: muddle scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 11.9,
+  "captions": [
+   [
+    "Muddle: unscramble four words.",
+    0.4,
+    10.8
+   ],
+   [
+    "Then crack the punchline.",
+    10.9,
+    21.4
+   ]
+  ],
+  "clips": [
+   {
+    "file": "muddle.mp4",
+    "ss": 7.14,
+    "t": 21.65
+   }
+  ]
+ },
+ {
+  "date": "2026-10-27",
+  "slug": "ph-18-games-30s",
+  "post_title": "[Needs capture] Product Hunt day cut: 18 games in 30s (set the PH link first)",
+  "season": "halloween",
+  "notes": "Product Hunt cut: all 18 games, one beat each, scripted in the simulator.",
+  "captions": [
+   [
+    "18 games in 30 seconds.",
+    0.3,
+    15.0
+   ],
+   [
+    "One score.",
+    15.1,
+    29.9
+   ]
+  ],
+  "clips": [
+   {
+    "file": "montage18.mp4",
+    "ss": 10.61,
+    "t": 40.66,
+    "speed": 1.352
+   }
+  ],
+  "cover_at": 12.8
+ },
+ {
+  "date": "2026-10-29",
+  "slug": "ep04-hubbub",
+  "post_title": "[Needs capture] 18 Days ep.4: Hubbub",
+  "season": "halloween",
+  "notes": "18 Days episode: hubbub scripted in the iPhone simulator (Unlimited board, random seed, never a daily).",
+  "cover_at": 14.1,
+  "captions": [
+   [
+    "Hubbub: build words from seven letters.",
+    0.4,
+    12.8
+   ],
+   [
+    "Find the pangram that uses them all.",
+    12.9,
+    25.4
+   ]
+  ],
+  "clips": [
+   {
+    "file": "hubbub.mp4",
+    "ss": 6.92,
+    "t": 25.65
+   }
+  ]
+ }
+]
