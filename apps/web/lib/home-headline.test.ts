@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bannerHeadline, headlineWidthEm, type GroupProgress } from '@wordle-duel/core';
-import { HEADLINE_LINE_EM, headlineRowHeight, headlineTextWidth, homeHeadlineLayout } from './home-headline';
+import { HEADLINE_LINE_EM, headlineReserveHeight, headlineRowHeight, headlineTextWidth, homeHeadlineLayout } from './home-headline';
 import { BANNER_SLOT, homeBannerSlots } from './stationary-layout';
 
 const none: GroupProgress = { played: 0, won: 0, total: 8 } as GroupProgress;
@@ -88,5 +88,15 @@ describe('2.8 item 6: nameless long headlines wrap instead of truncating (no cli
   it('the long flawless line is two balanced lines on a phone', () => {
     const l = homeHeadlineLayout(PHONE, 'WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT', '');
     expect(l.lines).toEqual(['WORDOCIOUS FLAWLESS!', '3 PUZZLES LEFT']);
+  });
+
+  it('reserves two full-size lines, so a changed headline never moves the switch (founder 10-15)', () => {
+    for (const w of [SE, PHONE, WIDE]) {
+      const reserve = headlineReserveHeight(w);
+      for (const h of [greet('BMT'), 'WORDOCIOUS FLAWLESS! 10 PUZZLES LEFT', 'A NEW STREAK STARTS NOW!']) {
+        const l = homeHeadlineLayout(w, h, 'BMT');
+        if (l.lines.length <= 2) expect(l.lines.length * l.lineHeight).toBeLessThanOrEqual(reserve);
+      }
+    }
   });
 });

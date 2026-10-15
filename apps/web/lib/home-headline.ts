@@ -45,3 +45,12 @@ export function homeHeadlineLayout(slotWidth: number, headline: string, name: st
 export function headlineRowHeight(layouts: readonly HomeHeadlineLayout[]): number {
   return Math.max(...layouts.map((l) => l.lines.length * l.lineHeight));
 }
+
+/**
+ * Founder 10-15 (TestFlight recording): the headline changes on launch as the streaks arrive, and a row sized to the CURRENT
+ * lines dropped the switch, clock and trio when the new headline took another line count / size. The row always reserves TWO
+ * lines at the largest size this slot allows (a short line fits at full size), so a new headline never moves anything.
+ */
+export function headlineReserveHeight(slotWidth: number): number {
+  return 2 * homeHeadlineLayout(slotWidth, 'W', '').lineHeight;
+}

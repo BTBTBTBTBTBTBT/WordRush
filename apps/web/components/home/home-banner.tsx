@@ -34,7 +34,7 @@ import { homeHostInviteAllowed } from '@/lib/home-host-cache';
 import { BANNER_SLOT, MODE_SWITCH, homeBannerContent, homeBannerSlots } from '@/lib/stationary-layout';
 import { HomeClock } from '@/components/home/home-clock';
 import { seasonTrimStops, trimPath } from '@/lib/card-trim';
-import { headlineRowHeight, homeHeadlineLayout } from '@/lib/home-headline';
+import { headlineRowHeight, headlineReserveHeight, homeHeadlineLayout } from '@/lib/home-headline';
 
 // The home banner (founder-approved home redesign, 2026-10-01; spec:
 // docs/HOME_REDESIGN_SPEC.md). One window: a frosted headline strip over a
@@ -220,7 +220,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   const headLayout = unlimited ? headLayouts.unlimited : headLayouts.daily;
   const layoutInput = {
     dailyTier, puzzleTier: groupTier(puzzles.progress), playedAny: word.progress.played + puzzles.progress.played > 0,
-    headlineHeight: headlineRowHeight([headLayouts.daily, headLayouts.unlimited]),
+    headlineHeight: Math.max(headlineRowHeight([headLayouts.daily, headLayouts.unlimited]), headlineReserveHeight(slotWidth)),
   };
   const slots = homeBannerSlots(playMode, layoutInput);
   const content = homeBannerContent(playMode, layoutInput);

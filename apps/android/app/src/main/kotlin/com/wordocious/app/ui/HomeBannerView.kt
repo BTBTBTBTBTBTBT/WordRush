@@ -271,7 +271,13 @@ fun HomeBannerView(
                     val dailyLayout = remember(dailyHeadline, name, usable) { com.wordocious.core.homeHeadlineFit(dailyHeadline, name, usable) }
                     val unlimitedLayout = remember(unlimitedHeadline, name, usable) { com.wordocious.core.homeHeadlineFit(unlimitedHeadline, name, usable) }
                     // Z: both modes' headlines share one slot (the taller of the two), crossfading.
-                    Box(Modifier.fillMaxWidth()) {
+                    // Founder 10-15 (TestFlight recording): the headline changes on launch as the streaks arrive, and a slot
+                    // sized to the CURRENT lines dropped the switch, clock and trio when the new one took another line count /
+                    // size. The slot always holds TWO lines at the largest size this width allows (an invisible reference,
+                    // laid out exactly like a headline) and the headline centers in it, so nothing below ever moves.
+                    val reserve = remember(usable) { com.wordocious.core.homeHeadlineFit("W", "", usable).let { it.copy(lines = listOf("W", "W"), nameLines = emptyList()) } }
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        BannerHeadlineLayer("", reserve, reserve.size, false, alpha = 0f, active = false)
                         BannerHeadlineLayer(dailyHeadline, dailyLayout, dailyLayout.size, dailyDouble, alpha = 1f - modeFade, active = !unlimited, name = name)
                         BannerHeadlineLayer(unlimitedHeadline, unlimitedLayout, unlimitedLayout.size, false, alpha = modeFade, active = unlimited, name = name)
                     }

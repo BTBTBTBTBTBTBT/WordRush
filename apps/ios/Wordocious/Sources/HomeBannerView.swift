@@ -377,7 +377,13 @@ struct HomeBannerView: View {
                 // sparkles flank it, mirrored.
                 HStack(alignment: .top, spacing: 6) {
                     GoldSparkle(size: 11).padding(.top, Self.sparkleTop(headWidth))
-                    ZStack(alignment: .top) {
+                    ZStack(alignment: .center) {
+                        // Founder 10-15 (TestFlight recording): the headline changes on launch as the streaks arrive
+                        // ("WORDOCIOUS FLAWLESS! 10 PUZZLES LEFT" -> "A NEW STREAK STARTS NOW!") and the slot's height used
+                        // to follow the new line count / size, dropping the switch, clock and trio ~12 pt. The slot now
+                        // always holds TWO lines at the largest size this width allows (an invisible reference), and the
+                        // headline centers in it, so a new headline never moves anything below it.
+                        headlineReference
                         headlineSlot(dailyHeadline, trophy: dailyDouble)
                             .opacity(unlimited ? 0 : 1).accessibilityHidden(unlimited)
                         headlineSlot(unlimitedHeadline, trophy: false)
@@ -449,6 +455,21 @@ struct HomeBannerView: View {
     /// BJ6: the headline's lettering size.
     static let headlineSize: CGFloat = 38
 
+
+    /// The headline slot's fixed height: two lines of the lettering at the largest size the slot's width allows, laid out
+    /// exactly like `headlineRow` (same spacing and trims) but never shown.
+    private var headlineReference: some View {
+        let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
+        let w = headWidth > 0 ? headWidth : UIScreen.main.bounds.width - 90   // before the slot is measured: a phone card's slot
+        let size = CGFloat(HeadlineLayout.fontSize(availableWidth: Double(max(1, w)))) / dyn
+        return VStack(spacing: -size * (Self.atlasDrawn(["W", "W"]) ? 0.15 : 0.42)) {
+            BubbleLineView(text: "W", palette: .home, size: size, names: [], interactive: false)
+            BubbleLineView(text: "W", palette: .home, size: size, names: [], interactive: false)
+        }
+        .padding(.top, -size * 0.24).padding(.bottom, -size * 0.28)
+        .hidden()
+        .accessibilityHidden(true)
+    }
 
     /// One mode's headline: BH3 (founder 10-03) ONE line, auto-fit (shrinks, never wraps), centered.
     private func headlineSlot(_ headline: String, trophy: Bool) -> some View {
