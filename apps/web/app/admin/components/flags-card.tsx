@@ -26,7 +26,17 @@ export function FlagsCard() {
       .catch((e) => setErr(String(e)));
   useEffect(() => { load(); }, []);
 
+  // Every switch reaches live players within a minute, so each change says what it will do and asks first.
+  const confirmText = (f: FlagRow, patch: Partial<Pick<AppFlag, 'enabled' | 'audience'>>) => {
+    if (patch.enabled === false) return `Turn OFF "${f.key}"? It switches off for everyone within a minute.`;
+    if (patch.enabled === true) return `Turn ON "${f.key}"? It goes live for ${f.audience === 'all' ? 'EVERY player' : 'admin and tester accounts only'} within a minute.`;
+    if (patch.audience === 'all') return `Open "${f.key}" to ALL players?${f.enabled ? ' It is on, so everyone gets it within a minute.' : ' It is off, so nothing changes until it is turned on.'}`;
+    return `Limit "${f.key}" to admin and tester accounts?${f.enabled ? ' Everyone else loses it within a minute.' : ''}`;
+  };
+
   const save = async (key: string, patch: Partial<Pick<AppFlag, 'enabled' | 'audience'>>) => {
+    const f = flags?.find((x) => x.key === key);
+    if (f && !window.confirm(confirmText(f, patch))) return;
     setBusy(key); setErr(null);
     try {
       const r = await fetch('/api/admin/flags', {
@@ -34,10 +44,10 @@ export function FlagsCard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, ...patch }),
       });
-      const d = await r.json();
-      if (d.error) setErr(d.error);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || d.error) setErr(d.error ?? `Save failed (HTTP ${r.status})`);
       await load();
-    } finally { setBusy(null); }
+    } catch (e) { setErr(String(e)); } finally { setBusy(null); }
   };
 
   const catalogFor = (key: string) => MODES.find((m) => m.flagKey === key);
