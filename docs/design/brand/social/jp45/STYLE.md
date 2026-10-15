@@ -75,3 +75,10 @@ Gold sub-line lettering stays gold in every season. Tile accent, sub-line stroke
 - `scene.py accept` recolor options: `--x0/--x1` limit the recolor to a column range (stops it eating same-hue props beside the headline), `--dil N` shrinks/grows the letter halo (use 4-5 on saturated skies), `--smin 0.6` raises the saturation floor for the letter mask (Diwali lilac sky).
 - `build_extra.py` finishes `incoming/extra/` into `extra/` (IG stories 1080x1920, carousel and contest frames 1080x1350, Product Hunt gallery 1270x760 + 240x240 thumbnail, 8 highlight covers keyed off the cyan sheets) and logs `extra/manifest.json` [{slug, due, files, caption, mascot_check}].
 - Muddle Wednesday and WOTD scenes: the empty cartoon/word band must be about 28 percent of the height (portrait) or the center 30 percent of the width (landscape); redo requests are in `incoming/rejects.json`.
+
+### Round 3 notes (10-15)
+- `scene.py accept --ex "x0,y0,x1,y1;..."` excludes rectangles (native scene px) from the headline recolor: use it for same-hue floating tiles beside the headline. `--dil 4-5` keeps a dark sky free of green specks.
+- Word card spec takes an optional scale: `wotd|WORD|note|1.15` (default 1.4). Shrink it when the gap between the two mascots is narrow.
+- The footer text switches to the light version automatically when the footer band of the scene is dark (Dia de los Muertos night, Veterans night sky), not only in dark seasons.
+- Holiday greetings (`<date>-holiday-feed-1` / `-holiday-x-1`) share one folder `<date>-holiday/` (portrait + landscape) and one post. A greeting with only one accepted format gets the other as a blur-backed copy (`landscape.png` from the portrait scene, like the tall portrait for X-only posts).
+- S is the angry-determined one: friendly raised brows on S is an off-model reject (seen on three scenes).

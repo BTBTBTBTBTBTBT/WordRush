@@ -34,7 +34,7 @@ def frame(im, fmt):
     return im.resize((W, H), Image.LANCZOS)
 
 
-def recolor_headline(im, season, series, y0, y1, nl=None, x0=None, x1=None, dil=14, smin=0.4):
+def recolor_headline(im, season, series, y0, y1, nl=None, x0=None, x1=None, dil=14, smin=0.4, ex=None):
     """Hue-shift the purple-pink headline lettering of a scene (rows y0..y1 of the native scene) to the series color for this season.
     Only bright saturated purple/pink pixels (plus a thin rim halo) inside the band are touched, never mascots or the sub line."""
     import numpy as np
@@ -45,6 +45,8 @@ def recolor_headline(im, season, series, y0, y1, nl=None, x0=None, x1=None, dil=
     hsv = np.asarray(im.convert('HSV')).astype(np.float32)
     H = hsv[..., 0] * 360 / 255; S = hsv[..., 1] / 255; V = hsv[..., 2] / 255
     band = np.zeros(H.shape, bool); band[y0:y1, (x0 or 0):(x1 or H.shape[1])] = True
+    for r in (ex or []):                      # exclusion rects (x0,y0,x1,y1) in native scene px: same-hue props beside the headline (purple floating tiles)
+        band[r[1]:r[3], r[0]:r[2]] = False
     letters = band & (H > 255) & (H < 345) & (S > smin) & (V > 0.62)
     letters = ndimage.binary_closing(letters, iterations=3)
     area = ndimage.binary_dilation(letters, iterations=dil) & band & (H > 240) & (H < 350) & (S > 0.3)
@@ -116,7 +118,7 @@ def add_content(im, fmt, spec, at, season, series):
     kind, *a = spec.split('|')
     L = LAYOUT[fmt]
     if kind == 'wotd':
-        blk = C.wotd_card(a[0], int(L['tile'] * 1.4), note=a[1] if len(a) > 1 else None)
+        blk = C.wotd_card(a[0], int(L['tile'] * (float(a[2]) if len(a) > 2 else 1.4)), note=a[1] if len(a) > 1 else None)   # optional 3rd arg = card scale (default 1.4)
     elif kind == 'mystery':
         blk = C.tiles_row(['?'] * int(a[0]), round(L['tile'] * 1.2), C.pal_rot(0), gap=0.12)
     elif kind == 'cartoon':
@@ -160,23 +162,27 @@ def overlay(im, fmt, slot, season):
     hslot = 'feed' if (fmt == 'portrait' and slot == 'x') else slot
     foot = ' · '.join(v for v in (C.HANDLE[hslot], 'wordocious.com') if v)
     dark = season in C.DARK
+    if not dark:        # a dark scene on a light-season day (Dia de los Muertos night, Veterans night sky): light footer text
+        import numpy as np
+        band = np.asarray(im.convert('L').crop((W // 4, L['foot_y'] - 24, 3 * W // 4, L['foot_y'] + 24)), dtype=np.float32)
+        dark = float(band.mean()) < 120
     C.text(layer, foot, W / 2, L['foot_y'], L['foot_size'], fill=(236, 224, 255) if dark else C.PURPLE_DEEP, weight='ExtraBold', shadow=dark)
     base = im.convert('RGBA'); base.alpha_composite(layer)
     return base.convert('RGB')
 
 
-def accept(cid, season=None, slot=None, scale=None, top=None, series=None, y0=None, y1=None, kw_nl=None, content=None, at=None, x0=None, x1=None, dil=None, smin=None):
+def accept(cid, season=None, slot=None, scale=None, top=None, series=None, y0=None, y1=None, kw_nl=None, content=None, at=None, x0=None, x1=None, dil=None, smin=None, ex=None):
     q = json.load(open(os.path.join(FULL, 'queue.json')))['queue']
     item = next(x for x in q if x['id'] == cid)
     fmt = item['fmt']; slot = slot or item['slot']; season = season or item['season']
-    slot = 'feed' if slot == 'extra' else slot                      # extras (TikTok/Reels covers) carry the @playwordocious footer
+    slot = {'extra': 'feed', 'holiday-feed': 'feed', 'holiday-x': 'x'}.get(slot, slot)                     # extras (TikTok/Reels covers) carry the @playwordocious footer
     season = 'thanksgiving' if season == 'harvest' else season      # queue.json says 'harvest' for Nov 14-29
     src = os.path.join(FULL, cid + '.png')
     if not os.path.exists(src):
         src = os.path.join('/private/tmp/claude-501/-Users-brianterchin-Developer-WordRush--claude-worktrees-new-session-38fb01/c71b5614-4332-4087-96d2-47d25779769a/scratchpad', 'accepted', cid + '.png')
     raw = Image.open(src).convert('RGB')
     if series:
-        raw = recolor_headline(raw, season, series, int(y0), int(y1), int(kw_nl) if kw_nl else None, int(x0) if x0 else None, int(x1) if x1 else None, int(dil) if dil else 14, float(smin) if smin else 0.4)
+        raw = recolor_headline(raw, season, series, int(y0), int(y1), int(kw_nl) if kw_nl else None, int(x0) if x0 else None, int(x1) if x1 else None, int(dil) if dil else 14, float(smin) if smin else 0.4, [tuple(int(v) for v in r.split(',')) for r in ex.split(';')] if ex else None)
     if scale == 'crop':
         im = frame(raw, fmt)
     elif scale == 'fill':
@@ -193,6 +199,7 @@ def accept(cid, season=None, slot=None, scale=None, top=None, series=None, y0=No
         im = add_content(im, fmt, content, at, season, series)
     out = overlay(im, fmt, slot, season)
     key = cid.rsplit('-', 1)[0] if item['slot'] != 'pin' else cid
+    key = key.replace('-holiday-feed', '-holiday').replace('-holiday-x', '-holiday')   # holiday greetings: one post, portrait + landscape share a folder
     key = key.replace('-land', '')       # extras: <date>-family-land-1 shares <date>-family with the portrait
     d = C.out_dir(key)
     fn = {'landscape': 'landscape.png', 'portrait': 'portrait.png', 'pin': 'pin.png'}[fmt]
@@ -223,7 +230,7 @@ def reject(cid, why):
         os.remove(src)
     mp = os.path.join(HERE, 'manifest.json')
     m = json.load(open(mp))
-    key = cid.rsplit('-', 1)[0]
+    key = cid.rsplit('-', 1)[0].replace('-holiday-feed', '-holiday').replace('-holiday-x', '-holiday')
     for r in m:
         if r['key'] == key or r['key'] == cid:
             r.setdefault('rejected', []).append(f'{cid}: {why}')
@@ -282,7 +289,7 @@ if __name__ == '__main__':
                 kw[a[i][2:]] = a[i + 1]; i += 2
             else:
                 i += 1
-        accept(pos[0], None, None, kw.get('scale'), kw.get('top'), kw.get('series'), kw.get('y0'), kw.get('y1'), kw.get('nl'), kw.get('content'), kw.get('at'), kw.get('x0'), kw.get('x1'), kw.get('dil'), kw.get('smin'))
+        accept(pos[0], None, None, kw.get('scale'), kw.get('top'), kw.get('series'), kw.get('y0'), kw.get('y1'), kw.get('nl'), kw.get('content'), kw.get('at'), kw.get('x0'), kw.get('x1'), kw.get('dil'), kw.get('smin'), kw.get('ex'))
     elif cmd == 'review':
         print(review(sys.argv[2]))
     elif cmd == 'reject':
