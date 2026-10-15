@@ -28,8 +28,8 @@ android {
         // on a real device.
         targetSdk = 36
 
-        versionCode = 224
-        versionName = "2.8.2"
+        versionCode = 225
+        versionName = "2.8.3"
         vectorDrawables { useSupportLibrary = true }
         // Perf/playthrough demo harness (data/PocketDemo.kt): compiled in ONLY for debug and the debug-signed
         // benchmarkRelease build; the shipping release build gets a constant false, so R8 strips it.

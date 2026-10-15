@@ -1,0 +1,5 @@
+Made for iPad and Android tablets: every screen now uses the whole display, with bigger game titles, boards that fill the space and a full-width tab bar.
+Settings and the help menu are easier to read.
+Hubbub: Reveal a word now takes two taps, so a stray tap while scrolling no longer costs you points.
+Rock Paper Scissors has a new crowd: the Wordocious cast cheering from the stands.
+Smoother pocket games and small layout fixes on Android.
