@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { AdminSidebar } from './components/admin-sidebar';
 import { DrillProvider } from './components/drill-panel';
@@ -22,7 +22,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="text-sm font-black text-gray-900">Wordocious Admin</span>
           </div>
           <div className="max-w-6xl mx-auto px-4 py-6 sm:px-6">
-            {children}
+            {/* Suspense: merged pages read ?tab= with useSearchParams. */}
+            <Suspense fallback={null}>{children}</Suspense>
           </div>
         </main>
       </div>

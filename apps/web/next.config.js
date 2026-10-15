@@ -19,11 +19,20 @@ const nextConfig = {
   // describes the whole stack and must never be public.
   async redirects() {
     return [
-      { source: '/portal', destination: '/admin/portal', permanent: false },
+      { source: '/portal', destination: '/admin/engineering?tab=portal', permanent: false },
       // Admin consolidation 2026-08-02: Content merged into Messaging,
       // Expenses into Revenue — keep old bookmarks working.
       { source: '/admin/content', destination: '/admin/messaging', permanent: false },
       { source: '/admin/expenses', destination: '/admin/revenue', permanent: false },
+      // Admin merge 2026-10-14 (28 pages -> 16): old pages are tabs now; keep
+      // bookmarks and every in-app link to the old paths working.
+      { source: '/admin/words', destination: '/admin/daily?tab=word', permanent: false },
+      { source: '/admin/banks', destination: '/admin/daily?tab=banks', permanent: false },
+      { source: '/admin/achievements', destination: '/admin/progression?tab=achievements', permanent: false },
+      { source: '/admin/avatars', destination: '/admin/progression?tab=avatars', permanent: false },
+      { source: '/admin/releases', destination: '/admin/engineering?tab=releases', permanent: false },
+      { source: '/admin/portal', destination: '/admin/engineering?tab=portal', permanent: false },
+      { source: '/admin/onboarding', destination: '/admin/metrics?tab=activation', permanent: false },
       // Mark scrub 2026-08-11 (§210): our routes must never wear a competitor
       // mark. Old paths 301 so shipped deep links, bookmarks, and indexed
       // URLs keep working while the canonical URL becomes the clean slug.

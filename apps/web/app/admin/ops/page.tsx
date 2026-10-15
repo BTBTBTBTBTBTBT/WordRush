@@ -56,7 +56,7 @@ export default function AdminOpsPage() {
           Is anything quietly broken: cron heartbeats, the store-webhook ledger, the anti-cheat watchlist and VS match health.
           Feature flags and the content runway moved to{' '}
           <Link href="/admin/flags" className="font-bold text-purple-700">Feature Flags</Link> and{' '}
-          <Link href="/admin/banks" className="font-bold text-purple-700">Content Banks</Link>.
+          <Link href="/admin/daily?tab=banks" className="font-bold text-purple-700">Content banks</Link>.
       </>} />
 
       {/* Cron heartbeats */}

@@ -56,6 +56,16 @@ export function PageHeader({ title, subtitle, icon: Icon, actions }: { title: st
   );
 }
 
+/** The one-line intro + controls row at the top of a merged page's tab (the tab's old page header). */
+export function TabIntro({ children, actions }: { children?: React.ReactNode; actions?: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      {children ? <p className="text-sm text-gray-500 font-medium max-w-3xl min-w-0">{children}</p> : <span />}
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+    </div>
+  );
+}
+
 export function ReloadButton({ onClick, loading }: { onClick: () => void; loading?: boolean }) {
   return (
     <button

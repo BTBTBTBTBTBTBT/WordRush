@@ -1,13 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { Rocket, ExternalLink, Smartphone, Globe } from 'lucide-react';
-import { BibleCard } from '../components/bible-card';
-import { PageHeader, Section, Callout } from '../components/admin-ui';
+import { TabIntro, Section, Callout } from '../components/admin-ui';
 
-// admin > System > Releases: a static card of store links and the release
-// flow. No secrets, no store API calls. Current build numbers are recorded
-// in the engineering bible's latest entry (shown below), which every release
-// commit updates.
+// admin > System > Engineering > Releases: a static card of store links and the
+// release flow. No secrets, no store API calls. Current build numbers are
+// recorded in the engineering bible's latest entry (the Bible card lives on the
+// Dashboard, one place), which every release commit updates.
 
 const LINKS: Array<{ group: string; icon: typeof Smartphone; items: Array<{ label: string; href: string; note: string }> }> = [
   {
@@ -42,14 +42,12 @@ const FLOW = [
   'Every App Store submission is paired with a Play production submission of the same version (managed publishing, publish after approval).',
 ];
 
-export default function AdminReleasesPage() {
+export default function ReleasesTab() {
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Releases"
-        icon={Rocket}
-        subtitle="Where each platform ships from, and the release order. Version and build numbers live in the bible's latest entry below."
-      />
+      <TabIntro>
+        Where each platform ships from, and the release order. Version and build numbers live in the bible&apos;s latest entry on the <Link href="/admin" className="font-bold text-purple-700">Dashboard</Link>.
+      </TabIntro>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {LINKS.map(({ group, icon: Icon, items }) => (
@@ -71,8 +69,6 @@ export default function AdminReleasesPage() {
           {FLOW.map((f) => <li key={f}>{f}</li>)}
         </ol>
       </Section>
-
-      <BibleCard />
 
       <Callout>
         Store credentials, signing keys and API keys never appear in the admin portal. Revenue reported by the stores is on Revenue.

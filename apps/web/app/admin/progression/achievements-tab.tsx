@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Trophy, EyeOff, Clock, Medal, Layers } from 'lucide-react';
 import { useDrill, DrillCard } from '../components/drill-panel';
-import { PageHeader, ReloadButton, Section, Table, BarList, ErrorNote, LoadingGrid, Callout, fmt, ago, useAdminData } from '../components/admin-ui';
+import { TabIntro, ReloadButton, Section, Table, ErrorNote, LoadingGrid, Callout, fmt, ago, useAdminData } from '../components/admin-ui';
 
 interface AchievementRow {
   key: string; name: string; description: string; category: string; icon: string; xp: number | null; hidden: boolean;
@@ -24,7 +24,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 
 type Sort = 'catalog' | 'most' | 'least' | 'week';
 
-export default function AdminAchievementsPage() {
+export default function AchievementsTab() {
   const drill = useDrill();
   const { data, error, loading, reload } = useAdminData<AchievementsData>('/api/admin/achievements');
   const [category, setCategory] = useState<string>('all');
@@ -53,12 +53,9 @@ export default function AdminAchievementsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Achievements & Levels"
-        icon={Trophy}
-        subtitle="The full catalog (the original set plus the 37 new-game achievements from packages/core), how many players unlocked each, and the level tiers. Click a row to see who unlocked it. Grant one from a player's page."
-        actions={<ReloadButton onClick={reload} loading={loading} />}
-      />
+      <TabIntro actions={<ReloadButton onClick={reload} loading={loading} />}>
+        The full catalog and how many players unlocked each. Click a row to see who unlocked it. Grant one from a player&apos;s page. Level tiers are on the Levels tab.
+      </TabIntro>
 
       {error && <ErrorNote>{error}</ErrorNote>}
       {!data && loading && <LoadingGrid />}
@@ -140,7 +137,7 @@ export default function AdminAchievementsPage() {
             </div>
           </Section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             <Section title="Recent unlocks" icon={Clock}>
               <Table
                 rows={data.recent}
@@ -156,14 +153,9 @@ export default function AdminAchievementsPage() {
               />
             </Section>
 
-            <Section title="Level tiers" icon={Layers} note={`Highest level reached: ${data.levels.maxLevel}. Tiers follow core levelTier (Bronze 1–10, Silver 11–25, Gold 26–50, Platinum 51–99, Diamond 100+).`}>
-              <BarList rows={data.levels.tiers.map((t) => ({ label: t.tier, count: t.count }))} />
-              <div className="mt-4">
-                <Callout>
-                  Granting: open a player from <Link href="/admin/users" className="font-bold text-purple-700">Users</Link> and use the Achievements card. Grants go through the same server path the games use (hidden keys refused) and are written to the audit log. There is no revoke.
-                </Callout>
-              </div>
-            </Section>
+            <Callout>
+              Granting: open a player from <Link href="/admin/users" className="font-bold text-purple-700">Users</Link> and use the Achievements card. Grants go through the same server path the games use (hidden keys refused) and are written to the audit log. There is no revoke.
+            </Callout>
           </div>
         </>
       )}

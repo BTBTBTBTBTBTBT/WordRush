@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { BookOpen, RotateCcw } from 'lucide-react';
-import { PageHeader } from '../components/admin-ui';
+import { TabIntro } from '../components/admin-ui';
 
 // Upcoming Word of the Day schedule. Server-derived from the exact module that
 // renders the player-facing card and archive, so this table IS the future —
@@ -33,7 +33,7 @@ const fmtDate = (key: string) => {
   });
 };
 
-export default function AdminWordsPage() {
+export default function WordTab() {
   const [data, setData] = useState<WordsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(45);
@@ -53,7 +53,7 @@ export default function AdminWordsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Word of the Day" actions={
+      <TabIntro actions={
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
@@ -64,7 +64,9 @@ export default function AdminWordsPage() {
           <option value={90}>Next 90 days</option>
           <option value={120}>Next 120 days</option>
         </select>
-      } />
+      }>
+        The upcoming Word of the Day schedule, straight from the module that renders the player-facing card.
+      </TabIntro>
 
       {/* Cycle mechanics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

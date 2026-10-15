@@ -78,8 +78,8 @@ export default function AdminDashboard() {
 
   const o = overview.data;
   const featureCards: Array<{ label: string; value: string; sub: string; icon: React.ReactNode; href: string }> = [
-    { label: 'Achievements', value: fmt(o?.achievementsAll), sub: `+${fmt(o?.achievements24h)} in 24h`, icon: <Trophy className="w-3.5 h-3.5" />, href: '/admin/achievements' },
-    { label: 'Mascots saved', value: fmt(o?.mascots), sub: 'avatar maker', icon: <Smile className="w-3.5 h-3.5" />, href: '/admin/avatars' },
+    { label: 'Achievements', value: fmt(o?.achievementsAll), sub: `+${fmt(o?.achievements24h)} in 24h`, icon: <Trophy className="w-3.5 h-3.5" />, href: '/admin/progression' },
+    { label: 'Mascots saved', value: fmt(o?.mascots), sub: 'avatar maker', icon: <Smile className="w-3.5 h-3.5" />, href: '/admin/progression?tab=avatars' },
     { label: 'Friendships', value: fmt(o?.friendships), sub: `${fmt(o?.friendRequests)} pending`, icon: <HeartHandshake className="w-3.5 h-3.5" />, href: '/admin/social' },
     { label: 'On now', value: fmt(o?.onNow), sub: 'seen in the last 2 min', icon: <Radio className="w-3.5 h-3.5" />, href: '/admin/social' },
     { label: 'Pocket games', value: fmt(o?.pocketActive), sub: `in progress · ${fmt(o?.pocket7)} new this week`, icon: <Gamepad2 className="w-3.5 h-3.5" />, href: '/admin/social' },

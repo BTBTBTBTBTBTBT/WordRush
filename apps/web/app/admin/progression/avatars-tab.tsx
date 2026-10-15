@@ -3,7 +3,7 @@
 import { Smile, Image as ImageIcon, Sparkles, Crown, Palette } from 'lucide-react';
 import { AVATAR_PRO_ONLY } from '@wordle-duel/core';
 import { DrillCard, useDrill } from '../components/drill-panel';
-import { PageHeader, ReloadButton, Section, BarList, ErrorNote, LoadingGrid, Callout, fmt, useAdminData } from '../components/admin-ui';
+import { TabIntro, ReloadButton, Section, BarList, ErrorNote, LoadingGrid, Callout, fmt, useAdminData } from '../components/admin-ui';
 
 interface Tally { key: string; count: number }
 interface AvatarsData {
@@ -30,7 +30,7 @@ const PART_TITLES: Array<[string, string]> = [
 
 const PRO_ONLY = new Set<string>([...AVATAR_PRO_ONLY.head, ...AVATAR_PRO_ONLY.neck, ...AVATAR_PRO_ONLY.bg]);
 
-export default function AdminAvatarsPage() {
+export default function AvatarsTab() {
   const drill = useDrill();
   const { data, error, loading, reload } = useAdminData<AvatarsData>('/api/admin/avatars');
   const a = data?.adoption;
@@ -38,12 +38,9 @@ export default function AdminAvatarsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Avatars"
-        icon={Smile}
-        subtitle="Mascot maker adoption: who saved a mascot, what they picked, and whether they show the mascot or their photo. Click any choice to see the players behind it."
-        actions={<ReloadButton onClick={reload} loading={loading} />}
-      />
+      <TabIntro actions={<ReloadButton onClick={reload} loading={loading} />}>
+        Mascot maker adoption: who saved a mascot, what they picked, and whether they show the mascot or their photo. Click any choice to see the players behind it.
+      </TabIntro>
       {error && <ErrorNote>{error}</ErrorNote>}
       {!data && loading && <LoadingGrid />}
       {data && !data.applied && <Callout tone="amber">{data.note}</Callout>}

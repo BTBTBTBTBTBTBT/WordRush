@@ -1,7 +1,7 @@
 import {
-  LayoutDashboard, TrendingUp, Users, UserPlus, Shield, CalendarCheck, Gamepad2, Puzzle, SpellCheck, Swords,
-  HeartHandshake, Trophy, Smile, CreditCard, DollarSign, Gift, Megaphone, BellRing, ToggleLeft, Library,
-  Ghost, MessageSquareText, Activity, Rocket, BookOpen, Palette, Clapperboard, AudioLines, type LucideIcon,
+  LayoutDashboard, TrendingUp, Users, Shield, CalendarCheck, Gamepad2, Puzzle, Swords,
+  HeartHandshake, Trophy, CreditCard, DollarSign, Gift, Megaphone, BellRing, ToggleLeft,
+  Ghost, MessageSquareText, Activity, Wrench, Palette, Clapperboard, AudioLines, type LucideIcon,
 } from 'lucide-react';
 
 export interface AdminNavItem {
@@ -28,7 +28,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     title: 'Overview',
     items: [
       { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, blurb: 'Key counts across the whole app' },
-      { href: '/admin/metrics', label: 'Metrics', icon: TrendingUp, blurb: 'The Weekly Five: DAU, retention, shares, conversion' },
+      { href: '/admin/metrics', label: 'Metrics', icon: TrendingUp, blurb: 'The Weekly Five (DAU, retention, shares, conversion) and new-player activation' },
     ],
   },
   {
@@ -58,17 +58,15 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     title: 'Players',
     items: [
       { href: '/admin/users', label: 'Users', icon: Users, blurb: 'Search players, Pro, bans, achievements' },
-      { href: '/admin/onboarding', label: 'Onboarding', icon: UserPlus, blurb: 'New-player activation funnel' },
-      { href: '/admin/moderation', label: 'Moderation', icon: Shield, blurb: 'Bans, new accounts, audit log' },
+            { href: '/admin/moderation', label: 'Moderation', icon: Shield, blurb: 'Bans, new accounts, audit log' },
     ],
   },
   {
     title: 'Games & Puzzles',
     items: [
-      { href: '/admin/daily', label: "Today's Dailies", icon: CalendarCheck, blurb: 'Plays, sweeps and the ten Puzzles today' },
+      { href: '/admin/daily', label: 'Dailies', icon: CalendarCheck, blurb: "Today's plays and sweeps, the Word of the Day schedule, bank runway" },
       { href: '/admin/games', label: 'Games & Leaderboards', icon: Gamepad2, blurb: 'Daily boards, seeds, recent matches' },
       { href: '/admin/puzzles', label: 'Puzzle Analytics', icon: Puzzle, blurb: 'Difficulty, popularity, streak economy' },
-      { href: '/admin/words', label: 'Word of the Day', icon: SpellCheck, blurb: 'Upcoming Word of the Day schedule' },
     ],
   },
   {
@@ -86,15 +84,13 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     title: 'Progression',
     items: [
-      { href: '/admin/achievements', label: 'Achievements & Levels', icon: Trophy, blurb: 'Catalog, unlock counts, level tiers' },
-      { href: '/admin/avatars', label: 'Avatars', icon: Smile, blurb: 'Mascot maker adoption and favorites' },
+      { href: '/admin/progression', label: 'Progression', icon: Trophy, blurb: 'Achievements, level tiers, mascot maker adoption' },
     ],
   },
   {
     title: 'Content & Ops',
     items: [
       { href: '/admin/flags', label: 'Feature Flags', icon: ToggleLeft, blurb: 'Remote kill switches and launches' },
-      { href: '/admin/banks', label: 'Content Banks', icon: Library, blurb: 'Puzzle bank runway per game' },
       { href: '/admin/seasons', label: 'Seasons', icon: Ghost, blurb: 'Halloween status and preview' },
       { href: '/admin/push-copy', label: 'Push Copy', icon: MessageSquareText, blurb: 'Preview every push message' },
     ],
@@ -103,8 +99,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     title: 'System',
     items: [
       { href: '/admin/ops', label: 'Ops Health', icon: Activity, blurb: 'Webhooks, anti-cheat, crons' },
-      { href: '/admin/releases', label: 'Releases', icon: Rocket, blurb: 'Store links and release flow' },
-      { href: '/admin/portal', label: 'Engineering Portal', icon: BookOpen, blurb: 'How Wordocious is built and works' },
+      { href: '/admin/engineering', label: 'Engineering', icon: Wrench, blurb: 'Store links, release flow, and how Wordocious is built' },
     ],
   },
 ];

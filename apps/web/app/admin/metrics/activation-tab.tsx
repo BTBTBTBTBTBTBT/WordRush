@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { UserPlus, Filter, CalendarDays } from 'lucide-react';
-import { PageHeader, ReloadButton, Section, BarList, ErrorNote, LoadingGrid, Callout, fmt, useAdminData } from '../components/admin-ui';
+import { Filter, CalendarDays } from 'lucide-react';
+import { TabIntro, ReloadButton, Section, BarList, ErrorNote, LoadingGrid, Callout, fmt, useAdminData } from '../components/admin-ui';
 
 interface OnboardingData {
   days: number;
@@ -13,16 +13,13 @@ interface OnboardingData {
 
 const WINDOWS = [7, 14, 30, 60];
 
-export default function AdminOnboardingPage() {
+export default function ActivationTab() {
   const [days, setDays] = useState(14);
   const { data, error, loading, reload } = useAdminData<OnboardingData>(`/api/admin/onboarding?days=${days}`);
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Onboarding"
-        icon={UserPlus}
-        subtitle="How new players activate after the first-run welcome and guided profile setup, measured from data the app already stores."
+      <TabIntro
         actions={
           <>
             <select value={days} onChange={(e) => setDays(Number(e.target.value))} className="text-xs font-bold border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
@@ -31,7 +28,9 @@ export default function AdminOnboardingPage() {
             <ReloadButton onClick={reload} loading={loading} />
           </>
         }
-      />
+      >
+        How new players activate after the first-run welcome and guided profile setup, measured from data the app already stores.
+      </TabIntro>
 
       <Callout tone="purple">
         The tour itself (welcome, quick tour, username, mascot maker, all set) is remembered per device with the <span className="font-mono">onboarded-v2</span> flag and isn&apos;t sent to the server, so its individual steps can&apos;t be counted. This funnel uses saved mascots, daily results and friendships instead.
