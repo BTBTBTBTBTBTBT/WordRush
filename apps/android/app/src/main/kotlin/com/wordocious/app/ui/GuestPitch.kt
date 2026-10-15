@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.theme.Nunito
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.Image
 import com.wordocious.app.ui.theme.WTheme
 
 /** One decorative sample chip on the signed-out pitch. */
@@ -174,16 +176,11 @@ private fun GuestChipTile(c: GuestChip, art: Float = 1f, width: Dp = 92.dp * art
     }
 }
 
-/** The Leaderboard's preview: a mini podium (2 · 1 · 3), the crown on first. */
+/** The Leaderboard's preview: the stadium podium image (2 · 1 · 3), no players yet. */
 @Composable
 private fun GuestPodium(modifier: Modifier, art: Float = 1f) {
-    val steps = listOf(2 to 56.dp, 1 to 78.dp, 3 to 42.dp)
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp * art), verticalAlignment = Alignment.Bottom) {
-        steps.forEach { (rank, h) ->
-            Column(Modifier.width(78.dp * art), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp * art)) {
-                if (rank == 1) Icon3D(Icon3DName.CROWN, 28.dp * art)
-                PodiumPedestal(rank, h * art)
-            }
-        }
-    }
+    Image(
+        artPainter(com.wordocious.app.R.drawable.art_podium_stage, 300.dp * art), contentDescription = null,
+        contentScale = ContentScale.Fit, modifier = modifier.width(300.dp * art),
+    )
 }

@@ -704,7 +704,7 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
             podium.mapIndexed { i, e ->
                 PodiumSpot(
                     place = i + 1, name = e.username, points = fmtPts(e.pts), username = e.avatarName,
-                    accentHex = e.accentHex, emoji = e.avatarEmoji,
+                    accentHex = e.accentHex, emoji = e.avatarEmoji, userId = e.id,
                     onClick = { onOpenProfile(e.id) },
                 )
             },
@@ -827,7 +827,7 @@ private fun TodayRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
             rows.take(3).mapIndexed { i, e ->
                 PodiumSpot(
                     place = i + 1, name = e.username, points = "${fmtPts(e.pts)} pts", username = e.avatarName,
-                    accentHex = e.accentHex, emoji = e.avatarEmoji, onClick = { onOpenProfile(e.id) }, badge = e.badge,
+                    accentHex = e.accentHex, emoji = e.avatarEmoji, userId = e.id, onClick = { onOpenProfile(e.id) }, badge = e.badge,
                 )
             },
             stepScale = 0.84f, avatar = 40.dp,

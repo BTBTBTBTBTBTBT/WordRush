@@ -727,86 +727,97 @@ object LeaderboardShare {
         return w
     }
 
+    /** The podium block's metrics for a block [w] wide: the stage image's height, the headroom above it for #1's head + name, the total. */
+    private class PodiumBlock(val w: Float) {
+        val imgH = w / com.wordocious.core.PodiumArtGeometry.ASPECT.toFloat()
+        val figGold = w * 0.32f
+        val figOther = w * 0.26f
+        val nameH = 50f
+        val headroom = max(0f, figGold + nameH + 14f - imgH * com.wordocious.core.PodiumArtGeometry.step(1).feetY.toFloat()).let { it + 8f }
+        val total = headroom + imgH
+        fun fig(place: Int) = if (place == 1) figGold else figOther
+    }
+
     /**
-     * The podium (second · first · third on gold / silver / bronze steps, first tallest):
-     * a glossy letter-tile avatar per spot (the crown over first), the name and soft
-     * points (+ the sweep dots) above each step. [h] = the block's height.
+     * The podium on the one stadium image (2.8, founder 10-15): the stage art across the block, each player's mascot with its feet
+     * on its step's top center (a soft contact shadow under it), the name above, the crown over first, and the score + guesses /
+     * time printed INSIDE the step's panel. Geometry = core PodiumArtGeometry. [h] = the block's height ([PodiumBlock.total]).
      */
     private fun drawPodium(context: Context, c: Canvas, fonts: ShareFinish.Fonts, spots: List<RowInput>, left: Float, right: Float, top: Float, h: Float) {
-        val gap = 8f * U
-        val colW = (right - left - gap * 2) / 3f
-        val k = (h / 380f).coerceIn(0.6f, 1.2f)
-        val stepH = mapOf(1 to 130f * k, 2 to 96f * k, 3 to 70f * k)
-        // The podium art (10-03): the floor plate across the block's foot, the glossy pedestals on it.
-        val rise = 14f * k
-        val bottom = top + h - rise
+        val geo = com.wordocious.core.PodiumArtGeometry
+        val blk = PodiumBlock(right - left)
         val bmpPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-        runCatching { BitmapFactory.decodeResource(context.resources, com.wordocious.app.ui.PodiumArt.FLOOR_RES) }.getOrNull()?.let { floor ->
-            c.drawBitmap(floor, null, RectF(left, bottom - rise - 4f, right, bottom + rise), bmpPaint)
+        val imgTop = top + (h - blk.total) + blk.headroom
+        runCatching { BitmapFactory.decodeResource(context.resources, com.wordocious.app.ui.PodiumArt.STAGE_RES) }.getOrNull()?.let { art ->
+            c.drawBitmap(art, null, RectF(left, imgTop, right, imgTop + blk.imgH), bmpPaint)
         }
-        listOf(2, 1, 3).forEachIndexed { colIdx, place ->
-            val s = spots.getOrNull(place - 1) ?: return@forEachIndexed
-            val x = left + colIdx * (colW + gap)
-            val cx = x + colW / 2f
-            val sh = stepH.getValue(place)
-            val step = RectF(x, bottom - sh, x + colW, bottom)
-            val numbered = s.rank == place
-            val ped = runCatching { BitmapFactory.decodeResource(context.resources, com.wordocious.app.ui.PodiumArt.pedestal(place, numbered)) }.getOrNull()
-            if (ped != null) {
-                val pw = min(colW, sh * ped.width / ped.height.toFloat())
-                c.drawBitmap(ped, null, RectF(cx - pw / 2f, step.top, cx + pw / 2f, step.bottom), bmpPaint)
-            } else {
-                val sp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    shader = android.graphics.LinearGradient(0f, step.top, 0f, step.bottom, stepColors(place), null, android.graphics.Shader.TileMode.CLAMP)
-                }
-                val rr = 12f * U / 1.5f
-                c.drawPath(Path().apply { addRoundRect(step, floatArrayOf(rr, rr, rr, rr, 0f, 0f, 0f, 0f), Path.Direction.CW) }, sp)
+        val ink = Color.rgb(geo.TEXT_RGB[0], geo.TEXT_RGB[1], geo.TEXT_RGB[2])
+        geo.ORDER.forEach { place ->
+            val step = geo.step(place)
+            val s = spots.getOrNull(place - 1)
+            val cx = left + (step.feetX * blk.w).toFloat()
+            val feetY = imgTop + (step.feetY * blk.imgH).toFloat() + geo.PLANT_PT.toFloat() * U / 1.5f
+            // ── the panel: score, then up to two stat lines, centered ──
+            val pnl = step.panel
+            val panel = RectF(left + (pnl.x0 * blk.w).toFloat(), imgTop + (pnl.y0 * blk.imgH).toFloat(), left + (pnl.x1 * blk.w).toFloat(), imgTop + (pnl.y1 * blk.imgH).toFloat())
+            val ph = panel.height()
+            val lines = if (s != null) com.wordocious.app.ui.podiumDetailLines(s.subline) else listOf(com.wordocious.core.podiumOpenSpot(place).line)
+            val scoreText = if (s != null) s.scoreDisplay else com.wordocious.core.podiumOpenSpot(place).title
+            val scoreP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textAlign = Paint.Align.CENTER; typeface = fonts.black; color = ink; fontFeatureSettings = "tnum"
+                textSize = ph * (if (s != null) geo.SCORE_HEIGHT else 0.24).toFloat()
             }
-            if (!numbered || ped == null) {
-                val num = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    textAlign = Paint.Align.CENTER; typeface = fonts.black; textSize = min(48f, sh * 0.42f); color = Color.WHITE
-                    setShadowLayer(0.01f, 0f, 4f, 0x2E000000)
-                }
-                c.textV("${s.rank}", cx, step.centerY() + sh * 0.12f, num)
+            ShareFinish.fitText(scoreP, scoreText, panel.width() * 0.86f)
+            val lineP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textAlign = Paint.Align.CENTER; typeface = fonts.black; color = ink; textSize = ph * geo.DETAIL_HEIGHT.toFloat()
             }
-            // Name, soft points, dots — stacked up from the step.
-            var y = step.top - 10f
-            if (!s.dots.isNullOrEmpty()) {
-                val r = 6f * k; val stepX = 16f * k
-                val w = r * 2 + (s.dots.size - 1) * stepX
-                drawDots(c, s.dots, cx - w / 2f, y - r, r, stepX)
-                y -= r * 2 + 8f
+            val shown = lines.take(2).map { it.uppercase() }
+            val lineH = lineP.textSize * 1.25f
+            val blockH = scoreP.textSize * 1.15f + lineH * shown.size
+            var ty = panel.centerY() - blockH / 2f
+            c.textV(scoreText, panel.centerX(), ty + scoreP.textSize * 0.575f, scoreP)
+            ty += scoreP.textSize * 1.15f
+            shown.forEach { line ->
+                val lp = Paint(lineP).also { ShareFinish.fitText(it, line, panel.width() * 0.86f) }
+                c.textV(line, panel.centerX(), ty + lineH / 2f, lp)
+                ty += lineH
             }
-            val pts = ShareFinish.softPaint(fonts, 36f * k)
-            ShareFinish.fitText(pts, s.scoreDisplay, colW - 8f)
-            c.drawText(s.scoreDisplay, cx, y - 2f, pts)
-            y -= pts.textSize + 6f
-            val name = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                textAlign = Paint.Align.CENTER; typeface = fonts.black; textSize = 28f * k
-                color = if (s.isYou) 0xFFA2560C.toInt() else ShareFinish.INK_HEADING
-                ShareFinish.softShadow(this)
+            if (s == null) return@forEach
+            // ── the figure: contact shadow, mascot, name above, crown on first ──
+            val a = blk.fig(place)
+            // the cheering pose is drawn mid-jump: its box drops so the winner lands on the step (see BoardPodium CHEER_FEET_DROP)
+            val drop = if (place == 1) a * 0.19f else 0f
+            val sw = a * geo.SHADOW_WIDTH.toFloat()
+            val sh = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                shader = android.graphics.RadialGradient(
+                    cx, feetY, sw / 2f, intArrayOf(0x8C14002B.toInt(), 0x0014002B), null, android.graphics.Shader.TileMode.CLAMP,
+                )
             }
-            val label = clampText(name, if (s.isYou) "${s.name} · YOU" else s.name, colW - 8f)
-            c.drawText(label, cx, y - 2f, name)
-            y -= name.textSize + 12f
-            // The letter-tile avatar (first bigger) with the crown on first.
-            val a = (if (place == 1) 112f else 92f) * k
-            val av = RectF(cx - a / 2f, y - a, cx + a / 2f, y)
-            if (s.isYou) {
-                val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 6f; color = 0xFFF5A524.toInt() }
-                c.drawRoundRect(RectF(av.left - 7f, av.top - 7f, av.right + 7f, av.bottom + 7f), a * 0.28f, a * 0.28f, ring)
-            }
+            c.save(); c.scale(1f, 0.2f, cx, feetY); c.drawCircle(cx, feetY, sw / 2f, sh); c.restore()
             // AN5: every podium player's mascot (the same composer as the on-screen avatars).
             run {
                 // BJ5: the shared resolver's mascot (share podiums stay mascot-only, never a letter tile).
-                val cfg = ShareAvatars.mascotConfig(null, s.name)
-                val key = com.wordocious.app.ui.MascotKey.of(cfg, MascotConfigRules.initialOf(s.name), 200f, a.toInt(), dark = false)
-                com.wordocious.app.ui.MascotComposer.draw(context, c, av.left, av.top, a, key)
+                // Standing full-body (a cutout in its place's pose), like the in-app podium.
+                val cfg = ShareAvatars.mascotConfig(null, s.name).copy(pose = com.wordocious.core.AvatarPoses.placePose(place))
+                val key = com.wordocious.app.ui.MascotKey.of(cfg, MascotConfigRules.initialOf(s.name), 200f, a.toInt(), dark = false, cutout = true, forcePose = true)
+                com.wordocious.app.ui.MascotComposer.draw(context, c, cx - a / 2f, feetY - a + drop, a, key)
             }
             if (place == 1) {
-                val cw = 64f * k
-                ShareFinish.drawArtInto(context, c, R.drawable.icon3d_crown, RectF(cx - cw / 2f, av.top - cw * 0.78f, cx + cw / 2f, av.top + cw * 0.22f))
+                val cw = 0.12f * blk.w
+                ShareFinish.drawArtInto(context, c, R.drawable.icon3d_crown, RectF(cx - cw / 2f, feetY - a + drop - cw * 0.55f, cx + cw / 2f, feetY - a + drop + cw * 0.45f))
             }
+            val name = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textAlign = Paint.Align.CENTER; typeface = fonts.black; textSize = if (place == 1) 44f else 38f
+                color = if (s.isYou) 0xFFA2560C.toInt() else ShareFinish.INK_HEADING
+                ShareFinish.softShadow(this)
+            }
+            val label = clampText(name, if (s.isYou) "${s.name} · YOU" else s.name, blk.w * 0.31f)
+            val nameBottom = feetY - a + drop - (if (place == 1) blk.w * 0.07f else 0f) + a * 0.12f
+            // a soft white pill so the name reads over the dark crowd as well as the cream page
+            val tw = name.measureText(label)
+            val pill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xE6FFFFFF.toInt() }
+            c.drawRoundRect(RectF(cx - tw / 2f - 16f, nameBottom - name.textSize - 6f, cx + tw / 2f + 16f, nameBottom + 8f), 24f, 24f, pill)
+            c.drawText(label, cx, nameBottom - 6f, name)
         }
     }
 
@@ -838,7 +849,7 @@ object LeaderboardShare {
         val nList = listRows.size + (if (input.you != null) 1 else 0)
         val listRowH = if (podium) 92f else 110f
         val listH = if (nList > 0) nList * listRowH + dividerH + 20f else 0f
-        val podiumH = if (podiumRows.isNotEmpty()) 400f else 0f
+        val podiumH = if (podiumRows.isNotEmpty()) PodiumBlock(w - 40f).total else 0f
         val caption = bragCaption(input)
         val captionH = if (caption != null) 64f else 0f
         var bodyH = chipH + 24f + podiumH + listH + captionH

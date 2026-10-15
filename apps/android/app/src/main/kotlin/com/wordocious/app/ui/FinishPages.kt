@@ -397,6 +397,8 @@ data class PodiumSpot(
     val accentHex: String? = null,
     val emoji: String? = null,
     val onClick: (() -> Unit)? = null,
+    /** The player's id when the row has one (resolves their real mascot; null = looked up by username). */
+    val userId: String? = null,
     /** Founder 10-09: today's highlight on the daily race podium ("FLAWLESS · 89-DAY STREAK", "SWEEP"), gold under the points. */
     val badge: String? = null,
 )
@@ -412,62 +414,24 @@ object PodiumInk {
 }
 
 /**
- * C2 / C4 the top-3 podium: second · first · third on gold / silver / bronze steps
- * (first tallest), letter-tile avatars over each step (first bigger, the crown on top),
- * name and soft points under the avatar. [stepScale] shrinks the steps (Friends' race
- * card uses the mockup's smaller set). Fewer than three spots leave their column empty.
+ * C2 / C4 the top-3 podium for the Friends races (this week's race, today's race): the same one-image stadium podium as the
+ * boards ([BoardPodium]) — each player's mascot standing on their step, the points and the race highlight (FLAWLESS /
+ * 89-DAY STREAK) printed in the step's panel. Fewer than three spots leave their step open. [stepScale] / [avatar] are kept
+ * for the call sites; the stage scales with the card's width.
  */
 @Composable
-fun MedalPodium(spots: List<PodiumSpot>, modifier: Modifier = Modifier, stepScale: Float = 1f, avatar: Dp = 44.dp) {
-    val byPlace = spots.associateBy { it.place }
-    Box(modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 2.dp)) {
-    PodiumFloor(Modifier.align(Alignment.BottomCenter))
-    Row(
-        Modifier.fillMaxWidth().padding(bottom = PodiumArt.FLOOR_RISE),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        listOf(2, 1, 3).forEach { place ->
-            val s = byPlace[place]
-            Column(
-                Modifier.weight(1f).then(
-                    if (s?.onClick != null) Modifier.squishClickable(label = "${podiumOrdinal(place)} place, ${s.name}, ${s.points}") { s.onClick.invoke() }
-                    else if (s != null) Modifier.semantics(mergeDescendants = true) {
-                        contentDescription = "${podiumOrdinal(place)} place, ${s.name}, ${s.points}"
-                    } else Modifier,
-                ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                if (s != null) {
-                    val a = if (place == 1) avatar * 1.22f else avatar
-                    // Founder 10-09: the name rides above the head in the bubble lettering (their color, glow in their secondary color).
-                    PodiumNameAbove(s.name, null, s.username ?: s.name, size = if (place == 1) 19f else 16f, pull = 2.dp, accentHex = s.accentHex)
-                    Box(contentAlignment = Alignment.TopCenter) {
-                        LetterTileAvatar(
-                            s.username ?: s.name, a, Modifier.padding(top = if (place == 1) 18.dp else 0.dp), accentHex = s.accentHex, emoji = s.emoji,
-                            pro = isOwnProAvatar(s.username ?: s.name), // AA2
-                        )
-                        if (place == 1) Icon3D(Icon3DName.CROWN, 26.dp)
-                    }
-                    // Founder 10-09: the plaque wears the player's own backdrop (fill) + frame (border); ink picked for contrast.
-                    PodiumPlaque(null, s.username ?: s.name, accentHex = s.accentHex) { ink ->
-                        BubbleOneLine(s.points.uppercase(), ink.palette, 17f + (if (place == 1) 2f else 0f))
-                        // Both parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
-                        com.wordocious.core.FriendCards.raceBadgeLines(s.badge).forEach { line ->
-                            Text(
-                                line, fontSize = 9.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = ink.badge,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, lineHeight = 11.sp,
-                            )
-                        }
-                    }
-                }
-                val h = when (place) { 1 -> 74.dp; 2 -> 54.dp; else -> 40.dp } * stepScale
-                PodiumPedestal(place, h)
-            }
-        }
-    }
-    }
+fun MedalPodium(spots: List<PodiumSpot>, modifier: Modifier = Modifier, @Suppress("UNUSED_PARAMETER") stepScale: Float = 1f, @Suppress("UNUSED_PARAMETER") avatar: Dp = 44.dp) {
+    BoardPodium(
+        spots.sortedBy { it.place }.map { s ->
+            BoardPodiumSpot(
+                place = s.place, name = s.name, points = s.points, username = s.username, userId = s.userId,
+                accentHex = s.accentHex, onClick = s.onClick,
+                // Both parts (FLAWLESS / 89-DAY STREAK) stack on the panel's two lines.
+                lines = com.wordocious.core.FriendCards.raceBadgeLines(s.badge),
+            )
+        },
+        (1..3).filter { p -> spots.none { it.place == p } }, Color.Unspecified, modifier,
+    )
 }
 
 /** The daily-race highlight gold (#F5B82E), same on the podium plaque and the rank rows. */

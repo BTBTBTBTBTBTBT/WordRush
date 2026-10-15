@@ -53,6 +53,11 @@ internal fun CelebrationTrio(
     /** Seconds per hop (the Halloween idle trio moves slower and spookier). */
     tempo: Float = 0.42f,
     swayDegrees: Float = 4f,
+    /**
+     * 2.8 Halloween stage (founder 10-15): the caller's box is the WHOLE card with the curtain-stage art cover-fitted behind it, bottom-aligned (the pools stay in view on a wide card);
+     * the figures' feet land in the art's three spotlight pools instead of the slot's own floor (no shared shadow, no bunting).
+     */
+    stage: Boolean = false,
 ) {
     // Founder 10-10 (smoothness): the loops run off ONE shared ~24 fps clock (ThemeKit.rememberPausableClock) instead of
     // 60 Hz infinite transitions: it holds still while the page scrolls and while the tab is covered / hidden (every tab
@@ -62,8 +67,11 @@ internal fun CelebrationTrio(
     val tick = ThemeKit.rememberPausableClock(!still, settleMs = 200)
     BoxWithConstraints(modifier.fillMaxSize().clearAndSetSemantics { }) {
         val w = maxWidth
-        val h = height
-        val fig = min(h.value * 0.66f, w.value / 3.6f).dp
+        val h = if (stage) maxHeight else height
+        // Stage: the art is cover-fitted (centered) to the card, so a pool's card position follows the scaled art.
+        val artW = if (stage) maxOf(w.value, h.value * STAGE_ART_ASPECT) else w.value
+        val artH = artW / STAGE_ART_ASPECT
+        val fig = if (stage) min(artW * 0.19f, h.value * 0.45f).dp else min(h.value * 0.66f, w.value / 3.6f).dp
         val buntingW = min(w.value * 0.36f, 136f).dp
         // the bunting hangs still (only the cast celebrates), centered at 9% of the height
         if (bunting) Image(
@@ -71,7 +79,7 @@ internal fun CelebrationTrio(
             modifier = Modifier.offset(x = (w - buntingW) / 2, y = h * 0.09f - h * 0.10f).width(buntingW).height(h * 0.20f),
         )
         // one shared floor shadow
-        androidx.compose.foundation.layout.Box(
+        if (!stage) androidx.compose.foundation.layout.Box(
             Modifier.offset(x = (w - fig * 3.2f) / 2, y = h - 25.dp).size(fig * 3.2f, 14.dp).drawBehind {
                 drawOval(
                     Brush.radialGradient(
@@ -88,10 +96,11 @@ internal fun CelebrationTrio(
 
             // sway: -4 to 4 degrees over 0.95 s each way, starting twice as late as the hop
 
-            val cx = (w - fig) / 2 + fig * 0.95f * (i - 1)
+            val cx = if (stage) (w.value / 2f + (STAGE_POOLS_X[i] - 0.5f) * artW).dp - fig / 2 else (w - fig) / 2 + fig * 0.95f * (i - 1)
+            val cy = if (stage) (h.value - (1f - STAGE_POOLS_Y) * artH).dp - fig + 11.dp else h - fig - 16.dp
             Image(
                 artPainter(res, fig), contentDescription = null, contentScale = ContentScale.Fit,
-                modifier = Modifier.offset(x = cx, y = h - fig - 16.dp).size(fig).graphicsLayer {
+                modifier = Modifier.offset(x = cx, y = cy).size(fig).graphicsLayer {
                     transformOrigin = TransformOrigin(0.5f, 1f)
                     val t = tick.value
                     if (t > 0L) {
@@ -126,6 +135,11 @@ internal fun CelebrationTrio(
         }
     }
 }
+
+/** The Halloween curtain-stage art (art_celebration_stage_halloween, 1586 x 992) and its three spotlight pools (fractions of the art). */
+private const val STAGE_ART_ASPECT = 1586f / 992f
+private val STAGE_POOLS_X = floatArrayOf(0.32f, 0.50f, 0.67f)
+private const val STAGE_POOLS_Y = 0.895f
 
 /**
  * One back-and-forth tween at clock time [t] (ms): 0 -> 1 over [durMs] with FastOutSlowIn, then back, starting

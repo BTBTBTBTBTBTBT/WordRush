@@ -2,6 +2,7 @@ package com.wordocious.core
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.double
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -44,5 +45,32 @@ class PodiumLayoutFixtureTest {
         assertEquals(PodiumLayout(3, emptyList()), podiumLayout(listOf(1, 2, 3)))
         assertEquals(PodiumLayout(3, emptyList()), podiumLayout(listOf(1, 2, 3, 4, 5)))
         assertEquals(PodiumLayout(3, emptyList()), podiumLayout(listOf(1, 1, 1, 1)))
+    }
+
+    @Test
+    fun art_geometry_matches() {
+        val art = root["art"]!!.jsonObject
+        assertEquals(art["aspect"]!!.jsonPrimitive.double, PodiumArtGeometry.ASPECT, 0.0)
+        assertEquals(art["plantPt"]!!.jsonPrimitive.double, PodiumArtGeometry.PLANT_PT, 0.0)
+        assertEquals(art["nameGapPt"]!!.jsonPrimitive.double, PodiumArtGeometry.NAME_GAP_PT, 0.0)
+        assertEquals(art["shadowWidth"]!!.jsonPrimitive.double, PodiumArtGeometry.SHADOW_WIDTH, 0.0)
+        assertEquals(art["scoreHeight"]!!.jsonPrimitive.double, PodiumArtGeometry.SCORE_HEIGHT, 0.0)
+        assertEquals(art["detailHeight"]!!.jsonPrimitive.double, PodiumArtGeometry.DETAIL_HEIGHT, 0.0)
+        assertEquals(art["textRgb"]!!.jsonArray.map { it.jsonPrimitive.int }, PodiumArtGeometry.TEXT_RGB.toList())
+        val steps = art["steps"]!!.jsonArray.map { it.jsonObject }
+        assertEquals(steps.size, PodiumArtGeometry.STEPS.size)
+        steps.forEachIndexed { i, s ->
+            val k = PodiumArtGeometry.STEPS[i]
+            val feet = s["feet"]!!.jsonObject
+            val panel = s["panel"]!!.jsonObject
+            assertEquals(s["place"]!!.jsonPrimitive.int, k.place)
+            assertEquals(feet["x"]!!.jsonPrimitive.double, k.feetX, 0.0)
+            assertEquals(feet["y"]!!.jsonPrimitive.double, k.feetY, 0.0)
+            assertEquals(panel["x0"]!!.jsonPrimitive.double, k.panel.x0, 0.0)
+            assertEquals(panel["x1"]!!.jsonPrimitive.double, k.panel.x1, 0.0)
+            assertEquals(panel["y0"]!!.jsonPrimitive.double, k.panel.y0, 0.0)
+            assertEquals(panel["y1"]!!.jsonPrimitive.double, k.panel.y1, 0.0)
+        }
+        assertEquals(root["art"]!!.jsonObject["order"]?.jsonArray?.map { it.jsonPrimitive.int } ?: PodiumArtGeometry.ORDER, PodiumArtGeometry.ORDER)
     }
 }

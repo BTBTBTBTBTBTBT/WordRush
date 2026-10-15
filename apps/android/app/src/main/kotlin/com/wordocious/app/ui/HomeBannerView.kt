@@ -26,6 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.Image
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
@@ -188,6 +190,8 @@ fun HomeBannerView(
     // Z: the band's slot exists in both modes (Unlimited shows U's loop art in it).
     val bandTier = slots.sceneBand
     val artAccent = if (bandTier == BannerTier.FLAWLESS) MomentInk.flawless else MomentInk.sweep
+    // 2.8 (founder 10-15): the Halloween season's curtain-stage art behind the headline card (null season = the card as ever).
+    val stageArt = rememberSeason() == com.wordocious.core.Season.HALLOWEEN
 
     // Fixed card chrome: capped fontScale (the HomeScreen rule) so huge system text
     // can't balloon the strip or push the tile rows out of the card.
@@ -235,7 +239,7 @@ fun HomeBannerView(
                 .then(if (shimmer) Modifier.bannerShimmer() else Modifier)
                 .then(if (artTier != BannerTier.NONE) Modifier.border(1.5.dp, accentLine(artAccent), shape) else Modifier),
         ) {
-            if (bandTier != BannerTier.NONE) BannerSceneSlot(bandTier, artAccent, modeFade)
+            val stripContent: @Composable () -> Unit = {
             // Frosted headline strip: it titles the whole card, so it sits apart from the Wordocious
             // row's glow. ART_SPEC §18.4: white at 72% (the fill under it is a smooth gradient, so
             // a backdrop blur would change nothing on Android; no platform backdrop blur here).
@@ -245,8 +249,8 @@ fun HomeBannerView(
                 // FINISH_SPEC A1: the frosted strip is a lilac frost, not white. BJ6 round 3 flair
                 // (static, symmetric): a soft diagonal sheen in the frost, the brand candy cap across
                 // the card's top edge, tiny confetti dots mirrored in the empty top corners.
-                Modifier.fillMaxWidth().homeStripFlair(cap = bandTier == BannerTier.NONE)
-                    .padding(start = 12.dp, top = homeStripTop(bandTier != BannerTier.NONE, hostShows).dp, end = 12.dp, bottom = 4.dp),
+                Modifier.fillMaxWidth().then(if (stageArt) Modifier else Modifier.homeStripFlair(cap = bandTier == BannerTier.NONE))
+                    .padding(start = 12.dp, top = homeStripTop(bandTier != BannerTier.NONE && !stageArt, hostShows).dp, end = 12.dp, bottom = 4.dp),
                 // BH3: one headline line, then the slim switch, the meta line under it (BJ6: 6 / 3).
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -299,9 +303,40 @@ fun HomeBannerView(
                     )
                 }
             }
+            }
+            if (stageArt) {
+                // 2.8 (founder 10-15): in the Halloween season the headline card stands on the curtain-stage art: it replaces the card's
+                // own valance / curtain / backdrop (no frost strip, no band), the title / switch / clock keep their place over its dark
+                // middle, and the animated trio's feet land in the three spotlight pools. Static art: decoded once, no per-frame work.
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    // A wide card (tablet) reserves a taller trio slot so the bigger figures stay under the clock line.
+                    val trioSlot = maxOf(HOME_STAGE_TRIO_SLOT, maxWidth * 0.30f)
+                    Image(
+                        artPainter(com.wordocious.app.R.drawable.art_celebration_stage_halloween, 400.dp), contentDescription = null,
+                        contentScale = ContentScale.Crop, alignment = Alignment.BottomCenter, modifier = Modifier.matchParentSize().clearAndSetSemantics { },
+                    )
+                    Column(Modifier.fillMaxWidth()) {
+                        stripContent()
+                        Spacer(Modifier.height(trioSlot))
+                    }
+                    val trio = when {
+                        !unlimited && bandTier == BannerTier.FLAWLESS -> listOf(com.wordocious.app.R.drawable.art_pose_d_cheer, com.wordocious.app.R.drawable.art_pose_o2_cheer, com.wordocious.app.R.drawable.art_pose_i_cheer)
+                        !unlimited && bandTier == BannerTier.SWEEP -> listOf(com.wordocious.app.R.drawable.art_pose_o1_cheer, com.wordocious.app.R.drawable.art_pose_s_flex, com.wordocious.app.R.drawable.art_pose_w_wave)
+                        else -> listOf(com.wordocious.app.R.drawable.art_halloween_o1, com.wordocious.app.R.drawable.art_halloween_w, com.wordocious.app.R.drawable.art_halloween_r)
+                    }
+                    val celebrating = !unlimited && bandTier != BannerTier.NONE
+                    CelebrationTrio(
+                        trioSlot, Modifier.matchParentSize(), images = trio, bunting = false, sparkles = celebrating,
+                        tempo = if (celebrating) 0.42f else 0.7f, swayDegrees = if (celebrating) 4f else 3f, stage = true,
+                    )
+                }
+            } else {
+            if (bandTier != BannerTier.NONE) BannerSceneSlot(bandTier, artAccent, modeFade)
+            stripContent()
+            }
             // Season preview: no celebration today → the season's Home banner art (registry `banner`)
             // under the headline strip, fit, at most 104 dp tall (iOS / web parity), never cropped.
-            if (bandTier == BannerTier.NONE) HalloweenBannerSlot { res ->
+            if (bandTier == BannerTier.NONE && !stageArt) HalloweenBannerSlot { res ->
                 // Founder 10-10: the idle Halloween scene is alive too: the costumed O, W, R sway slow and spooky (no sparkles,
                 // a slower 0.7 s tempo, +-3 degrees); a season without the trio art animates the still banner with the idle hop.
                 val trio = listOf(com.wordocious.app.R.drawable.art_halloween_o1, com.wordocious.app.R.drawable.art_halloween_w, com.wordocious.app.R.drawable.art_halloween_r)
@@ -430,6 +465,9 @@ internal fun bannerArtTier(word: BannerTier, puzzles: BannerTier, unlimited: Boo
     word == BannerTier.SWEEP || puzzles != BannerTier.NONE -> BannerTier.SWEEP
     else -> BannerTier.NONE
 }
+
+/** The reserved height under the headline strip for the stage's trio (the spotlight pools sit near the card's bottom). */
+internal val HOME_STAGE_TRIO_SLOT = 110.dp
 
 /** How far a banner host peeks over the card's top edge (MASCOT_SPEC §2). */
 internal val BANNER_HOST_PEEK = 12.dp

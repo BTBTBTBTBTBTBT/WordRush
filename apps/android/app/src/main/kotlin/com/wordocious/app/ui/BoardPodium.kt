@@ -3,6 +3,7 @@ package com.wordocious.app.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
@@ -31,6 +32,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.Alignment
@@ -54,8 +58,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.A11yLabels
+import com.wordocious.core.PodiumArtGeometry
 import com.wordocious.core.PodiumLayout
 import com.wordocious.core.podiumLayout
 import com.wordocious.core.podiumOpenSpot
@@ -68,14 +74,10 @@ import kotlin.math.sin
 
 // FINISH_SPEC BJ4 (founder 10-03: "The podium only appears on classic right now") —
 // every board (each game's daily board, Everyone AND Friends, the Sweep board today +
-// yesterday, Puzzles / More Games, Yesterday's Winners, Records) stands its leaders on the
-// podium once ONE result is in: core podiumLayout(ranks) says how many leading rows stand
-// on it, the free places are open spots (the pedestal softly dimmed, R asleep where the
-// avatar goes, "Open spot · Claim #N", not tappable), rows after the podium list below.
-// The stage backdrop sits behind it inside the board card's top: one soft accent
-// gradient, ONE static shape layer (faint sunburst rays from just above #1, a few tiny
-// confetti dots, a soft floor shadow under the pedestals). Static and cheap: no
-// animation, no blur, no outline.
+// yesterday, Puzzles / More Games, Yesterday's Winners, Records, the Friends races) stands its
+// leaders on the podium once ONE result is in: core podiumLayout(ranks) says how many leading
+// rows stand on it, the free places are open spots, rows after the podium list below.
+// 2.8 (founder 10-15): all of them stand on ONE stadium image with the stats printed in its panels.
 
 /** One player on the podium. [place] is the column (1–3); avatars go through PlayerAvatar (BJ5). */
 data class BoardPodiumSpot(
@@ -94,333 +96,242 @@ data class BoardPodiumSpot(
     val onTaunt: (() -> Unit)? = null,
     /** Founder 10-05: how they got the points — the board rows' detail line ("4 Guesses · 1m 45s"). */
     val detail: String? = null,
+    /** Panel lines under the score, when the caller has them already split (the race's highlight lines); wins over [detail]. */
+    val lines: List<String>? = null,
 )
 
 /** BJ4: the podium split for a board's competition ranks (score-desc order). */
 fun boardPodium(ranks: List<Int>): PodiumLayout = podiumLayout(ranks)
 
 /**
- * The podium art (10-03, docs/design/brand/podium/make-pedestals.py): glossy gold / silver /
- * bronze pedestals — `art_podium_N` wears its numeral, `art_podium_N_plain` is blank — and
- * the lilac floor plate they stand on. Same step heights as the code-drawn steps; the
- * width follows the art. Decoded off main ([prewarm]) before Home / the Leaderboard show it.
+ * 2.8 one-image podium (founder 10-15): ONE stadium image (art_podium_stage, 1536x1024, transparent fades) stands behind
+ * every podium — the crowd, the lights and three glossy numbered steps each with a blank satin panel. It replaces the
+ * three pedestal blocks AND the per-player stat plaques. The geometry (feet + panel rectangles, as fractions of the image)
+ * lives in core [PodiumArtGeometry]; decoded once through [ArtBitmaps] (prewarmed off main).
  */
 object PodiumArt {
-    /** The pedestal's display bucket (its longer side). */
-    val PEDESTAL: Dp = 96.dp
-    /** The floor plate's display bucket. */
-    val FLOOR: Dp = 360.dp
-    /** How far the floor plate rises under the pedestals' feet. */
-    val FLOOR_RISE: Dp = 10.dp
+    val STAGE_RES: Int get() = com.wordocious.app.R.drawable.art_podium_stage
+    /** A phone-width display bucket for the prewarm (the art is 1536 px wide; wider screens decode a bigger bucket on first use). */
+    val PREWARM: Dp = 360.dp
+    /** The widest the stage grows on a tablet (page width, capped). */
+    val MAX_WIDTH: Dp = 1000.dp
 
-    fun pedestal(place: Int, numbered: Boolean = true): Int = when (place.coerceIn(1, 3)) {
-        1 -> if (numbered) com.wordocious.app.R.drawable.art_podium_1 else com.wordocious.app.R.drawable.art_podium_1_plain
-        2 -> if (numbered) com.wordocious.app.R.drawable.art_podium_2 else com.wordocious.app.R.drawable.art_podium_2_plain
-        else -> if (numbered) com.wordocious.app.R.drawable.art_podium_3 else com.wordocious.app.R.drawable.art_podium_3_plain
-    }
+    /** The stage image's height for a display [width]. */
+    fun heightFor(width: Dp): Dp = width / PodiumArtGeometry.ASPECT.toFloat()
 
-    val FLOOR_RES: Int get() = com.wordocious.app.R.drawable.art_podium_floor
-
-    /** BJ2: the pedestals + floor into [ArtBitmaps] on the IO pool (same buckets as [PodiumPedestal]). */
+    /** The stage decoded into [ArtBitmaps] on the IO pool, before Home / the Leaderboard show it. */
     suspend fun prewarm(context: android.content.Context, density: Float) = withContext(Dispatchers.IO) {
-        val ped = ArtBitmaps.bucketPx((PEDESTAL.value * density).roundToInt())
-        (1..3).forEach { runCatching { ArtBitmaps.get(context, pedestal(it), ped) } }
-        runCatching { ArtBitmaps.get(context, FLOOR_RES, ArtBitmaps.bucketPx((FLOOR.value * density).roundToInt())) }
+        runCatching { ArtBitmaps.get(context, STAGE_RES, ArtBitmaps.bucketPx((PREWARM.value * density).roundToInt())) }
         Unit
     }
 }
 
 /**
- * One pedestal at [height] (the column's step height), centered in its column. A [label]
- * other than the place's own number takes the plain pedestal with the label on it.
+ * The cheering pose (1st place) is drawn mid-jump: its cutout's feet sit this fraction of the figure's size above the box's
+ * bottom edge, so the winner's box drops by it to land on the step like the claps / wave poses do (measured on the emulator).
+ */
+private const val CHEER_FEET_DROP = 0.19f
+
+/** The panel's text ink: rgb(70, 30, 100) on all three light satin panels (core PodiumArtGeometry.TEXT_RGB). */
+private val PANEL_INK = PodiumArtGeometry.TEXT_RGB.let { Color(it[0], it[1], it[2]) }
+
+/** The sleepy cast member on an open spot (art-scene-r-asleep, ~373×302). */
+private const val ASLEEP_ASPECT = 373f / 302f
+
+/** The detail text as at most two panel lines: the first part, then the rest (parity with iOS PodiumView.detailLines). */
+fun podiumDetailLines(detail: String?): List<String> {
+    if (detail.isNullOrEmpty()) return emptyList()
+    val parts = detail.split("·").map { it.trim() }.filter { it.isNotEmpty() }
+    // Founder 10-12 ("3M 13S · 2/4 · 1 HI…"): with time, boards AND hints the hints part joins the first line instead.
+    val h = parts.indices.drop(1).firstOrNull { parts[it].contains("hint", ignoreCase = true) }
+    return when {
+        parts.size <= 1 -> parts
+        parts.size >= 3 && h != null -> listOf("${parts.first()} · ${parts[h]}", parts.filterIndexed { i, _ -> i != 0 && i != h }.joinToString(" · "))
+        else -> listOf(parts.first(), parts.drop(1).joinToString(" · "))
+    }
+}
+
+/** Places a child with its bottom-center at ([cx], [bottom]) px inside the parent (a stage-sized Box). */
+private fun Modifier.anchoredBottomCenter(cx: Float, bottom: Float, maxWidthPx: Int): Modifier = this.layout { measurable, c ->
+    val p = measurable.measure(Constraints(maxWidth = maxWidthPx.coerceAtLeast(0)))
+    layout(c.maxWidth, c.maxHeight) { p.place((cx - p.width / 2f).roundToInt(), (bottom - p.height).roundToInt()) }
+}
+
+/** Places a child with its top-left at ([x], [y]) px, sized exactly [w] x [h] px. */
+private fun Modifier.anchoredRect(x: Float, y: Float, w: Float, h: Float): Modifier = this.layout { measurable, c ->
+    val p = measurable.measure(Constraints.fixed(w.roundToInt().coerceAtLeast(0), h.roundToInt().coerceAtLeast(0)))
+    layout(c.maxWidth, c.maxHeight) { p.place(x.roundToInt(), y.roundToInt()) }
+}
+
+/**
+ * The stats inside one step's panel, centered: the score (Nunito Black, ~29% of the panel's height) then the guesses / time
+ * lines (~19%), dark purple on the light satin. Sizes come from the panel's height in dp (system font scale never resizes
+ * them: the panel is fixed art); every line shrinks to fit the panel's width.
  */
 @Composable
-fun PodiumPedestal(place: Int, height: Dp, modifier: Modifier = Modifier, label: String? = null) {
-    val numbered = label == null || label == "${place.coerceIn(1, 3)}"
-    Box(modifier.fillMaxWidth().height(height).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
-        Image(
-            artPainter(PodiumArt.pedestal(place, numbered), PodiumArt.PEDESTAL), contentDescription = null,
-            contentScale = ContentScale.Fit, modifier = Modifier.matchParentSize(),
+private fun PanelText(score: String, lines: List<String>, panelW: Dp, panelH: Dp, scoreHeight: Double = PodiumArtGeometry.SCORE_HEIGHT) {
+    val scoreSp = with(LocalDensity.current) { (panelH * scoreHeight.toFloat()).toSp() }
+    val lineSp = with(LocalDensity.current) { (panelH * PodiumArtGeometry.DETAIL_HEIGHT.toFloat()).toSp() }
+    Column(
+        Modifier.width(panelW).height(panelH).padding(horizontal = panelW * 0.07f),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+    ) {
+        FitText(
+            score, fontSize = scoreSp, color = PANEL_INK, fontWeight = FontWeight.Black, fontFamily = Nunito,
+            textAlign = TextAlign.Center, minScale = 0.4f, modifier = Modifier.fillMaxWidth(),
         )
-        if (!numbered && label != null) {
-            Text(
-                label, fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White,
-                modifier = Modifier.offset(y = height * 0.12f),
-                style = androidx.compose.ui.text.TextStyle(shadow = Shadow(Color(0x2E000000), Offset(0f, 2f), 0f)),
+        lines.take(2).forEach { line ->
+            FitText(
+                line.uppercase(), fontSize = lineSp, color = PANEL_INK, fontWeight = FontWeight.ExtraBold, fontFamily = Nunito,
+                textAlign = TextAlign.Center, minScale = 0.4f, modifier = Modifier.fillMaxWidth(),
             )
         }
     }
 }
 
-/** The floor plate behind a podium row: full width, [PodiumArt.FLOOR_RISE] × 2 + 4 dp tall, at the bottom. */
-@Composable
-fun PodiumFloor(modifier: Modifier = Modifier) {
-    Image(
-        artPainter(PodiumArt.FLOOR_RES, PodiumArt.FLOOR), contentDescription = null,
-        contentScale = ContentScale.FillBounds,
-        modifier = modifier.fillMaxWidth().height(PodiumArt.FLOOR_RISE * 2 + 4.dp).clearAndSetSemantics { },
-    )
-}
-
-/** The sleepy cast member on an open spot (art-scene-r-asleep, ~373×302). */
-private const val ASLEEP_ASPECT = 373f / 302f
-
-/** Cast colors for the confetti dots (W, O, D, C, I, S). */
-private val CONFETTI = listOf(
-    Color(0xFF8B2CF5), Color(0xFFFF2F91), Color(0xFF0A6CFF), Color(0xFF00B4BE), Color(0xFF4CC77A), Color(0xFFF5A623),
-)
-
-/** Fixed confetti positions (fractions of the stage) + radius in dp. */
-private val CONFETTI_DOTS = listOf(
-    Triple(0.08f, 0.22f, 1.6f), Triple(0.19f, 0.08f, 1.2f), Triple(0.31f, 0.30f, 1.0f),
-    Triple(0.70f, 0.12f, 1.4f), Triple(0.82f, 0.28f, 1.1f), Triple(0.93f, 0.10f, 1.8f),
-    Triple(0.58f, 0.04f, 1.0f),
-)
-
 /**
- * BJ4 the stage backdrop: accent gradient (≈16% at the top → 0 at the pedestal base), the
- * static ray + confetti layer and the floor shadow. Dark mode: the same at lower alphas.
- */
-private fun Modifier.podiumStage(accent: Color, dark: Boolean): Modifier = this.drawBehind {
-    val w = size.width
-    val h = size.height
-    val k = if (dark) 0.6f else 1f
-    drawRect(Brush.verticalGradient(listOf(accent.copy(alpha = 0.16f * k), accent.copy(alpha = 0f)), startY = 0f, endY = h))
-    // ~12 faint sunburst rays fanning down from a point just above the #1 column.
-    val origin = Offset(w / 2f, -h * 0.08f)
-    val reach = h * 1.4f
-    val rayInk = (if (dark) Color.White else accent).copy(alpha = 0.09f * k)
-    val rays = 12
-    val span = Math.toRadians(150.0)
-    val start = Math.toRadians(90.0) - span / 2
-    val step = span / rays
-    for (i in 0 until rays) {
-        val a0 = start + step * i
-        val a1 = a0 + step * 0.45
-        val p = Path().apply {
-            moveTo(origin.x, origin.y)
-            lineTo(origin.x + (cos(a0) * reach).toFloat(), origin.y + (sin(a0) * reach).toFloat())
-            lineTo(origin.x + (cos(a1) * reach).toFloat(), origin.y + (sin(a1) * reach).toFloat())
-            close()
-        }
-        drawPath(p, rayInk)
-    }
-    // 6–8 tiny confetti dots (2–4 px), fixed positions, cast colors at ~50%.
-    CONFETTI_DOTS.forEachIndexed { i, (fx, fy, r) ->
-        drawCircle(CONFETTI[i % CONFETTI.size].copy(alpha = 0.5f * k), r.dp.toPx(), Offset(fx * w, fy * h))
-    }
-    // A soft elliptical floor shadow under the pedestals (radial, black ~10%).
-    val floorH = 14.dp.toPx()
-    val center = Offset(w / 2f, h - floorH * 0.35f)
-    drawOval(
-        Brush.radialGradient(
-            listOf(Color.Black.copy(alpha = 0.10f * k), Color.Black.copy(alpha = 0f)),
-            center = center, radius = w * 0.46f,
-        ),
-        topLeft = Offset(w * 0.04f, h - floorH),
-        size = Size(w * 0.92f, floorH),
-    )
-}
-
-/**
- * BJ4 the board podium: second · first · third, [spots] standing on their gold / silver /
- * bronze steps, [open] places as open spots, over the stage backdrop in [accent]. Put it
- * FIRST inside a board card (lbBoardCard clips it to the card's top corners).
+ * BJ4 / 2.8 the board podium on the one stadium image: [spots] stand with their feet on their step's top center, [open]
+ * places are open spots (the sleepy R and "Open spot · Claim #N" in the panel). The image spans the content width (capped at
+ * [PodiumArt.MAX_WIDTH]; [compact] a smaller copy for Yesterday), height = width / 1.5; the headroom above it holds the
+ * champion's name and head. Put it where the old podium went; the page's season wallpaper stays behind (the art fades out).
  */
 @Composable
 fun BoardPodium(
     spots: List<BoardPodiumSpot>,
     open: List<Int>,
-    accent: Color,
+    @Suppress("UNUSED_PARAMETER") accent: Color,
     modifier: Modifier = Modifier,
-    avatar: Dp = 51.dp,
-    /** 11b: on the Leaderboard stage the shared backdrop already draws the light + glow — no stage of its own. */
-    bare: Boolean = false,
-    /** Founder 10-09: the smaller copy (Yesterday): shorter steps, a smaller figure and type; same glows, points and detail lines. */
+    /** Kept for call-site parity: the stage image carries its own light, glow and floor everywhere now. */
+    @Suppress("UNUSED_PARAMETER") bare: Boolean = false,
+    /** Founder 10-09: the smaller copy (Yesterday): the same stage at a narrower width. */
     compact: Boolean = false,
 ) {
     val byPlace = spots.associateBy { it.place }
-    val dark = WTheme.isDark
     // 2.8 item 13: tapping another player's standing mascot opens their mini Stage card.
     var stageSpot by remember { mutableStateOf<BoardPodiumSpot?>(null) }
     stageSpot?.let { PodiumStageCard(it, it.place) { stageSpot = null } }
-    // 2.8 item 40: the steps are fixed-height art, so huge system text is capped at 1.3x here (reflow lives on the rows below)
+    val geo = PodiumArtGeometry
+    val taunts = spots.any { it.onTaunt != null }
+    // The art is fixed-size, so huge system text is capped here (reflow lives on the rows below).
     CappedFontScale {
-    Box(modifier.fillMaxWidth().then(if (bare) Modifier else Modifier.podiumStage(accent, dark)).padding(start = 10.dp, end = 10.dp, top = if (bare) 2.dp else 8.dp)) {
-    PodiumFloor(Modifier.align(Alignment.BottomCenter))
-    Row(
-        Modifier.fillMaxWidth().padding(bottom = PodiumArt.FLOOR_RISE),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        listOf(2, 1, 3).forEach { place ->
-            val s = byPlace[place]
-            val base = if (compact) 40.dp else avatar
-            val a = if (place == 1) (if (compact) base * 1.22f else base * (60f / 51f)) else base
-            val stepH = when (place) {
-                1 -> if (compact) 62.dp else 64.dp
-                2 -> if (compact) 46.dp else 47.dp
-                else -> if (compact) 34.dp else 35.dp
-            }
-            val stands = s != null && podiumStands(s.username ?: s.name, s.userId, s.avatarUrl, s.config, s.castId, s.frame, s.accentHex)
-            val opensCard = stands && s != null && com.wordocious.app.data.FlagsService.isLive("podium_stage_card") && !com.wordocious.app.data.PlayerAvatars.isOwn(s.userId, s.username ?: s.name)
-            Column(
-                Modifier.weight(1f).then(
-                    when {
-                        s != null && (opensCard || s.onClick != null) -> Modifier.squishClickable(label = A11yLabels.podiumPlace(place, s.name, s.points, s.detail) + (if (opensCard) ". Opens their stage" else "")) {
-                            if (opensCard) stageSpot = s else s.onClick?.invoke()
+        BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+            val w = minOf(maxWidth, if (compact) 300.dp else PodiumArt.MAX_WIDTH)
+            val imgH = PodiumArt.heightFor(w)
+            val density = LocalDensity.current
+            // Figure sizes (mascot box, in dp) scale with the stage width: #1 slightly larger.
+            val fig = { place: Int -> w * (if (place == 1) 0.36f else 0.30f) }
+            val plant = geo.PLANT_PT.dp
+            val nameSlot = 24.dp
+            // Headroom: the gold figure + its name rise above the image's top edge.
+            val goldFeet = imgH * geo.step(1).feetY.toFloat() + plant
+            val headroom = (fig(1) + nameSlot + geo.NAME_GAP_PT.dp - goldFeet).coerceAtLeast(0.dp)
+            val tauntRow = if (taunts) 30.dp else 0.dp
+            Box(Modifier.size(w, headroom + imgH + tauntRow)) {
+                Image(
+                    artPainter(PodiumArt.STAGE_RES, w), contentDescription = null, contentScale = ContentScale.FillBounds,
+                    modifier = Modifier.offset(y = headroom).size(w, imgH).clearAndSetSemantics { },
+                )
+                with(density) {
+                    val wPx = w.toPx(); val imgHPx = imgH.toPx(); val topPx = headroom.toPx()
+                    geo.ORDER.forEach { place ->
+                        val step = geo.step(place)
+                        val s = byPlace[place]
+                        val cx = (step.feetX * wPx).toFloat()
+                        val feetY = topPx + (step.feetY * imgHPx).toFloat() + plant.toPx()
+                        val f = fig(place)
+                        val colW = (wPx * 0.30f).roundToInt()
+                        // ── the stats panel (or the open spot's copy) ──
+                        val pnl = step.panel
+                        val px = (pnl.x0 * wPx).toFloat(); val py = topPx + (pnl.y0 * imgHPx).toFloat()
+                        val pw = ((pnl.x1 - pnl.x0) * wPx).toFloat(); val ph = ((pnl.y1 - pnl.y0) * imgHPx).toFloat()
+                        Box(Modifier.anchoredRect(px, py, pw, ph).clearAndSetSemantics { }) {
+                            if (s != null) {
+                                PanelText(s.points, s.lines ?: podiumDetailLines(s.detail), pw.toDp(), ph.toDp())
+                            } else if (place in open) {
+                                val spot = podiumOpenSpot(place)
+                                PanelText(spot.title, listOf(spot.line), pw.toDp(), ph.toDp(), scoreHeight = 0.24)
+                            }
                         }
-                        s != null -> Modifier.semantics(mergeDescendants = true) { contentDescription = A11yLabels.podiumPlace(place, s.name, s.points, s.detail) }
-                        place in open -> Modifier.semantics(mergeDescendants = true) {
-                            contentDescription = A11yLabels.podiumOpenSpot(place)
-                        }
-                        else -> Modifier
-                    },
-                ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                if (s != null) {
-                    // Founder 10-09: the name rides ABOVE the head in the bubble lettering (their color, one line, glow in their
-                    // secondary color); the plaque below holds the numbers. Close to the head: standing figures pull it down 18 dp
-                    // (the winner only 4 dp so it stays above the crown), a photo tile 2 dp.
-                    PodiumNameAbove(
-                        s.name, s.userId, s.username ?: s.name, size = if (compact) 14f else (if (place == 1) 19f else 16f),
-                        pull = if (stands) (if (place == 1) 10.dp else 18.dp) else 2.dp,
-                        avatarUrl = s.avatarUrl, config = s.config, castId = s.castId, frame = s.frame, accentHex = s.accentHex,
-                    )
-                    // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step (2x, no tile, posed by place).
-                    if (stands) {
-                        Box(
-                            Modifier.padding(bottom = 0.dp).offset(y = PODIUM_FOOT_OVERLAP).zIndex(1f)
-                                .podiumGlow(place, a * PODIUM_FIGURE_SCALE, (a * PODIUM_FIGURE_SCALE) / 2),
-                            contentAlignment = Alignment.TopCenter,
-                        ) {
-                            // the winner's confetti burst opens once on load
-                            if (place == 1 && com.wordocious.app.data.FlagsService.isLive("podium_burst")) PodiumBurst()
-                            PlayerAvatar(
-                                s.username ?: s.name, a * PODIUM_FIGURE_SCALE, Modifier,
-                                userId = s.userId, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
-                                frame = s.frame, accentHex = s.accentHex, podiumPlace = place,
+                        // ── the standing figure + name ──
+                        if (s != null) {
+                            val stands = podiumStands(s.username ?: s.name, s.userId, s.avatarUrl, s.config, s.castId, s.frame, s.accentHex)
+                            val opensCard = stands && com.wordocious.app.data.FlagsService.isLive("podium_stage_card") &&
+                                !com.wordocious.app.data.PlayerAvatars.isOwn(s.userId, s.username ?: s.name)
+                            val figure = if (stands) f else f * 0.5f
+                            // the contact shadow, under the feet
+                            Box(
+                                Modifier.anchoredRect(
+                                    cx - figure.toPx() * geo.SHADOW_WIDTH.toFloat() / 2f, feetY - figure.toPx() * 0.05f,
+                                    figure.toPx() * geo.SHADOW_WIDTH.toFloat(), figure.toPx() * 0.10f,
+                                ).clearAndSetSemantics { }.drawBehind {
+                                    drawOval(
+                                        Brush.radialGradient(
+                                            listOf(Color(0xFF14002B).copy(alpha = 0.55f), Color(0xFF14002B).copy(alpha = 0f)),
+                                            center = Offset(size.width / 2f, size.height / 2f), radius = size.width / 2f,
+                                        ),
+                                        topLeft = Offset.Zero, size = Size(size.width, size.height),
+                                    )
+                                },
+                            ) {}
+                            Column(
+                                Modifier.anchoredBottomCenter(cx, feetY + (if (place == 1 && stands) figure.toPx() * CHEER_FEET_DROP else 0f), colW)
+                                    .width(colW.toDp())
+                                    .then(
+                                        when {
+                                            opensCard || s.onClick != null -> Modifier.squishClickable(
+                                                label = A11yLabels.podiumPlace(place, s.name, s.points, s.detail) + (if (opensCard) ". Opens their stage" else ""),
+                                            ) { if (opensCard) stageSpot = s else s.onClick?.invoke() }
+                                            else -> Modifier.semantics(mergeDescendants = true) { contentDescription = A11yLabels.podiumPlace(place, s.name, s.points, s.detail) }
+                                        },
+                                    ),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                // Founder 10-09: the name rides ABOVE the head in the bubble lettering (their color, one line,
+                                // glow in their secondary color); the winner's pull keeps it above the crown.
+                                PodiumNameAbove(
+                                    s.name, s.userId, s.username ?: s.name,
+                                    size = if (compact) 14f else (if (place == 1) 19f else 16f),
+                                    pull = if (stands) (if (place == 1) 12.dp else 20.dp) - geo.NAME_GAP_PT.dp + 8.dp else 2.dp,
+                                    avatarUrl = s.avatarUrl, config = s.config, castId = s.castId, frame = s.frame, accentHex = s.accentHex,
+                                )
+                                Box(Modifier.zIndex(1f), contentAlignment = Alignment.TopCenter) {
+                                    // the winner's confetti burst opens once on load
+                                    if (place == 1 && com.wordocious.app.data.FlagsService.isLive("podium_burst")) {
+                                        // overlay only: the burst never sizes the figure's box
+                                        Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) { PodiumBurst() }
+                                    }
+                                    PlayerAvatar(
+                                        s.username ?: s.name, figure, Modifier,
+                                        userId = s.userId, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
+                                        frame = s.frame, accentHex = s.accentHex, podiumPlace = if (stands) place else null,
+                                    )
+                                    // the crown sits ON the first place's head
+                                    if (place == 1) Icon3D(Icon3DName.CROWN, if (compact) 28.dp else 34.dp, Modifier.offset(y = -(figure * if (stands) 0.05f else 0.12f)))
+                                }
+                            }
+                        } else if (place in open) {
+                            // the sleepy cast member keeps the open step company
+                            val rW = w * 0.20f
+                            Image(
+                                painterResource(com.wordocious.app.R.drawable.art_scene_r_asleep), contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.anchoredBottomCenter(cx, feetY, rW.roundToPx()).width(rW).height(rW / ASLEEP_ASPECT)
+                                    .semantics(mergeDescendants = true) { contentDescription = A11yLabels.podiumOpenSpot(place) },
                             )
-                            // the crown sits ON the first place's head
-                            if (place == 1) Icon3D(Icon3DName.CROWN, if (compact) 28.dp else 34.dp, Modifier.offset(y = -(a * PODIUM_FIGURE_SCALE * 0.05f)))
                         }
-                    } else Box(
-                        Modifier.podiumGlow(place, a, (if (place == 1) 18.dp else 0.dp) + a / 2),
-                        contentAlignment = Alignment.TopCenter,
-                    ) {
-                        PlayerAvatar(
-                            s.username ?: s.name, a, Modifier.padding(top = if (place == 1) 18.dp else 0.dp),
-                            userId = s.userId, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
-                            frame = s.frame, accentHex = s.accentHex,
-                        )
-                        if (place == 1) Icon3D(Icon3DName.CROWN, if (compact) 24.dp else 26.dp)
+                        // Friends board: the taunt bell stays reachable under the stage, centered on the step.
+                        s?.onTaunt?.let { taunt ->
+                            Box(Modifier.anchoredBottomCenter(cx, topPx + imgHPx + tauntRow.toPx(), colW)) {
+                                SoftControl(Icon3DName.BELL, "Taunt ${s.name}", taunt, iconSize = 16.dp)
+                            }
+                        }
                     }
-                    // Name, points and detail ride on a plaque above the step that wears the player's own backdrop (fill) and frame
-                    // (border); the ink follows the fill's brightness (founder 10-09, parity with iOS PlayerTint).
-                    PodiumPlaque(
-                        s.userId, s.username ?: s.name, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
-                        frame = s.frame, accentHex = s.accentHex,
-                    ) { ink ->
-                        // Points stay the bubble-lettered headline (#1 a touch larger); the detail parts sit under it in plain heavy type,
-                        // one per line (founder 10-10: the single shrunken bubble line was unreadable).
-                        BubbleOneLine(s.points.uppercase(), ink.palette, (if (compact) 14f else 17f) + (if (place == 1) 2f else 0f))
-                        s.detail?.takeIf { it.isNotEmpty() }?.let { d -> PlaqueDetail(d, ink, compact) }
-                    }
-                    // Friends board: the taunt bell stays reachable for friends on the podium.
-                    s.onTaunt?.let { taunt ->
-                        SoftControl(Icon3DName.BELL, "Taunt ${s.name}", taunt, iconSize = 16.dp)
-                    }
-                } else if (place in open) {
-                    val spot = podiumOpenSpot(place)
-                    Box(Modifier.padding(top = if (place == 1) 18.dp else 0.dp).height(a), contentAlignment = Alignment.BottomCenter) {
-                        Image(
-                            painterResource(com.wordocious.app.R.drawable.art_scene_r_asleep), contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.height(a).width(a * ASLEEP_ASPECT).clearAndSetSemantics { },
-                        )
-                    }
-                    Text(
-                        spot.title, fontSize = 13.sp, fontWeight = FontWeight.Black,
-                        color = (if (dark) WTheme.text else FinishInk.heading).copy(alpha = 0.7f),
-                        maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        spot.line, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
-                        color = if (dark) WTheme.textMuted else LB_SUB_INK,
-                        maxLines = 1, textAlign = TextAlign.Center,
-                    )
                 }
-                // Open spots: the pedestal art softly dimmed.
-                PodiumPedestal(place, stepH, Modifier.alpha(if (s == null) 0.45f else 1f))
-            }
-        }
-    }
-    }
-    }
-}
-
-
-
-/**
- * Podium glow (2.8 TestFlight feedback: "a glow behind the characters so they stand out"): a soft radial light behind a
- * standing figure, one clearly different hue per metal (1st warm gold with a few twinkling sparkles, 2nd cool silver, 3rd copper
- * bronze). Drawn BEHIND the figure (drawBehind), transparent by its rim; the sparkles hold still under calm motion. [figure] is
- * the figure's height and [centerY] its vertical center within the box. Mirrors web PODIUM_GLOW and iOS PodiumGlow hex-for-hex.
- */
-@Composable
-private fun Modifier.podiumGlow(place: Int, figure: Dp, centerY: Dp): Modifier {
-    val calm = WTheme.calmMotion
-    val tone = place.coerceIn(1, 3)
-    val phase = if (calm || tone != 1) null else rememberInfiniteTransition(label = "podium-twinkle")
-        .animateFloat(0f, 1f, infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart), label = "p")
-    return this.drawBehind {
-        val (core, alpha, scale) = when (tone) {
-            1 -> Triple(Color(0xFFFFC93C), 0.8f, 1.55f)
-            2 -> Triple(Color(0xFFB4C8EE), 0.75f, 1.4f)
-            else -> Triple(Color(0xFFF28A3B), 0.7f, 1.4f)
-        }
-        val d = figure.toPx() * scale
-        val c = Offset(size.width / 2f, centerY.toPx())
-        drawCircle(
-            Brush.radialGradient(
-                0f to core.copy(alpha = alpha), 0.54f to core.copy(alpha = alpha * 0.45f), 1f to core.copy(alpha = 0f),
-                center = c, radius = d / 2f,
-            ),
-            radius = d / 2f, center = c,
-        )
-        if (tone == 1) {
-            val topLeft = Offset(c.x - d / 2f, c.y - d / 2f)
-            val t = phase?.value
-            PODIUM_SPARKLES.forEach { (fx, fy, px, delay) ->
-                val k = if (t == null) 1f else 0.7f + 0.4f * wave(t, delay)
-                val a = if (t == null) 0.85f else 0.35f + 0.65f * wave(t, delay)
-                val r = px.dp.toPx() * k / 2f
-                val ctr = Offset(topLeft.x + d * fx, topLeft.y + d * fy)
-                val star = Path().apply {
-                    moveTo(ctr.x, ctr.y - r)
-                    lineTo(ctr.x + r * 0.24f, ctr.y - r * 0.24f); lineTo(ctr.x + r, ctr.y)
-                    lineTo(ctr.x + r * 0.24f, ctr.y + r * 0.24f); lineTo(ctr.x, ctr.y + r)
-                    lineTo(ctr.x - r * 0.24f, ctr.y + r * 0.24f); lineTo(ctr.x - r, ctr.y)
-                    lineTo(ctr.x - r * 0.24f, ctr.y - r * 0.24f); close()
-                }
-                drawPath(star, Color(0xFFFFF1B8).copy(alpha = a))
             }
         }
     }
 }
 
-/** 0..1..0 over a phase (0..1) shifted by [delaySec] of the 2.6 s cycle. */
-private fun wave(phase: Float, delaySec: Float): Float =
-    (0.5f - 0.5f * cos(2.0 * Math.PI * (phase + delaySec / 2.6f)).toFloat())
-
-/** The gold glow's sparkles: (x, y) as fractions of the glow, size dp, delay s. Same as web PODIUM_SPARKLES. */
-private val PODIUM_SPARKLES = listOf(
-    Sparkle(0.14f, 0.30f, 9f, 0f), Sparkle(0.86f, 0.24f, 7f, 0.7f), Sparkle(0.24f, 0.74f, 6f, 1.3f), Sparkle(0.80f, 0.68f, 8f, 0.35f),
-)
-
-private data class Sparkle(val fx: Float, val fy: Float, val px: Float, val delay: Float)
 
 /**
  * 2.8 item 13: the winner's confetti burst, once, as the podium opens (the celebration kit's party burst, the season's swap

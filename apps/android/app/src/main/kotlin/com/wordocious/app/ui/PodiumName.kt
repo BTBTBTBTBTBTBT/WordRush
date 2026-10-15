@@ -37,81 +37,7 @@ import com.wordocious.core.PlayerTint
 import com.wordocious.core.avatarColorHex
 import kotlinx.serialization.json.JsonElement
 
-/** The three inks of a podium plaque, picked for contrast against its fill (founder 10-09). */
-class PlaqueInk(val lightInk: Boolean) {
-    val heading: Color = if (lightInk) Color.White else Color(0xFF2A1650)
-    val muted: Color = if (lightInk) Color.White.copy(alpha = 0.82f) else Color(0xFF5B4B7A)
-    /** The gold highlight (FLAWLESS / streak): bright gold on dark, deep amber on light. */
-    val badge: Color = if (lightInk) Color(0xFFF5B82E) else Color(0xFFB45309)
-    /** The plain detail lines (guesses / time): white on a dark plate, the deepest violet on a pale one. */
-    val detail: Color = if (lightInk) Color.White else Color(0xFF2E1065)
-    /**
-     * The bubble lettering on the plate (founder 10-09): purple letters + numbers with a white outline on a pale plate; white
-     * letters + gold numbers (dark outline) on a dark one. Mirrors iOS PlayerTint.platePalette.
-     */
-    val palette: HeadlinePalette = if (lightInk) {
-        HeadlinePalette(
-            top = Color.White, bottom = Color(0xFFEDE9FE), deep = Color(0xFF3B0764), nameTop = Color.White, nameBottom = Color(0xFFEDE9FE),
-            outline = Color(0xFF4C1D95), numberTop = Color(0xFFFFE07A), numberBottom = Color(0xFFF5A524), rim = Color(0xFF4C1D95),
-        )
-    } else {
-        HeadlinePalette(
-            // Founder 10-10 (podium stats hard to read): deep violet on the pale plate (was a light-to-mid purple, ~3:1).
-            top = Color(0xFF7C3AED), bottom = Color(0xFF4C1D95), deep = Color(0xFF2E1065), nameTop = Color(0xFF7C3AED), nameBottom = Color(0xFF4C1D95),
-            outline = Color.White, numberTop = Color(0xFF7C3AED), numberBottom = Color(0xFF4C1D95), rim = Color.White,
-        )
-    }
-}
-
 private fun hex(c: String): Color = Color(android.graphics.Color.parseColor(c))
-
-private fun List<String>.fillBrush(diagonal: Boolean): Brush {
-    val colors = map(::hex).let { if (it.size > 1) it else listOf(it[0], it[0]) }
-    return if (diagonal) Brush.linearGradient(colors) else Brush.verticalGradient(colors)
-}
-
-/**
- * Founder 10-09: the name / points / badge / detail plaque under a podium player wears THEIR mascot-maker backdrop
- * (the fill, a top-left to bottom-right gradient) and frame (the border), 12 dp radius and a soft shadow; the ink follows
- * the fill's brightness so the stats read on any backdrop. Colors come from core PlayerTint (pinned to TS and Swift by
- * player-tint-fixtures.json), the config from the same resolver the avatar uses.
- */
-@Composable
-fun PodiumPlaque(
-    userId: String?,
-    username: String?,
-    avatarUrl: String? = null,
-    config: JsonElement? = null,
-    castId: String? = null,
-    frame: String? = null,
-    accentHex: String? = null,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.(PlaqueInk) -> Unit,
-) {
-    val row = remember(userId, username, avatarUrl, config, castId, frame, accentHex) {
-        AvatarFields(userId, username, avatarUrl, config, castId, frame, accentHex)
-    }
-    // Reads snapshot state (the directory + the own profile patch), like the avatar above it: recomposes on a lookup / an edit.
-    val cfg = PlayerAvatars.resolve(row).config
-    if (row.isPartial) {
-        LaunchedEffect(userId, username) {
-            if (PlayerAvatars.known(userId, username)?.complete != true) PlayerAvatars.requestLookup(userId, username)
-        }
-    }
-    val plate = remember(cfg.bg, cfg.frame, cfg.color) { PlayerTint.plateHexes(cfg.bg, cfg.frame, avatarColorHex(cfg.color)) }
-    val ink = remember(plate.lightInk) { PlaqueInk(plate.lightInk) }
-    val shape = RoundedCornerShape(12.dp)
-    val border = if (plate.border.size > 1) plate.border.fillBrush(diagonal = false) else SolidColor(hex(plate.border[0]))
-    Column(
-        modifier.zIndex(2f)
-            .shadow(3.dp, shape, clip = false, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.18f))
-            .background(plate.fill.fillBrush(diagonal = true), shape)
-            .border(plate.borderWidth.dp, border, shape)
-            .padding(PaddingValues(horizontal = 10.dp, vertical = 4.dp)),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) { content(ink) }
-}
-
 
 /**
  * Founder 10-09: the player's NAME rides ABOVE their head in the bubble lettering, one line that shrinks to fit (never wraps or
@@ -190,27 +116,4 @@ fun rememberPlayerNamePalette(
     }
     val cfg = PlayerAvatars.resolve(row).config
     return remember(cfg.bg, cfg.color, WTheme.isDark) { ThemeKit.accentPalette(hex(PlayerTint.nameHex(cfg.bg, avatarColorHex(cfg.color)))) }
-}
-
-/**
- * Founder 10-10 ("the stats for the podium winners are hard to read"): the detail ("3 GUESSES · 1M 14S") was one bubble-lettered
- * line allowed to shrink to 55% (~6 sp). Each part now gets its own line in plain heavy type that barely shrinks.
- */
-@Composable
-fun PlaqueDetail(detail: String, ink: PlaqueInk, compact: Boolean) {
-    // At most two lines: the first part, then the rest ("8 GUESSES" / "48S · 4/4"), parity with iOS PodiumView.detailLines.
-    val parts = detail.split("·").map { it.trim() }.filter { it.isNotEmpty() }
-    // Founder 10-12 ("3M 13S · 2/4 · 1 HI…"): with time, boards AND hints the hints part joins the first line instead.
-    val h = parts.indices.drop(1).firstOrNull { parts[it].contains("hint", ignoreCase = true) }
-    val lines = when {
-        parts.size <= 1 -> parts
-        parts.size >= 3 && h != null -> listOf("${parts.first()} · ${parts[h]}", parts.filterIndexed { i, _ -> i != 0 && i != h }.joinToString(" · "))
-        else -> listOf(parts.first(), parts.drop(1).joinToString(" · "))
-    }
-    lines.forEach { part ->
-        FitText(
-            part.uppercase(), fontSize = (if (compact) 10.5f else 12f).sp, color = ink.detail,
-            fontWeight = FontWeight.ExtraBold, letterSpacing = 0.3.sp, minScale = 0.8f,
-        )
-    }
 }

@@ -370,10 +370,10 @@ internal fun castColorForAccent(r: Float, g: Float, b: Float): CastColor {
 }
 
 /** The main stage podium's one fixed min height (founder 10-09; iOS stagePodiumHeight 240): no shift switching games. */
-internal val STAGE_PODIUM_HEIGHT = 240.dp
+internal val STAGE_PODIUM_HEIGHT = 280.dp
 
 /** Yesterday's small podium keeps one fixed height (founder 10-09) so the page never jumps while it loads. */
-internal val YESTERDAY_PODIUM_HEIGHT = 230.dp
+internal val YESTERDAY_PODIUM_HEIGHT = 250.dp
 
 /**
  * Yesterday (founder 10-09): it sits UNDER today's last player and the Completed Today line (not inside the stage), and
@@ -431,11 +431,11 @@ internal fun StageYesterdayLedge(
         // Founder 10-09: open (the default) shows the small podium + everyone else; minimizing folds it all to the header line.
         if (open && !empty) {
             Box(
-                Modifier.fillMaxWidth().height(YESTERDAY_PODIUM_HEIGHT),
+                Modifier.fillMaxWidth().heightIn(min = YESTERDAY_PODIUM_HEIGHT),
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 if (!loading) {
-                    Box(Modifier.widthIn(max = 360.dp).fillMaxWidth()) {
+                    Box(Modifier.fillMaxWidth()) {
                         BoardPodium(
                             minis.take(3), open = (minOf(minis.size, 3) + 1..3).toList(), accent = accent,
                             bare = true, compact = true,
