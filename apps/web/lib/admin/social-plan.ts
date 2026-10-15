@@ -239,7 +239,7 @@ export const PLAN_SETUP: readonly PlanTask[] = [
   {
     id: 'S3', owner: 'BMT', status: 'in progress', doneOn: null,
     task: 'Bios: one line ("18 daily games. One score.") plus the wordocious.com link carrying a per-channel attribution parameter from admin Marketing. Verify the landing-visit beacons fire.',
-    note: 'Live 10-14 on X, Instagram, TikTok, Facebook and Pinterest, each with its own /go link (TikTok and Facebook carry it in the bio text). Left: Instagram\'s website link can only be added in the phone app (add https://wordocious.com/go/instagram under Edit profile > Links); Threads, YouTube and LinkedIn wait for those profiles.',
+    note: 'Live 10-14 on X, Instagram, TikTok, Facebook and Pinterest, each with its own /go link (TikTok and Facebook carry it in the bio text). Instagram\'s link ("Play free", /go/instagram) was added by the founder in the app 10-14. Left: Threads, YouTube and LinkedIn wait for those profiles.',
     links: [
       { label: 'X', href: 'https://x.com/wordocious' },
       { label: 'Instagram', href: 'https://instagram.com/playwordocious' },
@@ -282,6 +282,7 @@ export interface AccountChange { date: string; channel: string; change: string }
 
 /** Live changes made on the real accounts, newest first. Append at the top whenever an account is touched. */
 export const PLAN_ACCOUNT_LOG: readonly AccountChange[] = [
+  { date: '2026-10-14', channel: 'Instagram', change: 'Link added in the app by the founder: "Play free" → https://wordocious.com/go/instagram.' },
   { date: '2026-10-14', channel: 'Pinterest', change: 'Boards created: Daily Games, Meet the Cast, Game Guides. Profile About rewritten; website https://wordocious.com/go/pinterest.' },
   { date: '2026-10-14', channel: 'Facebook', change: 'Bio: "18 daily games. One score. Bring your family. Play free at wordocious.com/go/facebook".' },
   { date: '2026-10-14', channel: 'TikTok', change: 'Bio: "18 daily games. One score. A cast with opinions. wordocious.com/go/tiktok" (no clickable link field on this account yet).' },
