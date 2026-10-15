@@ -297,7 +297,7 @@ function OpenStep({ step, title, line, w }: { step: 1 | 2 | 3; title: string; li
 /**
  * The podium: the places in board order (1st, 2nd, 3rd; DOM = reading order) standing on the one-image stage, with an open
  * spot for every free place (BJ4, core podiumLayout). Spans its container's width (the image is 3:2), tablets scale with the
- * page (max 1000). The mascots and names overflow the image's top, so the box keeps headroom (a % of its width).
+ * page up to core PODIUM_ART.maxWidthPt (680, so the whole podium fits above the tab bar). The mascots and names overflow the image's top, so the box keeps headroom (a % of its width).
  */
 export function Podium({ places, label = 'Top three' }: { places: PodiumPlace[]; label?: string }) {
   const shown = places.slice(0, 3);
@@ -306,7 +306,7 @@ export function Podium({ places, label = 'Top three' }: { places: PodiumPlace[];
   const w = useBoxWidth(ref);
   if (slots.length === 0) return null;
   return (
-    <div role="group" aria-label={label} ref={ref} className="relative w-full mx-auto" style={{ maxWidth: 1000, paddingTop: 'calc(13% + 30px)' }}>
+    <div role="group" aria-label={label} ref={ref} className="relative w-full mx-auto" style={{ maxWidth: PODIUM_ART.maxWidthPt, paddingTop: 'calc(13% + 30px)' }}>
       <div className="relative w-full" style={{ aspectRatio: String(PODIUM_ART.aspect) }}>
         {/* the stage: static, decoded once (the soft fade melts into the page wallpaper behind it) */}
         {/* eslint-disable-next-line @next/next/no-img-element */}

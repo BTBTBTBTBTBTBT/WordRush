@@ -156,6 +156,7 @@
   ],
   "art": {
     "aspect": 1.5,
+    "maxWidthPt": 680,
     "plantPt": 5,
     "nameGapPt": 12,
     "headTop": 0.04,

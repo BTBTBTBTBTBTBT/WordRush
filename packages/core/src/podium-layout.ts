@@ -41,6 +41,12 @@ export interface PodiumArtStep { place: 1 | 2 | 3; feet: PodiumArtPoint; panel: 
 export const PODIUM_ART = {
   /** Image width / height (1536 x 1024). */
   aspect: 1.5,
+  /**
+   * Tablets (founder 10-15): the stage never grows past this many points wide (the web / iOS / Android page cap used to be 1000,
+   * which pushed an iPad Pro 13's stat panels under the tab bar). 680 pt keeps the WHOLE podium (names, mascots, steps, panels)
+   * between the "#N of M" row and the tab bar in portrait; centered. Phones (< 680) are unchanged.
+   */
+  maxWidthPt: 680,
   /** Mascot lands this many points lower than the step-top center so it looks planted. */
   plantPt: 5,
   /**

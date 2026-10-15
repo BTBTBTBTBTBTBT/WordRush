@@ -6,6 +6,7 @@ import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { BoardAvatar } from '@/components/leaderboard/board-rows';
 import { Icon3D } from '@/components/ui/icon3d';
+import { clampAvatarSize } from '@/lib/avatar-render';
 import { useLivingMascotOn } from '@/hooks/use-flags';
 import type { PodiumPlace } from '@/components/leaderboard/podium';
 
@@ -35,9 +36,15 @@ export function PodiumFigure({ place, tone, size, ring, planted = false, crown =
   if (livingOn && !look.url) {
     const big = size * PODIUM_FIGURE_SCALE;
     const posed = { ...look.config, pose: avatarPlacePose(tone) };
+    // MascotAvatar clamps its size to 200 px. A wider stage (a tablet) asks for more, so the avatar would draw at 200 at the box's
+    // TOP and float above its step: draw it at the clamped size and scale it up from the bottom center instead (feet stay put).
+    const drawn = clampAvatarSize(big);
+    const k = big / drawn;
     return (
       <span className="relative block" style={{ width: big, height: big, lineHeight: 0, marginBottom: planted ? 0 : -PODIUM_FOOT_OVERLAP, zIndex: 1 }}>
-        <MascotAvatar config={posed as typeof look.config} initial={look.initial} size={big} cutout living />
+        <span className="absolute block" style={{ left: '50%', bottom: 0, width: drawn, height: drawn, marginLeft: -drawn / 2, transform: k === 1 ? undefined : `scale(${k})`, transformOrigin: '50% 100%' }}>
+          <MascotAvatar config={posed as typeof look.config} initial={look.initial} size={drawn} cutout living />
+        </span>
         {tone === 1 && crown && (
           <span
             className={intro ? 'podium-crown' : undefined}
