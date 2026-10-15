@@ -186,16 +186,99 @@ export const PLAN_KPIS: readonly PlanKpi[] = [
 export const PLAN_KPI_NOTE =
   'Working targets, not promises: the channels have no history, so the Week 2 Monday review re-bases them against actuals. Fill the actuals at each Monday review. A variance over 25% on installs or share rate gets a one-line written cause. Kill rule: a series under 1% engagement across 4 consecutive posts is replaced; a video over 5x median views gets 3 follow-on variants within a week.';
 
-export interface PlanTask { id: string; task: string; owner: 'JP' | 'BMT'; note?: string }
+export type SetupStatus = 'done' | 'in progress' | 'pending' | 'n/a';
 
+export interface PlanLink {
+  label: string;
+  /** Absolute URL. */
+  href: string;
+}
+
+export interface PlanTask {
+  id: string;
+  task: string;
+  owner: 'JP' | 'BMT';
+  status: SetupStatus;
+  /** YYYY-MM-DD the task was finished (or, for n/a, superseded). Null until then. */
+  doneOn: string | null;
+  /** One line on where it stands now. */
+  note: string;
+  /** Live things worth opening: the bio URL, the board URL, the pinned post. Add them here when they exist. */
+  links: readonly PlanLink[];
+  /** Launch-kit doc ids (lib/admin/launch-kit.ts) that carry this task's drafts. */
+  kit?: readonly string[];
+}
+
+/**
+ * Setup tasks S1-S7 and their live status. THE ONE ARRAY TO UPDATE as work lands: change `status`, set `doneOn`,
+ * rewrite `note`, add `links`. The Plan tab's "Launch setup" checklist reads it directly.
+ */
 export const PLAN_SETUP: readonly PlanTask[] = [
-  { id: 'S1', owner: 'JP', task: 'Map the posting tool to the channel accounts.', note: 'Superseded: accounts connect in Social Studio (Accounts, on the Calendar tab) and posts publish from there.' },
-  { id: 'S2', owner: 'JP', task: 'Install the social package: profile pictures (icon B, the W mascot), X header, FB cover, IG highlight covers, TikTok and YouTube banners, Pinterest boards, LinkedIn covers.' },
-  { id: 'S3', owner: 'BMT', task: 'Bios: one line ("18 daily games. One score.") plus the wordocious.com link carrying a per-channel attribution parameter from admin Marketing. Verify the landing-visit beacons fire.' },
-  { id: 'S4', owner: 'JP', task: 'Pinned posts: launch trailer (X, FB) and Meet-the-Cast slide 1 (IG).' },
-  { id: 'S5', owner: 'BMT', task: 'Capture kit: run the -storeShot set plus 5 raw screen recordings (Classic solve, OctoWord reveal cascade, VS match vs a bot, Muddle solve, Halloween opening animation) into a shared folder.' },
-  { id: 'S6', owner: 'JP', task: 'Press one-pager PDF plus a 15-name list (puzzle newsletters, indie-game press, daily-word-game writers). Product Hunt assets drafted, hunter confirmed.' },
-  { id: 'S7', owner: 'JP', task: 'Teasers: 3 countdown posts Oct 13-15 (cast silhouettes, "18 games. 4 days."). The only pre-launch content.' },
+  {
+    id: 'S1', owner: 'JP', status: 'n/a', doneOn: '2026-10-14',
+    task: 'Map the posting tool to the channel accounts.',
+    note: 'Superseded: accounts connect in Social Studio (Accounts tab) and posts publish from there once BMT and JP approve.',
+    links: [],
+  },
+  {
+    id: 'S2', owner: 'JP', status: 'in progress', doneOn: null,
+    task: 'Install the social package: profile pictures (icon B, the W mascot), X header, FB cover, IG highlight covers, TikTok and YouTube banners, Pinterest boards, LinkedIn covers.',
+    note: 'Done 10-14: icon B profile pictures on Facebook, Instagram, TikTok, X and Pinterest; Facebook cover; X header. Left: IG highlight covers, Pinterest boards, YouTube banner, LinkedIn covers (Claude sets these in the founder\'s Chrome once the art is final).',
+    links: [
+      { label: 'X', href: 'https://x.com/wordocious' },
+      { label: 'Instagram', href: 'https://instagram.com/playwordocious' },
+      { label: 'TikTok', href: 'https://tiktok.com/@playwordocious' },
+      { label: 'Facebook', href: 'https://facebook.com/wordocious' },
+      { label: 'Pinterest', href: 'https://pinterest.com/wordocious' },
+    ],
+  },
+  {
+    id: 'S3', owner: 'BMT', status: 'pending', doneOn: null,
+    task: 'Bios: one line ("18 daily games. One score.") plus the wordocious.com link carrying a per-channel attribution parameter from admin Marketing. Verify the landing-visit beacons fire.',
+    note: 'Bios and the per-channel /go links are drafted and the links are live (linkedin, producthunt and press added 10-14). Not yet set on the profiles: Claude does that in the founder\'s Chrome once ready; add each live bio URL below.',
+    links: [{ label: 'Channel links and clicks (Marketing)', href: '/admin/marketing' }],
+    kit: ['bios'],
+  },
+  {
+    id: 'S4', owner: 'JP', status: 'pending', doneOn: null,
+    task: 'Pinned posts: launch trailer (X, FB) and Meet-the-Cast slide 1 (IG).',
+    note: 'Waits for the launch posts on Oct 16. Add the pinned-post URLs below when they are live.',
+    links: [],
+    kit: ['founder-posts'],
+  },
+  {
+    id: 'S5', owner: 'BMT', status: 'in progress', doneOn: null,
+    task: 'Capture kit: run the -storeShot set plus 5 raw screen recordings (Classic solve, OctoWord reveal cascade, VS match vs a bot, Muddle solve, Halloween opening animation) into a shared folder.',
+    note: 'Recordings are being captured from the demo-shot harness (docs/design/brand/social/jp45/video).',
+    links: [],
+  },
+  {
+    id: 'S6', owner: 'JP', status: 'in progress', doneOn: null,
+    task: 'Press one-pager PDF plus a 15-name list (puzzle newsletters, indie-game press, daily-word-game writers). Product Hunt assets drafted, hunter confirmed.',
+    note: 'Drafted 10-14: one-pager, 15-target press list, four emails, Product Hunt copy, founder posts. One-pager PDF built (docs/marketing/jp45). Open: JP edits, hunter confirmation, YouTuber names.',
+    links: [],
+    kit: ['press-one-pager', 'press-list', 'press-emails', 'product-hunt'],
+  },
+  {
+    id: 'S7', owner: 'JP', status: 'in progress', doneOn: null,
+    task: 'Teasers: 3 countdown posts Oct 13-15 (cast silhouettes, "18 games. 4 days."). The only pre-launch content.',
+    note: 'Oct 13 and Oct 14 teasers are past. The Oct 15 teaser is drafted with art; it goes out with approval.',
+    links: [{ label: 'Open Oct 15 on the calendar', href: '/admin/studio?tab=calendar' }],
+  },
+];
+
+export interface AccountChange { date: string; channel: string; change: string }
+
+/** Live changes made on the real accounts, newest first. Append at the top whenever an account is touched. */
+export const PLAN_ACCOUNT_LOG: readonly AccountChange[] = [
+  { date: '2026-10-14', channel: 'Marketing', change: 'Tracked links added for LinkedIn, Product Hunt and press (/go/linkedin, /go/producthunt, /go/press); the other eight channel links already existed.' },
+  { date: '2026-10-14', channel: 'Pinterest', change: 'JP invited as Manager (jp@pattersonlp.com).' },
+  { date: '2026-10-14', channel: 'TikTok', change: 'TikTok Business Center created and JP invited.' },
+  { date: '2026-10-14', channel: 'Instagram', change: 'Connected to the Facebook Page.' },
+  { date: '2026-10-14', channel: 'Instagram and TikTok', change: 'Handles changed to @playwordocious (@wordocious is held by dormant accounts).' },
+  { date: '2026-10-14', channel: 'X', change: 'Header refreshed.' },
+  { date: '2026-10-14', channel: 'Facebook', change: 'Cover refreshed; Page username set to wordocious.' },
+  { date: '2026-10-14', channel: 'Facebook, Instagram, TikTok, X, Pinterest', change: 'Profile pictures set to icon B (the W mascot).' },
 ];
 
 export interface CopySlot { slot: string; copy: string }

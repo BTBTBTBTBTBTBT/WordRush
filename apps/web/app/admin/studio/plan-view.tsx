@@ -1,12 +1,13 @@
 'use client';
 
 import { Fragment, useState } from 'react';
-import { CalendarDays, Check, Clapperboard, Copy, Video } from 'lucide-react';
+import { CalendarDays, Check, ChevronDown, Clapperboard, Copy, ExternalLink, Printer, Video } from 'lucide-react';
 import {
-  dayLabel, needsCapture, PLAN_ANCHORS, PLAN_CHANNELS, PLAN_CHECKPOINTS, PLAN_COLLAPSE_NOTE, PLAN_COPY_PACK, PLAN_DAY_CHANNELS, PLAN_DAY_OWNER,
+  dayLabel, needsCapture, PLAN_ACCOUNT_LOG, PLAN_ANCHORS, PLAN_CHANNELS, PLAN_CHECKPOINTS, PLAN_COLLAPSE_NOTE, PLAN_COPY_PACK, PLAN_DAY_CHANNELS, PLAN_DAY_OWNER,
   PLAN_DAYS, PLAN_GUARDRAILS, PLAN_KPI_NOTE, PLAN_KPIS, PLAN_MESSAGE_HOUSE, PLAN_OBJECTIVE, PLAN_ONE_RULE, PLAN_PHASES, PLAN_PILLARS, PLAN_SERIES,
-  PLAN_SETUP, PLAN_UPDATES, PLAN_VOICE, PLAN_WEEK, PLAN_WINDOW, planDay, planPhase, type PlanDay, type PlanKpi,
+  PLAN_SETUP, PLAN_UPDATES, PLAN_VOICE, PLAN_WEEK, PLAN_WINDOW, planDay, planPhase, type PlanDay, type PlanKpi, type SetupStatus,
 } from '@/lib/admin/social-plan';
+import { kitDoc, LAUNCH_KIT, PRESS_ONE_PAGER_PRINTABLE, type LaunchKitDoc } from '@/lib/admin/launch-kit';
 
 // admin > Growth > Social Studio > Plan: JP's 45-day launch plan (lib/admin/social-plan.ts), laid out to read top
 // to bottom. Static; the calendar's day cards (PlanDayCard) come from the same data.
@@ -27,6 +28,71 @@ function kpiValue(k: PlanKpi, v: number | string | null): string {
 /** Pillar mix bar colors, in PLAN_PILLARS order. */
 const PILLAR_TONES = ['bg-violet-500', 'bg-fuchsia-500', 'bg-sky-500', 'bg-teal-500', 'bg-orange-400', 'bg-slate-400'];
 
+/** Setup-status chip looks. */
+const STATUS_LOOK: Record<SetupStatus, { label: string; chip: string }> = {
+  'done': { label: 'Done', chip: 'bg-emerald-50 text-emerald-700' },
+  'in progress': { label: 'In progress', chip: 'bg-amber-50 text-amber-700' },
+  'pending': { label: 'Pending', chip: 'bg-gray-100 text-gray-600' },
+  'n/a': { label: 'Not needed', chip: 'bg-slate-50 text-slate-500' },
+};
+
+function CopyButton({ id, text, label, copied, onCopy }: { id: string; text: string; label: string; copied: string | null; onCopy: (id: string, text: string) => void }) {
+  return (
+    <button
+      onClick={() => onCopy(id, text)}
+      aria-label={label}
+      className="shrink-0 h-9 rounded-xl bg-purple-50 px-2.5 text-xs font-extrabold text-purple-700 hover:bg-purple-100 inline-flex items-center gap-1"
+    >
+      {copied === id ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
+    </button>
+  );
+}
+
+function openPrintableOnePager() {
+  const url = URL.createObjectURL(new Blob([PRESS_ONE_PAGER_PRINTABLE], { type: 'text/html' }));
+  window.open(url, '_blank', 'noopener');
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+function KitDocRow({ doc, open, onToggle, copied, onCopy }: { doc: LaunchKitDoc; open: boolean; onToggle: () => void; copied: string | null; onCopy: (id: string, text: string) => void }) {
+  return (
+    <li id={`kit-${doc.id}`} className="py-2">
+      <div className="flex items-center gap-2">
+        <button onClick={onToggle} aria-expanded={open} className="min-w-0 flex-1 flex items-start gap-2 text-left rounded-xl py-1 hover:bg-gray-50">
+          <ChevronDown className={`mt-0.5 w-4 h-4 shrink-0 text-gray-400 transition-transform ${open ? '' : '-rotate-90'}`} />
+          <span className="min-w-0">
+            <span className="block text-sm font-black text-gray-900">{doc.title}</span>
+            <span className="block text-xs font-semibold text-gray-500 break-words">{doc.blurb}</span>
+          </span>
+        </button>
+        {doc.setup.map((id) => <span key={id} className="hidden sm:inline shrink-0 rounded-md bg-purple-50 px-1.5 py-0.5 text-[10px] font-black text-purple-700">{id}</span>)}
+        <CopyButton id={`kit:${doc.id}`} text={doc.markdown} label={`Copy all of ${doc.title}`} copied={copied} onCopy={onCopy} />
+      </div>
+      {open && (
+        <div className="mt-2 ml-6 space-y-2">
+          {doc.id === 'press-one-pager' && (
+            <button onClick={openPrintableOnePager} className="h-9 rounded-xl bg-purple-600 px-3 text-xs font-extrabold text-white hover:bg-purple-700 inline-flex items-center gap-1.5">
+              <Printer className="w-3.5 h-3.5" /> Open the printable one-pager (print to PDF)
+            </button>
+          )}
+          {doc.intro && <p className="text-xs font-semibold text-gray-500 break-words">{doc.intro}</p>}
+          <ul className="divide-y divide-gray-100 rounded-xl bg-gray-50/70 px-3">
+            {doc.sections.map((sec) => (
+              <li key={sec.heading} className="py-2.5 flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-black uppercase tracking-wide text-purple-600 break-words">{sec.heading}</p>
+                  <p className="mt-0.5 text-xs font-semibold text-gray-800 whitespace-pre-wrap break-words">{sec.text}</p>
+                </div>
+                <CopyButton id={`kit:${doc.id}:${sec.heading}`} text={sec.text} label={`Copy ${sec.heading}`} copied={copied} onCopy={onCopy} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </li>
+  );
+}
+
 export function PlanTab({ today, onOpenDay }: { today: string; onOpenDay: (day: string) => void }) {
   const todayPlan = planDay(today);
   const [copied, setCopied] = useState<string | null>(null);
@@ -34,6 +100,13 @@ export function PlanTab({ today, onOpenDay }: { today: string; onOpenDay: (day: 
     try { await navigator.clipboard.writeText(text); setCopied(slot); setTimeout(() => setCopied((c) => (c === slot ? null : c)), 1800); } catch { /* clipboard blocked */ }
   };
   const captureDays = PLAN_DAYS.filter(needsCapture).length;
+  const [openDocs, setOpenDocs] = useState<ReadonlySet<string>>(new Set());
+  const toggleDoc = (id: string) => setOpenDocs((cur) => { const next = new Set(cur); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const showDoc = (id: string) => {
+    setOpenDocs((cur) => new Set(cur).add(id));
+    setTimeout(() => document.getElementById(`kit-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  };
+  const doneCount = PLAN_SETUP.filter((t) => t.status === 'done' || t.status === 'n/a').length;
 
   return (
     <div className="space-y-4">
@@ -64,6 +137,67 @@ export function PlanTab({ today, onOpenDay }: { today: string; onOpenDay: (day: 
           </ul>
         </div>
         <p className="text-[11px] font-bold text-gray-400">{PLAN_DAYS.length} days on the calendar, {captureDays} with a video that needs a capture from Brian. Click any day on the Calendar tab for its card.</p>
+      </section>
+
+      {/* ---- launch setup (live status) */}
+      <section className={`${CARD} space-y-1`}>
+        <h2 className={H2}>Launch setup <span className="ml-1 normal-case tracking-normal text-gray-400">{doneCount} of {PLAN_SETUP.length} settled</span></h2>
+        <ul className="divide-y divide-gray-100">
+          {PLAN_SETUP.map((t) => {
+            const look = STATUS_LOOK[t.status];
+            return (
+              <li key={t.id} className="py-2.5 flex items-start gap-3" data-testid={`setup-${t.id}`}>
+                <span className="w-8 shrink-0 text-xs font-black text-purple-600">{t.id}</span>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className={`text-xs font-bold break-words ${t.status === 'n/a' ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{t.task}</p>
+                  <p className="text-xs font-semibold text-gray-600 break-words">{t.note}</p>
+                  {(t.links.length > 0 || (t.kit?.length ?? 0) > 0) && (
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      {t.links.map((l) => (
+                        <a key={l.href} href={l.href} target={l.href.startsWith('http') ? '_blank' : undefined} rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-extrabold text-purple-700 hover:bg-purple-50">
+                          {l.label} <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ))}
+                      {t.kit?.map((id) => (
+                        <button key={id} onClick={() => showDoc(id)} className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-[11px] font-extrabold text-purple-700 hover:bg-purple-100">
+                          Draft: {kitDoc(id)?.title ?? id}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="shrink-0 flex flex-col items-end gap-1">
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${look.chip}`}>{look.label}</span>
+                  {t.doneOn && <span className="text-[10px] font-bold text-gray-400">{fmtDay(t.doneOn)}</span>}
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${t.owner === 'JP' ? 'bg-amber-50 text-amber-700' : 'bg-purple-50 text-purple-700'}`}>{t.owner}</span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        <h2 className={`${H2} pt-3`}>Live account changes</h2>
+        <ul className="divide-y divide-gray-100">
+          {PLAN_ACCOUNT_LOG.map((c, i) => (
+            <li key={`${c.date}-${i}`} className="py-1.5 flex flex-wrap gap-x-3 gap-y-0">
+              <span className="w-14 shrink-0 text-[11px] font-black text-gray-400">{fmtDay(c.date)}</span>
+              <span className="w-full sm:w-44 shrink-0 text-xs font-black text-gray-800 break-words">{c.channel}</span>
+              <span className="min-w-0 flex-1 basis-56 text-xs font-semibold text-gray-600 break-words">{c.change}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* ---- launch kit */}
+      <section className={`${CARD} space-y-1`}>
+        <h2 className={H2}>Launch kit</h2>
+        <p className="text-xs font-semibold text-gray-500">
+          Press, Product Hunt, founder posts and bios, drafted for JP to edit, send and post himself. Nothing here publishes.
+          Copy a whole doc or any one block. The source is docs/marketing/jp45 in the repo.
+        </p>
+        <ul className="divide-y divide-gray-100">
+          {LAUNCH_KIT.map((d) => <KitDocRow key={d.id} doc={d} open={openDocs.has(d.id)} onToggle={() => toggleDoc(d.id)} copied={copied} onCopy={copy} />)}
+        </ul>
       </section>
 
       {/* ---- phases */}
@@ -261,23 +395,6 @@ export function PlanTab({ today, onOpenDay }: { today: string; onOpenDay: (day: 
             <li key={s.name}>
               <p className="text-sm font-black text-gray-900">{s.name}</p>
               <p className="text-xs font-semibold text-gray-600 break-words">{s.text}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* ---- setup */}
-      <section className={`${CARD} space-y-1`}>
-        <h2 className={H2}>Setup tasks (before launch day, Oct 13-15)</h2>
-        <ul className="divide-y divide-gray-100">
-          {PLAN_SETUP.map((t) => (
-            <li key={t.id} className="py-2.5 flex items-start gap-3">
-              <span className="w-8 shrink-0 text-xs font-black text-purple-600">{t.id}</span>
-              <div className="min-w-0 flex-1">
-                <p className={`text-xs font-semibold break-words ${t.note ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{t.task}</p>
-                {t.note && <p className="mt-0.5 text-xs font-bold text-amber-700 break-words">{t.note}</p>}
-              </div>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${t.owner === 'JP' ? 'bg-amber-50 text-amber-700' : 'bg-purple-50 text-purple-700'}`}>{t.owner}</span>
             </li>
           ))}
         </ul>
