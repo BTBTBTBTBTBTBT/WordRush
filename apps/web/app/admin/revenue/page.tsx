@@ -333,6 +333,15 @@ function AppAdsCard({ levelPlay, adFlags }: { levelPlay: LevelPlayResult | undef
         )}
         <Link href="/admin/flags" className="ml-auto inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">Admin → Flags</Link>
       </div>
+      <ul className="mt-3 space-y-1 text-xs font-semibold text-gray-600">
+        <li><span className="font-black text-gray-800">Live:</span> iOS 2.8.2 on the App Store (10-14) and Android 2.8.2 (224) on Google Play (10-13), both with LevelPlay; the ads flag is on for everyone, Pro still means no ads.</li>
+        <li>
+          <span className="font-black text-gray-800">Authorized sellers:</span>{' '}
+          <a href="/app-ads.txt" target="_blank" rel="noreferrer" className="font-bold text-purple-600 hover:underline">wordocious.com/app-ads.txt</a>{' '}
+          carries Unity&apos;s 161 lines (unity.com DIRECT + its resellers), copied 10-14; Unity developer website set to wordocious.com the same day.
+          Unity re-checks within about a day. Re-copy the block from Unity Monetization → Settings → App-ads.txt whenever it lists missing sellers.
+        </li>
+      </ul>
       <p className="text-[11px] font-bold text-gray-300 mt-2">
         iOS app key 28b3f4525, Android 28b3fb835. Revenue is LevelPlay&apos;s own estimate across all mediated networks; eCPM and fill are
         recomputed from totals (fill = ad-source fills ÷ requests). Pro means no ads. The web serves no ads.
