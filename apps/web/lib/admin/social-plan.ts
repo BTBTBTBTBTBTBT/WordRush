@@ -44,7 +44,7 @@ export const PLAN_UPDATES: readonly string[] = [
   'X is @wordocious. Facebook is facebook.com/wordocious. Pinterest is wordocious.',
   'Profile pictures are icon B (the W mascot), not the W tile.',
   'Publishing is automatic from Social Studio once BMT and JP both approve a post (the Studio cron). That replaces Buffer and native posting, so setup task S1 is superseded.',
-  '"Owner: Jasson" on a day means JP reviews and approves the posts and runs the community and press tasks. Brian captures the video.',
+  '"Owner: Jasson" on a day means JP reviews and approves the posts and runs the community and press tasks. Claude records the gameplay videos in the iPhone simulator (demo mode); the two family clips became mascot images.',
 ];
 
 export const PLAN_ONE_RULE = {
