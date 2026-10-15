@@ -733,7 +733,11 @@ object LeaderboardShare {
         val figGold = w * 0.32f
         val figOther = w * 0.26f
         val nameH = 50f
-        val headroom = max(0f, figGold + nameH + 14f - imgH * com.wordocious.core.PodiumArtGeometry.step(1).feetY.toFloat()).let { it + 8f }
+        /** One podium point in share-card pixels (the plant offset uses the same scale). */
+        val pt = U / 1.5f
+        // #1's crown top above the image top (the cheering box drops by CHEER_FEET_DROP), then the name pill (clearing it by CROWN_GAP_PT) above that.
+        val crownTopAbove = 0.81f * figGold + 0.55f * 0.12f * w - imgH * com.wordocious.core.PodiumArtGeometry.step(1).feetY.toFloat() - com.wordocious.core.PodiumArtGeometry.PLANT_PT.toFloat() * pt
+        val headroom = max(0f, crownTopAbove + com.wordocious.core.PodiumArtGeometry.CROWN_GAP_PT.toFloat() * pt + nameH + 14f) + 8f
         val total = headroom + imgH
         fun fig(place: Int) = if (place == 1) figGold else figOther
     }
@@ -812,7 +816,12 @@ object LeaderboardShare {
                 ShareFinish.softShadow(this)
             }
             val label = clampText(name, if (s.isYou) "${s.name} · YOU" else s.name, blk.w * 0.31f)
-            val nameBottom = feetY - a + drop - (if (place == 1) blk.w * 0.07f else 0f) + a * 0.12f
+            // Founder 10-15: the name pill's bottom sits NAME_GAP_PT above the drawn head top (box top + HEAD_TOP of the figure), never
+            // tucked into the box; the winner's clears the crown by CROWN_GAP_PT. (The pill reaches 8 px below the text baseline.)
+            val boxTop = feetY - a + drop
+            val pillBottom = if (place == 1) boxTop - 0.55f * 0.12f * blk.w - geo.CROWN_GAP_PT.toFloat() * blk.pt
+                             else boxTop + com.wordocious.app.ui.PodiumArt.HEAD_TOP * a - geo.NAME_GAP_PT.toFloat() * blk.pt
+            val nameBottom = pillBottom - 8f
             // a soft white pill so the name reads over the dark crowd as well as the cream page
             val tw = name.measureText(label)
             val pill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xE6FFFFFF.toInt() }

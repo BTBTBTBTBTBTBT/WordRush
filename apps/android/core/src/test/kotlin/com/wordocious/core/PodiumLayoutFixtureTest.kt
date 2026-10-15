@@ -3,6 +3,7 @@ package com.wordocious.core
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.double
+import kotlinx.serialization.json.float
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -53,6 +54,9 @@ class PodiumLayoutFixtureTest {
         assertEquals(art["aspect"]!!.jsonPrimitive.double, PodiumArtGeometry.ASPECT, 0.0)
         assertEquals(art["plantPt"]!!.jsonPrimitive.double, PodiumArtGeometry.PLANT_PT, 0.0)
         assertEquals(art["nameGapPt"]!!.jsonPrimitive.double, PodiumArtGeometry.NAME_GAP_PT, 0.0)
+        assertEquals(art["headTop"]!!.jsonPrimitive.double, PodiumArtGeometry.HEAD_TOP, 0.0)
+        assertEquals(art["crownRise"]!!.jsonPrimitive.double, PodiumArtGeometry.CROWN_RISE, 0.0)
+        assertEquals(art["crownGapPt"]!!.jsonPrimitive.double, PodiumArtGeometry.CROWN_GAP_PT, 0.0)
         assertEquals(art["shadowWidth"]!!.jsonPrimitive.double, PodiumArtGeometry.SHADOW_WIDTH, 0.0)
         assertEquals(art["scoreHeight"]!!.jsonPrimitive.double, PodiumArtGeometry.SCORE_HEIGHT, 0.0)
         assertEquals(art["detailHeight"]!!.jsonPrimitive.double, PodiumArtGeometry.DETAIL_HEIGHT, 0.0)
@@ -72,5 +76,35 @@ class PodiumLayoutFixtureTest {
             assertEquals(panel["y1"]!!.jsonPrimitive.double, k.panel.y1, 0.0)
         }
         assertEquals(root["art"]!!.jsonObject["order"]?.jsonArray?.map { it.jsonPrimitive.int } ?: PodiumArtGeometry.ORDER, PodiumArtGeometry.ORDER)
+    }
+
+    @Test
+    fun winner_intro_matches() {
+        val w = root["winnerIntro"]!!.jsonObject
+        val g = w["glow"]!!.jsonObject
+        assertEquals(g["size"]!!.jsonPrimitive.double, PodiumWinnerIntro.GLOW_SIZE, 0.0)
+        assertEquals(g["colorRgb"]!!.jsonArray.map { it.jsonPrimitive.int }, PodiumWinnerIntro.GLOW_RGB.toList())
+        assertEquals(g["fromScale"]!!.jsonPrimitive.double, PodiumWinnerIntro.GLOW_FROM_SCALE, 0.0)
+        assertEquals(g["toScale"]!!.jsonPrimitive.double, PodiumWinnerIntro.GLOW_TO_SCALE, 0.0)
+        assertEquals(g["durationMs"]!!.jsonPrimitive.int, PodiumWinnerIntro.GLOW_DURATION_MS)
+        assertEquals(g["ease"]!!.jsonArray.map { it.jsonPrimitive.float }, PodiumWinnerIntro.GLOW_EASE.toList())
+        assertEquals(g["restOpacity"]!!.jsonPrimitive.double, PodiumWinnerIntro.GLOW_REST_OPACITY, 0.0)
+        val s = w["sparkles"]!!.jsonObject
+        assertEquals(
+            s["offsets"]!!.jsonArray.map { it.jsonArray[0].jsonPrimitive.double to it.jsonArray[1].jsonPrimitive.double },
+            PodiumWinnerIntro.SPARKLE_OFFSETS,
+        )
+        assertEquals(s["size"]!!.jsonPrimitive.double, PodiumWinnerIntro.SPARKLE_SIZE, 0.0)
+        assertEquals(s["durationMs"]!!.jsonPrimitive.int, PodiumWinnerIntro.SPARKLE_DURATION_MS)
+        assertEquals(s["delayMs"]!!.jsonPrimitive.int, PodiumWinnerIntro.SPARKLE_DELAY_MS)
+        assertEquals(s["staggerMs"]!!.jsonPrimitive.int, PodiumWinnerIntro.SPARKLE_STAGGER_MS)
+        assertEquals(s["driftPt"]!!.jsonPrimitive.double, PodiumWinnerIntro.SPARKLE_DRIFT_PT, 0.0)
+        assertEquals(s["peakOpacity"]!!.jsonPrimitive.double, PodiumWinnerIntro.SPARKLE_PEAK_OPACITY, 0.0)
+        assertEquals(s["colorRgb"]!!.jsonArray.map { it.jsonPrimitive.int }, PodiumWinnerIntro.SPARKLE_RGB.toList())
+        val c = w["crown"]!!.jsonObject
+        assertEquals(c["delayMs"]!!.jsonPrimitive.int, PodiumWinnerIntro.CROWN_DELAY_MS)
+        assertEquals(c["durationMs"]!!.jsonPrimitive.int, PodiumWinnerIntro.CROWN_DURATION_MS)
+        assertEquals(c["dropPt"]!!.jsonPrimitive.double, PodiumWinnerIntro.CROWN_DROP_PT, 0.0)
+        assertEquals(c["settlePt"]!!.jsonPrimitive.double, PodiumWinnerIntro.CROWN_SETTLE_PT, 0.0)
     }
 }

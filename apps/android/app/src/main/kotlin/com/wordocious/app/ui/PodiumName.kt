@@ -43,8 +43,8 @@ private fun hex(c: String): Color = Color(android.graphics.Color.parseColor(c))
  * Founder 10-09: the player's NAME rides ABOVE their head in the bubble lettering, one line that shrinks to fit (never wraps or
  * clips; floor 0.3), in their own name color (core PlayerTint.nameHex), with a soft glow behind it in their SECONDARY color
  * (their avatar pattern color): two blurred capsules (outer 55% blur 12, inner 90% blur 6). The slot is 10 dp wider than its
- * column on each side and [pull] dp of its height overlaps the figure below, so the name sits close to the head (iOS pulls
- * standing figures 18 dp, the winner only 4 dp so the name stays above the crown). Draw it above the figure (zIndex 2).
+ * column on each side and [pull] dp of its height may overlap the figure below. Founder 10-15: the podium passes 0 (no tuck: the
+ * name floats above the head and the crown, a spacer sets the gap). Draw it above the figure (zIndex 2).
  */
 @Composable
 fun PodiumNameAbove(
@@ -79,7 +79,7 @@ fun PodiumNameAbove(
     ) {
         Box(
             Modifier.fillMaxSize().drawBehind {
-                val outer = Rect(-2.dp.toPx(), -6.dp.toPx(), this.size.width + 2.dp.toPx(), this.size.height + 6.dp.toPx())
+                val outer = Rect(-2.dp.toPx(), -6.dp.toPx(), this.size.width + 2.dp.toPx(), this.size.height + 2.dp.toPx())
                 val inner = Rect(10.dp.toPx(), 1.dp.toPx(), this.size.width - 10.dp.toPx(), this.size.height - 1.dp.toPx())
                 drawIntoCanvas { canvas ->
                     fun capsule(r: Rect, alpha: Float, sigma: Float) {
@@ -91,7 +91,7 @@ fun PodiumNameAbove(
                         val rad = r.height / 2f
                         canvas.nativeCanvas.drawRoundRect(r.left, r.top, r.right, r.bottom, rad, rad, paint)
                     }
-                    capsule(outer, 0.55f, 12f)
+                    capsule(outer, 0.5f, 10f)
                     capsule(inner, 0.9f, 6f)
                 }
             },

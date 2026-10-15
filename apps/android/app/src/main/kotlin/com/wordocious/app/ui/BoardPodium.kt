@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -63,6 +64,7 @@ import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.A11yLabels
 import com.wordocious.core.PodiumArtGeometry
 import com.wordocious.core.PodiumLayout
+import com.wordocious.core.PodiumWinnerIntro
 import com.wordocious.core.podiumLayout
 import com.wordocious.core.podiumOpenSpot
 import kotlinx.serialization.json.JsonElement
@@ -113,6 +115,12 @@ object PodiumArt {
     val STAGE_RES: Int get() = com.wordocious.app.R.drawable.art_podium_stage
     /** A phone-width display bucket for the prewarm (the art is 1536 px wide; wider screens decode a bigger bucket on first use). */
     val PREWARM: Dp = 360.dp
+    /**
+     * Where the drawn head / hat top is in the Android mascot box (fraction from the box's top edge): the composer's cutout keeps
+     * about 0.17 - 0.21 of headroom above even tall hats (witch / bunny ears measured on the emulator, 10-15), unlike the web SVG
+     * (core HEAD_TOP 0.04). The small end, so a name never sinks onto a hat.
+     */
+    const val HEAD_TOP = 0.12f
     /** The widest the stage grows on a tablet (page width, capped). */
     val MAX_WIDTH: Dp = 1000.dp
 
@@ -221,10 +229,12 @@ fun BoardPodium(
             // Figure sizes (mascot box, in dp) scale with the stage width: #1 slightly larger.
             val fig = { place: Int -> w * (if (place == 1) 0.36f else 0.30f) }
             val plant = geo.PLANT_PT.dp
-            val nameSlot = 24.dp
-            // Headroom: the gold figure + its name rise above the image's top edge.
+            // Headroom: the gold figure, its crown and its name (bottom clears the crown by CROWN_GAP_PT) rise above the image's top edge.
+            val nameSlot = ((if (compact) 14f else 19f) * 1.3f).dp
             val goldFeet = imgH * geo.step(1).feetY.toFloat() + plant
-            val headroom = (fig(1) + nameSlot + geo.NAME_GAP_PT.dp - goldFeet).coerceAtLeast(0.dp)
+            // box top = feet + drop - fig; the crown rides CROWN_RISE of the figure above it
+            val goldCrownTop = goldFeet + fig(1) * (CHEER_FEET_DROP - 1f + 0f) - fig(1) * geo.CROWN_RISE.toFloat()
+            val headroom = (nameSlot + geo.CROWN_GAP_PT.dp + 4.dp - goldCrownTop).coerceAtLeast(0.dp)
             val tauntRow = if (taunts) 30.dp else 0.dp
             Box(Modifier.size(w, headroom + imgH + tauntRow)) {
                 Image(
@@ -291,22 +301,27 @@ fun BoardPodium(
                                 PodiumNameAbove(
                                     s.name, s.userId, s.username ?: s.name,
                                     size = if (compact) 14f else (if (place == 1) 19f else 16f),
-                                    pull = if (stands) (if (place == 1) 12.dp else 20.dp) - geo.NAME_GAP_PT.dp + 8.dp else 2.dp,
+                                    pull = 0.dp,
                                     avatarUrl = s.avatarUrl, config = s.config, castId = s.castId, frame = s.frame, accentHex = s.accentHex,
                                 )
+                                // Founder 10-15: the name floats ABOVE the drawn head (never tucked into the box). The crowned winner's name
+                                // clears the crown (CROWN_RISE of the figure above the box) by CROWN_GAP_PT; the others clear the head top.
+                                Spacer(Modifier.height(
+                                    if (place == 1) figure * (if (stands) geo.CROWN_RISE.toFloat() else 0.12f) + geo.CROWN_GAP_PT.dp
+                                    else (geo.NAME_GAP_PT.dp - figure * PodiumArt.HEAD_TOP).coerceAtLeast(0.dp),
+                                ))
                                 Box(Modifier.zIndex(1f), contentAlignment = Alignment.TopCenter) {
-                                    // the winner's confetti burst opens once on load
-                                    if (place == 1 && com.wordocious.app.data.FlagsService.isLive("podium_burst")) {
-                                        // overlay only: the burst never sizes the figure's box
-                                        Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) { PodiumBurst() }
-                                    }
+                                    // the winner's calm load-in (glow behind the mascot + a few sparkles; the crown drops below): overlay
+                                    // only, it never sizes the figure's box. Draw-phase reads only, once per view.
+                                    val intro = if (place == 1 && com.wordocious.app.data.FlagsService.isLive("podium_burst")) rememberWinnerIntroClock() else null
+                                    if (intro != null) Spacer(Modifier.matchParentSize().winnerIntroGlow(intro))
                                     PlayerAvatar(
                                         s.username ?: s.name, figure, Modifier,
                                         userId = s.userId, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
                                         frame = s.frame, accentHex = s.accentHex, podiumPlace = if (stands) place else null,
                                     )
                                     // the crown sits ON the first place's head
-                                    if (place == 1) Icon3D(Icon3DName.CROWN, if (compact) 28.dp else 34.dp, Modifier.offset(y = -(figure * if (stands) 0.05f else 0.12f)))
+                                    if (place == 1) Icon3D(Icon3DName.CROWN, if (compact) 28.dp else 34.dp, Modifier.offset(y = -(figure * if (stands) geo.CROWN_RISE.toFloat() else 0.12f)).winnerCrownDrop(intro))
                                 }
                             }
                         } else if (place in open) {
@@ -334,33 +349,92 @@ fun BoardPodium(
 
 
 /**
- * 2.8 item 13: the winner's confetti burst, once, as the podium opens (the celebration kit's party burst, the season's swap
- * when there is one). Scale + alpha only; nothing under Reduce Motion / Low Power.
+ * 2.8 winner intro (founder 10-15, replaces the confetti burst; core [PodiumWinnerIntro]): ONE calm load-in for the #1 mascot, every
+ * season. A soft gold radial glow behind the mascot fades + scales in once and rests at low opacity; a few small sparkles fade in,
+ * drift up and fade out once (staggered); the crown drops in gently with a tiny settle. One clock (ms), read ONLY in graphicsLayer /
+ * draw lambdas (no recomposition, no per-frame state). Reduce Motion / Low Power: the glow rests, nothing moves.
  */
+private val WINNER_INTRO_END_MS = maxOf(
+    PodiumWinnerIntro.GLOW_DURATION_MS,
+    PodiumWinnerIntro.SPARKLE_DELAY_MS + (PodiumWinnerIntro.SPARKLE_OFFSETS.size - 1) * PodiumWinnerIntro.SPARKLE_STAGGER_MS + PodiumWinnerIntro.SPARKLE_DURATION_MS,
+    PodiumWinnerIntro.CROWN_DELAY_MS + PodiumWinnerIntro.CROWN_DURATION_MS,
+).toFloat()
+
 @Composable
-private fun PodiumBurst() {
+fun rememberWinnerIntroClock(): Animatable<Float, androidx.compose.animation.core.AnimationVector1D> {
     val still = WTheme.calmMotion
-    val ctx = LocalContext.current
-    val res = remember {
-        val n = SeasonKit.extra(ctx, SeasonSkins.current(), "celebrate-burst-party") ?: return@remember 0
-        ctx.resources.getIdentifier(n.replace('-', '_'), "drawable", ctx.packageName)
-    }
-    if (still || res == 0) return
-    val t = remember { Animatable(0f) }
-    val fade = remember { Animatable(1f) }
-    LaunchedEffect(Unit) {
-        t.animateTo(1f, tween(550))
-        kotlinx.coroutines.delay(150)
-        fade.animateTo(0f, tween(500))
-    }
-    Image(
-        painterResource(res), contentDescription = null, contentScale = ContentScale.Fit,
-        modifier = Modifier.requiredSize(170.dp).graphicsLayer {
-            val k = 0.4f + 0.65f * t.value
-            scaleX = k; scaleY = k; alpha = t.value.coerceAtMost(1f) * fade.value
-        }.clearAndSetSemantics { },
-    )
+    val clock = remember { Animatable(if (still) WINNER_INTRO_END_MS else 0f) }
+    LaunchedEffect(still) { if (!still) clock.animateTo(WINNER_INTRO_END_MS, tween(WINNER_INTRO_END_MS.roundToInt(), easing = LinearEasing)) else clock.snapTo(WINNER_INTRO_END_MS) }
+    return clock
 }
+
+private val GLOW_EASE = androidx.compose.animation.core.CubicBezierEasing(
+    PodiumWinnerIntro.GLOW_EASE[0], PodiumWinnerIntro.GLOW_EASE[1], PodiumWinnerIntro.GLOW_EASE[2], PodiumWinnerIntro.GLOW_EASE[3],
+)
+
+private fun rgb(a: IntArray, alpha: Float) = Color(a[0], a[1], a[2]).copy(alpha = alpha.coerceIn(0f, 1f))
+
+/** The glow + sparkles layer, drawn over (and extending past) the mascot's box; the mascot draws on top of it. */
+private fun Modifier.winnerIntroGlow(clock: Animatable<Float, androidx.compose.animation.core.AnimationVector1D>): Modifier = this.drawBehind {
+    val t = clock.value
+    val box = size.minDimension
+    val c = Offset(size.width / 2f, size.height / 2f)
+    // ── glow ──
+    val gp = GLOW_EASE.transform((t / PodiumWinnerIntro.GLOW_DURATION_MS).coerceIn(0f, 1f))
+    val scale = (PodiumWinnerIntro.GLOW_FROM_SCALE + (PodiumWinnerIntro.GLOW_TO_SCALE - PodiumWinnerIntro.GLOW_FROM_SCALE) * gp).toFloat()
+    val a = (gp * PodiumWinnerIntro.GLOW_REST_OPACITY).toFloat()
+    val r = box * PodiumWinnerIntro.GLOW_SIZE.toFloat() / 2f * scale
+    if (a > 0f && r > 0f) {
+        val g = PodiumWinnerIntro.GLOW_RGB
+        drawCircle(
+            Brush.radialGradient(
+                0f to rgb(g, 0.95f), 0.45f to rgb(g, 0.55f), 0.82f to rgb(g, 0.18f), 1f to rgb(g, 0f), center = c, radius = r,
+            ),
+            radius = r, center = c, alpha = a,
+        )
+    }
+    // ── sparkles ──
+    PodiumWinnerIntro.SPARKLE_OFFSETS.forEachIndexed { i, (ox, oy) ->
+        val local = (t - PodiumWinnerIntro.SPARKLE_DELAY_MS - i * PodiumWinnerIntro.SPARKLE_STAGGER_MS) / PodiumWinnerIntro.SPARKLE_DURATION_MS
+        if (local <= 0f || local >= 1f) return@forEachIndexed
+        val peak = PodiumWinnerIntro.SPARKLE_PEAK_OPACITY.toFloat()
+        val alpha = if (local < 0.3f) peak * (local / 0.3f) else peak * (1f - (local - 0.3f) / 0.7f)
+        val drift = PodiumWinnerIntro.SPARKLE_DRIFT_PT.dp.toPx()
+        val dy = if (local < 0.3f) -drift * 0.3f * (local / 0.3f) else -drift * (0.3f + 0.7f * ((local - 0.3f) / 0.7f))
+        val sc = if (local < 0.3f) 0.6f + 0.4f * (local / 0.3f) else 1f - 0.15f * ((local - 0.3f) / 0.7f)
+        val sz = box * PodiumWinnerIntro.SPARKLE_SIZE.toFloat() * sc
+        val cx = c.x + (ox * box).toFloat()
+        val cy = c.y + (oy * box).toFloat() + dy
+        val h = sz / 2f
+        val star = Path().apply {
+            moveTo(cx, cy - h)
+            cubicTo(cx + h * 0.083f, cy - h * 0.33f, cx + h * 0.33f, cy - h * 0.083f, cx + h, cy)
+            cubicTo(cx + h * 0.33f, cy + h * 0.083f, cx + h * 0.083f, cy + h * 0.33f, cx, cy + h)
+            cubicTo(cx - h * 0.083f, cy + h * 0.33f, cx - h * 0.33f, cy + h * 0.083f, cx - h, cy)
+            cubicTo(cx - h * 0.33f, cy - h * 0.083f, cx - h * 0.083f, cy - h * 0.33f, cx, cy - h)
+            close()
+        }
+        drawPath(star, rgb(PodiumWinnerIntro.SPARKLE_RGB, alpha))
+    }
+}
+
+/** The crown's gentle drop: starts CROWN_DROP_PT above rest and invisible, dips CROWN_SETTLE_PT at 70%, rests; ease-out. */
+private fun Modifier.winnerCrownDrop(clock: Animatable<Float, androidx.compose.animation.core.AnimationVector1D>?): Modifier =
+    if (clock == null) this else this.graphicsLayer {
+        val p = ((clock.value - PodiumWinnerIntro.CROWN_DELAY_MS) / PodiumWinnerIntro.CROWN_DURATION_MS).coerceIn(0f, 1f)
+        val drop = PodiumWinnerIntro.CROWN_DROP_PT.dp.toPx()
+        val settle = PodiumWinnerIntro.CROWN_SETTLE_PT.dp.toPx()
+        val ease = GLOW_EASE
+        if (p < 0.7f) {
+            val k = ease.transform(p / 0.7f)
+            translationY = -drop + (drop + settle) * k
+            alpha = k
+        } else {
+            val k = ease.transform((p - 0.7f) / 0.3f)
+            translationY = settle * (1f - k)
+            alpha = 1f
+        }
+    }
 
 /**
  * 2.8 item 13: the mini Stage card a podium mascot opens: that player's mascot standing on the stage in their backdrop,

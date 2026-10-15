@@ -46,8 +46,14 @@ object PodiumArtGeometry {
     const val ASPECT = 1.5
     /** Mascot lands this many points lower than the step-top center so it looks planted. */
     const val PLANT_PT = 5.0
-    /** Name label floats this many points above the mascot. */
-    const val NAME_GAP_PT = 8.0
+    /** The name label's BOTTOM sits this many points above the DRAWN head / hat top (never tucked into the box). */
+    const val NAME_GAP_PT = 12.0
+    /** Where the drawn head / hat top is, as a fraction of the mascot box from the box's top edge (small end: tall hats). */
+    const val HEAD_TOP = 0.04
+    /** The first place's crown rises this fraction of the mascot box above the box's top. */
+    const val CROWN_RISE = 0.05
+    /** Extra points the first place's name clears the crown by (name bottom to crown top). */
+    const val CROWN_GAP_PT = 10.0
     /** Contact shadow ellipse width as a fraction of the mascot width. */
     const val SHADOW_WIDTH = 0.9
     /** Panel text: the score line and the two detail lines, as fractions of the panel height. */
@@ -66,4 +72,34 @@ object PodiumArtGeometry {
 
     /** The art step for a place (1..3). */
     fun step(place: Int): PodiumArtStep = STEPS.first { it.place == place }
+}
+
+/**
+ * 2.8 winner intro (founder 10-15): ONE calm load-in for the #1 mascot, every season (no candy corn / confetti). Port of
+ * PODIUM_WINNER_INTRO in packages/core/src/podium-layout.ts, pinned by the "winnerIntro" block of podium-layout-fixtures.json.
+ */
+object PodiumWinnerIntro {
+    /** Soft gold radial glow behind the mascot: fades + scales in once, then rests at low opacity. */
+    const val GLOW_SIZE = 1.5
+    val GLOW_RGB = intArrayOf(255, 200, 61)
+    const val GLOW_FROM_SCALE = 0.85
+    const val GLOW_TO_SCALE = 1.0
+    const val GLOW_DURATION_MS = 600
+    /** Cubic-bezier ease-out. */
+    val GLOW_EASE = floatArrayOf(0f, 0f, 0.58f, 1f)
+    const val GLOW_REST_OPACITY = 0.5
+    /** Sparkle offsets: fractions of the mascot box from its center (x right, y down). */
+    val SPARKLE_OFFSETS: List<Pair<Double, Double>> = listOf(-0.42 to -0.06, 0.4 to 0.02, -0.24 to -0.34, 0.26 to -0.38)
+    const val SPARKLE_SIZE = 0.07
+    const val SPARKLE_DURATION_MS = 1200
+    const val SPARKLE_DELAY_MS = 300
+    const val SPARKLE_STAGGER_MS = 180
+    const val SPARKLE_DRIFT_PT = 8.0
+    const val SPARKLE_PEAK_OPACITY = 0.95
+    val SPARKLE_RGB = intArrayOf(255, 236, 170)
+    /** The crown drops in gently with a tiny settle. */
+    const val CROWN_DELAY_MS = 200
+    const val CROWN_DURATION_MS = 250
+    const val CROWN_DROP_PT = 10.0
+    const val CROWN_SETTLE_PT = 1.5
 }
