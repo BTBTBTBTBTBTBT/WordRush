@@ -39,6 +39,7 @@ export const PLAN_ANCHORS =
 
 /** Founder decisions made after JP wrote the doc. Shown once, at the top of the Plan tab. */
 export const PLAN_UPDATES: readonly string[] = [
+  'Every actual holiday gets its own early branded greeting post at 7 AM CT with a custom mascot image, in addition to that day\'s planned posts: Happy Halloween (Oct 31), Feliz Día de los Muertos (Nov 2), Happy Diwali (Nov 8), Veterans Day (Nov 11), Happy Thanksgiving (Nov 26).',
   'Halloween has been on in the apps since 2.8 went live (season window Oct 9 to Oct 31, off Nov 1), not from Oct 17. The Oct 17 post is the social reveal of a look players already have.',
   'Instagram and TikTok are @playwordocious (JP\'s draft said @wordocious2). Threads is @playwordocious too.',
   'X is @wordocious. Facebook is facebook.com/wordocious. Pinterest is wordocious.',
