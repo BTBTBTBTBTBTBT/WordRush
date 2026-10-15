@@ -126,6 +126,11 @@ measure() {
   "$@"
   sleep "$hold"
   local g; g=$($ADB shell dumpsys gfxinfo "$PKG")
+  # FRAMESTATS=1 keeps each step's per-frame timeline (dumpsys framestats: input, animation, traversal, draw, sync, GPU
+  # timestamps in ns) under apps/android/build/perf/framestats-<label>/, for a slow-frame phase breakdown.
+  if [ -n "${FRAMESTATS:-}" ]; then
+    mkdir -p "$OUTDIR/framestats-$LABEL"; $ADB shell dumpsys gfxinfo "$PKG" framestats > "$OUTDIR/framestats-$LABEL/$name.txt" 2>/dev/null
+  fi
   local frames janky p90 p99 o25 o50 slowui slowbmp
   # gfxinfo's main-thread counters (cumulative since the reset): frames whose UI thread ran > 16 ms, and slow bitmap uploads.
   slowui=$(echo "$g" | grep -m1 "Slow UI thread" | grep -o '[0-9]\+' | head -1)
