@@ -32,6 +32,22 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     ],
   },
   {
+    title: 'Monetization',
+    items: [
+      { href: '/admin/payments', label: 'Pro & Payments', icon: CreditCard, blurb: 'Pro members, Stripe, store events' },
+      { href: '/admin/revenue', label: 'Revenue', icon: DollarSign, blurb: 'Subscriptions, ads, store revenue, expenses' },
+      { href: '/admin/referrals', label: 'Referrals & Gifts', icon: Gift, blurb: 'Gift a week of Pro pipeline' },
+    ],
+  },
+  {
+    title: 'Growth',
+    items: [
+      { href: '/admin/marketing', label: 'Marketing', icon: Megaphone, blurb: 'Links, signups by source, shares, push campaigns' },
+      { href: '/admin/studio', label: 'Social Studio', icon: Clapperboard, blurb: 'Marketing calendar: review posts with JP, they publish once both approve' },
+      { href: '/admin/messaging', label: 'Messaging', icon: BellRing, blurb: 'Announcements and push devices' },
+    ],
+  },
+  {
     title: 'Design',
     items: [
       { href: '/admin/art', label: 'Art Library', icon: Palette, blurb: 'Review art with JP: side-by-side previews, approvals, feedback' },
@@ -72,22 +88,6 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     items: [
       { href: '/admin/achievements', label: 'Achievements & Levels', icon: Trophy, blurb: 'Catalog, unlock counts, level tiers' },
       { href: '/admin/avatars', label: 'Avatars', icon: Smile, blurb: 'Mascot maker adoption and favorites' },
-    ],
-  },
-  {
-    title: 'Monetization',
-    items: [
-      { href: '/admin/payments', label: 'Pro & Payments', icon: CreditCard, blurb: 'Pro members, Stripe, store events' },
-      { href: '/admin/revenue', label: 'Revenue', icon: DollarSign, blurb: 'Subscriptions, ads, store revenue, expenses' },
-      { href: '/admin/referrals', label: 'Referrals & Gifts', icon: Gift, blurb: 'Gift a week of Pro pipeline' },
-    ],
-  },
-  {
-    title: 'Growth',
-    items: [
-      { href: '/admin/marketing', label: 'Marketing', icon: Megaphone, blurb: 'Links, signups by source, shares, push campaigns' },
-      { href: '/admin/studio', label: 'Social Studio', icon: Clapperboard, blurb: 'Marketing calendar: review posts with JP, they publish once both approve' },
-      { href: '/admin/messaging', label: 'Messaging', icon: BellRing, blurb: 'Announcements and push devices' },
     ],
   },
   {

@@ -6,8 +6,8 @@ import { ArrowLeft, X } from 'lucide-react';
 import { ADMIN_NAV, isActiveNav } from './admin-nav';
 
 /**
- * The admin sidebar: the ADMIN_NAV groups (Overview · Players · Games &
- * Puzzles · Competition · Social · Progression · Monetization · Growth ·
+ * The admin sidebar: the ADMIN_NAV groups (Overview · Monetization · Growth · Players · Games &
+ * Puzzles · Competition · Social · Progression · Design ·
  * Content & Ops · System). Docked on desktop; a slide-over on phones, opened
  * from the layout's top bar (`open` / `onClose`).
  */
