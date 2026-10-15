@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { podiumLayout, podiumOpenSpot, PODIUM_ART, PODIUM_ART_ORDER, podiumArtStep } from './podium-layout';
+import { podiumLayout, podiumOpenSpot, PODIUM_ART, PODIUM_ART_ORDER, podiumArtStep, CELEBRATION_STAGE } from './podium-layout';
 import { resolveAvatar, isCustomPhotoUrl } from './avatar-config';
 
 describe('podiumLayout (BJ4: podium on every board from one result)', () => {
@@ -52,5 +52,13 @@ describe('PODIUM_ART (one-image podium geometry; Swift/Kotlin mirror these numbe
       expect(s.feet.x).toBeGreaterThan(s.panel.x0);
       expect(s.feet.x).toBeLessThan(s.panel.x1);
     }
+  });
+});
+
+describe('CELEBRATION_STAGE (Home Halloween card; Swift/Kotlin mirror these numbers)', () => {
+  it('mirrors the approved pool centers', () => {
+    expect(CELEBRATION_STAGE.feetX).toEqual([0.32, 0.5, 0.67]);
+    expect(CELEBRATION_STAGE.footY).toBe(0.895);
+    expect(CELEBRATION_STAGE.aspect).toBeCloseTo(1.6, 1);
   });
 });

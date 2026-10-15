@@ -67,3 +67,16 @@ export const PODIUM_ART_ORDER: readonly (1 | 2 | 3)[] = [2, 1, 3];
 export function podiumArtStep(place: 1 | 2 | 3): PodiumArtStep {
   return PODIUM_ART.steps.find((s) => s.place === place)!;
 }
+
+// 2.8 Home celebration card (founder 10-15, Halloween season only): art-celebration-stage-halloween (1586x992) is drawn
+// cover-fit behind the Home banner's stage (title + toggle + countdown + the animated cast trio). The art's own coral
+// valance and curtains replace the card's drawn cap / backdrop while it shows. The trio's FEET land in the three spotlight
+// pools: x = feetX of the card width, y = footY of the card height.
+export const CELEBRATION_STAGE = {
+  /** Image width / height (1586 x 992). */
+  aspect: 1586 / 992,
+  /** Spotlight pool centers, left to right, as fractions of the card width. */
+  feetX: [0.32, 0.5, 0.67] as readonly number[],
+  /** The pools' y as a fraction of the card height. */
+  footY: 0.895,
+} as const;
