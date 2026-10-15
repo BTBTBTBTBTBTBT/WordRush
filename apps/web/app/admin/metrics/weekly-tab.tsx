@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { TrendingUp, Share2, Flag, UserPlus } from 'lucide-react';
 import { DrillCard, useDrill } from '../components/drill-panel';
-import { modeLabel } from '@/lib/mode-labels';
+import Link from 'next/link';
 import { TabIntro } from '../components/admin-ui';
 
 // The Weekly Five as a page — the founders' agreed metric set (distribution
@@ -14,11 +14,6 @@ interface MetricsData {
   dau: { day: string; dau: number }[];
   retention: { cohort: string; size: number; d1: number; d7: number; d30: number }[];
   shareRate: { day: string; games: number; shares: number; rate: number }[];
-  shareBreakdown: {
-    byMode: { key: string; count: number }[];
-    bySurface: { key: string; count: number }[];
-    byKind: { key: string; count: number }[];
-  };
   summary: {
     totalProfiles: number;
     activePro: number;
@@ -162,33 +157,31 @@ export default function WeeklyTab() {
         </table>
       </div>
 
-      {/* Share breakdowns + auth providers */}
+      {/* Sign-in providers. Shares by game / surface live on Marketing > Shares. */}
       <div className="grid md:grid-cols-3 gap-4">
-        {([
-          ['Shares by mode', data.shareBreakdown.byMode, { metric: 'shares', by: 'mode' }],
-          ['Shares by surface', data.shareBreakdown.bySurface, { metric: 'shares', by: 'surface' }],
-          ['Sign-in providers', data.providers, { metric: 'provider' }],
-        ] as const).map(([title, rows, dp]) => (
-          <div key={title} className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs font-black text-gray-400 uppercase tracking-wide mb-2">{title}</p>
-            {rows.length === 0 ? (
-              <p className="text-xs font-bold text-gray-300">No data yet</p>
-            ) : (
-              <div className="space-y-1.5">
-                {rows.slice(0, 6).map((r) => (
-                  <button
-                    type="button" key={r.key}
-                    onClick={() => drill({ ...dp, key: r.key })}
-                    className="w-full flex justify-between text-sm hover:bg-gray-50 rounded px-1 -mx-1 py-0.5"
-                  >
-                    <span className="font-bold text-gray-600">{title === 'Shares by mode' ? modeLabel(r.key) : r.key}</span>
-                    <span className="font-black text-gray-900">{r.count}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <p className="text-xs font-black text-gray-400 uppercase tracking-wide mb-2">Sign-in providers</p>
+          {data.providers.length === 0 ? (
+            <p className="text-xs font-bold text-gray-300">No data yet</p>
+          ) : (
+            <div className="space-y-1.5">
+              {data.providers.slice(0, 6).map((r) => (
+                <button
+                  type="button" key={r.key}
+                  onClick={() => drill({ metric: 'provider', key: r.key })}
+                  className="w-full flex justify-between text-sm hover:bg-gray-50 rounded px-1 -mx-1 py-0.5"
+                >
+                  <span className="font-bold text-gray-600">{r.key}</span>
+                  <span className="font-black text-gray-900">{r.count}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <p className="md:col-span-2 text-xs font-bold text-gray-400 self-center leading-relaxed">
+          Shares by game and by surface, and what shares led to, are on{' '}
+          <Link href="/admin/marketing?tab=shares" className="text-purple-700">Marketing &gt; Shares</Link>.
+        </p>
       </div>
     </div>
   );

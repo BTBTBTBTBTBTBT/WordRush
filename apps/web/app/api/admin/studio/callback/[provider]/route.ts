@@ -19,6 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: { provider
   const provider = params.provider;
   const back = (msg: string, ok: boolean) => {
     const url = new URL('/admin/studio', request.nextUrl.origin);
+    url.searchParams.set('tab', 'accounts');
     url.searchParams.set(ok ? 'connected' : 'connect_error', ok ? provider : msg.slice(0, 200));
     return NextResponse.redirect(url, 302);
   };

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 import { getAdminSupabase } from '@/lib/supabase-admin';
-import { sweepAll } from '@/lib/supabase-sweep';
 
-// Operational health: anti-cheat watchlist, VS match health, and cron heartbeats.
+// Operational health: anti-cheat watchlist and cron heartbeats. (VS match health moved to
+// /api/admin/vs, Games > VS & Bots.)
 // (The store webhook ledger moved to /api/admin/store-feed, Pro & Gifts > Store feed.)
 //
 // Anti-cheat thresholds come from guard_precision.sql (manual-migration
@@ -31,10 +31,9 @@ export async function GET(request: NextRequest) {
 
   const admin = getAdminSupabase();
   const now = Date.now();
-  const since14 = new Date(now - 14 * 86400000).toISOString();
   const since30 = new Date(now - 30 * 86400000).toISOString().slice(0, 10);
 
-  const [suspectsRes, matchesRes, heartbeatsRes] = await Promise.all([
+  const [suspectsRes, heartbeatsRes] = await Promise.all([
     admin
       .from('daily_results')
       .select('user_id, day, game_mode, play_type, composite_score, guess_count, total_boards, time_seconds, vs_games, profiles(username)')
@@ -46,10 +45,6 @@ export async function GET(request: NextRequest) {
       )
       .order('composite_score', { ascending: false })
       .limit(50),
-    // §257: paged — matches is already past PostgREST's silent 1,000-row cap.
-    sweepAll<{ created_at: string; started_at: string; completed_at: string; forfeit: boolean | null; player1_id: string | null; player2_id: string | null; winner_id: string | null }>((f, t) =>
-      admin.from('matches').select('created_at, started_at, completed_at, forfeit, player1_id, player2_id, winner_id').gte('created_at', since14).order('id').range(f, t),
-    ).then((data) => ({ data })),
     admin.from('system_heartbeats').select('*'),
   ]);
 
@@ -83,22 +78,6 @@ export async function GET(request: NextRequest) {
     })
     .filter((s) => s.reasons.length > 0);
 
-  // VS health from human matches (CPU games write user_stats only — they never
-  // create a matches row, so bot fill is invisible here by design).
-  const matches = matchesRes.data ?? [];
-  const completed = matches.filter((m) => m.completed_at);
-  const durations = completed
-    .map((m) => (new Date(m.completed_at!).getTime() - new Date(m.started_at).getTime()) / 1000)
-    .filter((s) => s > 0 && s < 3600);
-  const vsHealth = {
-    matches14d: matches.length,
-    completed14d: completed.length,
-    forfeits14d: matches.filter((m) => m.forfeit).length,
-    abandonRate: matches.length ? Math.round((1000 * (matches.length - completed.length)) / matches.length) / 10 : 0,
-    avgDurationSec: durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0,
-    distinctPlayers: new Set(matches.flatMap((m) => [m.player1_id, m.player2_id].filter(Boolean))).size,
-  };
-
   // Cron heartbeats vs expected cadence. Table may predate the migration —
   // report 'not instrumented' rather than erroring.
   const beats = heartbeatsRes.data ?? [];
@@ -118,7 +97,6 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     suspects,
-    vsHealth,
     crons,
   });
 }

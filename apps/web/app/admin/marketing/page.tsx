@@ -6,6 +6,7 @@ import {
   ExternalLink, Copy, Check, CircleDashed, CircleCheck,
 } from 'lucide-react';
 import { PageHeader } from '../components/admin-ui';
+import { AdminTabs, useTabParam, type AdminTabDef } from '../components/admin-tabs';
 
 interface MarketingLink {
   slug: string;
@@ -61,31 +62,16 @@ interface MarketingData {
   shares?: SharesBlock;
 }
 
-/**
- * The anti-sprawl ledger: every social account records its handle, owning
- * login, and state the day it's born. Hand-maintained on purpose — this list
- * IS the source of truth for "what exists and who owns it", and it changes a
- * few times a year, not per-request.
- */
-const SOCIAL_REGISTRY: {
-  platform: string;
-  handle: string;
-  url: string | null;
-  owner: string;
-  status: 'live' | 'pending';
-  note?: string;
-}[] = [
-  { platform: 'X', handle: '@wordocious', url: 'https://x.com/wordocious', owner: 'bt@wordocious.com', status: 'live', note: 'JP (@JassonPatterson) admin invite pending: he must allow Delegate invites' },
-  { platform: 'TikTok', handle: '@playwordocious', url: 'https://tiktok.com/@playwordocious', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious held by a dormant account: claim via trademark once registered (renamed 10-14; next rename after 30 days). Linked to TikTok Business Center ShowLoud LLC; JP invited as admin' },
-  { platform: 'Instagram', handle: '@playwordocious', url: 'https://instagram.com/playwordocious', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious held by a dormant account: claim via trademark once registered (renamed 10-14). Professional (Business) account, connected to the Facebook Page; JP gets access through the Page' },
-  { platform: 'Facebook', handle: 'facebook.com/wordocious', url: 'https://facebook.com/wordocious', owner: 'Brian (admin)', status: 'live', note: 'username set 10-14; @playwordocious connected to the Page (Page admins manage IG too). JP Page access pending: needs his Facebook profile link (his email finds no profile)' },
-  { platform: 'Pinterest', handle: 'wordocious', url: 'https://pinterest.com/wordocious', owner: 'bt@wordocious.com', status: 'live', note: 'JP invited as Manager (jp@pattersonlp.com) 10-14' },
-  { platform: 'Threads', handle: '@playwordocious', url: null, owner: 'via Instagram', status: 'pending', note: 'auto-claims on first Threads sign-in' },
-  { platform: 'Reddit', handle: 'u/wordocious', url: null, owner: 'bt@wordocious.com', status: 'pending', note: 'create via phone app account switcher' },
-  { platform: 'YouTube', handle: '@wordocious', url: null, owner: 'TBD (Google account)', status: 'pending' },
+// ?tab= : Channels (links, signups by source, Search Console) | Shares. The social
+// account handle registry moved to Social Studio > Accounts; push campaigns and
+// push reach to Messaging & Push.
+const TABS: ReadonlyArray<AdminTabDef<'channels' | 'shares'>> = [
+  { id: 'channels', label: 'Channels', icon: Link2 },
+  { id: 'shares', label: 'Shares', icon: Share2 },
 ];
 
 export default function AdminMarketingPage() {
+  const [tab, setTab] = useTabParam(TABS.map((t) => t.id), 'channels');
   const [data, setData] = useState<MarketingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
@@ -123,9 +109,13 @@ export default function AdminMarketingPage() {
           sub={`${data?.invites30d ?? 0} invite links sent`} />
       </div>
 
-      {/* Shares: provenance + outcome (JP, 2026-09-23) */}
-      <SharesSection shares={data?.shares} />
+      <AdminTabs tabs={TABS} value={tab} onChange={setTab} label="Marketing sections" />
 
+      {/* Shares: provenance + outcome (JP, 2026-09-23). The one home for the
+          by-game and by-surface breakdowns (Metrics keeps only the share-rate trend). */}
+      {tab === 'shares' && <SharesSection shares={data?.shares} />}
+
+      {tab === 'channels' && (<>
       {/* Link builder & attribution */}
       <section className="bg-white rounded-xl border border-gray-200 p-5">
         <SectionTitle icon={Link2} title="Links & attribution" />
@@ -173,72 +163,6 @@ export default function AdminMarketingPage() {
         </table>
       </section>
 
-      {/* Social account registry */}
-      <section className="bg-white rounded-xl border border-gray-200 p-5">
-        <SectionTitle icon={AtSign} title="Social account registry" />
-        <p className="text-xs text-gray-500 font-semibold mb-3">
-          The anti-sprawl ledger: every account, its owning login, and its state. Bios all point at
-          the /go link for their channel.
-        </p>
-        <ul className="mb-3 space-y-1 text-xs font-semibold text-gray-600">
-          <li>
-            <span className="font-black text-gray-800">Content plan:</span> JP&apos;s 45-day plan (Oct 13 to Nov 29, launch Oct 16)
-            and its draft posts live in{' '}
-            <a href="/admin/studio?tab=plan" className="font-bold text-violet-700 hover:underline">Social Studio</a>.
-            Posts go out by themselves once BMT and JP both approve.
-          </li>
-          <li>
-            <span className="font-black text-gray-800">Profile pictures:</span> every account uses icon B (the W mascot) since
-            10-14; Facebook cover and X header refreshed the same day.
-          </li>
-          <li>
-            <span className="font-black text-gray-800">Claiming @wordocious (Instagram, TikTok):</span> keep dated evidence now,
-            report with the USPTO serial number once filed, refile with the registration number, then rename
-            @playwordocious (plan: bible §385).
-          </li>
-        </ul>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-[10px] font-black tracking-wider text-gray-400 border-b border-gray-100">
-              <th className="py-2 pr-2">PLATFORM</th>
-              <th className="py-2 pr-2">HANDLE</th>
-              <th className="py-2 pr-2">OWNER</th>
-              <th className="py-2">STATUS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {SOCIAL_REGISTRY.map((s) => (
-              <tr key={s.platform} className="border-b border-gray-50 align-top">
-                <td className="py-2 pr-2 font-bold text-gray-800">{s.platform}</td>
-                <td className="py-2 pr-2">
-                  {s.url ? (
-                    <a href={s.url} target="_blank" rel="noreferrer"
-                       className="inline-flex items-center gap-1 font-bold text-violet-700 hover:underline">
-                      {s.handle} <ExternalLink className="w-3 h-3" />
-                    </a>
-                  ) : (
-                    <span className="font-bold text-gray-500">{s.handle}</span>
-                  )}
-                  {s.note && <div className="text-[11px] text-amber-600 font-semibold">{s.note}</div>}
-                </td>
-                <td className="py-2 pr-2 font-mono text-xs text-gray-500">{s.owner}</td>
-                <td className="py-2">
-                  {s.status === 'live' ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-black text-green-700 bg-green-50 rounded-full px-2 py-0.5">
-                      <CircleCheck className="w-3 h-3" /> LIVE
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-black text-amber-700 bg-amber-50 rounded-full px-2 py-0.5">
-                      <CircleDashed className="w-3 h-3" /> PENDING
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-
       {/* Signups by source detail */}
       <section className="bg-white rounded-xl border border-gray-200 p-5">
         <SectionTitle icon={Users} title="Signups by source" />
@@ -267,9 +191,11 @@ export default function AdminMarketingPage() {
 
       <p className="text-[11px] text-gray-400 font-semibold max-w-2xl">
         Not tracked here: paid ads (none until organic lifetime value exists) and email (it appears
-        once there is an opt-in list). The content calendar lives in{' '}
-        <a href="/admin/studio" className="font-bold text-violet-700 hover:underline">Social Studio</a>.
+        once there is an opt-in list). The content calendar and the social account handles live in{' '}
+        <a href="/admin/studio" className="font-bold text-violet-700 hover:underline">Social Studio</a>; push campaigns are on{' '}
+        <a href="/admin/messaging?tab=campaigns" className="font-bold text-violet-700 hover:underline">Messaging &amp; Push</a>.
       </p>
+      </>)}
     </div>
   );
 }

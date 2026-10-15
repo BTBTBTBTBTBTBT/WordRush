@@ -5,10 +5,11 @@ import { Swords, Bot, Link2, Bell, Flag, CalendarDays, Trophy } from 'lucide-rea
 import { BOT_CAST, botOfTheDay, botSolveLine, LADDER_CLEAR_RUN } from '@wordle-duel/core';
 import { mascotSrc, type MascotId } from '@/lib/mascots';
 import { DrillCard } from '../components/drill-panel';
-import { PageHeader, ReloadButton, Section, BarList, Table, ErrorNote, LoadingGrid, Callout, fmt, ago, useAdminData } from '../components/admin-ui';
+import { TabIntro, ReloadButton, Section, BarList, Table, ErrorNote, LoadingGrid, Callout, fmt, ago, useAdminData } from '../components/admin-ui';
 
 interface VsData {
   people: { matches7: number | null; matches1: number | null; forfeits7: number | null; pings7: number | null };
+  health14d: { matches: number; completed: number; forfeits: number; abandonRate: number; avgDurationSec: number; distinctPlayers: number };
   challenges: {
     all: number | null; last7: number | null; open: number | null; entries7: number | null;
     byMode30: Array<{ key: string; count: number }>; links30: number; direct30: number;
@@ -32,19 +33,16 @@ const MILESTONE_LABEL: Record<string, string> = {
 const dayPlus = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 const weekday = (day: string) => new Date(`${day}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
 
-export default function AdminVsPage() {
+export default function VsTab() {
   const { data, error, loading, reload } = useAdminData<VsData>('/api/admin/vs');
   const today = dayPlus(0);
   const botToday = botOfTheDay(today);
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="VS & Bots"
-        icon={Swords}
-        subtitle="People VS matches, race-my-run challenges, and the ten-character bot cast. Ladder progress lives on each device, so the bot achievements are the server-side signal for it."
-        actions={<ReloadButton onClick={reload} loading={loading} />}
-      />
+      <TabIntro actions={<ReloadButton onClick={reload} loading={loading} />}>
+        People VS matches, race-my-run challenges, and the ten-character bot cast. Ladder progress lives on each device, so the bot achievements are the server-side signal for it.
+      </TabIntro>
       {error && <ErrorNote>{error}</ErrorNote>}
       {!data && loading && <LoadingGrid />}
 
@@ -54,6 +52,19 @@ export default function AdminVsPage() {
           <DrillCard label="Forfeits · 7d" value={fmt(data.people.forfeits7)} sub="quit = forfeit" icon={<Flag className="w-3.5 h-3.5" />} />
           <DrillCard label="Challenges · 7d" value={fmt(data.challenges.last7)} sub={`${fmt(data.challenges.open)} still open · ${fmt(data.challenges.all)} all time`} icon={<Link2 className="w-3.5 h-3.5" />} />
           <DrillCard label="'Ping me' senders · 7d" value={fmt(data.people.pings7)} sub={`${fmt(data.challenges.entries7)} challenge entries · 7d`} icon={<Bell className="w-3.5 h-3.5" />} />
+        </div>
+      )}
+
+      {data && (
+        <div>
+          <p className="text-xs font-black text-gray-400 uppercase tracking-wide mb-2">Match health, last 14 days</p>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <DrillCard label="Matches (14d)" icon={<Swords className="w-3.5 h-3.5" />} value={fmt(data.health14d.matches)} sub={`${fmt(data.health14d.distinctPlayers)} distinct players`} drill={{ metric: 'matches' }} />
+            <DrillCard label="Completed" value={fmt(data.health14d.completed)} drill={{ metric: 'matches', key: 'completed' }} />
+            <DrillCard label="Abandon rate" value={`${data.health14d.abandonRate}%`} sub="stuck or left unfinished" drill={{ metric: 'matches', key: 'abandoned' }} />
+            <DrillCard label="Forfeits" value={fmt(data.health14d.forfeits)} drill={{ metric: 'matches', key: 'forfeit' }} />
+            <DrillCard label="Avg duration" value={`${data.health14d.avgDurationSec}s`} sub="bot games aren't match rows" drill={{ metric: 'matches', key: 'completed' }} />
+          </div>
         </div>
       )}
 
@@ -142,7 +153,7 @@ export default function AdminVsPage() {
           </div>
 
           <Callout>
-            People VS leaderboards and recent matches live on <Link href="/admin/games" className="font-bold text-purple-700">Games & Leaderboards</Link>; VS match health (stuck or abandoned matches) is on <Link href="/admin/ops" className="font-bold text-purple-700">Ops Health</Link>.
+            People VS leaderboards and recent matches are on the <Link href="/admin/games" className="font-bold text-purple-700">Leaderboards</Link> tab (pick VS).
           </Callout>
         </>
       )}

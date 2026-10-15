@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, CalendarDays, CalendarRange, ListChecks, CircleCheck, CircleDashed, Clapperboard, Pause, Play, RotateCcw, X } from 'lucide-react';
+import { AlertTriangle, AtSign, CalendarDays, CalendarRange, ListChecks, CircleCheck, CircleDashed, Clapperboard, Pause, Play, RotateCcw, X } from 'lucide-react';
 import { PageHeader, useAdminData } from '../components/admin-ui';
+import { AdminTabs, useTabParam, type AdminTabDef } from '../components/admin-tabs';
+import { SocialRegistry } from './social-registry';
 import { StudioCalendar, type CalPost } from './calendar';
 import { PostCard, type CardActions } from './post-card';
 import { PlanDayCard, PlanTab } from './plan-view';
@@ -16,9 +18,16 @@ import type { StudioPayload } from '@/lib/admin/studio-types';
 
 // admin > Growth > Social Studio: the marketing calendar on top (month / week, status-colored thumbnails, season
 // and release bands, drag to reschedule), the review queue under it (inline caption edits with character counts,
-// Approve / Reject / Comment with a 5-second Undo), and the Accounts panel. BMT and JP (public.art_reviewers) both
+// Approve / Reject / Comment with a 5-second Undo), and the Accounts tab (connections + the handle registry). BMT and JP (public.art_reviewers) both
 // approve a post's CURRENT version; then /api/cron/social-publish posts it at its time on every connected account.
 // Rules: lib/admin/studio.ts. Tables: docs/sql/20261005-social-studio.sql.
+
+// ?tab= is shared with the other merged pages (the Calendar view is the default).
+const TABS: ReadonlyArray<AdminTabDef<'calendar' | 'plan' | 'accounts'>> = [
+  { id: 'calendar', label: 'Calendar', icon: CalendarDays },
+  { id: 'plan', label: "JP's plan", icon: ListChecks },
+  { id: 'accounts', label: 'Accounts', icon: AtSign },
+];
 
 const UNDO_MS = 5000;
 interface Toast { id: number; message: string; undo: (() => void) | null }
@@ -58,14 +67,13 @@ export default function SocialStudioPage() {
   const [view, setView] = useState<'month' | 'week'>('month');
   const [anchor, setAnchor] = useState(today);
   const [selected, setSelected] = useState<string | null>(null);
-  const [tab, setTab] = useState<'calendar' | 'plan'>('calendar');
+  const [tab, setTab] = useTabParam(TABS.map((t) => t.id), 'calendar');
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   useEffect(() => {
     if (search === null) return;
     const sp = new URLSearchParams(search);
     if (sp.get('connected')) setNotice({ ok: true, text: `${PROVIDERS[sp.get('connected') as Provider]?.label ?? sp.get('connected')} connected.` });
     if (sp.get('connect_error')) setNotice({ ok: false, text: sp.get('connect_error')! });
-    if (sp.get('tab') === 'plan') setTab('plan');
     const v = sp.get('view');
     if (v === 'week' || v === 'month') setView(v);
     const d = sp.get('day');
@@ -266,19 +274,7 @@ export default function SocialStudioPage() {
         </p>
       )}
 
-      <div className="inline-flex rounded-xl bg-white shadow-sm p-1" role="tablist" aria-label="Studio sections">
-        {([['calendar', 'Calendar', CalendarDays], ['plan', "JP's 45-day plan", ListChecks]] as const).map(([id, label, Icon]) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => setTab(id)}
-            className={`h-9 rounded-lg px-3.5 text-xs font-extrabold inline-flex items-center gap-1.5 ${tab === id ? 'bg-purple-600 text-white' : 'text-purple-700 hover:bg-purple-50'}`}
-          >
-            <Icon className="w-3.5 h-3.5" /> {label}
-          </button>
-        ))}
-      </div>
+      <AdminTabs tabs={TABS} value={tab} onChange={setTab} label="Studio sections" />
 
       {tab === 'plan' ? (
         <PlanTab today={today} onOpenDay={openPlanDay} />
@@ -299,6 +295,12 @@ export default function SocialStudioPage() {
             </p>
           )}
 
+          {tab === 'accounts' ? (
+            <>
+              <Accounts accounts={data.accounts} onChange={reload} />
+              <SocialRegistry />
+            </>
+          ) : (<>
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex rounded-xl bg-white shadow-sm p-1">
               {(['month', 'week'] as const).map((v) => (
@@ -327,9 +329,9 @@ export default function SocialStudioPage() {
               </button>
             ))}
             {connectedCount === 0 && (
-              <a href="#accounts" className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-200">
+              <button onClick={() => setTab('accounts')} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-200">
                 <CircleDashed className="w-3.5 h-3.5" /> No accounts connected: nothing will post yet
-              </a>
+              </button>
             )}
           </div>
 
@@ -394,7 +396,7 @@ export default function SocialStudioPage() {
             )}
           </section>
 
-          <Accounts accounts={data.accounts} onChange={reload} />
+          </>)}
           {data.fixture && <p className="text-[11px] font-bold text-gray-400">Local fixture data (dev only).</p>}
         </>
       )}

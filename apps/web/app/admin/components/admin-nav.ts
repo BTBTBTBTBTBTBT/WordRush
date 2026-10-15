@@ -1,7 +1,6 @@
 import {
-  LayoutDashboard, TrendingUp, Users, CalendarCheck, Gamepad2, Puzzle, Swords,
-  HeartHandshake, Trophy, CreditCard, DollarSign, Megaphone, BellRing, ToggleLeft,
-  Ghost, Activity, Wrench, Palette, Clapperboard, AudioLines, type LucideIcon,
+  LayoutDashboard, TrendingUp, Users, CalendarCheck, Gamepad2, HeartHandshake, Trophy, CreditCard, DollarSign,
+  Megaphone, BellRing, Ghost, Activity, Wrench, Palette, Clapperboard, AudioLines, type LucideIcon,
 } from 'lucide-react';
 
 export interface AdminNavItem {
@@ -42,7 +41,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     title: 'Growth',
     items: [
       { href: '/admin/marketing', label: 'Marketing', icon: Megaphone, blurb: 'Links, signups by source, shares' },
-      { href: '/admin/studio', label: 'Social Studio', icon: Clapperboard, blurb: 'Marketing calendar: review posts with JP, they publish once both approve' },
+      { href: '/admin/studio', label: 'Social Studio', icon: Clapperboard, blurb: "Marketing calendar, JP's plan and the social accounts: posts publish once both approve" },
       { href: '/admin/messaging', label: 'Messaging & Push', icon: BellRing, blurb: 'Announcements, push campaigns, push health, push copy' },
     ],
   },
@@ -51,51 +50,28 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     items: [
       { href: '/admin/art', label: 'Art Library', icon: Palette, blurb: 'Review art with JP: side-by-side previews, approvals, feedback' },
       { href: '/admin/sounds', label: 'Sound Library', icon: AudioLines, blurb: 'Every sound by game: what ships vs the options, picks with JP, feedback' },
+      { href: '/admin/seasons', label: 'Seasons', icon: Ghost, blurb: 'Halloween status, web preview and the costumed cast' },
     ],
   },
   {
     title: 'Players',
     items: [
       { href: '/admin/users', label: 'Users & Moderation', icon: Users, blurb: 'Search players, new accounts, bans, audit log' },
-          ],
+    ],
   },
   {
     title: 'Games & Puzzles',
     items: [
       { href: '/admin/daily', label: 'Dailies', icon: CalendarCheck, blurb: "Today's plays and sweeps, the Word of the Day schedule, bank runway" },
-      { href: '/admin/games', label: 'Games & Leaderboards', icon: Gamepad2, blurb: 'Daily boards, seeds, recent matches' },
-      { href: '/admin/puzzles', label: 'Puzzle Analytics', icon: Puzzle, blurb: 'Difficulty, popularity, streak economy' },
-    ],
-  },
-  {
-    title: 'Competition',
-    items: [
-      { href: '/admin/vs', label: 'VS & Bots', icon: Swords, blurb: 'Matches, challenges, the bot cast and ladder' },
-    ],
-  },
-  {
-    title: 'Social',
-    items: [
+      { href: '/admin/games', label: 'Games', icon: Gamepad2, blurb: 'Daily boards and seeds, puzzle difficulty and streaks, VS and the bot cast' },
       { href: '/admin/social', label: 'Friends & Pocket Games', icon: HeartHandshake, blurb: 'Friendships, pocket games, reactions, races' },
-    ],
-  },
-  {
-    title: 'Progression',
-    items: [
       { href: '/admin/progression', label: 'Progression', icon: Trophy, blurb: 'Achievements, level tiers, mascot maker adoption' },
-    ],
-  },
-  {
-    title: 'Content & Ops',
-    items: [
-      { href: '/admin/flags', label: 'Feature Flags', icon: ToggleLeft, blurb: 'Remote kill switches and launches' },
-      { href: '/admin/seasons', label: 'Seasons', icon: Ghost, blurb: 'Halloween status and preview' },
     ],
   },
   {
     title: 'System',
     items: [
-      { href: '/admin/ops', label: 'Ops Health', icon: Activity, blurb: 'Webhooks, anti-cheat, crons' },
+      { href: '/admin/ops', label: 'Ops', icon: Activity, blurb: 'Cron heartbeats, anti-cheat, feature flags' },
       { href: '/admin/engineering', label: 'Engineering', icon: Wrench, blurb: 'Store links, release flow, and how Wordocious is built' },
     ],
   },

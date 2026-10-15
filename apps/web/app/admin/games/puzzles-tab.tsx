@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Puzzle, Flame, Shield } from 'lucide-react';
 import { DrillCard, useDrill } from '../components/drill-panel';
 import { modeLabel } from '@/lib/mode-labels';
-import { PageHeader } from '../components/admin-ui';
+import { TabIntro, ErrorNote } from '../components/admin-ui';
 
 // Puzzle analytics — which dailies were brutal, which modes get played, and
 // whether the streak/shield economy is actually being used.
@@ -29,22 +29,24 @@ const fmtDay = (key: string) => {
 
 const winColor = (r: number) => (r < 40 ? 'text-red-500' : r < 65 ? 'text-amber-600' : 'text-green-600');
 
-export default function AdminPuzzlesPage() {
+export default function PuzzlesTab() {
   const drill = useDrill();
   const [data, setData] = useState<PuzzlesData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [days, setDays] = useState(14);
 
   useEffect(() => {
     setLoading(true);
+    setFailed(false);
     fetch(`/api/admin/puzzles?days=${days}`)
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((d) => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch(() => { setFailed(true); setLoading(false); });
   }, [days]);
 
   if (loading) return <div className="h-60 bg-gray-100 rounded-xl animate-pulse" />;
-  if (!data?.popularity) return <p className="text-sm text-gray-400">Failed to load puzzle analytics.</p>;
+  if (failed || !data?.popularity) return <ErrorNote>Could not load puzzle analytics.</ErrorNote>;
 
   const se = data.streakEconomy;
   // Group difficulty rows by day for a scannable table.
@@ -56,7 +58,7 @@ export default function AdminPuzzlesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Puzzle Analytics" actions={
+      <TabIntro actions={
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
@@ -67,7 +69,9 @@ export default function AdminPuzzlesPage() {
           <option value={30}>Last 30 days</option>
           <option value={60}>Last 60 days</option>
         </select>
-      } />
+      }>
+        Which dailies were brutal, which modes get played, and whether the streak and shield economy is being used.
+      </TabIntro>
 
       {/* Mode popularity */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">

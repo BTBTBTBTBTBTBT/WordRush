@@ -332,7 +332,7 @@ function AppAdsCard({ levelPlay, adFlags }: { levelPlay: LevelPlayResult | undef
             </span>
           ))
         )}
-        <Link href="/admin/flags" className="ml-auto inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">Admin → Flags</Link>
+        <Link href="/admin/ops?tab=flags" className="ml-auto inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">Admin → Ops → Flags</Link>
       </div>
       <ul className="mt-3 space-y-1 text-xs font-semibold text-gray-600">
         <li><span className="font-black text-gray-800">As of 10-14 (typed by hand, not read from the stores):</span> iOS 2.8.2 on the App Store (10-14) and Android 2.8.2 (224) on Google Play (10-13), both with LevelPlay. The live ads flag state is the pill above; Pro still means no ads.</li>

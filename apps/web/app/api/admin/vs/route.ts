@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     challengesAll, challenges7, challengesOpen, entries7,
     pings7,
     cpuRows, milestoneCounts,
-    challenge30, recentChallengesRes,
+    challenge30, recentChallengesRes, matches14,
   ] = await Promise.all([
     headCount(admin.from('matches').select('id', { count: 'exact', head: true }).gte('created_at', since7)),
     headCount(admin.from('matches').select('id', { count: 'exact', head: true }).gte('created_at', since1)),
@@ -58,7 +58,25 @@ export async function GET(request: NextRequest) {
       .select('id, code, challenger_id, game_mode, solved, guesses, time_ms, is_link, invitee_ids, created_at, expires_at')
       .order('created_at', { ascending: false })
       .limit(20),
+    // Match health window (14d). §257: paged, since matches is already past PostgREST's silent 1,000-row cap.
+    sweepAll<{ created_at: string; started_at: string; completed_at: string | null; forfeit: boolean | null; player1_id: string | null; player2_id: string | null }>((f, t) =>
+      admin.from('matches').select('created_at, started_at, completed_at, forfeit, player1_id, player2_id').gte('created_at', isoDaysAgo(14)).order('id').range(f, t),
+    ),
   ]);
+
+  // VS health from human matches (bot games write user_stats only, never a matches row).
+  const completed14 = matches14.filter((m) => m.completed_at);
+  const durations14 = completed14
+    .map((m) => (new Date(m.completed_at!).getTime() - new Date(m.started_at).getTime()) / 1000)
+    .filter((s) => s > 0 && s < 3600);
+  const health14d = {
+    matches: matches14.length,
+    completed: completed14.length,
+    forfeits: matches14.filter((m) => m.forfeit).length,
+    abandonRate: matches14.length ? Math.round((1000 * (matches14.length - completed14.length)) / matches14.length) / 10 : 0,
+    avgDurationSec: durations14.length ? Math.round(durations14.reduce((a, b) => a + b, 0) / durations14.length) : 0,
+    distinctPlayers: new Set(matches14.flatMap((m) => [m.player1_id, m.player2_id].filter(Boolean))).size,
+  };
 
   // Bot games by mode (lifetime totals from user_stats).
   const cpuByMode = new Map<string, { mode: string; games: number; wins: number; losses: number; players: number }>();
@@ -88,6 +106,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     people: { matches7, matches1, forfeits7, pings7 },
+    health14d,
     challenges: {
       all: challengesAll,
       last7: challenges7,

@@ -216,10 +216,10 @@ describe('approved picks -> make-sounds.py PICKS rows', () => {
 });
 
 describe('the page', () => {
-  it('is in the Design group next to the Art Library', async () => {
+  it('is in the Design group next to the Art Library and Seasons', async () => {
     const { ADMIN_NAV } = await import('@/app/admin/components/admin-nav');
     const design = ADMIN_NAV.find((g) => g.title === 'Design')!;
-    expect(design.items.map((i) => i.href)).toEqual(['/admin/art', '/admin/sounds']);
+    expect(design.items.map((i) => i.href)).toEqual(['/admin/art', '/admin/sounds', '/admin/seasons']);
   });
 
   it('stays silent: no game sound engine, no autoplay; audio starts only from a play button', () => {

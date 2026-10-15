@@ -1,13 +1,14 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { Ghost, ExternalLink, Smartphone, CalendarRange } from 'lucide-react';
 import { halloweenSrc } from '@/lib/art';
 import { CAST, MASCOT_LETTER } from '@/lib/mascots';
 import { halloweenStatus } from '@/lib/admin/admin-aggregates';
 import { PageHeader, Section, Stat, Callout } from '../components/admin-ui';
 
-// admin > Content & Ops > Seasons: the seasonal cast skins (FINISH_SPEC X).
+// admin > Design > Seasons: the seasonal cast skins (FINISH_SPEC X).
 // core currentSeason decides on the player's LOCAL date; this page reads the
 // admin's own local date the same way. Preview is web-only and per browser
 // session (lib/season.ts `?season=`); natives use the admin debug toggle.
@@ -77,7 +78,7 @@ export default function AdminSeasonsPage() {
       </Section>
 
       <Callout>
-        <span className="inline-flex items-center gap-1.5 font-bold"><Smartphone className="w-4 h-4" /> iOS and Android:</span> turn on Settings → Halloween preview (shown to admin accounts only).
+        <span className="inline-flex items-center gap-1.5 font-bold"><Smartphone className="w-4 h-4" /> iOS and Android:</span> turn on Settings → Halloween preview (shown to admin accounts only). To see a single piece of art in the app before it ships, use the In app preview tab on the <Link href="/admin/art" className="font-bold text-purple-700">Art Library</Link>.
       </Callout>
     </div>
   );
