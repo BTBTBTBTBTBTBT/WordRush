@@ -76,9 +76,9 @@ const SOCIAL_REGISTRY: {
   note?: string;
 }[] = [
   { platform: 'X', handle: '@wordocious', url: 'https://x.com/wordocious', owner: 'bt@wordocious.com', status: 'live', note: 'JP (@JassonPatterson) admin invite pending: he must allow Delegate invites' },
-  { platform: 'TikTok', handle: '@playwordocious', url: 'https://tiktok.com/@playwordocious', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious held by a dormant account: claim via trademark once registered (renamed 10-14; next rename allowed after 30 days)' },
-  { platform: 'Instagram', handle: '@playwordocious', url: 'https://instagram.com/playwordocious', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious held by a dormant account: claim via trademark once registered (renamed 10-14)' },
-  { platform: 'Facebook', handle: 'facebook.com/wordocious', url: 'https://facebook.com/wordocious', owner: 'Brian (admin)', status: 'live', note: 'username set 10-14; Instagram not yet connected to the Page' },
+  { platform: 'TikTok', handle: '@playwordocious', url: 'https://tiktok.com/@playwordocious', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious held by a dormant account: claim via trademark once registered (renamed 10-14; next rename after 30 days). Linked to TikTok Business Center ShowLoud LLC; JP invited as admin' },
+  { platform: 'Instagram', handle: '@playwordocious', url: 'https://instagram.com/playwordocious', owner: 'bt@wordocious.com', status: 'live', note: '@wordocious held by a dormant account: claim via trademark once registered (renamed 10-14). Professional (Business) account, connected to the Facebook Page' },
+  { platform: 'Facebook', handle: 'facebook.com/wordocious', url: 'https://facebook.com/wordocious', owner: 'Brian (admin)', status: 'live', note: 'username set 10-14; @playwordocious connected to the Page (Page admins manage IG too)' },
   { platform: 'Pinterest', handle: 'wordocious', url: 'https://pinterest.com/wordocious', owner: 'bt@wordocious.com', status: 'live', note: 'JP invited as Manager (jp@pattersonlp.com) 10-14' },
   { platform: 'Threads', handle: '@playwordocious', url: null, owner: 'via Instagram', status: 'pending', note: 'auto-claims on first Threads sign-in' },
   { platform: 'Reddit', handle: 'u/wordocious', url: null, owner: 'bt@wordocious.com', status: 'pending', note: 'create via phone app account switcher' },
