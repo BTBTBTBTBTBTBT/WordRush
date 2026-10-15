@@ -1821,7 +1821,7 @@ where public.social_posts.status = 'draft' and public.social_posts.version = 1
 insert into public.marketing_links (slug, target, channel) values ('p-35cd278b-tiktok', 'https://wordocious.com/', 'tiktok') on conflict (slug) do nothing;
 insert into public.social_post_targets (post_id, platform, caption, link_slug) values ('9782a4e4-1ebb-5d4d-a24b-491635cd278b', 'tiktok', '18 Days of Wordocious, episode 11: QuadWord.
 
-Four boards, nine shared guesses. Every word you type hits all four.
+Four boards, nine guesses shared across all four. Every word you type hits all four.
 
 Free daily: link in bio.', 'p-35cd278b-tiktok')
 on conflict (post_id, platform) do update set caption = excluded.caption, link_slug = excluded.link_slug, updated_at = now()
@@ -1830,7 +1830,7 @@ where public.social_post_targets.status = 'pending'
 insert into public.marketing_links (slug, target, channel) values ('p-35cd278b-instagram', 'https://wordocious.com/', 'instagram') on conflict (slug) do nothing;
 insert into public.social_post_targets (post_id, platform, caption, link_slug) values ('9782a4e4-1ebb-5d4d-a24b-491635cd278b', 'instagram', '18 Days of Wordocious, episode 11: QuadWord.
 
-Four boards, nine shared guesses. Every word you type hits all four.
+Four boards, nine guesses shared across all four. Every word you type hits all four.
 
 Free daily: link in bio.', 'p-35cd278b-instagram')
 on conflict (post_id, platform) do update set caption = excluded.caption, link_slug = excluded.link_slug, updated_at = now()
