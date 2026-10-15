@@ -1,37 +1,65 @@
-# JP 45-day post images: the one series system (founder 10-14: "the images should all be cohesive")
+# JP 45-day post images: the one series system
 
+Founder 10-14: "the images should all be cohesive", "always fit the seasonality themes", "posts should always seem fresh".
 Every image is the same template plus content: `compose.py` -> `build(fmt, season, slot, headline, sub, content, cast)`.
-Nothing is hand-placed per post. Change a rule in `LAYOUT` and every post follows.
+Nothing is hand-placed per post. Change a rule in `LAYOUT` / `SERIES_COLORS` and every post follows.
+Run `python3 docs/design/brand/social/jp45/compose.py` to rebuild every post, `manifest.json` and `contact-sheet.png`.
+
+## Pipeline (current)
+1. **Whole scenes from ChatGPT (preferred, newest)**: the runner drops full-resolution scenes (background + lettering + 1-3 mascots, drawn together) into `incoming/full/<date>-<slot>-<n>.png`. Each candidate gets the strict check below, then the REAL wordmark and footer are overlaid in code and the final is written. Rejected candidates are deleted and logged in `manifest.json`.
+2. **Composite fallback (what exists today for every post)**: ChatGPT lettering (flat green sheets, `lettering/`, cut by `extract-lettering.py`) recolored per series in code, real hero art composited in code, kit sky or the shipped seasonal wall. A post keeps its composite only until an accepted full scene replaces it; then the composite, its unused lettering captures and rejected candidates are deleted.
+
+### Strict check for any ChatGPT scene (all must pass)
+- Every mascot cropped next to `cast/hero/<id>.png` (Halloween / Thanksgiving costume art in season) and saved as `raw/compare-*.png`: letter shape, colors, eyes, mouth and teeth, brows, limbs, proportions. W is always friendly.
+- Headline spelled exactly; no stray text, no emoji, no puzzle answers; series color and season right; American spelling.
+- Never upscale a scene by more than about 1.1x. Sizes: landscape 1600x900 (from 3:2), portrait 1080x1350 and pin 1000x1500 (from 2:3).
+- Log `mascot_check` ("pass (checked vs hero)" / "pass (hero composite)" / "rejected: why") and `aesthetic_check` per image.
 
 ## Formats
 | fmt | size | used for |
 |---|---|---|
-| landscape | 1600x900 | X, Facebook link posts |
+| landscape | 1600x900 | X |
 | portrait | 1080x1350 | Instagram / Facebook feed |
 | pin | 1000x1500 | Pinterest |
 
-## The template (top to bottom, always centered and symmetric)
-1. **Wordmark spot** - the WORDOCIOUS wordmark, top center, same width per format (320 / 400 / 400 px), 34-60 px from the top.
-2. **Headline** - ChatGPT house bubble lettering (`lettering/*.png`), purple-to-pink gradient with deeper purple rim, ALWAYS in the same zone
-   (landscape y 108-380, portrait y 166-556, pin y 188-650), centered, max width 980 / 900 / 860. Soft purple shadow.
-3. **Sub line** - one line directly under the headline: either gold-to-orange house lettering (the "answer" line: BRING YOUR FAMILY., THE CROWN IS OPEN., CAPTION THIS.)
-   or Nunito Black white text with a purple stroke (the app's tagline style). Never both.
-4. **Content slot** (optional, centered under the sub line) - glossy tiles (kit.py ART_SPEC section 20 tile: purple/gold/grey family, no rim), a soft glass card, or a cartoon in a white paper frame. One thing only.
-5. **Cast** - real hero art from `cast/hero` (Halloween: `seasons/halloween/cast`), composited in code, feet on one baseline
-   (landscape y 824, portrait y 1262, pin y 1392). Ten = one row (landscape) or two rows of five (portrait/pin). Featured = 1-3, same height, centered. Never redrawn.
-6. **Footer** - `@handle  .  wordocious.com`, Nunito ExtraBold, centered at the same y. Handles: X `@wordocious`, IG/TikTok/Threads `@playwordocious`, Facebook `facebook.com/wordocious`, Pinterest just `wordocious.com`.
+## The template (top to bottom, centered and symmetric)
+1. **Wordmark spot**: the real WORDOCIOUS wordmark, top center, 430 / 520 / 520 px wide, with a soft white halo and dark shadow so it reads on every background. Same spot, same size, every format.
+2. **Headline**: ChatGPT house bubble lettering in the same zone every post (landscape y 108-380, portrait y 166-556, pin y 188-650), centered, max width 980 / 900 / 860.
+3. **Sub line**: one line under the headline, either gold-to-orange house lettering (BRING YOUR FAMILY., THE CROWN IS OPEN., CAPTION THIS.) or Nunito Black white text with a stroke tinted to the series. Never both.
+4. **Content slot** (optional, centered): glossy tiles (purple / gold / grey family, accent tinted to the series, no rim), a soft glass card, or a cartoon in a white paper frame. One thing only. The slot varies from week to week (tile rows, grids, cards, cartoons).
+5. **Cast**: real art only, feet on one baseline (landscape y 824, portrait y 1262, pin y 1392). Never redrawn.
+6. **Footer**: `@handle . wordocious.com`, Nunito ExtraBold, same y. X `@wordocious`, IG/TikTok/Threads `@playwordocious`, Facebook `facebook.com/wordocious`, Pinterest `wordocious.com`.
 
-Safe margin: 48 px landscape / 54 px portrait / 50 px pin from every edge for text and cast. Floating tiles only live at the edges, never under content.
+Safe margin 48 / 54 / 50 px from every edge. Floating tiles only at the edges, never under content.
 
-## Backgrounds (two variants, same structure)
-- **Standard** (Oct 15-16 and any non-Halloween day): the kit lilac-to-pink sky (`kit.sky`, seed 7) with soft bokeh and a few glossy letter tiles at the edges (seed 7, kept clear of content).
-- **Halloween** (Oct 17-31 only): the shipped Halloween home wall (`seasons/halloween/walls/wall-home-wide`) with a soft purple glow behind the headline, orange/purple edge tiles, costumed cast from `seasons/halloween/cast`, light footer text.
+## Backgrounds by season (same structure)
+| Season | Dates | Background | Cast art |
+|---|---|---|---|
+| Standard | Oct 15-16, Nov 1-13 | kit lilac-to-pink sky, bokeh, edge tiles | `cast/hero` + `poses/` |
+| Halloween | Oct 17-31 | shipped Halloween home wall, glow tinted to the series, orange/purple edge tiles | `seasons/halloween/cast` (+ alt costumes) |
+| Thanksgiving | Nov 14-29 | shipped Thanksgiving home wall, glow tinted to the series, harvest edge tiles | `seasons/thanksgiving/cast` (+ alt costumes) |
 
-## Lettering rules
-- One ChatGPT lettering family (free ChatGPT, flat #00FF00 sheets, zoom-captured 2x, keyed by `extract-lettering.py`).
-- Headlines purple-to-pink, sub lines gold-to-orange, Halloween headline (THE APP GOT DRESSED.) purple with slime drips and a cobweb (same kit as the shipped DAILIES Halloween title). No other colors, no other fonts.
-- No emoji, no puzzle answers, American spelling, no competitor names.
+## Headline color by season x series (hue in degrees; recolored in code on the keyed lettering)
+Each series keeps its name, lettering and layout across seasons; only the hue shifts with the season.
+| Series | Standard (cast colors) | Halloween | Thanksgiving |
+|---|---|---|---|
+| Launch / teasers / brand one-offs | purple-pink (original) | purple-pink | purple-pink |
+| MONDAY MASTERS | blue (D) 225-210 | ghostly blue-violet 250-235 | deep plum 305-325 |
+| WORD OF THE DAY QUIZ (+ word pins) | teal (C) 190-175 | slime green 105-85 | sage 100-90 |
+| MUDDLE WEDNESDAY (+ explainer pins) | orange / gold 45-28 | pumpkin orange 32-18 | burnt orange 25-15 |
+| 7 LETTERS. ONE WORD. (Hubbub tease) | green (I) 150-135 | potion teal 175-160 | golden wheat 48-40 |
+| FRIDAY'S FINEST | red-pink 350-335 | blood / candy red 358-345 | cranberry 350-340 |
+| SWEEP SUNDAY | purple (original) | witch purple 285-305 | maple brown 22-15 |
+| CAST SATURDAY | one color per letter, all cast colors | candy-corn yellow / orange / red-orange | harvest: cranberry, wheat, burnt orange, sage, plum |
+| Holiday one-offs | DIWALI marigold-vermilion 42-8; VETERANS DAY navy blue 222-210 | HALLOWEEN EVE / HAPPY HALLOWEEN keep the slime-drip Halloween lettering | THANKSGIVING / EVE / HAPPY harvest; FAMILY LEAGUE sage |
+
+Gold sub-line lettering stays gold in every season. Tile accent, sub-line stroke and headline glow follow the series hue.
+
+## Rotation (always fresh)
+- No fixed host per series. `pick()` chooses the lineup per post: least-used characters first, never the same lineup twice in a row on a channel, usage spread evenly (see `cast` in `manifest.json`).
+- Group size rotates per card (`SIZE_OPTS`): solo, duo, trio, 4-6, full cast. Two full rows never run back to back on a channel.
+- Art variants rotate too: the standard season cycles `cast/hero` and the shipped `poses/*` (inverted or seated poses skipped); Halloween and Thanksgiving cycle the shipped `-alt` costume art. Rows of seven or more always use the base hero/costume art.
+- Content slots rotate by occurrence (`occ()`): tile row / grid / card, different sub lines, a different cartoon or demo word each time.
 
 ## Checks logged per image in `manifest.json`
-- `mascot_check`: hero composite = pass; every cast instance is compared in `raw/compare-<fmt>.png` (real hero left, instance cropped from the final right).
-- `aesthetic_check`: house lettering, purple/gold/grey glossy tiles with no rim, calm background, compact symmetric layout.
+`mascot_check`, `aesthetic_check`, `hint` (any puzzle hint shown), `cast`, `series_color`, `caption`, plus `rejected: why` entries for scenes thrown out. Every cast instance is compared against the real hero art in `raw/compare-<fmt>.png`.

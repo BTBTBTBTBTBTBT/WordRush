@@ -21,6 +21,14 @@ SHEETS = {
     'sheet4-newweek-crown-caption-capture.png': (40, ['new-week-zero-points', 'the-crown-is-open', 'caption-this']),
     'sheet4-7letters-muddleworks-capture.png': (40, ['7-letters-one-word', 'how-muddle-works']),
     'sheet6-wotd-capture.png': (40, ['word-of-the-day', 'how-to-play']),
+    'sheet7-friday-cast-capture.png': (40, ['fridays-finest', 'cast-saturday', None]),
+    'sheet7-ph-dress-capture.png': (40, [None, 'product-hunt', 'dress-your-mascot']),
+    'sheet8-halloween-capture.png': (14, ['halloween-eve', 'happy-halloween', None]),
+    'sheet8-cleans-player-capture.png': (14, [None, 'the-cast-cleans-up', 'player-of-the-week']),
+    'sheet10-diwali-capture.png': (40, ['diwali', 'family-league']),
+    'sheet10-pro-day45-capture.png': (30, [None, None, 'go-pro', 'day-45']),
+    'sheet9-thanks-top-capture.png': (40, ['thanksgiving', 'thanksgiving-eve']),
+    'sheet9-thanks-capture.png': (40, [None, 'happy-thanksgiving', 'veterans-day']),
     'sheet5-meet-cast-capture.png': (40, ['meet-the-cast', 'bring-your-family-b']),
 }
 
@@ -90,5 +98,7 @@ if __name__ == '__main__':
         if len(blocks) != len(names):
             print('!!', fn, 'found', len(blocks), 'blocks, expected', len(names))
         for nm, im in zip(names, blocks):
+            if nm is None:
+                continue
             im.save(os.path.join(OUT, nm + '.png'))
             print(nm, im.size)

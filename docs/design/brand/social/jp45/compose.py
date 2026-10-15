@@ -33,6 +33,113 @@ HANDLE = {'x': '@wordocious', 'feed': '@playwordocious', 'fb': 'facebook.com/wor
 PURPLE_DEEP = (74, 32, 120)
 STROKE = (124, 58, 237)
 
+DARK = ('halloween', 'thanksgiving')
+CUR = {'series': 'default', 'season': 'standard', 'glow_h': None}
+PALETTE = ['#8B2CF5', '#F5A623', '#8E96A8']      # purple / gold / grey tile family (accent tinted per series by ctx())
+SLIME = ('app-got-dressed', 'halloween-eve', 'happy-halloween')     # Halloween drip lettering keeps its own look
+
+# Season x series headline colors (STYLE.md has the same table). ('grad', hue_top, hue_bottom, sat_mult, val_mult) or ('multi', [hues]).
+CAST_HUES = [270, 37, 217, 332, 183, 144, 24, 272, 38]
+SERIES_COLORS = {
+    'standard': {   # cast colors (Nov 1-13 and any non-seasonal day)
+        'default': None, 'brand': None, 'sweep': None,
+        'monday': ('grad', 225, 210, 1, 1), 'wotd': ('grad', 190, 175, 1, 1), 'muddle': ('grad', 45, 28, 1, 1),
+        'pangram': ('grad', 150, 135, 1, 1), 'friday': ('grad', 350, 335, 1, 1), 'cast': ('multi', CAST_HUES),
+        'diwali': ('grad', 42, 8, 1, 1), 'veterans': ('grad', 222, 210, 1, 0.92),
+    },
+    'halloween': {
+        'default': None, 'sweep': ('grad', 285, 305, 1, 0.95),
+        'monday': ('grad', 250, 235, 0.85, 1), 'wotd': ('grad', 105, 85, 1, 1), 'muddle': ('grad', 32, 18, 1, 1),
+        'pangram': ('grad', 175, 160, 0.9, 1), 'friday': ('grad', 358, 345, 1, 0.95), 'cast': ('multi', [50, 30, 14]),
+    },
+    'thanksgiving': {
+        'thanks': ('grad', 40, 20, 0.95, 0.95), 'sweep': ('grad', 22, 15, 0.75, 0.72),
+        'monday': ('grad', 305, 325, 0.9, 0.78), 'wotd': ('grad', 100, 90, 0.55, 0.85), 'muddle': ('grad', 25, 15, 1, 0.95),
+        'pangram': ('grad', 48, 40, 0.85, 1), 'friday': ('grad', 350, 340, 1, 0.85), 'cast': ('multi', [345, 42, 22, 95, 305]),
+        'league': ('grad', 100, 90, 0.55, 0.85), 'veterans': None,
+    },
+}
+
+
+def hsv_rgb(h, s, v):
+    import colorsys
+    r, g, b = colorsys.hsv_to_rgb((h % 360) / 360, s, v)
+    return (round(r * 255), round(g * 255), round(b * 255))
+
+
+def spec_now():
+    return SERIES_COLORS[CUR['season'] if CUR['season'] in SERIES_COLORS else 'standard'].get(CUR['series'])
+
+
+def ctx(series, season):
+    """Set the active series + season: headline hue, tile accent, text stroke, headline glow."""
+    CUR['series'], CUR['season'] = series, season
+    sp = SERIES_COLORS.get(season, SERIES_COLORS['standard']).get(series)
+    if sp is None:
+        PALETTE[:] = ['#8B2CF5', '#F5A623', '#8E96A8']; CUR['glow_h'] = None
+    else:
+        h = sp[1] if sp[0] == 'grad' else sp[1][0]
+        sm = sp[3] if sp[0] == 'grad' else 1; vm = sp[4] if sp[0] == 'grad' else 1
+        PALETTE[:] = ['#%02x%02x%02x' % hsv_rgb(h, min(1, 0.8 * sm), min(1, 0.95 * vm)), '#F5A623', '#8E96A8']
+        CUR['glow_h'] = h
+
+
+def cur_stroke():
+    sp = spec_now()
+    if sp is None:
+        return STROKE
+    h = sp[1] if sp[0] == 'grad' else sp[1][0]
+    return hsv_rgb(h, 0.72, 0.55)
+
+
+def tint(im, sp, name=''):
+    """Recolor the purple-pink house lettering (keeps rim shading, highlights and alpha)."""
+    if sp is None:
+        return im
+    hsv = np.asarray(im.convert('RGB').convert('HSV')).astype(np.float32)
+    H = hsv[..., 0] * 360 / 255; S = hsv[..., 1] / 255; V = hsv[..., 2] / 255
+    sel = (H > 235) & (H < 350) & (S > 0.15)
+    t = np.clip((H - 272) / 53, 0, 1)
+    if sp[0] == 'grad':
+        _, top, bot, sm, vm = sp
+        nh = top + (bot - top) * t
+    else:
+        hues = sp[1]; al = np.asarray(im.getchannel('A')) > 40
+        nh = np.zeros_like(H); sm = vm = 1
+        rows = al.sum(axis=1)
+        cut = None
+        if name in ('cast-saturday',):
+            lo, hi = int(len(rows) * 0.38), int(len(rows) * 0.62)
+            cut = lo + int(np.argmin(rows[lo:hi]))
+        zones = [(0, cut, 4), (cut, len(rows), 8)] if cut else [(0, len(rows), max(2, round(im.width / 120)))]
+        k = 0
+        for y0, y1, n in zones:
+            cols = np.where(al[y0:y1].any(axis=0))[0]
+            if len(cols) == 0:
+                continue
+            x0, x1 = cols.min(), cols.max() + 1
+            for i in range(n):
+                xa = x0 + (x1 - x0) * i / n; xb = x0 + (x1 - x0) * (i + 1) / n
+                nh[y0:y1, int(xa):int(xb) + (1 if i == n - 1 else 0)] = hues[k % len(hues)]; k += 1
+        nh = nh + (t - 0.5) * 14
+    nS = np.clip(S * sm, 0, 1); nV = np.clip(V * vm, 0, 1)
+    out = np.dstack([(nh % 360) * 255 / 360, nS * 255, nV * 255]).astype(np.uint8)
+    rgb = np.asarray(Image.fromarray(out, 'HSV').convert('RGB')).astype(np.float32)
+    base = np.asarray(im.convert('RGB')).astype(np.float32)
+    mix = np.where(sel[..., None], rgb, base).astype(np.uint8)
+    res = Image.fromarray(mix, 'RGB').convert('RGBA'); res.putalpha(im.getchannel('A'))
+    return res
+
+
+def tinted(name):
+    if name in SLIME or name.startswith('bring-your-family') or name in ('the-crown-is-open', 'caption-this'):
+        return lettering(name)
+    k = ('tint', name, CUR['series'], CUR['season'])
+    if k not in _c:
+        _c[k] = tint(lettering(name), spec_now(), name)
+    return _c[k]
+
+
 _c = {}
 
 
@@ -48,8 +155,10 @@ def lettering(name):
 
 def hero(cid, season):
     k = (cid, season)
+    if k not in _c and '|' in cid:
+        _c[k] = trim(Image.open(os.path.join(BRAND, cid.split('|')[1])).convert('RGBA'))
     if k not in _c:
-        folder = os.path.join(BRAND, 'seasons', 'halloween', 'cast') if season == 'halloween' else os.path.join(BRAND, 'cast', 'hero')
+        folder = os.path.join(BRAND, 'seasons', season, 'cast') if season in ('halloween', 'thanksgiving') else os.path.join(BRAND, 'cast', 'hero')
         _c[k] = trim(Image.open(os.path.join(folder, cid + '.png')).convert('RGBA'))
     return _c[k]
 
@@ -76,14 +185,15 @@ def drop_shadow(canvas, im, x, y, dark=(60, 20, 100), a=95, blur=0.03, dy=0.05):
 # ------------------------------------------------------------------ background
 def background(fmt, season, avoid=None):
     L = LAYOUT[fmt]; W, H = L['W'], L['H']
-    if season == 'halloween':
-        wall = Image.open(os.path.join(BRAND, 'seasons', 'halloween', 'walls', 'wall-home-wide.webp')).convert('RGBA')
+    if season in ('halloween', 'thanksgiving'):
+        wall = Image.open(os.path.join(BRAND, 'seasons', season, 'walls', 'wall-home-wide.webp')).convert('RGBA')
         box = {'landscape': (0, 75, 2400, 1425), 'portrait': (1200, 0, 2400, 1500), 'pin': (1400, 0, 2400, 1500)}[fmt]
         c = wall.crop(box).resize((W, H), Image.LANCZOS)
         glow = Image.new('L', (W, H), 0)
         ImageDraw.Draw(glow).ellipse((W * 0.12, L['head_y'][0] - 60, W * 0.88, L['head_y'][1] + 120), fill=120)
-        c.paste(Image.new('RGBA', (W, H), (110, 50, 170, 255)), (0, 0), glow.filter(ImageFilter.GaussianBlur(W * 0.06)))
-        cols = ['#F0782C', '#8B2CF5', '#FF9F1A', '#9B3DF3']
+        gc = hsv_rgb(CUR['glow_h'], 0.62, 0.62) if CUR['glow_h'] is not None else (110, 50, 170)
+        c.paste(Image.new('RGBA', (W, H), gc + (255,)), (0, 0), glow.filter(ImageFilter.GaussianBlur(W * 0.06)))
+        cols = ['#F0782C', '#8B2CF5', '#FF9F1A', '#9B3DF3'] if season == 'halloween' else ['#C0562A', '#E8A33A', '#7A2E4A', '#8B6B3A']
     else:
         c = sky(W, H, seed=7)
         cols = None
@@ -227,7 +337,7 @@ def build(fmt, season, slot, headline, sub=None, content=None, cast=None, cast_m
     # headline zone (same place every post)
     y0, y1 = L['head_y']
     names = headline if isinstance(headline, list) else [headline]
-    parts = [lettering(n) for n in names]
+    parts = [tinted(n) for n in names]
     if len(parts) > 1:   # stacked lines of equal cap height
         hh = min(p.height for p in parts)
         parts = [p.resize((round(p.width * hh / p.height), hh), Image.LANCZOS) for p in parts]
@@ -242,7 +352,7 @@ def build(fmt, season, slot, headline, sub=None, content=None, cast=None, cast_m
         hl = parts[0]
     hl = fit(hl, L['head_w'], y1 - y0, cap=head_cap)
     hx, hy = (W - hl.width) // 2, y0 + (y1 - y0 - hl.height) // 2
-    drop_shadow(layer, hl, hx, hy, dark=(20, 5, 50) if season == 'halloween' else (80, 30, 120), a=110)
+    drop_shadow(layer, hl, hx, hy, dark=(20, 5, 50) if season in DARK else (80, 30, 120), a=110)
     layer.alpha_composite(hl, (hx, hy))
     bottom = hy + hl.height
     # sub line
@@ -251,12 +361,12 @@ def build(fmt, season, slot, headline, sub=None, content=None, cast=None, cast_m
         if sub[0] == 'lettering':
             si = fit(lettering(sub[1]), W * 0.74, s1 - s0, cap=1.3)
             sx, sy = (W - si.width) // 2, s0 + (s1 - s0 - si.height) // 2
-            drop_shadow(layer, si, sx, sy, dark=(20, 5, 50) if season == 'halloween' else (110, 50, 20), a=100)
+            drop_shadow(layer, si, sx, sy, dark=(20, 5, 50) if season in DARK else (110, 50, 20), a=100)
             layer.alpha_composite(si, (sx, sy))
             bottom = sy + si.height
         else:
             sz = L['sub_size']
-            text(layer, sub[1], W / 2, (s0 + s1) / 2, sz, fill=(255, 255, 255), stroke=STROKE, sw=max(3, sz // 9))
+            text(layer, sub[1], W / 2, (s0 + s1) / 2, sz, fill=(255, 255, 255), stroke=cur_stroke(), sw=max(3, sz // 9))
             bottom = (s0 + s1) / 2 + sz * 0.6
     # content slot
     ctop = max(bottom + 18, L['content_top']) if sub else bottom + 24
@@ -281,8 +391,8 @@ def build(fmt, season, slot, headline, sub=None, content=None, cast=None, cast_m
         placements = pl
     # footer: handle + url
     foot = ' · '.join(v for v in (HANDLE[slot], 'wordocious.com') if v)
-    col = (236, 224, 255) if season == 'halloween' else PURPLE_DEEP
-    text(layer, foot, W / 2, L['foot_y'], L['foot_size'], fill=col, weight='ExtraBold', shadow=season == 'halloween')
+    col = (236, 224, 255) if season in DARK else PURPLE_DEEP
+    text(layer, foot, W / 2, L['foot_y'], L['foot_size'], fill=col, weight='ExtraBold', shadow=season in DARK)
     avoid = np.asarray(layer.getchannel('A').filter(ImageFilter.MaxFilter(15))) > 10
     c = background(fmt, season, avoid)
     c.alpha_composite(layer)
@@ -299,7 +409,7 @@ def hero_compare(path, placements, final, season):
         seen.setdefault(cid, bb)
     tiles = []
     for cid, bb in seen.items():
-        ref = hero(cid, season)
+        ref = hero(cid.split('|')[0], season)
         pad = 6
         crop = final.crop((max(0, bb[0] - pad), max(0, bb[1] - pad), bb[2] + pad, bb[3] + pad)).convert('RGBA')
         h = 240
@@ -338,52 +448,11 @@ def finish(key, imgs, placements_by_fmt, season, raw_letters):
     return files
 
 
-POSTS = {}
 
 
-def post(key, date, slot, title_match, caption, mascot, aesthetic, raw, season='standard', notes='', hint='hint: none'):
-    def deco(fn):
-        POSTS[key] = dict(fn=fn, date=date, slot=slot, title_match=title_match, caption=caption, mascot=mascot,
-                          aesthetic=aesthetic, raw=raw, season=season, notes=notes, hint=hint)
-        return fn
-    return deco
-
-
-FULL = CAST
-
-
-@post('2026-10-15-x', '2026-10-15', 'x', 'X: Teaser 3',
-      'TOMORROW. in house lettering over the ten cast silhouettes lit at the edge, with 18 unlit grey tiles above them (teaser 3).',
-      'pass (hero composite; silhouettes cut from the real hero alpha)', 'pass', ['sheet1-launch-capture.png'])
-def p_teaser():
-    imgs, pl = {}, {}
-    tiles = tiles_grid([[''] * 9, [''] * 9], LAYOUT['landscape']['tile'], ['#8E96A8'])
-    imgs['landscape'], pl['landscape'] = build('landscape', 'standard', 'x', 'tomorrow', content=tiles, cast=FULL, cast_mode='silhouette')
-    return imgs, pl
-
-
-@post('2026-10-16-x', '2026-10-16', 'x', 'X: Launch thread (family origin story)',
-      'Launch day: 18 DAILY GAMES. ONE SCORE. with the whole cast and Bring your family. (landscape for X).',
-      'pass (hero composite)', 'pass', ['sheet1-launch-capture.png'])
-def p_launch_x():
-    imgs, pl = {}, {}
-    imgs['landscape'], pl['landscape'] = build('landscape', 'standard', 'x', ['daily-games', 'one-score'], sub=('lettering', 'bring-your-family-b'), cast=FULL)
-    return imgs, pl
-
-
-@post('2026-10-16-feed', '2026-10-16', 'feed', 'Feed: trailer + carousel slide 1',
-      'Launch day feed card: 18 DAILY GAMES. ONE SCORE. with the whole cast and Bring your family. (portrait for IG and Facebook).',
-      'pass (hero composite)', 'pass', ['sheet1-launch-capture.png'])
-def p_launch_feed():
-    imgs, pl = {}, {}
-    imgs['portrait'], pl['portrait'] = build('portrait', 'standard', 'feed', ['daily-games', 'one-score'], sub=('lettering', 'bring-your-family-b'), cast=FULL)
-    return imgs, pl
-
-
-PALETTE = ['#8B2CF5', '#F5A623', '#8E96A8']      # purple / gold / grey tile family
-
-
-def text_img(s, size, fill=(255, 255, 255), stroke=STROKE, weight='Black', pad=None):
+def text_img(s, size, fill=(255, 255, 255), stroke='auto', weight='Black', pad=None):
+    if stroke == 'auto':
+        stroke = cur_stroke()
     f = font(size, weight)
     sw = max(3, size // 9) if stroke else 0
     bb = ImageDraw.Draw(Image.new('RGBA', (4, 4))).textbbox((0, 0), s, font=f, anchor='lt', stroke_width=sw)
@@ -445,10 +514,10 @@ def arrow_img(size):
     return im.resize((size, round(size * 0.7)), Image.LANCZOS)
 
 
-def steps_card(tile, lines):
-    scr = tiles_row(list('GCRERO'), tile, PALETTE[:2], gap=0.1)
+def steps_card(tile, lines, scr_word='GCRERO', sol_word='GROCER'):
+    scr = tiles_row(list(scr_word), tile, PALETTE[:2], gap=0.1)
     arrow = arrow_img(round(tile * 0.9))
-    sol = tiles_row(list('GROCER'), tile, ['#F5A623'], gap=0.1)
+    sol = tiles_row(list(sol_word), tile, ['#F5A623'], gap=0.1)
     demo = Image.new('RGBA', (scr.width + sol.width + arrow.width + 60, scr.height), (0, 0, 0, 0))
     demo.alpha_composite(scr, (0, 0)); demo.alpha_composite(arrow, (scr.width + 30, (scr.height - arrow.height) // 2))
     demo.alpha_composite(sol, (scr.width + arrow.width + 60, 0))
@@ -467,164 +536,396 @@ def steps_card(tile, lines):
     return card(stack([demo, lines_img], gap=round(tile * 0.5)), round(tile * 0.5), round(tile * 0.45))
 
 
-H_CAST = 'pass (hero composite; shipped Halloween costume art)'
-HAL_ALL = 'halloween'
 
 
-@post('2026-10-15-pin-1', '2026-10-15', 'pin', 'Game explainer pin',
-      'Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo (GCRERO to GROCER, from the already-played Oct 13 Muddle) and the three steps.',
-      'pass (hero composite)', 'pass', ['sheet4-7letters-muddleworks-capture.png'],
-      hint='hint: none (demo word GROCER comes from the already-played Oct 13 Muddle; bank checked)')
-def p_pin_explainer():
-    t = LAYOUT['pin']['tile']
-    c = steps_card(round(t * 0.6), ['Unscramble four words', 'Ringed letters spell the punchline', 'Finish the cartoon caption'])
-    im, pl = build('pin', 'standard', 'pin', 'how-muddle-works', sub=('text', 'A new cartoon puzzle every day.'), content=c, cast=['o3', 'd'])
-    return {'pin': im}, {'pin': pl}
+# ------------------------------------------------------------------ rotation (founder: posts always seem fresh)
+FULL = CAST
+CH = {'x': 'x', 'feed': 'ig', 'fb': 'fb', 'pin': 'pin'}
+STATE = {'last': {}, 'lastsize': {}, 'count': {c: 0 for c in CAST}, 'var': {c: 0 for c in CAST}, 'occ': {}, 'rot': 0}
+POSE_SKIP = ('sit', 'lean', 'waiting', 'goodgame', 'cushion', 'upside', 'handstand', 'cartwheel')
 
 
-@post('2026-10-15-pin-2', '2026-10-15', 'pin', 'Word card pin',
-      'Pinterest word card pin: WORD OF THE DAY with JUBILANT in glossy tiles and its meaning (an evergreen word checked against every daily bank: not an answer anywhere).',
-      'pass (hero composite)', 'pass', ['sheet6-wotd-capture.png'],
-      hint='hint: none (JUBILANT is in no daily bank: checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)')
-def p_pin_word():
-    c = wotd_card('JUBILANT', 80, definition='Feeling or showing great happiness and triumph.', pos='adjective')
-    im, pl = build('pin', 'standard', 'pin', 'word-of-the-day', sub=('text', 'Learn one new word a day.'), content=c, cast=['c', 'd'])
-    return {'pin': im}, {'pin': pl}
-
-
-@post('2026-10-15-pin-3', '2026-10-15', 'pin', 'Cast art pin',
-      'Pinterest cast art pin: MEET THE CAST with all ten heroes and Bring your family.',
-      'pass (hero composite)', 'pass', ['sheet5-meet-cast-capture.png'])
-def p_pin_cast():
-    im, pl = build('pin', 'standard', 'pin', 'meet-the-cast', sub=('lettering', 'bring-your-family-b'), cast=FULL, head_cap=0.95)
-    return {'pin': im}, {'pin': pl}
-
-
-@post('2026-10-17-x', '2026-10-17', 'x', 'X: "The app got dressed."',
-      'Halloween reveal: THE APP GOT DRESSED. over the Halloween wall with the whole costumed cast (landscape for X, portrait alongside).',
-      H_CAST, 'pass', ['sheet2-halloween-dressed-capture.png'], season='halloween')
-def p_halloween():
-    imgs, pl = {}, {}
-    for fmt in ('landscape', 'portrait'):
-        imgs[fmt], pl[fmt] = build(fmt, 'halloween', 'x', 'app-got-dressed', sub=('text', 'Halloween is live through Oct 31.'), cast=FULL)
-    return imgs, pl
-
-
-def sweep(fmt, slot):
-    t = LAYOUT[fmt]['tile']
-    if fmt == 'landscape':
-        tiles = tiles_row([str(i) for i in range(1, 19)], round(t * 1.12), PALETTE, gap=0.1)
-        cast = ['w', 's', 'd']
+def variants(cid, season):
+    """Every shipped, on-model art variant of one character for this season (base first)."""
+    out = [cid]
+    if season in ('halloween', 'thanksgiving'):
+        d = os.path.join(BRAND, 'seasons', season, 'cast')
+        out += [f'{cid}|seasons/{season}/cast/{f}' for f in sorted(os.listdir(d)) if f.startswith(cid + '-alt') and f.endswith('.png')]
     else:
-        tiles = tiles_grid([[str(i) for i in range(r * 6 + 1, r * 6 + 7)] for r in range(3)], round(t * 0.84), PALETTE, gap=0.1)
-        cast = ['s', 'w']
-    return build(fmt, 'halloween', slot, 'sweep-sunday', sub=('text', 'All 18 dailies. One day.'), content=tiles, cast=cast)
+        d = os.path.join(BRAND, 'poses')
+        out += [f'{cid}|poses/{f}' for f in sorted(os.listdir(d)) if f.startswith(cid + '-') and f.endswith('.png')
+                and not any(k in f for k in POSE_SKIP)]
+    return out
 
 
-@post('2026-10-18-x', '2026-10-18', 'x', 'X: Sweep board + challenge',
-      'SWEEP SUNDAY: 18 numbered glossy tiles (the sweep board idea) under the headline with the leader and the speedster.',
-      H_CAST, 'pass', ['sheet3-sweep-muddle-capture.png'], season='halloween')
-def p_sweep_x():
-    im, pl = sweep('landscape', 'x')
-    return {'landscape': im}, {'landscape': pl}
+def pick(card, slot, season, n):
+    """Choose the lineup for this post: least-used characters first, never the same lineup twice in a row on a channel."""
+    ch = CH[slot]
+    if n >= 10:
+        ids = list(CAST)
+    else:
+        last = {i.split('|')[0] for i in STATE['last'].get(ch, ())} if STATE['lastsize'].get(ch, 0) < 10 else set()
+        order = sorted(CAST, key=lambda c: (STATE['count'][c], c in last, (CAST.index(c) * 3 + STATE['rot']) % 10))
+        chosen = order[:n]
+        STATE['rot'] += 1
+        ids = []
+        for c in CAST:
+            if c in chosen:
+                vs = variants(c, season)
+                ids.append(vs[STATE['var'][c] % len(vs)] if n < 7 else c)
+                STATE['var'][c] += 1
+    for i in ids:
+        STATE['count'][i.split('|')[0]] += 1
+    STATE['last'][ch] = tuple(ids); STATE['lastsize'][ch] = len(ids)
+    return ids
 
 
-@post('2026-10-18-fb', '2026-10-18', 'fb', 'Facebook: Sweep post',
-      'SWEEP SUNDAY (portrait for Facebook): 18 numbered glossy tiles under the headline with the speedster and the leader.',
-      H_CAST, 'pass', ['sheet3-sweep-muddle-capture.png'], season='halloween')
-def p_sweep_fb():
-    im, pl = sweep('portrait', 'fb')
-    return {'portrait': im}, {'portrait': pl}
+SIZE_OPTS = {
+    'teaser': [10], 'launch': [10], 'dressed': [10], 'pin-cast': [10, 6, 5], 'pin-explainer': [2, 3], 'pin-word': [2, 1],
+    'friday': [1, 2], 'cast-sat': [10, 6, 5], 'sweep': [2, 3], 'monday': [3, 2, 4], 'ph': [10, 5], 'dress': [10, 6], 'dress-reminder': [4, 3],
+    'eve': [10, 5], 'happy-halloween': [10, 6], 'winners': [3], 'cleans-up': [10, 6], 'potw': [2, 1], 'wotd-punch': [2],
+    'wotd-quiz': [2, 3, 1], 'pangram': [3, 2], 'muddle': [2], 'diwali': [6, 10], 'veterans': [3, 4], 'thanksgiving': [10],
+    'league-open': [4, 5], 'league-final': [5, 4], 'thanks-eve': [5, 10], 'happy-thanks': [10, 6], 'pro': [3, 4], 'cast-wrap': [10], 'day45': [6, 10],
+}
 
 
-@post('2026-10-19-x', '2026-10-19', 'x', 'X: Race-reset post + last week champion',
-      'MONDAY MASTERS: New week. Zero points. The crown is open. with the leader, the brain and the speedster.',
-      H_CAST, 'pass', ['sheet3-monday-wotd-capture.png', 'sheet4-newweek-crown-caption-capture.png'], season='halloween')
-def p_monday():
-    t = text_img('New week. Zero points.', LAYOUT['landscape']['sub_size'])
-    im, pl = build('landscape', 'halloween', 'x', 'monday-masters', sub=('lettering', 'the-crown-is-open'), content=t, cast=['w', 'd', 's'])
-    return {'landscape': im}, {'landscape': pl}
+def size_for(card, slot):
+    ch = CH[slot]
+    opts = SIZE_OPTS.get(card, [10, 5])
+    i = STATE['occ'].get(card, 0)
+    n = opts[i % len(opts)]
+    if n >= 10 and STATE['lastsize'].get(ch, 0) >= 10 and len(opts) > 1:
+        n = opts[(i + 1) % len(opts)]
+        if n >= 10:
+            n = opts[(i + 2) % len(opts)]
+    return n
 
 
-@post('2026-10-20-x', '2026-10-20', 'x', 'X: WOTD quiz debut',
-      'WORD OF THE DAY QUIZ card for Oct 20: the day\'s real word PUNCH in glossy tiles on a soft card, definition hidden for the quiz.',
-      H_CAST, 'pass', ['sheet3-monday-wotd-capture.png'], season='halloween',
-      notes='Word = PUNCH (Oct 20 Word of the Day, computed by the Studio-post agent). Template: wotd_card(WORD, tile_px) in compose.py renders any other day.',
-      hint='hint: the day\'s own word PUNCH is shown as the quiz subject; its definition is hidden (founder-approved quiz format)')
-def p_wotd():
-    c = wotd_card('PUNCH', 90, note='Pick the real definition.')
-    im, pl = build('landscape', 'halloween', 'x', 'word-of-the-day-quiz', sub=None, content=c, cast=['d', 'c'])
-    return {'landscape': im}, {'landscape': pl}
+# ------------------------------------------------------------------ cards (every scheduled post = template + a card)
+def season_of(d):
+    return 'halloween' if '2026-10-17' <= d <= '2026-10-31' else ('thanksgiving' if '2026-11-14' <= d <= '2026-11-29' else 'standard')
 
 
-def muddle(fmt, slot):
-    cart = os.path.join(REPO, 'apps', 'web', 'public', 'muddle', 'md-7jpkkq-2de281017b.webp')
-    w = 400 if fmt == 'landscape' else 560
-    fr = cartoon_frame(cart, w)
-    return build(fmt, 'halloween', slot, 'muddle-wednesday', sub=('lettering', 'caption-this'), content=fr, cast=['o3', 'd'], cast_mode='sides')
+def T(fmt):
+    return LAYOUT[fmt]['tile']
 
 
-@post('2026-10-21-x', '2026-10-21', 'x', 'X: Yesterday',
-      'MUDDLE WEDNESDAY: the Oct 20 Muddle cartoon in a paper frame with Caption this. and the prankster and the brain at the sides.',
-      H_CAST, 'pass', ['sheet3-sweep-muddle-capture.png', 'sheet4-newweek-crown-caption-capture.png'], season='halloween',
-      notes='Cartoon = daily Muddle of 2026-10-20 (md-7jpkkq), shown only on Oct 21 when it is yesterday. Caption text not shown, so no answer on the image.',
-      hint='hint: none (Oct 20 Muddle cartoon, already played by Oct 21; caption and answer not shown)')
-def p_muddle_x():
-    im, pl = muddle('landscape', 'x')
-    return {'landscape': im}, {'landscape': pl}
+def occ():
+    return CUR['occ']
 
 
-@post('2026-10-21-feed', '2026-10-21', 'feed', 'Feed: cartoon + reveal thread',
-      'MUDDLE WEDNESDAY (portrait for IG and Facebook): the Oct 20 Muddle cartoon in a paper frame with Caption this.',
-      H_CAST, 'pass', ['sheet3-sweep-muddle-capture.png', 'sheet4-newweek-crown-caption-capture.png'], season='halloween',
-      notes='Same cartoon note as the X post.',
-      hint='hint: none (Oct 20 Muddle cartoon, already played by Oct 21; caption and answer not shown)')
-def p_muddle_feed():
-    im, pl = muddle('portrait', 'feed')
-    return {'portrait': im}, {'portrait': pl}
+def pal_rot(k):
+    p = list(PALETTE); return p[k % 3:] + p[:k % 3]
 
 
-@post('2026-10-22-x', '2026-10-22', 'x', 'X: WOTD quiz + pangram tease',
-      'Hubbub pangram tease: 7 LETTERS. ONE WORD. with seven mystery tiles and the explorer, the sprout and the speedster.',
-      H_CAST, 'pass', ['sheet4-7letters-muddleworks-capture.png'], season='halloween')
-def p_pangram():
-    t = LAYOUT['landscape']['tile']
-    tiles = tiles_row(['?'] * 7, round(t * 1.2), PALETTE, gap=0.12)
-    im, pl = build('landscape', 'halloween', 'x', '7-letters-one-word', sub=('text', 'Today’s letters hide a seven-letter word.'), content=tiles, cast=['c', 'i', 's'])
-    return {'landscape': im}, {'landscape': pl}
+def muddle_card(fmt, season, slot, L, cartoon):
+    path = os.path.join(REPO, 'apps', 'web', 'public', 'muddle', cartoon)
+    fr = cartoon_frame(path, 400 if fmt == 'landscape' else 560)
+    return build(fmt, season, slot, 'muddle-wednesday', sub=('lettering', 'caption-this'), content=fr, cast=L, cast_mode='sides')
 
 
-if __name__ == '__main__':
-    only = sys.argv[1:]
+def sweep_c(fmt, season, slot, L):
+    t = T(fmt); o = occ() % 3
+    pal = PALETTE if o != 2 else pal_rot(1)
+    if o == 1:
+        tiles = tiles_grid([[''] * 9, [''] * 9], round(t * 0.78), [PALETTE[0], '#F5A623'], gap=0.1) if fmt == 'landscape' else \
+            tiles_grid([[''] * 6] * 3, round(t * 0.84), [PALETTE[0], '#F5A623'], gap=0.1)
+    elif fmt == 'landscape':
+        tiles = tiles_row([str(i) for i in range(1, 19)], round(t * 1.12), pal, gap=0.1)
+    else:
+        tiles = tiles_grid([[str(i) for i in range(r * 6 + 1, r * 6 + 7)] for r in range(3)], round(t * 0.84), pal, gap=0.1)
+    return build(fmt, season, slot, 'sweep-sunday', sub=('text', ['All 18 dailies. One day.', 'Can you sweep all 18?', 'Eighteen games. One Sunday.'][occ() % 3]), content=tiles, cast=L)
+
+
+def friday_c(fmt, season, slot, L):
+    t = T(fmt); o = occ() % 3
+    if o == 0:
+        c = tiles_row([''] * 5, round(t * 1.25), ['#F5A623'], gap=0.12)
+    elif o == 1:
+        c = tiles_grid([[''] * 5, [''] * 5] if fmt == 'landscape' else [[''] * 5] * 3, round(t * (0.8 if fmt == 'landscape' else 1.0)), ['#F5A623', PALETTE[0], '#8E96A8'], gap=0.12)
+    else:
+        c = tiles_row([''] * 7, round(t * 1.0), ['#F5A623', PALETTE[0]], gap=0.12)
+    return build(fmt, season, slot, 'fridays-finest', sub=('text', ['Show us your best board.', 'Your best board of the week.', 'Post your proudest streak.'][occ() % 3]), content=c, cast=L)
+
+
+def S(head, sub, content=None, sub_kind='text', cast_mode='cast'):
+    def f(fmt, season, slot, L):
+        sb = sub[occ() % len(sub)] if isinstance(sub, list) else sub
+        c = content(fmt) if content else None
+        return build(fmt, season, slot, head, sub=(sub_kind, sb) if sb else None, content=c, cast=L, cast_mode=cast_mode)
+    return f
+
+
+def mrow(n, fmt, k=1.0, cols=None):
+    return tiles_row([''] * n, round(T(fmt) * k), cols or PALETTE, gap=0.12)
+
+
+def monday_c(fmt, season, slot, L):
+    txt = ['New week. Zero points.', 'Race resets today.', 'Everyone starts at zero.', 'Who takes the crown?'][occ() % 4]
+    return build(fmt, season, slot, 'monday-masters', sub=('lettering', 'the-crown-is-open'), content=text_img(txt, LAYOUT[fmt]['sub_size']), cast=L)
+
+
+def wotd_c(fmt, season, slot, L):
+    note = ['Pick the real definition.', 'Three meanings. One is real.', 'Which meaning is right?'][occ() % 3]
+    return build(fmt, season, slot, 'word-of-the-day-quiz', sub=None, content=wotd_card('?????', 90, note=note), cast=L)
+
+
+def pangram_c(fmt, season, slot, L):
+    sb = ['Today’s letters hide a seven-letter word.', 'One word uses every letter.', 'Find the pangram.'][occ() % 3]
+    return build(fmt, season, slot, '7-letters-one-word', sub=('text', sb), content=tiles_row(['?'] * 7, round(T(fmt) * 1.2), pal_rot(occ()), gap=0.12), cast=L)
+
+
+def teaser_c(fmt, season, slot, L):
+    tiles = tiles_grid([[''] * 9, [''] * 9], T(fmt), ['#8E96A8'])
+    return build(fmt, season, slot, 'tomorrow', content=tiles, cast=L, cast_mode='silhouette')
+
+
+def punch_c(fmt, season, slot, L):
+    return build(fmt, season, slot, 'word-of-the-day-quiz', sub=None, content=wotd_card('PUNCH', 90, note='Pick the real definition.'), cast=L)
+
+
+BANK = None
+
+
+def muddle_demo(idx):
+    global BANK
+    if BANK is None:
+        BANK = json.load(open(os.path.join(REPO, 'apps', 'web', 'data', 'scramble-puzzles.json')))
+    w = BANK['daily'][idx]['words'][0]
+    return w['scramble'], w['answer']
+
+
+PIN_IDX = {'2026-10-15': 20, '2026-10-21': 26, '2026-10-22': 27, '2026-10-29': 33, '2026-11-05': 40, '2026-11-12': 47, '2026-11-19': 54, '2026-11-26': 61}
+WORDS = [('JUBILANT', 'Feeling or showing great happiness and triumph.', 'adjective'),
+         ('GOSSAMER', 'A very light, thin, delicate fabric or film.', 'noun'),
+         ('ELOQUENT', 'Speaking or writing in a fluent, moving way.', 'adjective'),
+         ('WANDERLUST', 'A strong urge to travel and see the world.', 'noun'),
+         ('HULLABALOO', 'A loud, confused noise or fuss.', 'noun'),
+         ('BAMBOOZLE', 'To trick or fool someone.', 'verb'),
+         ('GLIMMERING', 'Shining with a faint, wavering light.', 'adjective'),
+         ('JUBILANT', 'Feeling or showing great happiness and triumph.', 'adjective')]
+
+
+def pin_expl_c(fmt, season, slot, L):
+    scr, sol = muddle_demo(PIN_IDX[CUR['date']])
+    t = LAYOUT['pin']['tile']
+    lines = [['Unscramble four words', 'Ringed letters spell the punchline', 'Finish the cartoon caption'],
+             ['Four words are scrambled', 'Ring the letters to spell the joke', 'Complete the cartoon caption']][occ() % 2]
+    c = steps_card(round(t * 0.6), lines, scr, sol)
+    return build('pin', season, slot, 'how-muddle-works', sub=('text', ['A new cartoon puzzle every day.', 'One cartoon. One punchline.'][occ() % 2]), content=c, cast=L)
+
+
+def pin_word_c(fmt, season, slot, L):
+    w, d, pos = WORDS[occ() % len(WORDS)]
+    sub = ['Learn one new word a day.', 'A new word every day.'][occ() % 2]
+    c = wotd_card(w, 76 if len(w) <= 8 else 70, definition=d, pos=pos)
+    return build('pin', season, slot, 'word-of-the-day', sub=('text', sub), content=c, cast=L)
+
+
+def pin_cast_c(fmt, season, slot, L):
+    return build('pin', season, slot, 'meet-the-cast', sub=('lettering', 'bring-your-family-b'), cast=L, head_cap=0.95)
+
+
+def launch_c(fmt, season, slot, L):
+    return build(fmt, season, slot, ['daily-games', 'one-score'], sub=('lettering', 'bring-your-family-b'), cast=L)
+
+
+def dressed_c(fmt, season, slot, L):
+    return build(fmt, season, slot, 'app-got-dressed', sub=('text', 'Halloween is live through Oct 31.'), cast=L)
+
+
+CARD_FN = {
+    'teaser': teaser_c, 'launch': launch_c, 'dressed': dressed_c, 'pin-explainer': pin_expl_c, 'pin-word': pin_word_c, 'pin-cast': pin_cast_c,
+    'friday': friday_c, 'sweep': sweep_c, 'monday': monday_c, 'wotd-quiz': wotd_c, 'wotd-punch': punch_c, 'pangram': pangram_c,
+    'cast-sat': S('cast-saturday', ['Can you beat Webster?', 'Meet the family.', 'Say hi to the crew.', 'Thanksgiving week with the family.']),
+    'ph': S('product-hunt', 'Come say hello and vote.'),
+    'dress': S('dress-your-mascot', 'Costume contest. Oct 28 to 30.'),
+    'dress-reminder': S('dress-your-mascot', 'Last days to enter. Show us your mascot.'),
+    'eve': S('halloween-eve', 'Themed puzzles in every game.'),
+    'happy-halloween': S('happy-halloween', 'Themed puzzles and contest winners.'),
+    'winners': S('happy-halloween', 'Meet the winning mascots.'),
+    'cleans-up': S('the-cast-cleans-up', 'A fresh icon for November.'),
+    'potw': S('player-of-the-week', 'Our favorite player this week.'),
+    'muddle-oct20': lambda fmt, season, slot, L: muddle_card(fmt, season, slot, L, 'md-7jpkkq-2de281017b.webp'),
+    'muddle-nov4': lambda fmt, season, slot, L: muddle_card(fmt, season, slot, L, 'md-nrx549-623eb331ba.webp'),
+    'muddle-nov18': lambda fmt, season, slot, L: muddle_card(fmt, season, slot, L, 'md-aanlcb-0a907648a5.webp'),
+    'diwali': S('diwali', 'Themed puzzles in every game.'),
+    'veterans': S('veterans-day', 'Themed puzzles today.'),
+    'thanksgiving': S('thanksgiving', 'The app knows what month it is.'),
+    'league-open': S('family-league', 'Set it up before Thursday.'),
+    'league-final': S('family-league', 'Final call before Thanksgiving.'),
+    'thanks-eve': S('thanksgiving-eve', 'Themed puzzles today.'),
+    'happy-thanks': S('happy-thanksgiving', 'Bring the whole family.'),
+    'pro': S('go-pro', '$59.99 a year. That is $5 a month.'),
+    'cast-wrap': S('meet-the-cast', 'Back tomorrow with the numbers.'),
+    'day45': S('day-45', 'Thank you for playing.'),
+}
+CARD_SERIES = {'teaser': 'brand', 'launch': 'brand', 'dressed': 'brand', 'pin-explainer': 'muddle', 'pin-word': 'wotd', 'pin-cast': 'brand',
+               'friday': 'friday', 'cast-sat': 'cast', 'sweep': 'sweep', 'monday': 'monday', 'wotd-punch': 'wotd', 'wotd-quiz': 'wotd', 'pangram': 'pangram',
+               'ph': 'brand', 'dress': 'brand', 'dress-reminder': 'brand', 'eve': 'brand', 'happy-halloween': 'brand', 'winners': 'brand',
+               'cleans-up': 'brand', 'potw': 'brand', 'muddle-oct20': 'muddle', 'muddle-nov4': 'muddle', 'muddle-nov18': 'muddle',
+               'diwali': 'diwali', 'veterans': 'veterans', 'thanksgiving': 'thanks', 'thanks-eve': 'thanks', 'happy-thanks': 'thanks',
+               'league-open': 'league', 'league-final': 'league', 'pro': 'brand', 'cast-wrap': 'brand', 'day45': 'brand'}
+CARD_CAPTION = {
+    'teaser': 'TOMORROW. over the ten cast silhouettes lit at the edge, with 18 unlit grey tiles (teaser 3).',
+    'launch': 'LAUNCH: 18 DAILY GAMES. ONE SCORE. with the whole cast and Bring your family.',
+    'dressed': 'THE APP GOT DRESSED.: Halloween reveal over the haunted wall with the whole costumed cast.',
+    'pin-explainer': 'Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo from an already-played Muddle and the three steps.',
+    'pin-word': 'Pinterest word card pin: WORD OF THE DAY with an evergreen word in glossy tiles and its meaning.',
+    'pin-cast': 'Pinterest cast art pin: MEET THE CAST with a rotating group and Bring your family.',
+    'friday': "FRIDAY'S FINEST: gold tiles under the headline (best board of the week).",
+    'sweep': 'SWEEP SUNDAY: 18 glossy tiles under the headline, All 18 dailies. One day.',
+    'monday': 'MONDAY MASTERS: weekly race reset, The crown is open.',
+    'wotd-punch': 'WORD OF THE DAY QUIZ for Oct 20: the real word PUNCH in glossy tiles, definition hidden.',
+    'wotd-quiz': 'WORD OF THE DAY QUIZ: five mystery tiles, Pick the real definition.',
+    'pangram': '7 LETTERS. ONE WORD.: seven mystery tiles for the Hubbub pangram tease.',
+    'cast-sat': 'CAST SATURDAY: a rotating group of the cast.',
+    'ph': "WE'RE ON PRODUCT HUNT: Come say hello and vote.",
+    'dress': 'DRESS YOUR MASCOT: costume contest card (Oct 28 to 30).',
+    'dress-reminder': 'DRESS YOUR MASCOT: contest reminder card.',
+    'eve': 'HALLOWEEN EVE: themed puzzles in every game.',
+    'happy-halloween': 'HAPPY HALLOWEEN: themed puzzles and contest winners.',
+    'winners': 'HAPPY HALLOWEEN: Meet the winning mascots (swap in the real winners).',
+    'cleans-up': 'THE CAST CLEANS UP: November icon card.',
+    'potw': 'PLAYER OF THE WEEK: feature card for the repost.',
+    'muddle-oct20': 'MUDDLE WEDNESDAY: the Oct 20 Muddle cartoon (played yesterday) in a paper frame, Caption this.',
+    'muddle-nov4': 'MUDDLE WEDNESDAY: the Nov 3 Muddle cartoon (played yesterday) in a paper frame, Caption this.',
+    'muddle-nov18': 'MUDDLE WEDNESDAY: the Nov 17 Muddle cartoon (played yesterday) in a paper frame, Caption this.',
+    'diwali': 'DIWALI: themed puzzles card.', 'veterans': 'VETERANS DAY: themed puzzles card.',
+    'thanksgiving': 'THANKSGIVING build reveal: The app knows what month it is.',
+    'league-open': 'FAMILY LEAGUE: Set it up before Thursday.', 'league-final': 'FAMILY LEAGUE: Final call before Thanksgiving.',
+    'thanks-eve': 'THANKSGIVING EVE: themed puzzles card.', 'happy-thanks': 'HAPPY THANKSGIVING: Bring the whole family.',
+    'pro': 'GO PRO.: $59.99 a year, that is $5 a month (message only, no discount).',
+    'cast-wrap': 'MEET THE CAST: wrap-prep card.', 'day45': 'DAY 45.: Thank you for playing.',
+}
+CARD_HINT = {
+    'pin-explainer': 'hint: none (demo scramble comes from an already-played Muddle daily)',
+    'pin-word': 'hint: none (evergreen word, absent from every daily bank; checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)',
+    'wotd-punch': "hint: the day's own word PUNCH is shown as the quiz subject; its definition is hidden (founder-approved quiz format)",
+    'muddle-oct20': 'hint: none (yesterday’s, already-played cartoon; caption and answer not shown)',
+    'muddle-nov4': 'hint: none (yesterday’s, already-played cartoon; caption and answer not shown)',
+    'muddle-nov18': 'hint: none (yesterday’s, already-played cartoon; caption and answer not shown)',
+    'wotd-quiz': 'hint: none (five mystery tiles)', 'pangram': 'hint: none (seven mystery tiles)',
+}
+LETTER_RAW = {
+    'teaser': ['sheet1-launch-capture.png'], 'launch': ['sheet1-launch-capture.png'], 'dressed': ['sheet2-halloween-dressed-capture.png'],
+    'pin-explainer': ['sheet4-7letters-muddleworks-capture.png'], 'pin-word': ['sheet6-wotd-capture.png'], 'pin-cast': ['sheet5-meet-cast-capture.png'],
+    'friday': ['sheet7-friday-cast-capture.png'], 'cast-sat': ['sheet7-friday-cast-capture.png'], 'sweep': ['sheet3-sweep-muddle-capture.png'],
+    'monday': ['sheet3-monday-wotd-capture.png', 'sheet4-newweek-crown-caption-capture.png'], 'wotd-punch': ['sheet3-monday-wotd-capture.png'],
+    'wotd-quiz': ['sheet3-monday-wotd-capture.png'], 'pangram': ['sheet4-7letters-muddleworks-capture.png'],
+    'ph': ['sheet7-ph-dress-capture.png'], 'dress': ['sheet7-ph-dress-capture.png'], 'dress-reminder': ['sheet7-ph-dress-capture.png'],
+    'eve': ['sheet8-halloween-capture.png'], 'happy-halloween': ['sheet8-halloween-capture.png'], 'winners': ['sheet8-halloween-capture.png'],
+    'cleans-up': ['sheet8-cleans-player-capture.png'], 'potw': ['sheet8-cleans-player-capture.png'],
+    'muddle-oct20': ['sheet3-sweep-muddle-capture.png', 'sheet4-newweek-crown-caption-capture.png'],
+    'muddle-nov4': ['sheet3-sweep-muddle-capture.png', 'sheet4-newweek-crown-caption-capture.png'],
+    'muddle-nov18': ['sheet3-sweep-muddle-capture.png', 'sheet4-newweek-crown-caption-capture.png'],
+    'diwali': ['sheet10-diwali-capture.png'], 'league-open': ['sheet10-diwali-capture.png'], 'league-final': ['sheet10-diwali-capture.png'],
+    'pro': ['sheet10-pro-day45-capture.png'], 'day45': ['sheet10-pro-day45-capture.png'],
+    'veterans': ['sheet9-thanks-capture.png'], 'thanksgiving': ['sheet9-thanks-top-capture.png'], 'thanks-eve': ['sheet9-thanks-top-capture.png'],
+    'happy-thanks': ['sheet9-thanks-capture.png'], 'cast-wrap': ['sheet5-meet-cast-capture.png'],
+}
+EXTRA_FMT = {'dressed': ['portrait']}      # (date-slot cards that also get a second format)
+PIN_CARD = {'Game explainer pin': 'pin-explainer', 'Word card pin': 'pin-word', 'Cast art pin': 'pin-cast'}
+# (date, slot, title contains, card); None title matches the date+slot
+SCHEDULE = [
+    ('2026-10-15', 'x', 'Teaser 3', 'teaser'), ('2026-10-16', 'x', None, 'launch'), ('2026-10-16', 'feed', None, 'launch'),
+    ('2026-10-17', 'x', None, 'dressed'), ('2026-10-18', 'x', None, 'sweep'), ('2026-10-18', 'fb', None, 'sweep'),
+    ('2026-10-19', 'x', None, 'monday'), ('2026-10-20', 'x', None, 'wotd-punch'),
+    ('2026-10-21', 'x', None, 'muddle-oct20'), ('2026-10-21', 'feed', None, 'muddle-oct20'), ('2026-10-22', 'x', None, 'pangram'),
+    ('2026-10-23', 'x', None, 'friday'), ('2026-10-23', 'feed', None, 'friday'), ('2026-10-24', 'x', None, 'cast-sat'),
+    ('2026-10-25', 'x', None, 'sweep'), ('2026-10-25', 'fb', None, 'sweep'), ('2026-10-26', 'x', None, 'monday'),
+    ('2026-10-27', 'x', None, 'ph'), ('2026-10-27', 'feed', None, 'ph'),
+    ('2026-10-28', 'x', None, 'dress'), ('2026-10-28', 'feed', None, 'dress'), ('2026-10-29', 'x', None, 'dress-reminder'),
+    ('2026-10-30', 'x', None, 'eve'), ('2026-10-30', 'feed', None, 'eve'),
+    ('2026-10-31', 'x', None, 'happy-halloween'), ('2026-10-31', 'feed', None, 'winners'),
+    ('2026-11-01', 'x', None, 'cleans-up'), ('2026-11-01', 'fb', None, 'cleans-up'), ('2026-11-02', 'x', None, 'monday'),
+    ('2026-11-03', 'x', None, 'wotd-quiz'), ('2026-11-04', 'x', None, 'muddle-nov4'), ('2026-11-04', 'feed', None, 'muddle-nov4'),
+    ('2026-11-05', 'x', None, 'pangram'), ('2026-11-06', 'x', None, 'friday'), ('2026-11-06', 'feed', None, 'friday'),
+    ('2026-11-07', 'x', None, 'cast-sat'), ('2026-11-08', 'x', None, 'diwali'), ('2026-11-08', 'fb', None, 'diwali'),
+    ('2026-11-09', 'x', None, 'monday'), ('2026-11-10', 'x', None, 'wotd-quiz'),
+    ('2026-11-11', 'x', None, 'veterans'), ('2026-11-11', 'feed', None, 'veterans'), ('2026-11-12', 'x', None, 'pangram'),
+    ('2026-11-13', 'x', None, 'potw'), ('2026-11-13', 'feed', None, 'potw'), ('2026-11-14', 'x', None, 'cast-sat'),
+    ('2026-11-15', 'x', None, 'sweep'), ('2026-11-15', 'fb', None, 'sweep'), ('2026-11-16', 'x', None, 'thanksgiving'),
+    ('2026-11-17', 'x', None, 'league-open'), ('2026-11-18', 'x', None, 'muddle-nov18'), ('2026-11-18', 'feed', None, 'muddle-nov18'),
+    ('2026-11-19', 'x', None, 'pangram'), ('2026-11-20', 'x', None, 'friday'), ('2026-11-20', 'feed', None, 'friday'),
+    ('2026-11-21', 'x', None, 'cast-sat'), ('2026-11-22', 'x', None, 'sweep'), ('2026-11-22', 'fb', None, 'sweep'),
+    ('2026-11-23', 'x', None, 'monday'), ('2026-11-24', 'x', None, 'league-final'),
+    ('2026-11-25', 'x', None, 'thanks-eve'), ('2026-11-25', 'fb', None, 'thanks-eve'),
+    ('2026-11-26', 'x', None, 'happy-thanks'), ('2026-11-26', 'fb', None, 'happy-thanks'),
+    ('2026-11-27', 'x', None, 'pro'), ('2026-11-27', 'feed', None, 'pro'), ('2026-11-28', 'x', None, 'cast-wrap'),
+    ('2026-11-29', 'x', None, 'day45'), ('2026-11-29', 'feed', None, 'day45'),
+]
+
+
+def lineup_summary(ids):
+    return [i if '|' not in i else i.split('|')[0] + ':' + os.path.splitext(os.path.basename(i.split('|')[1]))[0].split('-', 1)[1] for i in ids]
+
+
+def build_all(only_dates=None):
     spec = json.load(open(SPEC))
-    mpath = os.path.join(HERE, 'manifest.json')
-    manifest = json.load(open(mpath)) if os.path.exists(mpath) else []
-    byid = {m['key']: m for m in manifest}
-    for key, p in POSTS.items():
-        if only and key not in only:
-            continue
-        imgs, pl = p['fn']()
-        files = finish(key, imgs, pl, p['season'], p['raw'])
-        cands = [x for x in spec['posts'] if x['date'] == p['date'] and x['slot'] == p['slot'] and p['title_match'] in x['title']]
-        pid = cands[0]['id'] if cands else None
-        byid[key] = dict(key=key, post_id=pid, date=p['date'], slot=p['slot'], title=cands[0]['title'] if cands else p['title_match'],
-                         files=files, caption=p['caption'], mascot_check=p['mascot'], aesthetic_check=p['aesthetic'], hint=p['hint'], notes=p['notes'])
-        print('built', key, list(files))
-    manifest = sorted(byid.values(), key=lambda m: (m['date'], m['slot'], m['key']))
-    json.dump(manifest, open(mpath, 'w'), indent=2)
-    # contact sheet of every final, side by side (one-family check)
+    posts = [x for x in spec['posts'] if x['date'] >= '2026-10-15' and x['date'] <= '2026-11-29']
+    slot_rank = {'x': 0, 'feed': 1, 'fb': 2, 'pin': 3}
+    posts.sort(key=lambda x: (x['date'], x['time'], slot_rank[x['slot']]))
+    rows, pin_n = [], {}
+    for x in posts:
+        date, slot = x['date'], x['slot']
+        if slot == 'pin':
+            card = next(c for k, c in PIN_CARD.items() if k in x['title'])
+            pin_n[date] = pin_n.get(date, 0) + 1
+            key = f'{date}-pin-{pin_n[date]}'
+        else:
+            card = next((c for d, s, t, c in SCHEDULE if d == date and s == slot and (t is None or t in x['title'])), None)
+            if card is None:
+                continue
+            key = f'{date}-{slot}'
+        season = season_of(date)
+        fmts = ['pin'] if slot == 'pin' else (['landscape'] if x['size'] == 'landscape' else ['portrait'])
+        fmts += EXTRA_FMT.get(card, []) if slot == 'x' else []
+        n = size_for(card, slot)
+        L = pick(card, slot, season, n)
+        STATE['occ'][card] = STATE['occ'].get(card, 0) + 1
+        CUR['occ'] = STATE['occ'][card] - 1; CUR['date'] = date
+        ctx(CARD_SERIES[card], season)
+        d = out_dir(key); files, pls = {}, {}
+        for fmt in fmts:
+            im, pl = CARD_FN[card](fmt, season, slot, L)
+            fn = {'landscape': 'landscape.png', 'portrait': 'portrait.png', 'pin': 'pin.png'}[fmt]
+            im.save(os.path.join(d, fn), optimize=True); files[fmt] = f'{key}/{fn}'
+            hero_compare(os.path.join(d, 'raw', f'compare-{fmt}.png'), pl, im, season)
+        for rl in LETTER_RAW.get(card, []):
+            src = os.path.join(HERE, 'lettering', 'raw', rl)
+            if os.path.exists(src):
+                shutil.copy(src, os.path.join(d, 'raw', rl))
+        sp = spec_now()
+        rows.append(dict(key=key, post_id=x['id'], date=date, slot=slot, title=x['title'], files=files, caption=CARD_CAPTION[card], card=card, season=season,
+                         series_color=('default purple-pink' if sp is None else (f'hue {sp[1]}-{sp[2]}' if sp[0] == 'grad' else 'multicolor')),
+                         cast=lineup_summary(L), cast_count=len(L),
+                         mascot_check=('pass (hero composite)' if season == 'standard' else 'pass (hero composite; shipped %s costume art)' % season) +
+                         ('' if all('|' not in i for i in L) else '; pose/costume variants are shipped art, compare in raw/'),
+                         aesthetic_check='pass', hint=CARD_HINT.get(card, 'hint: none'), notes=''))
+        print('built', key, card, len(L))
+    return rows
+
+
+def contact_sheets(manifest):
     thumbs = []
     for m in manifest:
         for fmt in ('landscape', 'portrait', 'pin'):
             f = m['files'].get(fmt)
             if f:
-                im = Image.open(os.path.join(HERE, f)).convert('RGB')
-                th = 300
-                thumbs.append((m['date'], im.resize((round(im.width * th / im.height), th), Image.LANCZOS)))
-    cols_w = 1900; x = y = 10; rowh = 0
-    sheet = Image.new('RGB', (cols_w, 4000), (36, 30, 52))
-    for d, im in thumbs:
+                im = Image.open(os.path.join(HERE, f)).convert('RGB'); th = 260
+                thumbs.append(im.resize((round(im.width * th / im.height), th), Image.LANCZOS))
+    cols_w = 2400; x = y = 10; rowh = 0
+    sheet = Image.new('RGB', (cols_w, 8000), (36, 30, 52))
+    for im in thumbs:
         if x + im.width > cols_w - 10:
             x = 10; y += rowh + 10; rowh = 0
         sheet.paste(im, (x, y)); x += im.width + 10; rowh = max(rowh, im.height)
     sheet.crop((0, 0, cols_w, y + rowh + 10)).save(os.path.join(HERE, 'contact-sheet.png'), optimize=True)
+
+
+if __name__ == '__main__':
+    rows = build_all()
+    json.dump(rows, open(os.path.join(HERE, 'manifest.json'), 'w'), indent=2)
+    contact_sheets(rows)
+    print(len(rows), 'posts; cast counts', STATE['count'])

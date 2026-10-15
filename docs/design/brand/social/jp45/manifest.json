@@ -1,5 +1,30 @@
 [
   {
+    "key": "2026-10-15-x",
+    "post_id": "941ebac0-e641-5626-b087-d8151871ad28",
+    "date": "2026-10-15",
+    "slot": "x",
+    "title": "X: Teaser 3",
+    "files": {
+      "landscape": "2026-10-15-x/landscape.png"
+    },
+    "caption": "Teaser 3: TOMORROW. with W, D and S (ChatGPT scene).",
+    "card": "teaser",
+    "season": "standard",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w",
+      "d",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene"
+  },
+  {
     "key": "2026-10-15-pin-1",
     "post_id": "79f2e335-7446-51e6-b3dc-9b7c53c6201d",
     "date": "2026-10-15",
@@ -8,11 +33,20 @@
     "files": {
       "pin": "2026-10-15-pin-1/pin.png"
     },
-    "caption": "Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo (GCRERO to GROCER, from the already-played Oct 13 Muddle) and the three steps.",
-    "mascot_check": "pass (hero composite)",
+    "caption": "Pinterest explainer pin: HOW TO PLAY CLASSIC, A new puzzle every day. (ChatGPT scene with C and I).",
+    "card": "pin-explainer",
+    "season": "standard",
+    "series_color": "hue 45-28",
+    "cast": [
+      "c",
+      "i"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero)",
     "aesthetic_check": "pass",
-    "hint": "hint: none (demo word GROCER comes from the already-played Oct 13 Muddle; bank checked)",
-    "notes": ""
+    "hint": "hint: none (demo scramble comes from an already-played Muddle daily)",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-15-pin-2",
@@ -23,11 +57,21 @@
     "files": {
       "pin": "2026-10-15-pin-2/pin.png"
     },
-    "caption": "Pinterest word card pin: WORD OF THE DAY with JUBILANT in glossy tiles and its meaning (an evergreen word checked against every daily bank: not an answer anywhere).",
-    "mascot_check": "pass (hero composite)",
+    "caption": "Pinterest word pin: BANJO, WORD OF THE DAY, with the sleepy one, the cheerleader and the zen one (ChatGPT scene).",
+    "card": "pin-word",
+    "season": "standard",
+    "series_color": "hue 190-175",
+    "cast": [
+      "o1",
+      "r",
+      "u"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero)",
     "aesthetic_check": "pass",
-    "hint": "hint: none (JUBILANT is in no daily bank: checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
-    "notes": ""
+    "hint": "hint: none (BANJO was a past Word of the Day: pool index 1634 vs daily index 1667 on Oct 15, next repeat 1734 days later; the word is a past answer)",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-15-pin-3",
@@ -38,41 +82,19 @@
     "files": {
       "pin": "2026-10-15-pin-3/pin.png"
     },
-    "caption": "Pinterest cast art pin: MEET THE CAST with all ten heroes and Bring your family.",
-    "mascot_check": "pass (hero composite)",
+    "caption": "Pinterest cast pin: MEET W. Bring your family. (ChatGPT scene, W solo).",
+    "card": "pin-cast",
+    "season": "standard",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (checked vs hero)",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
-  },
-  {
-    "key": "2026-10-15-x",
-    "post_id": "941ebac0-e641-5626-b087-d8151871ad28",
-    "date": "2026-10-15",
-    "slot": "x",
-    "title": "X: Teaser 3",
-    "files": {
-      "landscape": "2026-10-15-x/landscape.png"
-    },
-    "caption": "TOMORROW. in house lettering over the ten cast silhouettes lit at the edge, with 18 unlit grey tiles above them (teaser 3).",
-    "mascot_check": "pass (hero composite; silhouettes cut from the real hero alpha)",
-    "aesthetic_check": "pass",
-    "hint": "hint: none",
-    "notes": ""
-  },
-  {
-    "key": "2026-10-16-feed",
-    "post_id": "1eed8608-c764-59bf-843c-18f47cfe2d0c",
-    "date": "2026-10-16",
-    "slot": "feed",
-    "title": "Feed: trailer + carousel slide 1",
-    "files": {
-      "portrait": "2026-10-16-feed/portrait.png"
-    },
-    "caption": "Launch day feed card: 18 DAILY GAMES. ONE SCORE. with the whole cast and Bring your family. (portrait for IG and Facebook).",
-    "mascot_check": "pass (hero composite)",
-    "aesthetic_check": "pass",
-    "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-16-x",
@@ -83,11 +105,44 @@
     "files": {
       "landscape": "2026-10-16-x/landscape.png"
     },
-    "caption": "Launch day: 18 DAILY GAMES. ONE SCORE. with the whole cast and Bring your family. (landscape for X).",
-    "mascot_check": "pass (hero composite)",
+    "caption": "Launch: 18 DAILY GAMES. ONE SCORE. Bring your family. with D (ChatGPT scene).",
+    "card": "launch",
+    "season": "standard",
+    "series_color": "default purple-pink",
+    "cast": [
+      "d"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (checked vs hero)",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
+  },
+  {
+    "key": "2026-10-16-feed",
+    "post_id": "1eed8608-c764-59bf-843c-18f47cfe2d0c",
+    "date": "2026-10-16",
+    "slot": "feed",
+    "title": "Feed: trailer + carousel slide 1",
+    "files": {
+      "portrait": "2026-10-16-feed/portrait.png"
+    },
+    "caption": "Launch feed card: MEET THE CAST, Bring your family. with S, C and O (ChatGPT scene).",
+    "card": "launch",
+    "season": "standard",
+    "series_color": "default purple-pink",
+    "cast": [
+      "s",
+      "c",
+      "o2"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-17-x",
@@ -99,26 +154,20 @@
       "landscape": "2026-10-17-x/landscape.png",
       "portrait": "2026-10-17-x/portrait.png"
     },
-    "caption": "Halloween reveal: THE APP GOT DRESSED. over the Halloween wall with the whole costumed cast (landscape for X, portrait alongside).",
-    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "caption": "THE APP GOT DRESSED. Halloween is live. with vampire W and scarecrow I (ChatGPT scene).",
+    "card": "dressed",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w:vampire",
+      "i:scarecrow"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (checked vs hero)",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
-  },
-  {
-    "key": "2026-10-18-fb",
-    "post_id": "b49c1d32-6fb1-58a3-a7d0-3a9c132800bb",
-    "date": "2026-10-18",
-    "slot": "fb",
-    "title": "Facebook: Sweep post",
-    "files": {
-      "portrait": "2026-10-18-fb/portrait.png"
-    },
-    "caption": "SWEEP SUNDAY (portrait for Facebook): 18 numbered glossy tiles under the headline with the speedster and the leader.",
-    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
-    "aesthetic_check": "pass",
-    "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-18-x",
@@ -129,11 +178,44 @@
     "files": {
       "landscape": "2026-10-18-x/landscape.png"
     },
-    "caption": "SWEEP SUNDAY: 18 numbered glossy tiles (the sweep board idea) under the headline with the leader and the speedster.",
-    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "caption": "SWEEP SUNDAY: All 18 dailies. One day. with the mummy prankster, the lantern fairy and the ghost napper (ChatGPT scene).",
+    "card": "sweep",
+    "season": "halloween",
+    "series_color": "hue 285-305",
+    "cast": [
+      "o3:mummy",
+      "u:fairy-ghost",
+      "r:ghost"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero)",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
+  },
+  {
+    "key": "2026-10-18-fb",
+    "post_id": "b49c1d32-6fb1-58a3-a7d0-3a9c132800bb",
+    "date": "2026-10-18",
+    "slot": "fb",
+    "title": "Facebook: Sweep post",
+    "files": {
+      "portrait": "2026-10-18-fb/portrait.png"
+    },
+    "caption": "SWEEP SUNDAY (Facebook): ghost napper solo (ChatGPT scene).",
+    "card": "sweep",
+    "season": "halloween",
+    "series_color": "hue 285-305",
+    "cast": [
+      "r:ghost"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-19-x",
@@ -144,11 +226,23 @@
     "files": {
       "landscape": "2026-10-19-x/landscape.png"
     },
-    "caption": "MONDAY MASTERS: New week. Zero points. The crown is open. with the leader, the brain and the speedster.",
-    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "caption": "MONDAY MASTERS: weekly race reset, The crown is open.",
+    "card": "monday",
+    "season": "halloween",
+    "series_color": "hue 250-235",
+    "cast": [
+      "r",
+      "d:alt1",
+      "s:alt1"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-10-19-x-1: series color: MONDAY MASTERS headline must be ghostly blue-violet (Halloween Monday hue ~245), scene drew purple-pink; mascots (C robot, D wizard, O1 pumpkin cheerleader) and spelling were fine. Redo with the headline lettering in blue-violet with a deeper indigo rim and the sub line in gold."
+    ]
   },
   {
     "key": "2026-10-20-x",
@@ -159,26 +253,22 @@
     "files": {
       "landscape": "2026-10-20-x/landscape.png"
     },
-    "caption": "WORD OF THE DAY QUIZ card for Oct 20: the day's real word PUNCH in glossy tiles on a soft card, definition hidden for the quiz.",
-    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "caption": "WORD OF THE DAY QUIZ for Oct 20: the real word PUNCH in glossy tiles, definition hidden.",
+    "card": "wotd-punch",
+    "season": "halloween",
+    "series_color": "hue 105-85",
+    "cast": [
+      "c:alt1",
+      "i:alt1"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
     "aesthetic_check": "pass",
     "hint": "hint: the day's own word PUNCH is shown as the quiz subject; its definition is hidden (founder-approved quiz format)",
-    "notes": "Word = PUNCH (Oct 20 Word of the Day, computed by the Studio-post agent). Template: wotd_card(WORD, tile_px) in compose.py renders any other day."
-  },
-  {
-    "key": "2026-10-21-feed",
-    "post_id": "c35527c4-906c-51f1-be9b-25b04be1277e",
-    "date": "2026-10-21",
-    "slot": "feed",
-    "title": "Feed: cartoon + reveal thread",
-    "files": {
-      "portrait": "2026-10-21-feed/portrait.png"
-    },
-    "caption": "MUDDLE WEDNESDAY (portrait for IG and Facebook): the Oct 20 Muddle cartoon in a paper frame with Caption this.",
-    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (Oct 20 Muddle cartoon, already played by Oct 21; caption and answer not shown)",
-    "notes": "Same cartoon note as the X post."
+    "notes": "",
+    "rejected": [
+      "2026-10-20-x-1: series color + layout: WORD OF THE DAY QUIZ headline must be slime green (Halloween WOTD hue ~100), scene drew purple-pink; also leave a calm band (~20% of height, no props) between the headline and the mascots for the day's word tiles that I overlay in code. Mascots U fairy-ghost and S skeleton were fine."
+    ]
   },
   {
     "key": "2026-10-21-x",
@@ -189,11 +279,131 @@
     "files": {
       "landscape": "2026-10-21-x/landscape.png"
     },
-    "caption": "MUDDLE WEDNESDAY: the Oct 20 Muddle cartoon in a paper frame with Caption this. and the prankster and the brain at the sides.",
-    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "caption": "MUDDLE WEDNESDAY: the Oct 20 Muddle cartoon (played yesterday) in a paper frame, Caption this.",
+    "card": "muddle-oct20",
+    "season": "halloween",
+    "series_color": "hue 32-18",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (checked vs hero)",
     "aesthetic_check": "pass",
-    "hint": "hint: none (Oct 20 Muddle cartoon, already played by Oct 21; caption and answer not shown)",
-    "notes": "Cartoon = daily Muddle of 2026-10-20 (md-7jpkkq), shown only on Oct 21 when it is yesterday. Caption text not shown, so no answer on the image."
+    "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
+    "notes": "",
+    "rejected": [
+      "2026-10-21-x-1: layout: MUDDLE WEDNESDAY needs the day's cartoon (added in code in a paper frame): redraw with TWO mascots standing at the far left and far right and a calm empty center (about 30% of the width, from the sub line down to the floor) for the cartoon; headline color is recolored in code to pumpkin orange so only keep the shape. Mascots/spelling were fine."
+    ]
+  },
+  {
+    "key": "2026-10-21-feed",
+    "post_id": "c35527c4-906c-51f1-be9b-25b04be1277e",
+    "date": "2026-10-21",
+    "slot": "feed",
+    "title": "Feed: cartoon + reveal thread",
+    "files": {
+      "portrait": "2026-10-21-feed/portrait.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: the Oct 20 Muddle cartoon (played yesterday) in a paper frame, Caption this.",
+    "card": "muddle-oct20",
+    "season": "halloween",
+    "series_color": "hue 32-18",
+    "cast": [
+      "w:alt1",
+      "r:alt1",
+      "o2:alt1",
+      "o3:alt1",
+      "u:alt1"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
+    "notes": "",
+    "rejected": [
+      "2026-10-21-feed-1: layout: MUDDLE WEDNESDAY needs the day's cartoon: leave a calm empty rectangle (about 70% width x 28% height) between the sub line and the mascots' heads, with the mascots (two, standing low) under it; headline color is recolored in code. Mascots/spelling were fine."
+    ]
+  },
+  {
+    "key": "2026-10-21-pin-1",
+    "post_id": "5082362a-47d3-54c0-b2d0-e7e8f3a7eb82",
+    "date": "2026-10-21",
+    "slot": "pin",
+    "title": "Pin: Game explainer pin",
+    "files": {
+      "pin": "2026-10-21-pin-1/pin.png"
+    },
+    "caption": "Pinterest explainer pin: HOW TO PLAY OCTOWORD, A new puzzle every day. (ChatGPT scene).",
+    "card": "pin-explainer",
+    "season": "halloween",
+    "series_color": "hue 32-18",
+    "cast": [
+      "o1:cheerleader",
+      "r:ghost",
+      "u:fairy-ghost"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene"
+  },
+  {
+    "key": "2026-10-21-pin-2",
+    "post_id": "35529f63-4aef-59dd-8701-00f91d27637d",
+    "date": "2026-10-21",
+    "slot": "pin",
+    "title": "Pin: Word card pin",
+    "files": {
+      "pin": "2026-10-21-pin-2/pin.png"
+    },
+    "caption": "Pinterest word pin: INERT, WORD OF THE DAY with the skeleton runner and the ghost napper (ChatGPT scene).",
+    "card": "pin-word",
+    "season": "halloween",
+    "series_color": "hue 105-85",
+    "cast": [
+      "s:skeleton",
+      "r:ghost"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (INERT is a past answer: solutions pool index 1649 vs daily index 1673 on Oct 21; it will not recur in the 45-day window)",
+    "notes": "Queue asked for D solo; scene drew S + R (both real costume art, verified). Cast logged as drawn.",
+    "source": "chatgpt-scene"
+  },
+  {
+    "key": "2026-10-21-pin-3",
+    "post_id": "1212dcdf-6ff2-5e66-9d93-1a18c6e7bf6b",
+    "date": "2026-10-21",
+    "slot": "pin",
+    "title": "Pin: Cast art pin",
+    "files": {
+      "pin": "2026-10-21-pin-3/pin.png"
+    },
+    "caption": "Pinterest cast pin: MEET D. Bring your family. with wizard D (ChatGPT scene).",
+    "card": "pin-cast",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "d:wizard"
+    ],
+    "cast_count": 6,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-22-x",
@@ -204,8 +414,1970 @@
     "files": {
       "landscape": "2026-10-22-x/landscape.png"
     },
-    "caption": "Hubbub pangram tease: 7 LETTERS. ONE WORD. with seven mystery tiles and the explorer, the sprout and the speedster.",
-    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "caption": "7 LETTERS. ONE WORD.: seven mystery tiles for the Hubbub pangram tease.",
+    "card": "pangram",
+    "season": "halloween",
+    "series_color": "hue 175-160",
+    "cast": [
+      "w:alt2",
+      "o2",
+      "o3"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (seven mystery tiles)",
+    "notes": "",
+    "rejected": [
+      "2026-10-22-x-1: wrong headline for the day: the Oct 22 X post is the Hubbub pangram tease, per the coordinator keep the pangram image: headline must be '7 LETTERS. ONE WORD.' (sub 'ONE WORD USES EVERY LETTER.') with a calm band under the headline for seven mystery tiles that I add in code. Mascots (S skeleton, C astronaut, O2 witch) looked on-model; spelling fine."
+    ]
+  },
+  {
+    "key": "2026-10-22-pin-1",
+    "post_id": "ea4250dd-6b52-5867-8ffd-3bffe6aec58c",
+    "date": "2026-10-22",
+    "slot": "pin",
+    "title": "Pin: Game explainer pin",
+    "files": {
+      "pin": "2026-10-22-pin-1/pin.png"
+    },
+    "caption": "Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo from an already-played Muddle and the three steps.",
+    "card": "pin-explainer",
+    "season": "halloween",
+    "series_color": "hue 32-18",
+    "cast": [
+      "w",
+      "u:alt3"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (demo scramble comes from an already-played Muddle daily)",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-22-pin-2",
+    "post_id": "7608cf0f-ded3-522b-921b-bf085c8a7799",
+    "date": "2026-10-22",
+    "slot": "pin",
+    "title": "Pin: Word card pin",
+    "files": {
+      "pin": "2026-10-22-pin-2/pin.png"
+    },
+    "caption": "Pinterest word card pin: WORD OF THE DAY with an evergreen word in glossy tiles and its meaning.",
+    "card": "pin-word",
+    "season": "halloween",
+    "series_color": "hue 105-85",
+    "cast": [
+      "d",
+      "i"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (evergreen word, absent from every daily bank; checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-22-pin-3",
+    "post_id": "91798f51-7986-5f71-9bcc-e733f4bf6904",
+    "date": "2026-10-22",
+    "slot": "pin",
+    "title": "Pin: Cast art pin",
+    "files": {
+      "pin": "2026-10-22-pin-3/pin.png"
+    },
+    "caption": "Pinterest cast art pin: MEET THE CAST with a rotating group and Bring your family.",
+    "card": "pin-cast",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w:alt1",
+      "o1",
+      "r",
+      "c",
+      "s"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-23-x",
+    "post_id": "04833a93-315b-5a50-a4b7-c4aedaf84013",
+    "date": "2026-10-23",
+    "slot": "x",
+    "title": "X: Best board/streak of the week",
+    "files": {
+      "landscape": "2026-10-23-x/landscape.png"
+    },
+    "caption": "FRIDAY'S FINEST: gold tiles under the headline (best board of the week).",
+    "card": "friday",
+    "season": "halloween",
+    "series_color": "hue 358-345",
+    "cast": [
+      "r:alt1"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-23-feed",
+    "post_id": "8eef1597-b228-5cce-a529-fc7badbcee31",
+    "date": "2026-10-23",
+    "slot": "feed",
+    "title": "Feed: Friday's Finest",
+    "files": {
+      "portrait": "2026-10-23-feed/portrait.png"
+    },
+    "caption": "FRIDAY'S FINEST: gold tiles under the headline (best board of the week).",
+    "card": "friday",
+    "season": "halloween",
+    "series_color": "hue 358-345",
+    "cast": [
+      "c:alt1",
+      "s:alt1"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-24-x",
+    "post_id": "85a8e2dc-f2c6-5ce8-839f-486f87a4126f",
+    "date": "2026-10-24",
+    "slot": "x",
+    "title": "X: Cast post",
+    "files": {
+      "landscape": "2026-10-24-x/landscape.png"
+    },
+    "caption": "CAST SATURDAY: a rotating group of the cast.",
+    "card": "cast-sat",
+    "season": "halloween",
+    "series_color": "multicolor",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite; shipped halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-25-x",
+    "post_id": "ed5c865b-565d-5be9-90ee-3142edbbfe7e",
+    "date": "2026-10-25",
+    "slot": "x",
+    "title": "X: Sweep board + challenge",
+    "files": {
+      "landscape": "2026-10-25-x/landscape.png"
+    },
+    "caption": "SWEEP SUNDAY: 18 glossy tiles under the headline, All 18 dailies. One day.",
+    "card": "sweep",
+    "season": "halloween",
+    "series_color": "hue 285-305",
+    "cast": [
+      "i:alt1",
+      "u"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-25-fb",
+    "post_id": "de989153-828b-5d83-ba5d-9af31c4ed1cb",
+    "date": "2026-10-25",
+    "slot": "fb",
+    "title": "Facebook: Sweep post",
+    "files": {
+      "portrait": "2026-10-25-fb/portrait.png"
+    },
+    "caption": "SWEEP SUNDAY: 18 glossy tiles under the headline, All 18 dailies. One day.",
+    "card": "sweep",
+    "season": "halloween",
+    "series_color": "hue 285-305",
+    "cast": [
+      "o1:alt1",
+      "d:alt1",
+      "o3:alt1"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-26-x",
+    "post_id": "9dc7192c-10de-5cfb-a9e8-c77d737afc8f",
+    "date": "2026-10-26",
+    "slot": "x",
+    "title": "X: Race-reset post + last week champion",
+    "files": {
+      "landscape": "2026-10-26-x/landscape.png"
+    },
+    "caption": "MONDAY MASTERS: weekly race reset, The crown is open.",
+    "card": "monday",
+    "season": "halloween",
+    "series_color": "hue 250-235",
+    "cast": [
+      "o1:alt2",
+      "o2:alt1"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-27-x",
+    "post_id": "0f3807e1-1b31-5663-98df-bc693aa32470",
+    "date": "2026-10-27",
+    "slot": "x",
+    "title": "X: PH live \u2014 all channels point at listing",
+    "files": {
+      "landscape": "2026-10-27-x/landscape.png"
+    },
+    "caption": "WE'RE ON PRODUCT HUNT: Come say hello and vote.",
+    "card": "ph",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite; shipped halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-27-feed",
+    "post_id": "f3760f0a-f72a-5a99-a010-b3759be42e81",
+    "date": "2026-10-27",
+    "slot": "feed",
+    "title": "Feed: Story: PH",
+    "files": {
+      "portrait": "2026-10-27-feed/portrait.png"
+    },
+    "caption": "WE'RE ON PRODUCT HUNT: Come say hello and vote.",
+    "card": "ph",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "r:alt2",
+      "o2:alt2",
+      "i:alt2",
+      "o3:alt2",
+      "u:alt1"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-28-x",
+    "post_id": "7f5511e0-102c-521d-a308-2dcb719071e1",
+    "date": "2026-10-28",
+    "slot": "x",
+    "title": "X: \"Dress your mascot\" brief",
+    "files": {
+      "landscape": "2026-10-28-x/landscape.png"
+    },
+    "caption": "DRESS YOUR MASCOT: costume contest card (Oct 28 to 30).",
+    "card": "dress",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w:alt2",
+      "d:alt2",
+      "o2",
+      "c:alt2",
+      "o3",
+      "s:alt2"
+    ],
+    "cast_count": 6,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-28-feed",
+    "post_id": "f47383f2-c53b-50fa-ac57-8f96b7e0d4bc",
+    "date": "2026-10-28",
+    "slot": "feed",
+    "title": "Feed: contest brief + examples",
+    "files": {
+      "portrait": "2026-10-28-feed/portrait.png"
+    },
+    "caption": "DRESS YOUR MASCOT: costume contest card (Oct 28 to 30).",
+    "card": "dress",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w",
+      "o1",
+      "d",
+      "c",
+      "u:alt2",
+      "s"
+    ],
+    "cast_count": 6,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-29-x",
+    "post_id": "67585632-1e1b-5a7b-b952-f18c8a5c6b0f",
+    "date": "2026-10-29",
+    "slot": "x",
+    "title": "X: Contest reminders + entries repost",
+    "files": {
+      "landscape": "2026-10-29-x/landscape.png"
+    },
+    "caption": "DRESS YOUR MASCOT: contest reminder card.",
+    "card": "dress-reminder",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "o1:alt1",
+      "r",
+      "i",
+      "u:alt3"
+    ],
+    "cast_count": 4,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-29-pin-1",
+    "post_id": "5a2495e5-c3d0-5fbd-9889-8967504db593",
+    "date": "2026-10-29",
+    "slot": "pin",
+    "title": "Pin: Game explainer pin",
+    "files": {
+      "pin": "2026-10-29-pin-1/pin.png"
+    },
+    "caption": "Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo from an already-played Muddle and the three steps.",
+    "card": "pin-explainer",
+    "season": "halloween",
+    "series_color": "hue 32-18",
+    "cast": [
+      "d:alt1",
+      "i:alt1",
+      "o3:alt1"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (demo scramble comes from an already-played Muddle daily)",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-29-pin-2",
+    "post_id": "cddca6f0-d0a5-5ca6-a6dd-e41d53306ef4",
+    "date": "2026-10-29",
+    "slot": "pin",
+    "title": "Pin: Word card pin",
+    "files": {
+      "pin": "2026-10-29-pin-2/pin.png"
+    },
+    "caption": "Pinterest word card pin: WORD OF THE DAY with an evergreen word in glossy tiles and its meaning.",
+    "card": "pin-word",
+    "season": "halloween",
+    "series_color": "hue 105-85",
+    "cast": [
+      "r:alt1"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (evergreen word, absent from every daily bank; checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-29-pin-3",
+    "post_id": "2f08e162-0ddb-560f-898a-9ec6639ca526",
+    "date": "2026-10-29",
+    "slot": "pin",
+    "title": "Pin: Cast art pin",
+    "files": {
+      "pin": "2026-10-29-pin-3/pin.png"
+    },
+    "caption": "Pinterest cast art pin: MEET THE CAST with a rotating group and Bring your family.",
+    "card": "pin-cast",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite; shipped halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-30-x",
+    "post_id": "fd6f0eed-3902-5abb-a231-19d46cf8648f",
+    "date": "2026-10-30",
+    "slot": "x",
+    "title": "X: Themed-puzzle day post",
+    "files": {
+      "landscape": "2026-10-30-x/landscape.png"
+    },
+    "caption": "HALLOWEEN EVE: themed puzzles in every game.",
+    "card": "eve",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite; shipped halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-30-feed",
+    "post_id": "1cb60717-99de-5f84-bbdf-b9d775102c7a",
+    "date": "2026-10-30",
+    "slot": "feed",
+    "title": "Feed: Friday's Finest",
+    "files": {
+      "portrait": "2026-10-30-feed/portrait.png"
+    },
+    "caption": "HALLOWEEN EVE: themed puzzles in every game.",
+    "card": "eve",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w:alt1",
+      "r:alt2",
+      "o2:alt1",
+      "c:alt1",
+      "s:alt1"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-31-x",
+    "post_id": "293cf4e9-7bd7-598f-affe-ae26ef0be6f6",
+    "date": "2026-10-31",
+    "slot": "x",
+    "title": "X: Winners featured; Halloween board",
+    "files": {
+      "landscape": "2026-10-31-x/landscape.png"
+    },
+    "caption": "HAPPY HALLOWEEN: themed puzzles and contest winners.",
+    "card": "happy-halloween",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w:alt2",
+      "d:alt2",
+      "c:alt2",
+      "i:alt2",
+      "u",
+      "s:alt2"
+    ],
+    "cast_count": 6,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-31-feed",
+    "post_id": "7f984e39-15ec-53f9-86c9-d53c67bf495f",
+    "date": "2026-10-31",
+    "slot": "feed",
+    "title": "Feed: 3 winning mascots",
+    "files": {
+      "portrait": "2026-10-31-feed/portrait.png"
+    },
+    "caption": "HAPPY HALLOWEEN: Meet the winning mascots (swap in the real winners).",
+    "card": "winners",
+    "season": "halloween",
+    "series_color": "default purple-pink",
+    "cast": [
+      "o1:alt2",
+      "o2:alt2",
+      "o3:alt2"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-01-x",
+    "post_id": "c718dd69-7ef2-54eb-9341-39a09f06f3da",
+    "date": "2026-11-01",
+    "slot": "x",
+    "title": "X: Before/after icon post",
+    "files": {
+      "landscape": "2026-11-01-x/landscape.png"
+    },
+    "caption": "THE CAST CLEANS UP: November icon card.",
+    "card": "cleans-up",
+    "season": "standard",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-01-fb",
+    "post_id": "ec30d2eb-1508-5c4d-bfff-4b436046a35d",
+    "date": "2026-11-01",
+    "slot": "fb",
+    "title": "Facebook: Sweep post",
+    "files": {
+      "portrait": "2026-11-01-fb/portrait.png"
+    },
+    "caption": "THE CAST CLEANS UP: November icon card.",
+    "card": "cleans-up",
+    "season": "standard",
+    "series_color": "default purple-pink",
+    "cast": [
+      "r:cocoa",
+      "o2:gasp",
+      "c:cheer",
+      "i:giggle",
+      "u:lotus",
+      "s:blocks"
+    ],
+    "cast_count": 6,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-02-x",
+    "post_id": "84a60b26-b749-531c-9fab-42a8b4acbd88",
+    "date": "2026-11-02",
+    "slot": "x",
+    "title": "X: Race-reset post + last week champion",
+    "files": {
+      "landscape": "2026-11-02-x/landscape.png"
+    },
+    "caption": "MONDAY MASTERS: weekly race reset, The crown is open.",
+    "card": "monday",
+    "season": "standard",
+    "series_color": "hue 225-210",
+    "cast": [
+      "w",
+      "o1:jump",
+      "d:eureka",
+      "o3:ready"
+    ],
+    "cast_count": 4,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-03-x",
+    "post_id": "49c5ec30-36da-534c-a4f3-1c425029cd35",
+    "date": "2026-11-03",
+    "slot": "x",
+    "title": "X: WOTD quiz AM / answer PM",
+    "files": {
+      "landscape": "2026-11-03-x/landscape.png"
+    },
+    "caption": "WORD OF THE DAY QUIZ: five mystery tiles, Pick the real definition.",
+    "card": "wotd-quiz",
+    "season": "standard",
+    "series_color": "hue 190-175",
+    "cast": [
+      "o2:ready",
+      "u:meditate"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (five mystery tiles)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-04-x",
+    "post_id": "1ecb83ca-225b-5e5d-a847-9ec81d54ffa3",
+    "date": "2026-11-04",
+    "slot": "x",
+    "title": "X: Yesterday's cartoon \u2014 caption this",
+    "files": {
+      "landscape": "2026-11-04-x/landscape.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: the Nov 3 Muddle cartoon (played yesterday) in a paper frame, Caption this.",
+    "card": "muddle-nov4",
+    "season": "standard",
+    "series_color": "hue 45-28",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-04-feed",
+    "post_id": "0c150df6-b5aa-5293-ac28-7b59b243fb02",
+    "date": "2026-11-04",
+    "slot": "feed",
+    "title": "Feed: cartoon + reveal thread",
+    "files": {
+      "portrait": "2026-11-04-feed/portrait.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: the Nov 3 Muddle cartoon (played yesterday) in a paper frame, Caption this.",
+    "card": "muddle-nov4",
+    "season": "standard",
+    "series_color": "hue 45-28",
+    "cast": [
+      "w:cheer",
+      "r:ready",
+      "d:notes",
+      "c:map",
+      "s:flex"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-05-x",
+    "post_id": "70eb079b-bb12-5700-9bef-952d56f9d331",
+    "date": "2026-11-05",
+    "slot": "x",
+    "title": "X: WOTD quiz + pangram tease",
+    "files": {
+      "landscape": "2026-11-05-x/landscape.png"
+    },
+    "caption": "7 LETTERS. ONE WORD.: seven mystery tiles for the Hubbub pangram tease.",
+    "card": "pangram",
+    "season": "standard",
+    "series_color": "hue 150-135",
+    "cast": [
+      "i:reach",
+      "o3:sneak"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (seven mystery tiles)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-05-pin-1",
+    "post_id": "43a47c1a-a313-5187-88f6-16fc10ae93ac",
+    "date": "2026-11-05",
+    "slot": "pin",
+    "title": "Pin: Game explainer pin",
+    "files": {
+      "pin": "2026-11-05-pin-1/pin.png"
+    },
+    "caption": "Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo from an already-played Muddle and the three steps.",
+    "card": "pin-explainer",
+    "season": "standard",
+    "series_color": "hue 45-28",
+    "cast": [
+      "o1:ready",
+      "s:ready"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (demo scramble comes from an already-played Muddle daily)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-05-pin-2",
+    "post_id": "ab0a2e11-fb0b-58ed-9acb-c9d2e6a7698f",
+    "date": "2026-11-05",
+    "slot": "pin",
+    "title": "Pin: Word card pin",
+    "files": {
+      "pin": "2026-11-05-pin-2/pin.png"
+    },
+    "caption": "Pinterest word card pin: WORD OF THE DAY with an evergreen word in glossy tiles and its meaning.",
+    "card": "pin-word",
+    "season": "standard",
+    "series_color": "hue 190-175",
+    "cast": [
+      "r:sleepwalk",
+      "i:ready"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (evergreen word, absent from every daily bank; checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-05-pin-3",
+    "post_id": "69af1e81-6a02-55f1-8081-27f42b7a41b3",
+    "date": "2026-11-05",
+    "slot": "pin",
+    "title": "Pin: Cast art pin",
+    "files": {
+      "pin": "2026-11-05-pin-3/pin.png"
+    },
+    "caption": "Pinterest cast art pin: MEET THE CAST with a rotating group and Bring your family.",
+    "card": "pin-cast",
+    "season": "standard",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w:fly",
+      "o1:victory",
+      "d:ready",
+      "o2:strut",
+      "c:ready",
+      "o3:victory"
+    ],
+    "cast_count": 6,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-06-x",
+    "post_id": "49797a18-4383-5e5f-be30-28395d96ea99",
+    "date": "2026-11-06",
+    "slot": "x",
+    "title": "X: Best board/streak of the week",
+    "files": {
+      "landscape": "2026-11-06-x/landscape.png"
+    },
+    "caption": "FRIDAY'S FINEST: gold tiles under the headline (best board of the week).",
+    "card": "friday",
+    "season": "standard",
+    "series_color": "hue 350-335",
+    "cast": [
+      "u:ready"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-06-feed",
+    "post_id": "459e2bf3-d8b6-56e1-93d1-5791de281c1e",
+    "date": "2026-11-06",
+    "slot": "feed",
+    "title": "Feed: Friday's Finest",
+    "files": {
+      "portrait": "2026-11-06-feed/portrait.png"
+    },
+    "caption": "FRIDAY'S FINEST: gold tiles under the headline (best board of the week).",
+    "card": "friday",
+    "season": "standard",
+    "series_color": "hue 350-335",
+    "cast": [
+      "o1",
+      "u:spin"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-07-x",
+    "post_id": "4a5ab3a2-148c-5892-b21c-82e71eadb8d6",
+    "date": "2026-11-07",
+    "slot": "x",
+    "title": "X: Cast post",
+    "files": {
+      "landscape": "2026-11-07-x/landscape.png"
+    },
+    "caption": "CAST SATURDAY: a rotating group of the cast.",
+    "card": "cast-sat",
+    "season": "standard",
+    "series_color": "multicolor",
+    "cast": [
+      "r:victory",
+      "d:skeptic",
+      "o2:twirl",
+      "c:telescope",
+      "i:victory",
+      "s:slide"
+    ],
+    "cast_count": 6,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-08-x",
+    "post_id": "5305c8fe-0eaa-5c93-8883-59b6cb3d7c1d",
+    "date": "2026-11-08",
+    "slot": "x",
+    "title": "X: Diwali HEROES title + themed boards",
+    "files": {
+      "landscape": "2026-11-08-x/landscape.png"
+    },
+    "caption": "DIWALI: themed puzzles card.",
+    "card": "diwali",
+    "season": "standard",
+    "series_color": "hue 42-8",
+    "cast": [
+      "w:hips",
+      "o1:cheer",
+      "o2:victory",
+      "c:victory",
+      "o3",
+      "u:stretch"
+    ],
+    "cast_count": 6,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-08-fb",
+    "post_id": "6b738e88-42e6-5823-941c-6781cf85362a",
+    "date": "2026-11-08",
+    "slot": "fb",
+    "title": "Facebook: Sweep post",
+    "files": {
+      "portrait": "2026-11-08-fb/portrait.png"
+    },
+    "caption": "DIWALI: themed puzzles card.",
+    "card": "diwali",
+    "season": "standard",
+    "series_color": "hue 42-8",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-09-x",
+    "post_id": "96657fa1-6b82-5b8b-b65b-4f9a2c839d3e",
+    "date": "2026-11-09",
+    "slot": "x",
+    "title": "X: Race-reset post + last week champion",
+    "files": {
+      "landscape": "2026-11-09-x/landscape.png"
+    },
+    "caption": "MONDAY MASTERS: weekly race reset, The crown is open.",
+    "card": "monday",
+    "season": "standard",
+    "series_color": "hue 225-210",
+    "cast": [
+      "r:wake",
+      "i:water",
+      "s:stopwatch"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-10-x",
+    "post_id": "376b1f20-da7d-5253-9a4f-92b9c8a290b6",
+    "date": "2026-11-10",
+    "slot": "x",
+    "title": "X: WOTD quiz AM / answer PM",
+    "files": {
+      "landscape": "2026-11-10-x/landscape.png"
+    },
+    "caption": "WORD OF THE DAY QUIZ: five mystery tiles, Pick the real definition.",
+    "card": "wotd-quiz",
+    "season": "standard",
+    "series_color": "hue 190-175",
+    "cast": [
+      "w:point",
+      "d:victory",
+      "o3:laugh"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (five mystery tiles)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-11-x",
+    "post_id": "a7e7311b-afa5-57df-b8f4-4e630206e5c9",
+    "date": "2026-11-11",
+    "slot": "x",
+    "title": "X: Themed boards post",
+    "files": {
+      "landscape": "2026-11-11-x/landscape.png"
+    },
+    "caption": "VETERANS DAY: themed puzzles card.",
+    "card": "veterans",
+    "season": "standard",
+    "series_color": "hue 222-210",
+    "cast": [
+      "o1:hug",
+      "o2",
+      "i"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-11-feed",
+    "post_id": "cb60cd7a-1e8f-5be8-a804-e725a2f076d4",
+    "date": "2026-11-11",
+    "slot": "feed",
+    "title": "Feed: cartoon + reveal thread",
+    "files": {
+      "portrait": "2026-11-11-feed/portrait.png"
+    },
+    "caption": "VETERANS DAY: themed puzzles card.",
+    "card": "veterans",
+    "season": "standard",
+    "series_color": "hue 222-210",
+    "cast": [
+      "w:proud",
+      "d",
+      "o3:mustache",
+      "s:trophy"
+    ],
+    "cast_count": 4,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-12-x",
+    "post_id": "22b7ef24-d79e-5279-9045-ac6e283e21fd",
+    "date": "2026-11-12",
+    "slot": "x",
+    "title": "X: WOTD quiz + pangram tease",
+    "files": {
+      "landscape": "2026-11-12-x/landscape.png"
+    },
+    "caption": "7 LETTERS. ONE WORD.: seven mystery tiles for the Hubbub pangram tease.",
+    "card": "pangram",
+    "season": "standard",
+    "series_color": "hue 150-135",
+    "cast": [
+      "r",
+      "c",
+      "u:tea"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (seven mystery tiles)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-12-pin-1",
+    "post_id": "f4f91ed9-feec-559e-b565-4cc51b29c445",
+    "date": "2026-11-12",
+    "slot": "pin",
+    "title": "Pin: Game explainer pin",
+    "files": {
+      "pin": "2026-11-12-pin-1/pin.png"
+    },
+    "caption": "Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo from an already-played Muddle and the three steps.",
+    "card": "pin-explainer",
+    "season": "standard",
+    "series_color": "hue 45-28",
+    "cast": [
+      "r:cheer",
+      "i:cheer",
+      "s:victory"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (demo scramble comes from an already-played Muddle daily)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-12-pin-2",
+    "post_id": "9e64320a-dd51-535e-a722-173181a02f39",
+    "date": "2026-11-12",
+    "slot": "pin",
+    "title": "Pin: Word card pin",
+    "files": {
+      "pin": "2026-11-12-pin-2/pin.png"
+    },
+    "caption": "Pinterest word card pin: WORD OF THE DAY with an evergreen word in glossy tiles and its meaning.",
+    "card": "pin-word",
+    "season": "standard",
+    "series_color": "hue 190-175",
+    "cast": [
+      "u:victory"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (evergreen word, absent from every daily bank; checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-12-pin-3",
+    "post_id": "6f1c4a03-f37c-5955-b439-d4a2e81ed34f",
+    "date": "2026-11-12",
+    "slot": "pin",
+    "title": "Pin: Cast art pin",
+    "files": {
+      "pin": "2026-11-12-pin-3/pin.png"
+    },
+    "caption": "Pinterest cast art pin: MEET THE CAST with a rotating group and Bring your family.",
+    "card": "pin-cast",
+    "season": "standard",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w:ready",
+      "o1:jump",
+      "d:cheer",
+      "c:backpack",
+      "o3:ready"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-13-x",
+    "post_id": "39b7cdd3-d272-583b-afc2-58ea9d464645",
+    "date": "2026-11-13",
+    "slot": "x",
+    "title": "X: Best board/streak of the week",
+    "files": {
+      "landscape": "2026-11-13-x/landscape.png"
+    },
+    "caption": "PLAYER OF THE WEEK: feature card for the repost.",
+    "card": "potw",
+    "season": "standard",
+    "series_color": "default purple-pink",
+    "cast": [
+      "o1:ready",
+      "o2:cheer"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-13-feed",
+    "post_id": "d820ca70-38f4-580e-853c-8dd265b05856",
+    "date": "2026-11-13",
+    "slot": "feed",
+    "title": "Feed: player feature",
+    "files": {
+      "portrait": "2026-11-13-feed/portrait.png"
+    },
+    "caption": "PLAYER OF THE WEEK: feature card for the repost.",
+    "card": "potw",
+    "season": "standard",
+    "series_color": "default purple-pink",
+    "cast": [
+      "o2:gasp"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-14-x",
+    "post_id": "13874b19-3ce1-5a08-91c9-3ce93b2f3418",
+    "date": "2026-11-14",
+    "slot": "x",
+    "title": "X: Cast post",
+    "files": {
+      "landscape": "2026-11-14-x/landscape.png"
+    },
+    "caption": "CAST SATURDAY: a rotating group of the cast.",
+    "card": "cast-sat",
+    "season": "thanksgiving",
+    "series_color": "multicolor",
+    "cast": [
+      "w",
+      "r",
+      "c",
+      "o3",
+      "u"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-15-x",
+    "post_id": "c7c6683c-e190-54ce-a6bc-fe25778f779a",
+    "date": "2026-11-15",
+    "slot": "x",
+    "title": "X: Sweep board + challenge",
+    "files": {
+      "landscape": "2026-11-15-x/landscape.png"
+    },
+    "caption": "SWEEP SUNDAY: 18 glossy tiles under the headline, All 18 dailies. One day.",
+    "card": "sweep",
+    "season": "thanksgiving",
+    "series_color": "hue 22-15",
+    "cast": [
+      "d",
+      "s"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-15-fb",
+    "post_id": "c26a76f8-d4c4-549d-a011-6a3e4b26a515",
+    "date": "2026-11-15",
+    "slot": "fb",
+    "title": "Facebook: Sweep post",
+    "files": {
+      "portrait": "2026-11-15-fb/portrait.png"
+    },
+    "caption": "SWEEP SUNDAY: 18 glossy tiles under the headline, All 18 dailies. One day.",
+    "card": "sweep",
+    "season": "thanksgiving",
+    "series_color": "hue 22-15",
+    "cast": [
+      "w:alt1",
+      "d:alt1",
+      "i"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-16-x",
+    "post_id": "4552635b-84ef-51ce-8667-d1248b16eb27",
+    "date": "2026-11-16",
+    "slot": "x",
+    "title": "X: \"The app knows what month it is. Again.\"",
+    "files": {
+      "landscape": "2026-11-16-x/landscape.png"
+    },
+    "caption": "THANKSGIVING build reveal: The app knows what month it is.",
+    "card": "thanksgiving",
+    "season": "thanksgiving",
+    "series_color": "hue 40-20",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-17-x",
+    "post_id": "6b248516-72aa-52ed-b554-99d558a8dcac",
+    "date": "2026-11-17",
+    "slot": "x",
+    "title": "X: \"Set up the family league before Thursday\"",
+    "files": {
+      "landscape": "2026-11-17-x/landscape.png"
+    },
+    "caption": "FAMILY LEAGUE: Set it up before Thursday.",
+    "card": "league-open",
+    "season": "thanksgiving",
+    "series_color": "hue 100-90",
+    "cast": [
+      "o2:alt1",
+      "i:alt1",
+      "o3:alt1",
+      "s:alt1"
+    ],
+    "cast_count": 4,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-18-x",
+    "post_id": "23f9718d-4cd3-58c3-af45-eadfc16106ce",
+    "date": "2026-11-18",
+    "slot": "x",
+    "title": "X: Yesterday's cartoon \u2014 caption this",
+    "files": {
+      "landscape": "2026-11-18-x/landscape.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: the Nov 17 Muddle cartoon (played yesterday) in a paper frame, Caption this.",
+    "card": "muddle-nov18",
+    "season": "thanksgiving",
+    "series_color": "hue 25-15",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-18-feed",
+    "post_id": "7a8bd0fb-8100-55a5-a82a-3058dbab93e7",
+    "date": "2026-11-18",
+    "slot": "feed",
+    "title": "Feed: cartoon + reveal thread",
+    "files": {
+      "portrait": "2026-11-18-feed/portrait.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: the Nov 17 Muddle cartoon (played yesterday) in a paper frame, Caption this.",
+    "card": "muddle-nov18",
+    "season": "thanksgiving",
+    "series_color": "hue 25-15",
+    "cast": [
+      "o1:alt1",
+      "r:alt1",
+      "c:alt1",
+      "u:alt1",
+      "s"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-19-x",
+    "post_id": "5381e9c4-2720-5557-b81c-811dac01319c",
+    "date": "2026-11-19",
+    "slot": "x",
+    "title": "X: WOTD quiz + pangram tease",
+    "files": {
+      "landscape": "2026-11-19-x/landscape.png"
+    },
+    "caption": "7 LETTERS. ONE WORD.: seven mystery tiles for the Hubbub pangram tease.",
+    "card": "pangram",
+    "season": "thanksgiving",
+    "series_color": "hue 48-40",
+    "cast": [
+      "r",
+      "c"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (seven mystery tiles)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-19-pin-1",
+    "post_id": "1266986f-83d6-55ef-91dc-4a6b5e51d501",
+    "date": "2026-11-19",
+    "slot": "pin",
+    "title": "Pin: Game explainer pin",
+    "files": {
+      "pin": "2026-11-19-pin-1/pin.png"
+    },
+    "caption": "Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo from an already-played Muddle and the three steps.",
+    "card": "pin-explainer",
+    "season": "thanksgiving",
+    "series_color": "hue 25-15",
+    "cast": [
+      "i",
+      "u"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (demo scramble comes from an already-played Muddle daily)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-19-pin-2",
+    "post_id": "207555dd-d7bb-5ff7-9983-83c7fd9f6e82",
+    "date": "2026-11-19",
+    "slot": "pin",
+    "title": "Pin: Word card pin",
+    "files": {
+      "pin": "2026-11-19-pin-2/pin.png"
+    },
+    "caption": "Pinterest word card pin: WORD OF THE DAY with an evergreen word in glossy tiles and its meaning.",
+    "card": "pin-word",
+    "season": "thanksgiving",
+    "series_color": "hue 100-90",
+    "cast": [
+      "o1",
+      "d"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (evergreen word, absent from every daily bank; checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-19-pin-3",
+    "post_id": "1a8b632c-2749-5de6-b842-15a5bc1fcac0",
+    "date": "2026-11-19",
+    "slot": "pin",
+    "title": "Pin: Cast art pin",
+    "files": {
+      "pin": "2026-11-19-pin-3/pin.png"
+    },
+    "caption": "Pinterest cast art pin: MEET THE CAST with a rotating group and Bring your family.",
+    "card": "pin-cast",
+    "season": "thanksgiving",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-20-x",
+    "post_id": "ec4c8ed4-5047-5ad5-bcd2-28e8f42bf50b",
+    "date": "2026-11-20",
+    "slot": "x",
+    "title": "X: Best board/streak of the week",
+    "files": {
+      "landscape": "2026-11-20-x/landscape.png"
+    },
+    "caption": "FRIDAY'S FINEST: gold tiles under the headline (best board of the week).",
+    "card": "friday",
+    "season": "thanksgiving",
+    "series_color": "hue 350-340",
+    "cast": [
+      "o2"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-20-feed",
+    "post_id": "e6a3953e-fcd7-5cb1-859d-9f634b8aa9c7",
+    "date": "2026-11-20",
+    "slot": "feed",
+    "title": "Feed: Friday's Finest",
+    "files": {
+      "portrait": "2026-11-20-feed/portrait.png"
+    },
+    "caption": "FRIDAY'S FINEST: gold tiles under the headline (best board of the week).",
+    "card": "friday",
+    "season": "thanksgiving",
+    "series_color": "hue 350-340",
+    "cast": [
+      "w",
+      "o3"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-21-x",
+    "post_id": "d5693b57-9104-5b2f-adac-33df5746eaf6",
+    "date": "2026-11-21",
+    "slot": "x",
+    "title": "X: Cast post",
+    "files": {
+      "landscape": "2026-11-21-x/landscape.png"
+    },
+    "caption": "CAST SATURDAY: a rotating group of the cast.",
+    "card": "cast-sat",
+    "season": "thanksgiving",
+    "series_color": "multicolor",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-22-x",
+    "post_id": "c3b4b235-0fcb-5fdf-85b7-ab1307e24eef",
+    "date": "2026-11-22",
+    "slot": "x",
+    "title": "X: Sweep board + challenge",
+    "files": {
+      "landscape": "2026-11-22-x/landscape.png"
+    },
+    "caption": "SWEEP SUNDAY: 18 glossy tiles under the headline, All 18 dailies. One day.",
+    "card": "sweep",
+    "season": "thanksgiving",
+    "series_color": "hue 22-15",
+    "cast": [
+      "w:alt1",
+      "o3:alt1"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-22-fb",
+    "post_id": "81448e8a-bbf0-5004-bea1-63a1c04355b5",
+    "date": "2026-11-22",
+    "slot": "fb",
+    "title": "Facebook: Sweep post",
+    "files": {
+      "portrait": "2026-11-22-fb/portrait.png"
+    },
+    "caption": "SWEEP SUNDAY: 18 glossy tiles under the headline, All 18 dailies. One day.",
+    "card": "sweep",
+    "season": "thanksgiving",
+    "series_color": "hue 22-15",
+    "cast": [
+      "o1:alt1",
+      "o2:alt1",
+      "u:alt1"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-23-x",
+    "post_id": "21cec54c-651c-5e7b-975d-32a7667d177c",
+    "date": "2026-11-23",
+    "slot": "x",
+    "title": "X: Race-reset post + last week champion",
+    "files": {
+      "landscape": "2026-11-23-x/landscape.png"
+    },
+    "caption": "MONDAY MASTERS: weekly race reset, The crown is open.",
+    "card": "monday",
+    "season": "thanksgiving",
+    "series_color": "hue 305-325",
+    "cast": [
+      "d:alt1",
+      "i:alt1"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-24-x",
+    "post_id": "154ec392-22ea-535d-83cc-4e07d38fa96f",
+    "date": "2026-11-24",
+    "slot": "x",
+    "title": "X: Final family-league call + gift-a-shield post",
+    "files": {
+      "landscape": "2026-11-24-x/landscape.png"
+    },
+    "caption": "FAMILY LEAGUE: Final call before Thanksgiving.",
+    "card": "league-final",
+    "season": "thanksgiving",
+    "series_color": "hue 100-90",
+    "cast": [
+      "w",
+      "r:alt1",
+      "c:alt1",
+      "o3",
+      "s:alt1"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-25-x",
+    "post_id": "bbf43e05-d538-5607-8028-e5bdb6e0e759",
+    "date": "2026-11-25",
+    "slot": "x",
+    "title": "X: Themed boards",
+    "files": {
+      "landscape": "2026-11-25-x/landscape.png"
+    },
+    "caption": "THANKSGIVING EVE: themed puzzles card.",
+    "card": "thanks-eve",
+    "season": "thanksgiving",
+    "series_color": "hue 40-20",
+    "cast": [
+      "o1",
+      "d",
+      "o2",
+      "i",
+      "u"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-25-fb",
+    "post_id": "82469689-c22a-5bff-92c0-80415a574117",
+    "date": "2026-11-25",
+    "slot": "fb",
+    "title": "Facebook: Cartoon post",
+    "files": {
+      "portrait": "2026-11-25-fb/portrait.png"
+    },
+    "caption": "THANKSGIVING EVE: themed puzzles card.",
+    "card": "thanks-eve",
+    "season": "thanksgiving",
+    "series_color": "hue 40-20",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-26-x",
+    "post_id": "496bd243-1297-5965-ac42-517bf630e130",
+    "date": "2026-11-26",
+    "slot": "x",
+    "title": "X: \"Loser does the dishes.\" + themed board",
+    "files": {
+      "landscape": "2026-11-26-x/landscape.png"
+    },
+    "caption": "HAPPY THANKSGIVING: Bring the whole family.",
+    "card": "happy-thanks",
+    "season": "thanksgiving",
+    "series_color": "hue 40-20",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-26-fb",
+    "post_id": "6239398b-9db8-50bc-9de5-516c78e6cd74",
+    "date": "2026-11-26",
+    "slot": "fb",
+    "title": "Facebook: Family post",
+    "files": {
+      "portrait": "2026-11-26-fb/portrait.png"
+    },
+    "caption": "HAPPY THANKSGIVING: Bring the whole family.",
+    "card": "happy-thanks",
+    "season": "thanksgiving",
+    "series_color": "hue 40-20",
+    "cast": [
+      "w:alt1",
+      "r",
+      "d:alt1",
+      "c",
+      "i:alt1",
+      "s"
+    ],
+    "cast_count": 6,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-26-pin-1",
+    "post_id": "7aeeddc8-d21e-5839-9048-a9f507224750",
+    "date": "2026-11-26",
+    "slot": "pin",
+    "title": "Pin: Game explainer pin",
+    "files": {
+      "pin": "2026-11-26-pin-1/pin.png"
+    },
+    "caption": "Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo from an already-played Muddle and the three steps.",
+    "card": "pin-explainer",
+    "season": "thanksgiving",
+    "series_color": "hue 25-15",
+    "cast": [
+      "r:alt1",
+      "c:alt1",
+      "u:alt1"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (demo scramble comes from an already-played Muddle daily)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-26-pin-2",
+    "post_id": "f612c51b-004d-5b1d-a4a0-51ef50991bec",
+    "date": "2026-11-26",
+    "slot": "pin",
+    "title": "Pin: Word card pin",
+    "files": {
+      "pin": "2026-11-26-pin-2/pin.png"
+    },
+    "caption": "Pinterest word card pin: WORD OF THE DAY with an evergreen word in glossy tiles and its meaning.",
+    "card": "pin-word",
+    "season": "thanksgiving",
+    "series_color": "hue 100-90",
+    "cast": [
+      "o1:alt1"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (evergreen word, absent from every daily bank; checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-26-pin-3",
+    "post_id": "eaf900f0-5f95-56f7-b827-973804363333",
+    "date": "2026-11-26",
+    "slot": "pin",
+    "title": "Pin: Cast art pin",
+    "files": {
+      "pin": "2026-11-26-pin-3/pin.png"
+    },
+    "caption": "Pinterest cast art pin: MEET THE CAST with a rotating group and Bring your family.",
+    "card": "pin-cast",
+    "season": "thanksgiving",
+    "series_color": "default purple-pink",
+    "cast": [
+      "r",
+      "o2:alt1",
+      "c",
+      "o3:alt1",
+      "u",
+      "s:alt1"
+    ],
+    "cast_count": 6,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-27-x",
+    "post_id": "b099637c-e225-5bf9-b472-b9ace5152361",
+    "date": "2026-11-27",
+    "slot": "x",
+    "title": "X: Value post \u2014 message only, no discount",
+    "files": {
+      "landscape": "2026-11-27-x/landscape.png"
+    },
+    "caption": "GO PRO.: $59.99 a year, that is $5 a month (message only, no discount).",
+    "card": "pro",
+    "season": "thanksgiving",
+    "series_color": "default purple-pink",
+    "cast": [
+      "o1",
+      "o2",
+      "o3"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-27-feed",
+    "post_id": "c751a187-036c-5323-b081-23e0db851338",
+    "date": "2026-11-27",
+    "slot": "feed",
+    "title": "Feed: Pro value card",
+    "files": {
+      "portrait": "2026-11-27-feed/portrait.png"
+    },
+    "caption": "GO PRO.: $59.99 a year, that is $5 a month (message only, no discount).",
+    "card": "pro",
+    "season": "thanksgiving",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w",
+      "d",
+      "i",
+      "s"
+    ],
+    "cast_count": 4,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-28-x",
+    "post_id": "820a422b-d443-5596-9bfd-57b006679ad6",
+    "date": "2026-11-28",
+    "slot": "x",
+    "title": "X: Cast post",
+    "files": {
+      "landscape": "2026-11-28-x/landscape.png"
+    },
+    "caption": "MEET THE CAST: wrap-prep card.",
+    "card": "cast-wrap",
+    "season": "thanksgiving",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-29-x",
+    "post_id": "29e983fe-e2bb-582a-a781-cef9e112d7cb",
+    "date": "2026-11-29",
+    "slot": "x",
+    "title": "X: Wrap thread",
+    "files": {
+      "landscape": "2026-11-29-x/landscape.png"
+    },
+    "caption": "DAY 45.: Thank you for playing.",
+    "card": "day45",
+    "season": "thanksgiving",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w:alt1",
+      "o1:alt1",
+      "d:alt1",
+      "o2:alt1",
+      "o3:alt1",
+      "u:alt1"
+    ],
+    "cast_count": 6,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art); pose/costume variants are shipped art, compare in raw/",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-11-29-feed",
+    "post_id": "a6b5bb45-ed18-5b72-870b-bb0ca44121d3",
+    "date": "2026-11-29",
+    "slot": "feed",
+    "title": "Feed: wrap card",
+    "files": {
+      "portrait": "2026-11-29-feed/portrait.png"
+    },
+    "caption": "DAY 45.: Thank you for playing.",
+    "card": "day45",
+    "season": "thanksgiving",
+    "series_color": "default purple-pink",
+    "cast": [
+      "w",
+      "o1",
+      "r",
+      "d",
+      "o2",
+      "c",
+      "i",
+      "o3",
+      "u",
+      "s"
+    ],
+    "cast_count": 10,
+    "mascot_check": "pass (hero composite; shipped thanksgiving costume art)",
     "aesthetic_check": "pass",
     "hint": "hint: none",
     "notes": ""

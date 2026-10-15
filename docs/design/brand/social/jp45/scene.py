@@ -1,0 +1,217 @@
+# Whole-scene pipeline (founder 10-14): ChatGPT draws the scene (background + lettering + 1-3 mascots);
+# this script frames it to the post size and overlays the REAL wordmark (top band) and the footer
+# (bottom band) so those stay exact.
+#
+#   python3 scene.py compare <id> <cast ids...>        crop-free side-by-side prep sheet of the candidate vs hero art
+#   python3 scene.py accept  <id> [season] [slot]      write the final for incoming/full/<id>.png into <date>-<slot>/
+#   python3 scene.py reject  <id> "<why>"              delete the candidate and log it in manifest.json
+import json, os, sys
+from PIL import Image, ImageDraw, ImageFilter
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import compose as C      # noqa: E402  (importing compose runs nothing; its main is guarded)
+from compose import LAYOUT, Image as _I, ImageFilter as _F  # noqa: E402,F401
+
+FULL = os.path.join(HERE, 'incoming', 'full')
+FMT_OF = {'landscape': (1600, 900), 'portrait': (1080, 1350), 'pin': (1000, 1500)}
+MAX_UP = 1.12
+
+
+def frame(im, fmt):
+    """Center-crop to the target aspect, then resize; refuses to upscale more than ~1.1x."""
+    W, H = FMT_OF[fmt]
+    ar = W / H
+    w, h = im.size
+    if w / h > ar:
+        nw = round(h * ar); im = im.crop(((w - nw) // 2, 0, (w - nw) // 2 + nw, h))
+    else:
+        nh = round(w / ar); im = im.crop((0, (h - nh) // 2, w, (h - nh) // 2 + nh))
+    up = W / im.width
+    if up > MAX_UP:
+        print(f'WARNING: needs {up:.2f}x upscale (> {MAX_UP}); scene is too small for {fmt}')
+    return im.resize((W, H), Image.LANCZOS)
+
+
+def recolor_headline(im, season, series, y0, y1):
+    """Hue-shift the purple-pink headline lettering of a scene (rows y0..y1 of the native scene) to the series color for this season.
+    Only bright saturated purple/pink pixels (plus a thin rim halo) inside the band are touched, never mascots or the sub line."""
+    import numpy as np
+    from scipy import ndimage
+    sp = C.SERIES_COLORS.get(season, C.SERIES_COLORS['standard']).get(series)
+    if sp is None:
+        return im
+    hsv = np.asarray(im.convert('HSV')).astype(np.float32)
+    H = hsv[..., 0] * 360 / 255; S = hsv[..., 1] / 255; V = hsv[..., 2] / 255
+    band = np.zeros(H.shape, bool); band[y0:y1] = True
+    letters = band & (H > 255) & (H < 345) & (S > 0.4) & (V > 0.62)
+    letters = ndimage.binary_closing(letters, iterations=3)
+    area = ndimage.binary_dilation(letters, iterations=14) & band & (H > 240) & (H < 350) & (S > 0.3)
+    t = np.clip((H - 272) / 53, 0, 1)
+    _, top, bot, sm, vm = sp if sp[0] == 'grad' else ('grad', sp[1][0], sp[1][0], 1, 1)
+    nh = top + (bot - top) * t
+    nS = np.clip(S * sm, 0, 1); nV = np.clip(V * vm, 0, 1)
+    out = np.dstack([(nh % 360) * 255 / 360, nS * 255, nV * 255]).astype(np.uint8)
+    rgb = np.asarray(Image.fromarray(out, 'HSV').convert('RGB')).astype(np.float32)
+    base = np.asarray(im.convert('RGB')).astype(np.float32)
+    w = ndimage.gaussian_filter(area.astype(np.float32), 1.2)[..., None]
+    return Image.fromarray((rgb * w + base * (1 - w)).clip(0, 255).astype(np.uint8))
+
+
+def fit_scene(im, fmt, scale, top):
+    """Place the whole scene at `scale` (native pixel multiplier) with its top at `top` px; the margin around it is the scene's
+    own edge reflected and blurred (continues trees, bokeh and floor), with a wide feather so no seam shows.
+    Used when the scene has no calm top band for the wordmark."""
+    import numpy as np
+    W, H = FMT_OF[fmt]
+    s = float(scale)
+    sc = im.resize((round(im.width * s), round(im.height * s)), Image.LANCZOS)
+    x0 = (W - sc.width) // 2
+    a = np.asarray(sc)
+    pl, pr, pt = max(x0, 0), max(W - sc.width - x0, 0), max(top, 0)
+    pb = max(H - top - sc.height, 0)
+    big = np.pad(a, ((pt, pb), (pl, pr), (0, 0)), mode='reflect')
+    canvas = Image.fromarray(big)
+    blur = canvas.filter(ImageFilter.GaussianBlur(16))
+    # crop to the canvas (scene may overhang the bottom)
+    oy = pt - top if top < 0 else 0
+    canvas = canvas.crop((0, 0, W, H)); blur = blur.crop((0, 0, W, H))
+    f = 110
+    xs_ = np.minimum(np.arange(W) - x0, W - (x0 + sc.width) - (np.arange(W) - W + 1) * 0 - 1 + (x0 + sc.width) - np.arange(W)) if False else None
+    xx = np.arange(W); yy = np.arange(H)
+    dx = np.minimum(xx - x0, x0 + sc.width - 1 - xx)           # distance inside the scene from its left/right edge (negative outside)
+    dy = np.minimum(yy - top, 10 ** 6) if top > 0 else np.full(H, 10 ** 6)
+    inside = np.clip(np.minimum(dx[None, :], dy[:, None]) / f, 0, 1)       # 0 at/after the scene edge .. 1 deep inside
+    out = np.asarray(blur).astype(np.float32) * (1 - inside[..., None]) + np.asarray(canvas).astype(np.float32) * inside[..., None]
+    # sharp scene in the interior
+    res = Image.fromarray(out.clip(0, 255).astype(np.uint8))
+    return res
+
+
+def overlay(im, fmt, slot, season):
+    """Real wordmark in the top band + footer (handle . wordocious.com) in the bottom band."""
+    L = LAYOUT[fmt]
+    W, H = im.size
+    layer = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    wm = C.wordmark(); wmw = L['wm_w']; wmh = round(wmw * wm.height / wm.width)
+    wmi = wm.resize((wmw, wmh), Image.LANCZOS)
+    hm = Image.new('L', im.size, 0)
+    hm.paste(wmi.getchannel('A').filter(ImageFilter.MaxFilter(13)), ((W - wmw) // 2, L['wm_top']))
+    layer.paste(Image.new('RGBA', im.size, (255, 244, 255, 255)), (0, 0), hm.filter(ImageFilter.GaussianBlur(wmh * 0.22)).point(lambda v: min(255, int(v * 0.9))))
+    C.drop_shadow(layer, wmi, (W - wmw) / 2, L['wm_top'], dark=(40, 10, 80), a=150, blur=0.05, dy=0.08)
+    layer.alpha_composite(wmi, ((W - wmw) // 2, L['wm_top']))
+    hslot = 'feed' if (fmt == 'portrait' and slot == 'x') else slot
+    foot = ' · '.join(v for v in (C.HANDLE[hslot], 'wordocious.com') if v)
+    dark = season in C.DARK
+    C.text(layer, foot, W / 2, L['foot_y'], L['foot_size'], fill=(236, 224, 255) if dark else C.PURPLE_DEEP, weight='ExtraBold', shadow=dark)
+    base = im.convert('RGBA'); base.alpha_composite(layer)
+    return base.convert('RGB')
+
+
+def accept(cid, season=None, slot=None, scale=None, top=None, series=None, y0=None, y1=None):
+    q = json.load(open(os.path.join(FULL, 'queue.json')))['queue']
+    item = next(x for x in q if x['id'] == cid)
+    fmt = item['fmt']; slot = slot or item['slot']; season = season or item['season']
+    src = os.path.join(FULL, cid + '.png')
+    if not os.path.exists(src):
+        src = os.path.join('/private/tmp/claude-501/-Users-brianterchin-Developer-WordRush--claude-worktrees-new-session-38fb01/c71b5614-4332-4087-96d2-47d25779769a/scratchpad', 'accepted', cid + '.png')
+    raw = Image.open(src).convert('RGB')
+    if series:
+        raw = recolor_headline(raw, season, series, int(y0), int(y1))
+    if scale == 'crop':
+        im = frame(raw, fmt)
+    elif scale:
+        im = fit_scene(raw, fmt, float(scale), int(top))
+    elif fmt == 'landscape':
+        im = fit_scene(raw, fmt, 0.87, 28)      # default: whole 3:2 scene, margins reflected, wordmark band clear
+    elif fmt == 'portrait':
+        im = fit_scene(raw, fmt, 0.88, 0)
+    else:
+        im = frame(raw, fmt)
+    out = overlay(im, fmt, slot, season)
+    key = cid.rsplit('-', 1)[0] if item['slot'] != 'pin' else cid
+    d = C.out_dir(key)
+    fn = {'landscape': 'landscape.png', 'portrait': 'portrait.png', 'pin': 'pin.png'}[fmt]
+    out.save(os.path.join(d, fn), optimize=True)
+    review(cid, os.path.join(d, 'raw', f'compare-{fmt}.png'), src)
+    # accepted: drop the superseded composite's lettering captures and the candidate itself (founder: delete what is not needed)
+    for f in os.listdir(os.path.join(d, 'raw')):
+        if f.endswith('-capture.png'):
+            os.remove(os.path.join(d, 'raw', f))
+    keep = os.path.join('/private/tmp/claude-501/-Users-brianterchin-Developer-WordRush--claude-worktrees-new-session-38fb01/c71b5614-4332-4087-96d2-47d25779769a/scratchpad', 'accepted'); os.makedirs(keep, exist_ok=True)
+    if os.path.dirname(src) != keep:
+        os.replace(src, os.path.join(keep, cid + '.png'))
+    mp = os.path.join(HERE, 'manifest.json'); m = json.load(open(mp))
+    for r in m:
+        if r['key'] == key:
+            r['source'] = 'chatgpt-scene'; r['mascot_check'] = 'pass (checked vs hero)'
+    json.dump(m, open(mp, 'w'), indent=2)
+    print('accepted ->', os.path.join(key, fn))
+    return key, fn
+
+
+def reject(cid, why):
+    src = os.path.join(FULL, cid + '.png')
+    if os.path.exists(src):
+        os.remove(src)
+    mp = os.path.join(HERE, 'manifest.json')
+    m = json.load(open(mp))
+    key = cid.rsplit('-', 1)[0]
+    for r in m:
+        if r['key'] == key or r['key'] == cid:
+            r.setdefault('rejected', []).append(f'{cid}: {why}')
+    json.dump(m, open(mp, 'w'), indent=2)
+    rp = os.path.join(HERE, 'incoming', 'rejects.json')
+    rj = json.load(open(rp)) if os.path.exists(rp) else []
+    rj.append({'id': cid, 'why': why, 'status': 'redo'})
+    json.dump(rj, open(rp, 'w'), indent=2)
+    print('rejected', cid, why)
+
+
+def review(cid, out_dir_=None, src=None):
+    """Review sheet: the candidate on top, the real hero (or in-season costume) art of every cast member listed in the queue below it."""
+    q = json.load(open(os.path.join(FULL, 'queue.json')))['queue']
+    item = next(x for x in q if x['id'] == cid)
+    sc = Image.open(src or os.path.join(FULL, cid + '.png')).convert('RGB')
+    season = item['season']
+    refs = []
+    for c in item['cast']:
+        base = c.split('|')[0]
+        if season in ('halloween', 'thanksgiving'):
+            folder = os.path.join(C.BRAND, 'seasons', season, 'cast')
+            fs = [f for f in sorted(os.listdir(folder)) if f == base + '.png' or f.startswith(base + '-alt')]
+        else:
+            folder = os.path.join(C.BRAND, 'cast', 'hero'); fs = [base + '.png']
+        for f in fs[:3]:
+            im = Image.open(os.path.join(folder, f)).convert('RGBA'); im = im.crop(im.getchannel('A').getbbox())
+            refs.append(im)
+    h = 260
+    strip = Image.new('RGB', (sc.width, h + 10), (200, 190, 230)); x = 6
+    for im in refs:
+        im = im.resize((round(im.width * h / im.height), h), Image.LANCZOS)
+        strip.paste(im, (x, 5), im); x += im.width + 14
+    sheet = Image.new('RGB', (sc.width, sc.height + strip.height))
+    sheet.paste(sc, (0, 0)); sheet.paste(strip, (0, sc.height))
+    p = out_dir_ or os.path.join('/private/tmp/claude-501/-Users-brianterchin-Developer-WordRush--claude-worktrees-new-session-38fb01/c71b5614-4332-4087-96d2-47d25779769a/scratchpad', f'review-{cid}.png')
+    sheet.save(p)
+    return p
+
+
+if __name__ == '__main__':
+    cmd = sys.argv[1]
+    if cmd == 'accept':
+        a = sys.argv[2:]
+        kw = {}
+        pos = [x for x in a if not x.startswith('--')]
+        i = 0
+        while i < len(a):
+            if a[i].startswith('--'):
+                kw[a[i][2:]] = a[i + 1]; i += 2
+            else:
+                i += 1
+        accept(pos[0], None, None, kw.get('scale'), kw.get('top'), kw.get('series'), kw.get('y0'), kw.get('y1'))
+    elif cmd == 'review':
+        print(review(sys.argv[2]))
+    elif cmd == 'reject':
+        reject(sys.argv[2], sys.argv[3])
+

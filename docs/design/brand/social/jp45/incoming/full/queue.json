@@ -1,0 +1,2174 @@
+{
+ "queue": [
+  {
+   "id": "2026-10-15-x-1",
+   "post_id": "941ebac0-e641-5626-b087-d8151871ad28",
+   "date": "2026-10-15",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "Teaser 3: Tomorrow",
+   "headline": "TOMORROW.",
+   "sub": null,
+   "cast": [
+    "w",
+    "d",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "done",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-10-15-pin-1",
+   "post_id": "79f2e335-7446-51e6-b3dc-9b7c53c6201d",
+   "date": "2026-10-15",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Pin: How to play Classic",
+   "headline": "HOW TO PLAY CLASSIC",
+   "sub": "A NEW PUZZLE EVERY DAY.",
+   "cast": [
+    "c",
+    "i"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "done",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-10-15-pin-2",
+   "post_id": "c1c193f3-3f14-50d3-8bd1-5a14b16942f4",
+   "date": "2026-10-15",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Pin: Word card, BANJO",
+   "headline": "BANJO",
+   "sub": "WORD OF THE DAY",
+   "cast": [
+    "o1",
+    "r",
+    "u"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "done",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-10-15-pin-3",
+   "post_id": "1c9c3340-1c60-5117-b16b-c572700357f9",
+   "date": "2026-10-15",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Pin: Cast art, W",
+   "headline": "MEET W.",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "w"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "done",
+   "tab": "1547828051"
+  },
+  {
+   "id": "2026-10-16-x-1",
+   "post_id": "1541025f-5785-5f84-a186-bb8458ec6ef4",
+   "date": "2026-10-16",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "Launch day: 18 games, one score",
+   "headline": "18 DAILY GAMES. ONE SCORE.",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "d"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "done",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-10-16-feed-1",
+   "post_id": "1eed8608-c764-59bf-843c-18f47cfe2d0c",
+   "date": "2026-10-16",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Launch day carousel: meet the cast",
+   "headline": "MEET THE CAST",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "s",
+    "c",
+    "o2"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o2.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "done",
+   "tab": "1547828051"
+  },
+  {
+   "id": "2026-10-17-x-1",
+   "post_id": "419e5ec9-4722-5c89-8894-4b30481f1388",
+   "date": "2026-10-17",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Halloween reveal: the app got dressed",
+   "headline": "THE APP GOT DRESSED.",
+   "sub": "HALLOWEEN IS LIVE.",
+   "cast": [
+    "i",
+    "w"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "done",
+   "tab": "1547828052"
+  },
+  {
+   "id": "2026-10-18-x-1",
+   "post_id": "44ffa501-fe29-59bf-bcc3-7bf2057a8ff3",
+   "date": "2026-10-18",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Sweep Sunday debut",
+   "headline": "SWEEP SUNDAY",
+   "sub": "ALL 18 DAILIES. ONE DAY.",
+   "cast": [
+    "o3",
+    "u",
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o3.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/o3.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "done",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-10-18-fb-1",
+   "post_id": "b49c1d32-6fb1-58a3-a7d0-3a9c132800bb",
+   "date": "2026-10-18",
+   "slot": "fb",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Sweep Sunday debut (Facebook)",
+   "headline": "SWEEP SUNDAY",
+   "sub": "ALL 18 DAILIES. ONE DAY.",
+   "cast": [
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "done",
+   "tab": "1547828052"
+  },
+  {
+   "id": "2026-10-19-x-1",
+   "post_id": "d1103d7d-c962-5bef-93a8-6385dabc8509",
+   "date": "2026-10-19",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Monday Masters debut",
+   "headline": "MONDAY MASTERS",
+   "sub": "THE CROWN IS OPEN.",
+   "cast": [
+    "c",
+    "d",
+    "o1"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "done",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-10-20-x-1",
+   "post_id": "a7c6a65f-1a96-5689-857e-551128d44e12",
+   "date": "2026-10-20",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Word of the Day quiz debut: PUNCH",
+   "headline": "WORD OF THE DAY QUIZ",
+   "sub": null,
+   "cast": [
+    "u",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "done",
+   "tab": "1547828051"
+  },
+  {
+   "id": "2026-10-21-x-1",
+   "post_id": "570c3a01-096d-558e-8933-244b394a4662",
+   "date": "2026-10-21",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Muddle Wednesday debut",
+   "headline": "MUDDLE WEDNESDAY",
+   "sub": "FOUR WORDS. ONE PUNCHLINE.",
+   "cast": [
+    "w",
+    "d",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "done",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-10-21-feed-1",
+   "post_id": "c35527c4-906c-51f1-be9b-25b04be1277e",
+   "date": "2026-10-21",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Muddle Wednesday debut: caption this",
+   "headline": "MUDDLE WEDNESDAY",
+   "sub": "FOUR WORDS. ONE PUNCHLINE.",
+   "cast": [
+    "c",
+    "i"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "done",
+   "tab": "1547828052"
+  },
+  {
+   "id": "2026-10-21-pin-1",
+   "post_id": "5082362a-47d3-54c0-b2d0-e7e8f3a7eb82",
+   "date": "2026-10-21",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Pin: How to play OctoWord",
+   "headline": "HOW TO PLAY OCTOWORD",
+   "sub": "A NEW PUZZLE EVERY DAY.",
+   "cast": [
+    "o1",
+    "r",
+    "u"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "done",
+   "tab": "1547828051"
+  },
+  {
+   "id": "2026-10-21-pin-2",
+   "post_id": "35529f63-4aef-59dd-8701-00f91d27637d",
+   "date": "2026-10-21",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Pin: Word card, INERT",
+   "headline": "INERT",
+   "sub": "WORD OF THE DAY",
+   "cast": [
+    "d"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "done",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-10-21-pin-3",
+   "post_id": "1212dcdf-6ff2-5e66-9d93-1a18c6e7bf6b",
+   "date": "2026-10-21",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Pin: Cast art, D",
+   "headline": "MEET D.",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "d"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "done",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-10-22-x-1",
+   "post_id": "e8668a15-dbe0-5bb6-a785-bfb6f54d62b2",
+   "date": "2026-10-22",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "WOTD quiz LOSER + Hubbub pangram tease",
+   "headline": "WORD OF THE DAY QUIZ",
+   "sub": null,
+   "cast": [
+    "s",
+    "c",
+    "o2"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o2.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/o2.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "done",
+   "tab": "1547828052"
+  },
+  {
+   "id": "2026-10-22-pin-1",
+   "post_id": "ea4250dd-6b52-5867-8ffd-3bffe6aec58c",
+   "date": "2026-10-22",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Pin: How to play Starsweep",
+   "headline": "HOW TO PLAY STARSWEEP",
+   "sub": "A NEW PUZZLE EVERY DAY.",
+   "cast": [
+    "i",
+    "w"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "done",
+   "tab": "1547828051"
+  },
+  {
+   "id": "2026-10-22-pin-2",
+   "post_id": "7608cf0f-ded3-522b-921b-bf085c8a7799",
+   "date": "2026-10-22",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Pin: Word card, WEDGE",
+   "headline": "WEDGE",
+   "sub": "WORD OF THE DAY",
+   "cast": [
+    "o3",
+    "u",
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o3.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/o3.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "done",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-10-22-pin-3",
+   "post_id": "91798f51-7986-5f71-9bcc-e733f4bf6904",
+   "date": "2026-10-22",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Pin: Cast art, O",
+   "headline": "MEET O.",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "o1"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "done",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-10-23-x-1",
+   "post_id": "04833a93-315b-5a50-a4b7-c4aedaf84013",
+   "date": "2026-10-23",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Friday's Finest",
+   "headline": "FRIDAY'S FINEST",
+   "sub": "BEST BOARD OF THE WEEK.",
+   "cast": [
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "done",
+   "tab": "1547828052"
+  },
+  {
+   "id": "2026-10-23-feed-1",
+   "post_id": "8eef1597-b228-5cce-a529-fc7badbcee31",
+   "date": "2026-10-23",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Friday's Finest",
+   "headline": "FRIDAY'S FINEST",
+   "sub": "BEST BOARD OF THE WEEK.",
+   "cast": [
+    "c",
+    "d",
+    "o1"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "sent",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-10-24-x-1",
+   "post_id": "85a8e2dc-f2c6-5ce8-839f-486f87a4126f",
+   "date": "2026-10-24",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Cast Saturday: Beat Webster",
+   "headline": "BEAT WEBSTER",
+   "sub": "CAST SATURDAY",
+   "cast": [
+    "w",
+    "d"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "sent",
+   "tab": "1547828051"
+  },
+  {
+   "id": "2026-10-25-x-1",
+   "post_id": "ed5c865b-565d-5be9-90ee-3142edbbfe7e",
+   "date": "2026-10-25",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Sweep Sunday",
+   "headline": "SWEEP SUNDAY",
+   "sub": "ALL 18 DAILIES. ONE DAY.",
+   "cast": [
+    "u",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "sent",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-10-25-fb-1",
+   "post_id": "de989153-828b-5d83-ba5d-9af31c4ed1cb",
+   "date": "2026-10-25",
+   "slot": "fb",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Sweep Sunday (Facebook)",
+   "headline": "SWEEP SUNDAY",
+   "sub": "ALL 18 DAILIES. ONE DAY.",
+   "cast": [
+    "w",
+    "d",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-26-x-1",
+   "post_id": "9dc7192c-10de-5cfb-a9e8-c77d737afc8f",
+   "date": "2026-10-26",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Monday Masters: race reset",
+   "headline": "MONDAY MASTERS",
+   "sub": "THE CROWN IS OPEN.",
+   "cast": [
+    "c",
+    "i"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-27-x-1",
+   "post_id": "0f3807e1-1b31-5663-98df-bc693aa32470",
+   "date": "2026-10-27",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Product Hunt day (set the PH link first)",
+   "headline": "WE'RE ON PRODUCT HUNT",
+   "sub": null,
+   "cast": [
+    "o1",
+    "r",
+    "u"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-27-feed-1",
+   "post_id": "f3760f0a-f72a-5a99-a010-b3759be42e81",
+   "date": "2026-10-27",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Product Hunt day (set the PH link first)",
+   "headline": "WE'RE ON PRODUCT HUNT",
+   "sub": null,
+   "cast": [
+    "d"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-28-x-1",
+   "post_id": "7f5511e0-102c-521d-a308-2dcb719071e1",
+   "date": "2026-10-28",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Costume contest opens: Dress your mascot",
+   "headline": "DRESS YOUR MASCOT",
+   "sub": "COSTUME CONTEST OPENS.",
+   "cast": [
+    "s",
+    "c",
+    "o2"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o2.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/o2.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-28-feed-1",
+   "post_id": "f47383f2-c53b-50fa-ac57-8f96b7e0d4bc",
+   "date": "2026-10-28",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Costume contest brief + examples",
+   "headline": "COSTUME CONTEST",
+   "sub": "BRING YOUR BEST.",
+   "cast": [
+    "i",
+    "w"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-29-x-1",
+   "post_id": "67585632-1e1b-5a7b-b952-f18c8a5c6b0f",
+   "date": "2026-10-29",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Costume contest reminder",
+   "headline": "COSTUME CONTEST",
+   "sub": "LAST CALL.",
+   "cast": [
+    "o3",
+    "u",
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o3.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/o3.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-29-pin-1",
+   "post_id": "5a2495e5-c3d0-5fbd-9889-8967504db593",
+   "date": "2026-10-29",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Pin: How to play Hubbub",
+   "headline": "HOW TO PLAY HUBBUB",
+   "sub": "A NEW PUZZLE EVERY DAY.",
+   "cast": [
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-29-pin-2",
+   "post_id": "cddca6f0-d0a5-5ca6-a6dd-e41d53306ef4",
+   "date": "2026-10-29",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Pin: Word card, TUNIC",
+   "headline": "TUNIC",
+   "sub": "WORD OF THE DAY",
+   "cast": [
+    "c",
+    "d",
+    "o1"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-29-pin-3",
+   "post_id": "2f08e162-0ddb-560f-898a-9ec6639ca526",
+   "date": "2026-10-29",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Pin: Cast art, R",
+   "headline": "MEET R.",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-30-x-1",
+   "post_id": "fd6f0eed-3902-5abb-a231-19d46cf8648f",
+   "date": "2026-10-30",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Halloween Eve: themed puzzles",
+   "headline": "HALLOWEEN EVE",
+   "sub": "THEMED PUZZLES.",
+   "cast": [
+    "u",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-30-feed-1",
+   "post_id": "1cb60717-99de-5f84-bbdf-b9d775102c7a",
+   "date": "2026-10-30",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Halloween Eve + Friday's Finest",
+   "headline": "FRIDAY'S FINEST",
+   "sub": "BEST BOARD OF THE WEEK.",
+   "cast": [
+    "w",
+    "d",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-31-x-1",
+   "post_id": "293cf4e9-7bd7-598f-affe-ae26ef0be6f6",
+   "date": "2026-10-31",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "halloween",
+   "title": "Halloween: themed puzzles + contest winners (needs winners)",
+   "headline": "HAPPY HALLOWEEN",
+   "sub": "THEMED PUZZLES.",
+   "cast": [
+    "c",
+    "i"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-10-31-feed-1",
+   "post_id": "7f984e39-15ec-53f9-86c9-d53c67bf495f",
+   "date": "2026-10-31",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "halloween",
+   "title": "Three winning mascots (needs winners)",
+   "headline": "THREE WINNERS",
+   "sub": "COSTUME CONTEST",
+   "cast": [
+    "o1",
+    "r",
+    "u"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/halloween/cast/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-18-fb/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-01-x-1",
+   "post_id": "c718dd69-7ef2-54eb-9341-39a09f06f3da",
+   "date": "2026-11-01",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "The cast cleans up: icon reverts (confirm it shipped)",
+   "headline": "THE CAST CLEANS UP",
+   "sub": null,
+   "cast": [
+    "d"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-01-fb-1",
+   "post_id": "ec30d2eb-1508-5c4d-bfff-4b436046a35d",
+   "date": "2026-11-01",
+   "slot": "fb",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Sweep Sunday (Facebook)",
+   "headline": "SWEEP SUNDAY",
+   "sub": "ALL 18 DAILIES. ONE DAY.",
+   "cast": [
+    "s",
+    "c",
+    "o2"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o2.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-02-x-1",
+   "post_id": "84a60b26-b749-531c-9fab-42a8b4acbd88",
+   "date": "2026-11-02",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "Monday Masters: race reset",
+   "headline": "MONDAY MASTERS",
+   "sub": "THE CROWN IS OPEN.",
+   "cast": [
+    "i",
+    "w"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-03-x-1",
+   "post_id": "49c5ec30-36da-534c-a4f3-1c425029cd35",
+   "date": "2026-11-03",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "Word of the Day quiz: WHICH",
+   "headline": "WORD OF THE DAY QUIZ",
+   "sub": null,
+   "cast": [
+    "o3",
+    "u",
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o3.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-04-x-1",
+   "post_id": "1ecb83ca-225b-5e5d-a847-9ec81d54ffa3",
+   "date": "2026-11-04",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "Muddle Wednesday",
+   "headline": "MUDDLE WEDNESDAY",
+   "sub": "FOUR WORDS. ONE PUNCHLINE.",
+   "cast": [
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-04-feed-1",
+   "post_id": "0c150df6-b5aa-5293-ac28-7b59b243fb02",
+   "date": "2026-11-04",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Muddle Wednesday: caption this",
+   "headline": "MUDDLE WEDNESDAY",
+   "sub": "CAPTION THIS.",
+   "cast": [
+    "c",
+    "d",
+    "o1"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-05-x-1",
+   "post_id": "70eb079b-bb12-5700-9bef-952d56f9d331",
+   "date": "2026-11-05",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "WOTD quiz FLUNG + Hubbub pangram tease",
+   "headline": "WORD OF THE DAY QUIZ",
+   "sub": null,
+   "cast": [
+    "u",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-05-pin-1",
+   "post_id": "43a47c1a-a313-5187-88f6-16fc10ae93ac",
+   "date": "2026-11-05",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Pin: How to play Muddle",
+   "headline": "HOW TO PLAY MUDDLE",
+   "sub": "A NEW PUZZLE EVERY DAY.",
+   "cast": [
+    "w",
+    "d",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-05-pin-2",
+   "post_id": "ab0a2e11-fb0b-58ed-9acb-c9d2e6a7698f",
+   "date": "2026-11-05",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Pin: Word card, SHOVE",
+   "headline": "SHOVE",
+   "sub": "WORD OF THE DAY",
+   "cast": [
+    "c",
+    "i"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-05-pin-3",
+   "post_id": "69af1e81-6a02-55f1-8081-27f42b7a41b3",
+   "date": "2026-11-05",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Pin: Cast art, C",
+   "headline": "MEET C.",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "c"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-06-x-1",
+   "post_id": "49797a18-4383-5e5f-be30-28395d96ea99",
+   "date": "2026-11-06",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "Friday's Finest",
+   "headline": "FRIDAY'S FINEST",
+   "sub": "BEST BOARD OF THE WEEK.",
+   "cast": [
+    "o1",
+    "r",
+    "u"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-06-feed-1",
+   "post_id": "459e2bf3-d8b6-56e1-93d1-5791de281c1e",
+   "date": "2026-11-06",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Friday's Finest",
+   "headline": "FRIDAY'S FINEST",
+   "sub": "BEST BOARD OF THE WEEK.",
+   "cast": [
+    "d"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-07-x-1",
+   "post_id": "4a5ab3a2-148c-5892-b21c-82e71eadb8d6",
+   "date": "2026-11-07",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "Cast Saturday: Cosmo opens bold",
+   "headline": "COSMO OPENS BOLD",
+   "sub": "CAST SATURDAY",
+   "cast": [
+    "c"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-08-x-1",
+   "post_id": "5305c8fe-0eaa-5c93-8883-59b6cb3d7c1d",
+   "date": "2026-11-08",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "Diwali themed puzzles",
+   "headline": "HAPPY DIWALI",
+   "sub": "THEMED PUZZLES TODAY.",
+   "cast": [
+    "s",
+    "c",
+    "o2"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o2.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-08-fb-1",
+   "post_id": "6b738e88-42e6-5823-941c-6781cf85362a",
+   "date": "2026-11-08",
+   "slot": "fb",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Sweep Sunday + Diwali (Facebook)",
+   "headline": "SWEEP SUNDAY",
+   "sub": "ALL 18 DAILIES. ONE DAY.",
+   "cast": [
+    "i",
+    "w"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-09-x-1",
+   "post_id": "96657fa1-6b82-5b8b-b65b-4f9a2c839d3e",
+   "date": "2026-11-09",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "Monday Masters: race reset",
+   "headline": "MONDAY MASTERS",
+   "sub": "THE CROWN IS OPEN.",
+   "cast": [
+    "o3",
+    "u",
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o3.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-10-x-1",
+   "post_id": "376b1f20-da7d-5253-9a4f-92b9c8a290b6",
+   "date": "2026-11-10",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "Word of the Day quiz: WATER",
+   "headline": "WORD OF THE DAY QUIZ",
+   "sub": null,
+   "cast": [
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-11-x-1",
+   "post_id": "a7e7311b-afa5-57df-b8f4-4e630206e5c9",
+   "date": "2026-11-11",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "Veterans Day themed puzzles",
+   "headline": "VETERANS DAY",
+   "sub": "THEMED PUZZLES TODAY.",
+   "cast": [
+    "c",
+    "d",
+    "o1"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-11-feed-1",
+   "post_id": "cb60cd7a-1e8f-5be8-a804-e725a2f076d4",
+   "date": "2026-11-11",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Muddle Wednesday + Veterans Day",
+   "headline": "MUDDLE WEDNESDAY",
+   "sub": "FOUR WORDS. ONE PUNCHLINE.",
+   "cast": [
+    "u",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-12-x-1",
+   "post_id": "22b7ef24-d79e-5279-9045-ac6e283e21fd",
+   "date": "2026-11-12",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "WOTD quiz OTHER + Hubbub pangram tease",
+   "headline": "WORD OF THE DAY QUIZ",
+   "sub": null,
+   "cast": [
+    "w",
+    "d",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-12-pin-1",
+   "post_id": "f4f91ed9-feec-559e-b565-4cc51b29c445",
+   "date": "2026-11-12",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Pin: How to play Kindred",
+   "headline": "HOW TO PLAY KINDRED",
+   "sub": "A NEW PUZZLE EVERY DAY.",
+   "cast": [
+    "c",
+    "i"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-12-pin-2",
+   "post_id": "9e64320a-dd51-535e-a722-173181a02f39",
+   "date": "2026-11-12",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Pin: Word card, QUAKE",
+   "headline": "QUAKE",
+   "sub": "WORD OF THE DAY",
+   "cast": [
+    "o1",
+    "r",
+    "u"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-12-pin-3",
+   "post_id": "6f1c4a03-f37c-5955-b439-d4a2e81ed34f",
+   "date": "2026-11-12",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Pin: Cast art, U",
+   "headline": "MEET U.",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "u"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-13-x-1",
+   "post_id": "39b7cdd3-d272-583b-afc2-58ea9d464645",
+   "date": "2026-11-13",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "standard",
+   "title": "Player of the Week (needs a real player post)",
+   "headline": "PLAYER OF THE WEEK",
+   "sub": null,
+   "cast": [
+    "d"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-13-feed-1",
+   "post_id": "d820ca70-38f4-580e-853c-8dd265b05856",
+   "date": "2026-11-13",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "standard",
+   "title": "Player of the Week (needs a real player post)",
+   "headline": "PLAYER OF THE WEEK",
+   "sub": null,
+   "cast": [
+    "s",
+    "c",
+    "o2"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o2.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-14-x-1",
+   "post_id": "13874b19-3ce1-5a08-91c9-3ce93b2f3418",
+   "date": "2026-11-14",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Cast Saturday: Opal is dramatic",
+   "headline": "OPAL IS DRAMATIC",
+   "sub": "CAST SATURDAY",
+   "cast": [
+    "o2"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o2.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-15-x-1",
+   "post_id": "c7c6683c-e190-54ce-a6bc-fe25778f779a",
+   "date": "2026-11-15",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Sweep Sunday",
+   "headline": "SWEEP SUNDAY",
+   "sub": "ALL 18 DAILIES. ONE DAY.",
+   "cast": [
+    "i",
+    "w"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-15-fb-1",
+   "post_id": "c26a76f8-d4c4-549d-a011-6a3e4b26a515",
+   "date": "2026-11-15",
+   "slot": "fb",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Sweep Sunday (Facebook)",
+   "headline": "SWEEP SUNDAY",
+   "sub": "ALL 18 DAILIES. ONE DAY.",
+   "cast": [
+    "o3",
+    "u",
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o3.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-16-x-1",
+   "post_id": "4552635b-84ef-51ce-8667-d1248b16eb27",
+   "date": "2026-11-16",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Thanksgiving build reveal (move to the ship date)",
+   "headline": "FALL MAKEOVER",
+   "sub": "THE CAST GOT DRESSED AGAIN.",
+   "cast": [
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-17-x-1",
+   "post_id": "6b248516-72aa-52ed-b554-99d558a8dcac",
+   "date": "2026-11-17",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Family-league push: start it before Thursday",
+   "headline": "FAMILY LEAGUE",
+   "sub": "START IT BEFORE THURSDAY.",
+   "cast": [
+    "c",
+    "d",
+    "o1"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-18-x-1",
+   "post_id": "23f9718d-4cd3-58c3-af45-eadfc16106ce",
+   "date": "2026-11-18",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Muddle Wednesday",
+   "headline": "MUDDLE WEDNESDAY",
+   "sub": "FOUR WORDS. ONE PUNCHLINE.",
+   "cast": [
+    "u",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-18-feed-1",
+   "post_id": "7a8bd0fb-8100-55a5-a82a-3058dbab93e7",
+   "date": "2026-11-18",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Muddle Wednesday: caption this",
+   "headline": "MUDDLE WEDNESDAY",
+   "sub": "CAPTION THIS.",
+   "cast": [
+    "w",
+    "d",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-19-x-1",
+   "post_id": "5381e9c4-2720-5557-b81c-811dac01319c",
+   "date": "2026-11-19",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "WOTD quiz TOPIC + Hubbub pangram tease",
+   "headline": "WORD OF THE DAY QUIZ",
+   "sub": null,
+   "cast": [
+    "c",
+    "i"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-19-pin-1",
+   "post_id": "1266986f-83d6-55ef-91dc-4a6b5e51d501",
+   "date": "2026-11-19",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Pin: How to play Codebreaker",
+   "headline": "HOW TO PLAY CODEBREAKER",
+   "sub": "A NEW PUZZLE EVERY DAY.",
+   "cast": [
+    "o1",
+    "r",
+    "u"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-19-pin-2",
+   "post_id": "207555dd-d7bb-5ff7-9983-83c7fd9f6e82",
+   "date": "2026-11-19",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Pin: Word card, BAKER",
+   "headline": "BAKER",
+   "sub": "WORD OF THE DAY",
+   "cast": [
+    "d"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-19-pin-3",
+   "post_id": "1a8b632c-2749-5de6-b842-15a5bc1fcac0",
+   "date": "2026-11-19",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Pin: Cast art, S",
+   "headline": "MEET S.",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-20-x-1",
+   "post_id": "ec4c8ed4-5047-5ad5-bcd2-28e8f42bf50b",
+   "date": "2026-11-20",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Friday's Finest",
+   "headline": "FRIDAY'S FINEST",
+   "sub": "BEST BOARD OF THE WEEK.",
+   "cast": [
+    "s",
+    "c",
+    "o2"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o2.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-20-feed-1",
+   "post_id": "e6a3953e-fcd7-5cb1-859d-9f634b8aa9c7",
+   "date": "2026-11-20",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Friday's Finest",
+   "headline": "FRIDAY'S FINEST",
+   "sub": "BEST BOARD OF THE WEEK.",
+   "cast": [
+    "i",
+    "w"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-21-x-1",
+   "post_id": "d5693b57-9104-5b2f-adac-33df5746eaf6",
+   "date": "2026-11-21",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Cast Saturday: Thanksgiving costumes (needs the Thanksgiving build)",
+   "headline": "CAST SATURDAY",
+   "sub": "THANKSGIVING COSTUMES.",
+   "cast": [
+    "o3",
+    "u",
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o3.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-22-x-1",
+   "post_id": "c3b4b235-0fcb-5fdf-85b7-ab1307e24eef",
+   "date": "2026-11-22",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Sweep Sunday",
+   "headline": "SWEEP SUNDAY",
+   "sub": "ALL 18 DAILIES. ONE DAY.",
+   "cast": [
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-22-fb-1",
+   "post_id": "81448e8a-bbf0-5004-bea1-63a1c04355b5",
+   "date": "2026-11-22",
+   "slot": "fb",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Sweep Sunday (Facebook)",
+   "headline": "SWEEP SUNDAY",
+   "sub": "ALL 18 DAILIES. ONE DAY.",
+   "cast": [
+    "c",
+    "d",
+    "o1"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-23-x-1",
+   "post_id": "21cec54c-651c-5e7b-975d-32a7667d177c",
+   "date": "2026-11-23",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Monday Masters: race reset",
+   "headline": "MONDAY MASTERS",
+   "sub": "THE CROWN IS OPEN.",
+   "cast": [
+    "u",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-24-x-1",
+   "post_id": "154ec392-22ea-535d-83cc-4e07d38fa96f",
+   "date": "2026-11-24",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Final family-league call + gift a shield",
+   "headline": "FAMILY LEAGUE",
+   "sub": "FINAL CALL.",
+   "cast": [
+    "w",
+    "d",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-25-x-1",
+   "post_id": "bbf43e05-d538-5607-8028-e5bdb6e0e759",
+   "date": "2026-11-25",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Thanksgiving Eve themed puzzles",
+   "headline": "THANKSGIVING EVE",
+   "sub": "THEMED PUZZLES.",
+   "cast": [
+    "c",
+    "i"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-25-fb-1",
+   "post_id": "82469689-c22a-5bff-92c0-80415a574117",
+   "date": "2026-11-25",
+   "slot": "fb",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Muddle Wednesday: Thanksgiving Eve",
+   "headline": "MUDDLE WEDNESDAY",
+   "sub": "FOUR WORDS. ONE PUNCHLINE.",
+   "cast": [
+    "o1",
+    "r",
+    "u"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-26-x-1",
+   "post_id": "496bd243-1297-5965-ac42-517bf630e130",
+   "date": "2026-11-26",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Thanksgiving: loser does the dishes",
+   "headline": "DISHES ON THE LINE",
+   "sub": "LOSER DOES THE DISHES.",
+   "cast": [
+    "d"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-26-fb-1",
+   "post_id": "6239398b-9db8-50bc-9de5-516c78e6cd74",
+   "date": "2026-11-26",
+   "slot": "fb",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Thanksgiving: the family post",
+   "headline": "HAPPY THANKSGIVING",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "s",
+    "c",
+    "o2"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o2.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-26-pin-1",
+   "post_id": "7aeeddc8-d21e-5839-9048-a9f507224750",
+   "date": "2026-11-26",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Pin: How to play Letter Ladder",
+   "headline": "HOW TO PLAY LETTER LADDER",
+   "sub": "A NEW PUZZLE EVERY DAY.",
+   "cast": [
+    "i",
+    "w"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-26-pin-2",
+   "post_id": "f612c51b-004d-5b1d-a4a0-51ef50991bec",
+   "date": "2026-11-26",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Pin: Word card, PLANT",
+   "headline": "PLANT",
+   "sub": "WORD OF THE DAY",
+   "cast": [
+    "o3",
+    "u",
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o3.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-26-pin-3",
+   "post_id": "eaf900f0-5f95-56f7-b827-973804363333",
+   "date": "2026-11-26",
+   "slot": "pin",
+   "fmt": "pin",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Pin: Cast art, I",
+   "headline": "MEET I.",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "i"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/i.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-27-x-1",
+   "post_id": "b099637c-e225-5bf9-b472-b9ace5152361",
+   "date": "2026-11-27",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Pro value: $59.99 a year",
+   "headline": "$59.99 A YEAR",
+   "sub": "18 GAMES. ONE PRICE.",
+   "cast": [
+    "r"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-27-feed-1",
+   "post_id": "c751a187-036c-5323-b081-23e0db851338",
+   "date": "2026-11-27",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Pro value card: $59.99 a year",
+   "headline": "$59.99 A YEAR",
+   "sub": "18 GAMES. ONE PRICE.",
+   "cast": [
+    "c",
+    "d",
+    "o1"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/c.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-28-x-1",
+   "post_id": "820a422b-d443-5596-9bfd-57b006679ad6",
+   "date": "2026-11-28",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Cast Saturday: Umi matches your form",
+   "headline": "UMI MATCHES YOUR FORM",
+   "sub": "CAST SATURDAY",
+   "cast": [
+    "u"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-29-x-1",
+   "post_id": "29e983fe-e2bb-582a-a781-cef9e112d7cb",
+   "date": "2026-11-29",
+   "slot": "x",
+   "fmt": "landscape",
+   "aspect": "3:2 landscape (1536x1024)",
+   "season": "harvest",
+   "title": "Day 45 wrap: numbers in the post (fill them)",
+   "headline": "DAY 45.",
+   "sub": "45 DAYS IN NUMBERS.",
+   "cast": [
+    "u",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-x/landscape.png"
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "2026-11-29-feed-1",
+   "post_id": "a6b5bb45-ed18-5b72-870b-bb0ca44121d3",
+   "date": "2026-11-29",
+   "slot": "feed",
+   "fmt": "portrait",
+   "aspect": "2:3 portrait (1024x1536)",
+   "season": "harvest",
+   "title": "Day 45 wrap card (fill the numbers)",
+   "headline": "DAY 45.",
+   "sub": "45 DAYS IN NUMBERS.",
+   "cast": [
+    "w",
+    "d",
+    "s"
+   ],
+   "refs": [
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/w.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-10-16-feed/portrait.png"
+   ],
+   "status": "todo"
+  }
+ ],
+ "limit": null,
+ "note": "status todo|sent|done; sent items carry tab + chat url; files land in incoming/full/<id>.png"
+}

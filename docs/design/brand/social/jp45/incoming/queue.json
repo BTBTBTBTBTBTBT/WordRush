@@ -1,0 +1,280 @@
+{
+ "queue": [
+  {
+   "id": "L01-cast-names",
+   "kind": "lettering",
+   "color": "purple",
+   "blocks": [
+    [
+     "BEAT",
+     "WEBSTER"
+    ],
+    [
+     "COSMO"
+    ],
+    [
+     "OPAL"
+    ],
+    [
+     "UMI"
+    ]
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "L02-costume",
+   "kind": "lettering",
+   "color": "purple",
+   "blocks": [
+    [
+     "COSTUME",
+     "CONTEST"
+    ],
+    [
+     "LAST",
+     "CALL"
+    ],
+    [
+     "THREE",
+     "WINNERS"
+    ],
+    [
+     "VOTE",
+     "NOW"
+    ]
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "L03-thanks-family",
+   "kind": "lettering",
+   "color": "purple",
+   "blocks": [
+    [
+     "DISHES",
+     "ON THE LINE"
+    ],
+    [
+     "FALL",
+     "MAKEOVER"
+    ],
+    [
+     "FAMILY",
+     "SHOWDOWN"
+    ],
+    [
+     "GIFT A",
+     "SHIELD"
+    ]
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "L04-pro-wrap",
+   "kind": "lettering",
+   "color": "purple",
+   "blocks": [
+    [
+     "$59.99",
+     "A YEAR"
+    ],
+    [
+     "ONE PRICE",
+     "18 GAMES"
+    ],
+    [
+     "45 DAYS",
+     "IN NUMBERS"
+    ],
+    [
+     "WHAT'S",
+     "NEXT"
+    ]
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "L05-18days-a",
+   "kind": "lettering",
+   "color": "purple",
+   "blocks": [
+    [
+     "18 DAYS OF",
+     "WORDOCIOUS"
+    ],
+    [
+     "MUDDLE"
+    ],
+    [
+     "HUBBUB"
+    ],
+    [
+     "KINDRED"
+    ]
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "L06-18days-b",
+   "kind": "lettering",
+   "color": "purple",
+   "blocks": [
+    [
+     "LETTER",
+     "LADDER"
+    ],
+    [
+     "SPYGLASS"
+    ],
+    [
+     "CODEBREAKER"
+    ],
+    [
+     "SUDOCIOUS"
+    ]
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "L07-18days-c",
+   "kind": "lettering",
+   "color": "purple",
+   "blocks": [
+    [
+     "CROSSWORD",
+     "OCIOUS"
+    ],
+    [
+     "QUADWORD"
+    ],
+    [
+     "SUCCESSION"
+    ],
+    [
+     "DELIVERANCE"
+    ]
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "L08-18days-d",
+   "kind": "lettering",
+   "color": "purple",
+   "blocks": [
+    [
+     "GAUNTLET"
+    ],
+    [
+     "CLASSIC"
+    ],
+    [
+     "POCKET",
+     "GAMES"
+    ],
+    [
+     "TIC-TAC",
+     "TILE"
+    ]
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "L09-pins",
+   "kind": "lettering",
+   "color": "purple",
+   "blocks": [
+    [
+     "ROCK PAPER",
+     "SCISSORS"
+    ],
+    [
+     "WORD",
+     "CARD"
+    ],
+    [
+     "FIND THE",
+     "PANGRAM"
+    ],
+    [
+     "WHICH",
+     "WORD?"
+    ]
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "L10-family",
+   "kind": "lettering",
+   "color": "purple",
+   "blocks": [
+    [
+     "BEAT YOUR",
+     "UNCLE"
+    ],
+    [
+     "LOSER DOES",
+     "THE DISHES"
+    ],
+    [
+     "GRATEFUL",
+     "FOR WORDS"
+    ],
+    [
+     "TURKEY",
+     "TIME"
+    ]
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "L11-gold-subs",
+   "kind": "lettering",
+   "color": "gold",
+   "blocks": [
+    [
+     "LOSER DOES THE DISHES."
+    ],
+    [
+     "START IT BEFORE THURSDAY."
+    ],
+    [
+     "18 GAMES. ONE PRICE."
+    ],
+    [
+     "FREE ON WEB, IOS AND ANDROID."
+    ]
+   ],
+   "status": "todo"
+  },
+  {
+   "id": "A1-halloween-props",
+   "kind": "accent",
+   "key": "cyan",
+   "items": "pumpkin (jack-o'-lantern), wrapped candy, bat, cobweb, cauldron with green bubbling potion, candy corn",
+   "status": "todo"
+  },
+  {
+   "id": "A2-thanksgiving-props",
+   "kind": "accent",
+   "key": "cyan",
+   "items": "pumpkin pie slice, autumn leaves (red, orange, gold), gourds, cornucopia, string of warm lights, acorn",
+   "status": "todo"
+  },
+  {
+   "id": "A3-diwali-props",
+   "kind": "accent",
+   "key": "magenta",
+   "items": "lit diya oil lamps, rangoli mandala pattern, marigold garland, string lights, a small gold lantern",
+   "status": "todo"
+  },
+  {
+   "id": "A4-veterans-props",
+   "kind": "accent",
+   "key": "cyan",
+   "items": "gold star, red-white-blue ribbon, laurel wreath, a folded flag shape, a medal on a ribbon, a simple gold star burst",
+   "status": "todo"
+  }
+ ],
+ "limit": null,
+ "notes": "status todo|sent|done; sent items carry tab+chat url"
+}

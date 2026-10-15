@@ -1,0 +1,7 @@
+# Images live in the Art Library (wordocious-art repo + art-library bucket) and the social-media bucket,
+# not in the app repo (they bloated every clone and Vercel deploy). Only tooling and docs are tracked.
+*.png
+*.jpg
+*.jpeg
+*.webp
+__pycache__/

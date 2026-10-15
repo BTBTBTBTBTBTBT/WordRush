@@ -1,0 +1,27 @@
+[
+  {
+    "id": "2026-10-19-x-1",
+    "why": "series color: MONDAY MASTERS headline must be ghostly blue-violet (Halloween Monday hue ~245), scene drew purple-pink; mascots (C robot, D wizard, O1 pumpkin cheerleader) and spelling were fine. Redo with the headline lettering in blue-violet with a deeper indigo rim and the sub line in gold.",
+    "status": "redo"
+  },
+  {
+    "id": "2026-10-20-x-1",
+    "why": "series color + layout: WORD OF THE DAY QUIZ headline must be slime green (Halloween WOTD hue ~100), scene drew purple-pink; also leave a calm band (~20% of height, no props) between the headline and the mascots for the day's word tiles that I overlay in code. Mascots U fairy-ghost and S skeleton were fine.",
+    "status": "redo"
+  },
+  {
+    "id": "2026-10-21-x-1",
+    "why": "layout: MUDDLE WEDNESDAY needs the day's cartoon (added in code in a paper frame): redraw with TWO mascots standing at the far left and far right and a calm empty center (about 30% of the width, from the sub line down to the floor) for the cartoon; headline color is recolored in code to pumpkin orange so only keep the shape. Mascots/spelling were fine.",
+    "status": "redo"
+  },
+  {
+    "id": "2026-10-21-feed-1",
+    "why": "layout: MUDDLE WEDNESDAY needs the day's cartoon: leave a calm empty rectangle (about 70% width x 28% height) between the sub line and the mascots' heads, with the mascots (two, standing low) under it; headline color is recolored in code. Mascots/spelling were fine.",
+    "status": "redo"
+  },
+  {
+    "id": "2026-10-22-x-1",
+    "why": "wrong headline for the day: the Oct 22 X post is the Hubbub pangram tease, per the coordinator keep the pangram image: headline must be '7 LETTERS. ONE WORD.' (sub 'ONE WORD USES EVERY LETTER.') with a calm band under the headline for seven mystery tiles that I add in code. Mascots (S skeleton, C astronaut, O2 witch) looked on-model; spelling fine.",
+    "status": "redo"
+  }
+]
