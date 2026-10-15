@@ -2,26 +2,51 @@
   {
     "id": "2026-10-19-x-1",
     "why": "series color: MONDAY MASTERS headline must be ghostly blue-violet (Halloween Monday hue ~245), scene drew purple-pink; mascots (C robot, D wizard, O1 pumpkin cheerleader) and spelling were fine. Redo with the headline lettering in blue-violet with a deeper indigo rim and the sub line in gold.",
-    "status": "redo"
+    "status": "done (accepted 10-14)"
   },
   {
     "id": "2026-10-20-x-1",
     "why": "series color + layout: WORD OF THE DAY QUIZ headline must be slime green (Halloween WOTD hue ~100), scene drew purple-pink; also leave a calm band (~20% of height, no props) between the headline and the mascots for the day's word tiles that I overlay in code. Mascots U fairy-ghost and S skeleton were fine.",
-    "status": "redo"
+    "status": "superseded"
   },
   {
     "id": "2026-10-21-x-1",
     "why": "layout: MUDDLE WEDNESDAY needs the day's cartoon (added in code in a paper frame): redraw with TWO mascots standing at the far left and far right and a calm empty center (about 30% of the width, from the sub line down to the floor) for the cartoon; headline color is recolored in code to pumpkin orange so only keep the shape. Mascots/spelling were fine.",
-    "status": "redo"
+    "status": "done (accepted 10-14)"
   },
   {
     "id": "2026-10-21-feed-1",
     "why": "layout: MUDDLE WEDNESDAY needs the day's cartoon: leave a calm empty rectangle (about 70% width x 28% height) between the sub line and the mascots' heads, with the mascots (two, standing low) under it; headline color is recolored in code. Mascots/spelling were fine.",
-    "status": "redo"
+    "status": "superseded"
   },
   {
     "id": "2026-10-22-x-1",
     "why": "wrong headline for the day: the Oct 22 X post is the Hubbub pangram tease, per the coordinator keep the pangram image: headline must be '7 LETTERS. ONE WORD.' (sub 'ONE WORD USES EVERY LETTER.') with a calm band under the headline for seven mystery tiles that I add in code. Mascots (S skeleton, C astronaut, O2 witch) looked on-model; spelling fine.",
+    "status": "done (accepted 10-14)"
+  },
+  {
+    "id": "2026-10-20-x-1",
+    "why": "layout (2nd time): WORD OF THE DAY QUIZ still has no calm band under the headline: only ~60 px of 1024 between the headline bottom and the mascot tops, and the gap between U and S is ~140 px wide; the word-tile card I overlay (about 560 px wide x 250 px tall) has nowhere to go. Mascots U fairy-ghost + S skeleton and spelling were fine, so keep them but SHRINK them and stand them lower (heads no higher than 62 percent of the frame height), headline in the top 30 percent, and leave the whole band from 32 percent to 60 percent of the height plain wall, nothing in it. Or: one mascot only, bottom-left, with the center and right of that band empty.",
+    "status": "redo"
+  },
+  {
+    "id": "2026-10-21-feed-1",
+    "why": "layout (portrait 2:3): MUDDLE WEDNESDAY needs a calm empty rectangle for the cartoon (about 70 percent of the width x 28 percent of the height of the frame) between the sub line and the mascots; the scene has only ~190 px of 1536 (12 percent) because the C astronaut and I scarecrow are huge (heads at 47 percent of the height). Mascots C and I and spelling were fine. Redraw with the two mascots about half this size, standing low (heads below 68 percent of the frame height), headline in the top 33 percent, and the band from 36 percent to 66 percent completely empty wall.",
+    "status": "redo"
+  },
+  {
+    "id": "2026-10-31-x-1",
+    "why": "spelling: the headline reads HALOWEEN (one L missing). Must be exactly 'HAPPY HALLOWEEN' (H-A-L-L-O-W-E-E-N). Mascots C astronaut with candy bucket and I scarecrow with lollipop were on-model and the layout was fine.",
+    "status": "redo"
+  },
+  {
+    "id": "2026-11-01-fb-1",
+    "why": "palette: the 1-18 number tiles are a rainbow (green, blue, pink, red); house tiles are glossy purple / gold / grey only, as in the Oct 25 Sweep Sunday final. Mascots S, C, O2 and spelling were fine. Redo with the 18 tiles in purple, gold and grey (rotating), same two-row layout.",
+    "status": "redo"
+  },
+  {
+    "id": "2026-11-03-x-1",
+    "why": "lettering + layout: WORD OF THE DAY QUIZ is squeezed onto one line with horizontally condensed letters (not the house bubble lettering) and there is only ~9 percent of the height between the headline and the mascots, no calm band for the word tiles. Mascots O3, U, R were on-model. Redo with the house lettering on two lines (WORD OF THE DAY / QUIZ), headline in the top 30 percent, mascots small and low (heads below 62 percent of the height), and the band from 32 to 60 percent plain background.",
     "status": "redo"
   }
 ]

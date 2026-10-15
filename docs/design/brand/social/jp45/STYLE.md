@@ -63,3 +63,9 @@ Gold sub-line lettering stays gold in every season. Tile accent, sub-line stroke
 
 ## Checks logged per image in `manifest.json`
 `mascot_check`, `aesthetic_check`, `hint` (any puzzle hint shown), `cast`, `series_color`, `caption`, plus `rejected: why` entries for scenes thrown out. Every cast instance is compared against the real hero art in `raw/compare-<fmt>.png`.
+
+### Finishing a scene (scene.py accept), options learned 10-14
+- `--series <series> --y0 N --y1 N` hue-shifts the purple-pink headline for the season (y range = native scene rows of the headline only; stop above the gold sub line). `cast` is a smooth left-to-right sweep through the season's hue list (bubble letters touch, so per-letter labeling does not work); `--nl N` makes N stepped bands.
+- Framing: pins use the default crop. Landscape and portrait default to `fit_scene` (scene shrunk, margins reflected + blurred); pass `--scale S --top T` so the headline top lands at about y 120 (landscape) / 150 (portrait) and the mascot feet stay above the footer. `--scale fill --top T` fits the scene to the full post width with no margins (only when feet and headline both survive the crop). Headlines that start above 8 percent of the frame must be shrunk with `--scale`, or they touch the wordmark.
+- `--content "cartoon|<file>|<width px>"`, `"mystery|7"` or `"wotd|WORD|note"` plus `--at cx,cy` (fractions of the post) overlays the day's content block in code on the scene's empty center. Scenes for Muddle Wednesday, Word of the Day quiz and the 7-letters tease must leave that area empty.
+- Compare sheets are JPEG q80 (`raw/compare-*.jpg`). Do not run compose.py's full build now: it regenerates every composite and overwrites accepted scene finals.

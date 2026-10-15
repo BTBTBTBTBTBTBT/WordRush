@@ -16,6 +16,7 @@ from compose import LAYOUT, Image as _I, ImageFilter as _F  # noqa: E402,F401
 FULL = os.path.join(HERE, 'incoming', 'full')
 FMT_OF = {'landscape': (1600, 900), 'portrait': (1080, 1350), 'pin': (1000, 1500)}
 MAX_UP = 1.12
+PAD_MODE = os.environ.get('SCENE_PAD', 'reflect')    # 'edge' gave hard color streaks; reflect + heavy blur stays the default
 
 
 def frame(im, fmt):
@@ -33,7 +34,7 @@ def frame(im, fmt):
     return im.resize((W, H), Image.LANCZOS)
 
 
-def recolor_headline(im, season, series, y0, y1):
+def recolor_headline(im, season, series, y0, y1, nl=None):
     """Hue-shift the purple-pink headline lettering of a scene (rows y0..y1 of the native scene) to the series color for this season.
     Only bright saturated purple/pink pixels (plus a thin rim halo) inside the band are touched, never mascots or the sub line."""
     import numpy as np
@@ -48,8 +49,28 @@ def recolor_headline(im, season, series, y0, y1):
     letters = ndimage.binary_closing(letters, iterations=3)
     area = ndimage.binary_dilation(letters, iterations=14) & band & (H > 240) & (H < 350) & (S > 0.3)
     t = np.clip((H - 272) / 53, 0, 1)
-    _, top, bot, sm, vm = sp if sp[0] == 'grad' else ('grad', sp[1][0], sp[1][0], 1, 1)
-    nh = top + (bot - top) * t
+    if sp[0] == 'multi':
+        # letters touch in bubble lettering, so no per-letter labeling: hues sweep left to right across the headline
+        # (smooth through the hue list; nl = number of letters -> stepped bands instead of a smooth sweep)
+        cols = np.where(letters.any(axis=0))[0]
+        x0, x1 = cols.min(), cols.max()
+        u = np.clip((np.arange(H.shape[1]) - x0) / max(1, x1 - x0), 0, 1)
+        hl = list(sp[1]); k = len(hl) - 1
+        if nl:
+            u = (np.floor(u * nl).clip(0, nl - 1) + 0.5) / nl
+            pos = u * len(hl)
+            hrow = np.array([hl[int(p) % len(hl)] for p in pos], np.float32)
+        else:
+            pos = u * k
+            i0 = np.minimum(pos.astype(int), k - 1) if k else np.zeros_like(pos, int)
+            f = pos - i0
+            hrow = np.array([hl[i] + (hl[min(i + 1, k)] - hl[i]) * ff for i, ff in zip(i0, f)], np.float32)
+        nh = hrow[None, :] + (t - 0.5) * 10
+        sm = vm = 1
+        area = ndimage.binary_dilation(letters, iterations=7) & band & (H > 240) & (H < 350) & (S > 0.3)
+    else:
+        _, top, bot, sm, vm = sp if sp[0] == 'grad' else ('grad', sp[1][0], sp[1][0], 1, 1)
+        nh = top + (bot - top) * t
     nS = np.clip(S * sm, 0, 1); nV = np.clip(V * vm, 0, 1)
     out = np.dstack([(nh % 360) * 255 / 360, nS * 255, nV * 255]).astype(np.uint8)
     rgb = np.asarray(Image.fromarray(out, 'HSV').convert('RGB')).astype(np.float32)
@@ -70,9 +91,9 @@ def fit_scene(im, fmt, scale, top):
     a = np.asarray(sc)
     pl, pr, pt = max(x0, 0), max(W - sc.width - x0, 0), max(top, 0)
     pb = max(H - top - sc.height, 0)
-    big = np.pad(a, ((pt, pb), (pl, pr), (0, 0)), mode='reflect')
+    big = np.pad(a, ((pt, pb), (pl, pr), (0, 0)), mode=PAD_MODE)
     canvas = Image.fromarray(big)
-    blur = canvas.filter(ImageFilter.GaussianBlur(16))
+    blur = canvas.filter(ImageFilter.GaussianBlur(28))
     # crop to the canvas (scene may overhang the bottom)
     oy = pt - top if top < 0 else 0
     canvas = canvas.crop((0, 0, W, H)); blur = blur.crop((0, 0, W, H))
@@ -86,6 +107,42 @@ def fit_scene(im, fmt, scale, top):
     # sharp scene in the interior
     res = Image.fromarray(out.clip(0, 255).astype(np.uint8))
     return res
+
+
+def add_content(im, fmt, spec, at, season, series):
+    """Overlay the post's content block in code on a scene's empty center. spec: 'wotd|WORD|note' | 'mystery|7' | 'cartoon|file.webp|width_px'.
+    at = 'cx,cy' as fractions of the post. Uses compose.ctx so tile colors follow the series/season."""
+    C.ctx(series or 'default', season)
+    kind, *a = spec.split('|')
+    L = LAYOUT[fmt]
+    if kind == 'wotd':
+        blk = C.wotd_card(a[0], int(L['tile'] * 1.4), note=a[1] if len(a) > 1 else None)
+    elif kind == 'mystery':
+        blk = C.tiles_row(['?'] * int(a[0]), round(L['tile'] * 1.2), C.pal_rot(0), gap=0.12)
+    elif kind == 'cartoon':
+        blk = C.cartoon_frame(os.path.join(C.REPO, 'apps', 'web', 'public', 'muddle', a[0]), int(a[1]))
+    else:
+        raise SystemExit('unknown content ' + kind)
+    cx, cy = (float(v) for v in at.split(','))
+    W, H = im.size
+    base = im.convert('RGBA')
+    x, y = round(cx * W - blk.width / 2), round(cy * H - blk.height / 2)
+    if kind != 'wotd':
+        C.drop_shadow(base, blk, x, y, dark=(30, 10, 60), a=140, blur=0.04, dy=0.04)
+    base.alpha_composite(blk, (x, y))
+    return base.convert('RGB')
+
+
+def fill_scene(im, fmt, top):
+    """Scale the scene to the full post width (no margins) and crop to the post height, scene top at `top` px (negative = crop it off)."""
+    W, H = FMT_OF[fmt]
+    s = W / im.width
+    if s > MAX_UP:
+        print(f'WARNING: needs {s:.2f}x upscale (> {MAX_UP})')
+    sc = im.resize((W, round(im.height * s)), Image.LANCZOS)
+    canvas = Image.new('RGB', (W, H))
+    canvas.paste(sc, (0, int(top)))
+    return canvas
 
 
 def overlay(im, fmt, slot, season):
@@ -108,7 +165,7 @@ def overlay(im, fmt, slot, season):
     return base.convert('RGB')
 
 
-def accept(cid, season=None, slot=None, scale=None, top=None, series=None, y0=None, y1=None):
+def accept(cid, season=None, slot=None, scale=None, top=None, series=None, y0=None, y1=None, kw_nl=None, content=None, at=None):
     q = json.load(open(os.path.join(FULL, 'queue.json')))['queue']
     item = next(x for x in q if x['id'] == cid)
     fmt = item['fmt']; slot = slot or item['slot']; season = season or item['season']
@@ -117,9 +174,11 @@ def accept(cid, season=None, slot=None, scale=None, top=None, series=None, y0=No
         src = os.path.join('/private/tmp/claude-501/-Users-brianterchin-Developer-WordRush--claude-worktrees-new-session-38fb01/c71b5614-4332-4087-96d2-47d25779769a/scratchpad', 'accepted', cid + '.png')
     raw = Image.open(src).convert('RGB')
     if series:
-        raw = recolor_headline(raw, season, series, int(y0), int(y1))
+        raw = recolor_headline(raw, season, series, int(y0), int(y1), int(kw_nl) if kw_nl else None)
     if scale == 'crop':
         im = frame(raw, fmt)
+    elif scale == 'fill':
+        im = fill_scene(raw, fmt, int(top or 0))
     elif scale:
         im = fit_scene(raw, fmt, float(scale), int(top))
     elif fmt == 'landscape':
@@ -128,12 +187,17 @@ def accept(cid, season=None, slot=None, scale=None, top=None, series=None, y0=No
         im = fit_scene(raw, fmt, 0.88, 0)
     else:
         im = frame(raw, fmt)
+    if content:
+        im = add_content(im, fmt, content, at, season, series)
     out = overlay(im, fmt, slot, season)
     key = cid.rsplit('-', 1)[0] if item['slot'] != 'pin' else cid
     d = C.out_dir(key)
     fn = {'landscape': 'landscape.png', 'portrait': 'portrait.png', 'pin': 'pin.png'}[fmt]
     out.save(os.path.join(d, fn), optimize=True)
-    review(cid, os.path.join(d, 'raw', f'compare-{fmt}.png'), src)
+    review(cid, os.path.join(d, 'raw', f'compare-{fmt}.jpg'), src)
+    _old = os.path.join(d, 'raw', f'compare-{fmt}.png')
+    if os.path.exists(_old):
+        os.remove(_old)
     # accepted: drop the superseded composite's lettering captures and the candidate itself (founder: delete what is not needed)
     for f in os.listdir(os.path.join(d, 'raw')):
         if f.endswith('-capture.png'):
@@ -180,20 +244,25 @@ def review(cid, out_dir_=None, src=None):
         if season in ('halloween', 'thanksgiving'):
             folder = os.path.join(C.BRAND, 'seasons', season, 'cast')
             fs = [f for f in sorted(os.listdir(folder)) if f == base + '.png' or f.startswith(base + '-alt')]
+            fs.sort(key=lambda f: (f != base + '.png', f))      # base costume first, then the alts
         else:
             folder = os.path.join(C.BRAND, 'cast', 'hero'); fs = [base + '.png']
-        for f in fs[:3]:
+        for f in fs[:4]:
             im = Image.open(os.path.join(folder, f)).convert('RGBA'); im = im.crop(im.getchannel('A').getbbox())
             refs.append(im)
+    # reference strip: every ref at one height, scaled down so the whole row fits the sheet width (nothing cut off)
     h = 260
+    tot = sum(round(im.width * h / im.height) + 14 for im in refs) + 6
+    if tot > sc.width:
+        h = int(h * sc.width / tot)
     strip = Image.new('RGB', (sc.width, h + 10), (200, 190, 230)); x = 6
     for im in refs:
         im = im.resize((round(im.width * h / im.height), h), Image.LANCZOS)
         strip.paste(im, (x, 5), im); x += im.width + 14
     sheet = Image.new('RGB', (sc.width, sc.height + strip.height))
     sheet.paste(sc, (0, 0)); sheet.paste(strip, (0, sc.height))
-    p = out_dir_ or os.path.join('/private/tmp/claude-501/-Users-brianterchin-Developer-WordRush--claude-worktrees-new-session-38fb01/c71b5614-4332-4087-96d2-47d25779769a/scratchpad', f'review-{cid}.png')
-    sheet.save(p)
+    p = out_dir_ or os.path.join('/private/tmp/claude-501/-Users-brianterchin-Developer-WordRush--claude-worktrees-new-session-38fb01/c71b5614-4332-4087-96d2-47d25779769a/scratchpad', f'review-{cid}.jpg')
+    sheet.save(p, quality=80)    # JPEG q80 keeps the compare sheets small
     return p
 
 
@@ -209,7 +278,7 @@ if __name__ == '__main__':
                 kw[a[i][2:]] = a[i + 1]; i += 2
             else:
                 i += 1
-        accept(pos[0], None, None, kw.get('scale'), kw.get('top'), kw.get('series'), kw.get('y0'), kw.get('y1'))
+        accept(pos[0], None, None, kw.get('scale'), kw.get('top'), kw.get('series'), kw.get('y0'), kw.get('y1'), kw.get('nl'), kw.get('content'), kw.get('at'))
     elif cmd == 'review':
         print(review(sys.argv[2]))
     elif cmd == 'reject':

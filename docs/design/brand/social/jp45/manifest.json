@@ -231,18 +231,19 @@
     "season": "halloween",
     "series_color": "hue 250-235",
     "cast": [
-      "r",
-      "d:alt1",
-      "s:alt1"
+      "c:astronaut",
+      "d:wizard",
+      "o1:cheerleader"
     ],
     "cast_count": 3,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
     "notes": "",
     "rejected": [
       "2026-10-19-x-1: series color: MONDAY MASTERS headline must be ghostly blue-violet (Halloween Monday hue ~245), scene drew purple-pink; mascots (C robot, D wizard, O1 pumpkin cheerleader) and spelling were fine. Redo with the headline lettering in blue-violet with a deeper indigo rim and the sub line in gold."
-    ]
+    ],
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-20-x",
@@ -267,7 +268,8 @@
     "hint": "hint: the day's own word PUNCH is shown as the quiz subject; its definition is hidden (founder-approved quiz format)",
     "notes": "",
     "rejected": [
-      "2026-10-20-x-1: series color + layout: WORD OF THE DAY QUIZ headline must be slime green (Halloween WOTD hue ~100), scene drew purple-pink; also leave a calm band (~20% of height, no props) between the headline and the mascots for the day's word tiles that I overlay in code. Mascots U fairy-ghost and S skeleton were fine."
+      "2026-10-20-x-1: series color + layout: WORD OF THE DAY QUIZ headline must be slime green (Halloween WOTD hue ~100), scene drew purple-pink; also leave a calm band (~20% of height, no props) between the headline and the mascots for the day's word tiles that I overlay in code. Mascots U fairy-ghost and S skeleton were fine.",
+      "2026-10-20-x-1: layout (2nd time): WORD OF THE DAY QUIZ still has no calm band under the headline: only ~60 px of 1024 between the headline bottom and the mascot tops, and the gap between U and S is ~140 px wide; the word-tile card I overlay (about 560 px wide x 250 px tall) has nowhere to go. Mascots U fairy-ghost + S skeleton and spelling were fine, so keep them but SHRINK them and stand them lower (heads no higher than 62 percent of the frame height), headline in the top 30 percent, and leave the whole band from 32 percent to 60 percent of the height plain wall, nothing in it. Or: one mascot only, bottom-left, with the center and right of that band empty."
     ]
   },
   {
@@ -284,25 +286,18 @@
     "season": "halloween",
     "series_color": "hue 32-18",
     "cast": [
-      "w",
-      "o1",
-      "r",
-      "d",
-      "o2",
-      "c",
-      "i",
-      "o3",
-      "u",
-      "s"
+      "w:vampire",
+      "d:wizard"
     ],
-    "cast_count": 10,
+    "cast_count": 2,
     "mascot_check": "pass (checked vs hero)",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
-    "notes": "",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none (yesterday cartoon md-7jpkkq overlaid in code; caption and answer not shown)",
+    "notes": "Queue listed W, D, S; scene drew W + D at the edges by design (empty center for the cartoon). Cartoon frame added in code.",
     "rejected": [
       "2026-10-21-x-1: layout: MUDDLE WEDNESDAY needs the day's cartoon (added in code in a paper frame): redraw with TWO mascots standing at the far left and far right and a calm empty center (about 30% of the width, from the sub line down to the floor) for the cartoon; headline color is recolored in code to pumpkin orange so only keep the shape. Mascots/spelling were fine."
-    ]
+    ],
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-21-feed",
@@ -330,7 +325,8 @@
     "hint": "hint: none (yesterday\u2019s, already-played cartoon; caption and answer not shown)",
     "notes": "",
     "rejected": [
-      "2026-10-21-feed-1: layout: MUDDLE WEDNESDAY needs the day's cartoon: leave a calm empty rectangle (about 70% width x 28% height) between the sub line and the mascots' heads, with the mascots (two, standing low) under it; headline color is recolored in code. Mascots/spelling were fine."
+      "2026-10-21-feed-1: layout: MUDDLE WEDNESDAY needs the day's cartoon: leave a calm empty rectangle (about 70% width x 28% height) between the sub line and the mascots' heads, with the mascots (two, standing low) under it; headline color is recolored in code. Mascots/spelling were fine.",
+      "2026-10-21-feed-1: layout (portrait 2:3): MUDDLE WEDNESDAY needs a calm empty rectangle for the cartoon (about 70 percent of the width x 28 percent of the height of the frame) between the sub line and the mascots; the scene has only ~190 px of 1536 (12 percent) because the C astronaut and I scarecrow are huge (heads at 47 percent of the height). Mascots C and I and spelling were fine. Redraw with the two mascots about half this size, standing low (heads below 68 percent of the frame height), headline in the top 33 percent, and the band from 36 percent to 66 percent completely empty wall."
     ]
   },
   {
@@ -419,18 +415,19 @@
     "season": "halloween",
     "series_color": "hue 175-160",
     "cast": [
-      "w:alt2",
-      "o2",
-      "o3"
+      "s:skeleton",
+      "c:astronaut",
+      "o2:witch"
     ],
     "cast_count": 3,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (seven mystery tiles)",
-    "notes": "",
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none (seven mystery tiles added in code)",
+    "notes": "Seven mystery tiles added in code.",
     "rejected": [
       "2026-10-22-x-1: wrong headline for the day: the Oct 22 X post is the Hubbub pangram tease, per the coordinator keep the pangram image: headline must be '7 LETTERS. ONE WORD.' (sub 'ONE WORD USES EVERY LETTER.') with a calm band under the headline for seven mystery tiles that I add in code. Mascots (S skeleton, C astronaut, O2 witch) looked on-model; spelling fine."
-    ]
+    ],
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-22-pin-1",
@@ -444,16 +441,17 @@
     "caption": "Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo from an already-played Muddle and the three steps.",
     "card": "pin-explainer",
     "season": "halloween",
-    "series_color": "hue 32-18",
+    "series_color": "hue 32-18 (explainer pin, pumpkin orange)",
     "cast": [
-      "w",
-      "u:alt3"
+      "w:vampire",
+      "i:scarecrow"
     ],
     "cast_count": 2,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (demo scramble comes from an already-played Muddle daily)",
-    "notes": ""
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-22-pin-2",
@@ -469,14 +467,16 @@
     "season": "halloween",
     "series_color": "hue 105-85",
     "cast": [
-      "d",
-      "i"
+      "o3:mummy",
+      "r:ghost",
+      "u:fairy-ghost"
     ],
-    "cast_count": 2,
-    "mascot_check": "pass (hero composite; shipped halloween costume art)",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (evergreen word, absent from every daily bank; checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
-    "notes": ""
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none (WEDGE was the Sep 16 daily answer; past puzzle)",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-22-pin-3",
@@ -492,17 +492,14 @@
     "season": "halloween",
     "series_color": "default purple-pink",
     "cast": [
-      "w:alt1",
-      "o1",
-      "r",
-      "c",
-      "s"
+      "o1:cheerleader"
     ],
-    "cast_count": 5,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-23-x",
@@ -518,13 +515,14 @@
     "season": "halloween",
     "series_color": "hue 358-345",
     "cast": [
-      "r:alt1"
+      "r:ghost"
     ],
     "cast_count": 1,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-23-feed",
@@ -540,14 +538,16 @@
     "season": "halloween",
     "series_color": "hue 358-345",
     "cast": [
-      "c:alt1",
-      "s:alt1"
+      "c:astronaut",
+      "d:wizard",
+      "o1:cheerleader"
     ],
-    "cast_count": 2,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-24-x",
@@ -561,24 +561,17 @@
     "caption": "CAST SATURDAY: a rotating group of the cast.",
     "card": "cast-sat",
     "season": "halloween",
-    "series_color": "multicolor",
+    "series_color": "candy-corn sweep 50-30-14 (smooth left to right)",
     "cast": [
-      "w",
-      "o1",
-      "r",
-      "d",
-      "o2",
-      "c",
-      "i",
-      "o3",
-      "u",
-      "s"
+      "w:vampire",
+      "d:wizard"
     ],
-    "cast_count": 10,
-    "mascot_check": "pass (hero composite; shipped halloween costume art)",
-    "aesthetic_check": "pass",
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-25-x",
@@ -594,14 +587,15 @@
     "season": "halloween",
     "series_color": "hue 285-305",
     "cast": [
-      "i:alt1",
-      "u"
+      "u:fairy-ghost",
+      "s:skeleton"
     ],
     "cast_count": 2,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
-    "hint": "hint: none",
-    "notes": ""
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none (tiles 1-18 are the game numbers)",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-25-fb",
@@ -617,15 +611,16 @@
     "season": "halloween",
     "series_color": "hue 285-305",
     "cast": [
-      "o1:alt1",
-      "d:alt1",
-      "o3:alt1"
+      "w:vampire",
+      "d:wizard",
+      "s:skeleton"
     ],
     "cast_count": 3,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-26-x",
@@ -641,14 +636,15 @@
     "season": "halloween",
     "series_color": "hue 250-235",
     "cast": [
-      "o1:alt2",
-      "o2:alt1"
+      "c:astronaut",
+      "i:scarecrow (crown + scepter prop)"
     ],
     "cast_count": 2,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-27-x",
@@ -664,22 +660,16 @@
     "season": "halloween",
     "series_color": "default purple-pink",
     "cast": [
-      "w",
-      "o1",
-      "r",
-      "d",
-      "o2",
-      "c",
-      "i",
-      "o3",
-      "u",
-      "s"
+      "o1:cheerleader",
+      "r:ghost",
+      "u:fairy-ghost"
     ],
-    "cast_count": 10,
-    "mascot_check": "pass (hero composite; shipped halloween costume art)",
-    "aesthetic_check": "pass",
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-27-feed",
@@ -695,17 +685,14 @@
     "season": "halloween",
     "series_color": "default purple-pink",
     "cast": [
-      "r:alt2",
-      "o2:alt2",
-      "i:alt2",
-      "o3:alt2",
-      "u:alt1"
+      "d:wizard"
     ],
-    "cast_count": 5,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-28-x",
@@ -721,18 +708,16 @@
     "season": "halloween",
     "series_color": "default purple-pink",
     "cast": [
-      "w:alt2",
-      "d:alt2",
-      "o2",
-      "c:alt2",
-      "o3",
-      "s:alt2"
+      "s:skeleton",
+      "c:astronaut",
+      "o2:witch"
     ],
-    "cast_count": 6,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-28-feed",
@@ -748,18 +733,15 @@
     "season": "halloween",
     "series_color": "default purple-pink",
     "cast": [
-      "w",
-      "o1",
-      "d",
-      "c",
-      "u:alt2",
-      "s"
+      "i:scarecrow",
+      "w:vampire"
     ],
-    "cast_count": 6,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-29-x",
@@ -775,16 +757,16 @@
     "season": "halloween",
     "series_color": "default purple-pink",
     "cast": [
-      "o1:alt1",
-      "r",
-      "i",
-      "u:alt3"
+      "o3:mummy",
+      "u:fairy-ghost",
+      "r:ghost"
     ],
-    "cast_count": 4,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-29-pin-1",
@@ -800,15 +782,14 @@
     "season": "halloween",
     "series_color": "hue 32-18",
     "cast": [
-      "d:alt1",
-      "i:alt1",
-      "o3:alt1"
+      "r:ghost"
     ],
-    "cast_count": 3,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (demo scramble comes from an already-played Muddle daily)",
-    "notes": ""
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-29-pin-2",
@@ -824,13 +805,16 @@
     "season": "halloween",
     "series_color": "hue 105-85",
     "cast": [
-      "r:alt1"
+      "c:astronaut",
+      "d:wizard",
+      "o1:cheerleader"
     ],
-    "cast_count": 1,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
-    "hint": "hint: none (evergreen word, absent from every daily bank; checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
-    "notes": ""
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-29-pin-3",
@@ -846,22 +830,14 @@
     "season": "halloween",
     "series_color": "default purple-pink",
     "cast": [
-      "w",
-      "o1",
-      "r",
-      "d",
-      "o2",
-      "c",
-      "i",
-      "o3",
-      "u",
-      "s"
+      "r:ghost"
     ],
-    "cast_count": 10,
-    "mascot_check": "pass (hero composite; shipped halloween costume art)",
-    "aesthetic_check": "pass",
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-30-x",
@@ -875,24 +851,17 @@
     "caption": "HALLOWEEN EVE: themed puzzles in every game.",
     "card": "eve",
     "season": "halloween",
-    "series_color": "default purple-pink",
+    "series_color": "default purple-pink (house bubble lettering, not the slime drip)",
     "cast": [
-      "w",
-      "o1",
-      "r",
-      "d",
-      "o2",
-      "c",
-      "i",
-      "o3",
-      "u",
-      "s"
+      "u:fairy-ghost",
+      "s:skeleton (partly behind a pumpkin)"
     ],
-    "cast_count": 10,
-    "mascot_check": "pass (hero composite; shipped halloween costume art)",
-    "aesthetic_check": "pass",
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-30-feed",
@@ -906,19 +875,18 @@
     "caption": "HALLOWEEN EVE: themed puzzles in every game.",
     "card": "eve",
     "season": "halloween",
-    "series_color": "default purple-pink",
+    "series_color": "hue 358-345",
     "cast": [
-      "w:alt1",
-      "r:alt2",
-      "o2:alt1",
-      "c:alt1",
-      "s:alt1"
+      "d:wizard",
+      "w:vampire",
+      "s:skeleton"
     ],
-    "cast_count": 5,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-10-31-x",
@@ -945,7 +913,10 @@
     "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-10-31-x-1: spelling: the headline reads HALOWEEN (one L missing). Must be exactly 'HAPPY HALLOWEEN' (H-A-L-L-O-W-E-E-N). Mascots C astronaut with candy bucket and I scarecrow with lollipop were on-model and the layout was fine."
+    ]
   },
   {
     "key": "2026-10-31-feed",
@@ -961,15 +932,16 @@
     "season": "halloween",
     "series_color": "default purple-pink",
     "cast": [
-      "o1:alt2",
-      "o2:alt2",
-      "o3:alt2"
+      "r:ghost",
+      "o1:cheerleader",
+      "u:fairy-ghost"
     ],
     "cast_count": 3,
-    "mascot_check": "pass (hero composite; shipped halloween costume art); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-01-x",
@@ -985,22 +957,14 @@
     "season": "standard",
     "series_color": "default purple-pink",
     "cast": [
-      "w",
-      "o1",
-      "r",
-      "d",
-      "o2",
-      "c",
-      "i",
-      "o3",
-      "u",
-      "s"
+      "d:hero (broom prop)"
     ],
-    "cast_count": 10,
-    "mascot_check": "pass (hero composite)",
-    "aesthetic_check": "pass",
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-01-fb",
@@ -1027,7 +991,10 @@
     "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
     "aesthetic_check": "pass",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-01-fb-1: palette: the 1-18 number tiles are a rainbow (green, blue, pink, red); house tiles are glossy purple / gold / grey only, as in the Oct 25 Sweep Sunday final. Mascots S, C, O2 and spelling were fine. Redo with the 18 tiles in purple, gold and grey (rotating), same two-row layout."
+    ]
   },
   {
     "key": "2026-11-02-x",
@@ -1043,16 +1010,15 @@
     "season": "standard",
     "series_color": "hue 225-210",
     "cast": [
-      "w",
-      "o1:jump",
-      "d:eureka",
-      "o3:ready"
+      "i:hero",
+      "w:hero (crown + cape + scepter props)"
     ],
-    "cast_count": 4,
-    "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
-    "aesthetic_check": "pass",
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero)",
+    "aesthetic_check": "pass (whole scene; real wordmark + footer overlaid; headline recolored in code)",
     "hint": "hint: none",
-    "notes": ""
+    "notes": "",
+    "source": "chatgpt-scene"
   },
   {
     "key": "2026-11-03-x",
@@ -1075,7 +1041,10 @@
     "mascot_check": "pass (hero composite); pose/costume variants are shipped art, compare in raw/",
     "aesthetic_check": "pass",
     "hint": "hint: none (five mystery tiles)",
-    "notes": ""
+    "notes": "",
+    "rejected": [
+      "2026-11-03-x-1: lettering + layout: WORD OF THE DAY QUIZ is squeezed onto one line with horizontally condensed letters (not the house bubble lettering) and there is only ~9 percent of the height between the headline and the mascots, no calm band for the word tiles. Mascots O3, U, R were on-model. Redo with the house lettering on two lines (WORD OF THE DAY / QUIZ), headline in the top 30 percent, mascots small and low (heads below 62 percent of the height), and the band from 32 to 60 percent plain background."
+    ]
   },
   {
     "key": "2026-11-04-x",
