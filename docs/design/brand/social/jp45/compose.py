@@ -22,11 +22,11 @@ CAST = ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's']
 
 # ------------------------------------------------------------------ the series template (STYLE.md)
 LAYOUT = {
-    'landscape': dict(W=1600, H=900, wm_top=34, wm_w=320, head_y=(108, 380), head_w=980, sub_y=(394, 470), sub_size=50,
+    'landscape': dict(W=1600, H=900, wm_top=34, wm_w=430, head_y=(108, 380), head_w=980, sub_y=(394, 470), sub_size=50,
                       content_top=486, base=824, foot_y=868, foot_size=26, tile=64),
-    'portrait': dict(W=1080, H=1350, wm_top=52, wm_w=400, head_y=(166, 556), head_w=900, sub_y=(580, 680), sub_size=58,
+    'portrait': dict(W=1080, H=1350, wm_top=52, wm_w=520, head_y=(166, 556), head_w=900, sub_y=(580, 680), sub_size=58,
                      content_top=702, base=1262, foot_y=1310, foot_size=30, tile=104),
-    'pin': dict(W=1000, H=1500, wm_top=60, wm_w=400, head_y=(188, 650), head_w=860, sub_y=(676, 776), sub_size=58,
+    'pin': dict(W=1000, H=1500, wm_top=60, wm_w=520, head_y=(188, 650), head_w=860, sub_y=(676, 776), sub_size=58,
                 content_top=802, base=1392, foot_y=1450, foot_size=30, tile=96),
 }
 HANDLE = {'x': '@wordocious', 'feed': '@playwordocious', 'fb': 'facebook.com/wordocious', 'pin': ''}
@@ -217,7 +217,12 @@ def build(fmt, season, slot, headline, sub=None, content=None, cast=None, cast_m
     # wordmark spot (top center, same size every post)
     wm = wordmark(); wmw = L['wm_w']; wmh = round(wmw * wm.height / wm.width)
     wmi = wm.resize((wmw, wmh), Image.LANCZOS)
-    drop_shadow(layer, wmi, (W - wmw) / 2, L['wm_top'], dark=(40, 10, 80) if season == 'halloween' else (80, 30, 120), a=80)
+    halo = Image.new('RGBA', layer.size, (0, 0, 0, 0))
+    hm = Image.new('L', layer.size, 0)
+    hm.paste(wmi.getchannel('A').filter(ImageFilter.MaxFilter(13)), ((W - wmw) // 2, L['wm_top']))
+    halo.paste(Image.new('RGBA', layer.size, (255, 244, 255, 255)), (0, 0), hm.filter(ImageFilter.GaussianBlur(wmh * 0.22)).point(lambda v: min(255, int(v * 0.9))))
+    layer.alpha_composite(halo)
+    drop_shadow(layer, wmi, (W - wmw) / 2, L['wm_top'], dark=(40, 10, 80), a=150, blur=0.05, dy=0.08)
     layer.alpha_composite(wmi, ((W - wmw) // 2, L['wm_top']))
     # headline zone (same place every post)
     y0, y1 = L['head_y']
@@ -261,7 +266,17 @@ def build(fmt, season, slot, headline, sub=None, content=None, cast=None, cast_m
         bottom = ctop + ci.height
     # cast
     sil = cast_mode == 'silhouette'
-    if cast:
+    if cast and cast_mode == 'sides' and content is not None:
+        # two heroes standing on the baseline either side of the content block (symmetric)
+        side_h = {'landscape': 330, 'portrait': 300, 'pin': 300}[fmt]
+        gap = 24
+        for cid, sgn in zip(cast[:2], (-1, 1)):
+            asp = hero(cid, season).width / hero(cid, season).height
+            span = (W / 2 - content.width / 2 - 2 * gap)
+            h = min(side_h, span / asp)
+            cx = W / 2 + sgn * (content.width / 2 + gap + h * asp / 2)
+            placements += row(layer, [cid], cx, h * asp + 4, L['base'], h * 1.07, season)
+    elif cast:
         pl = cast_block(layer, fmt, cast, season, bottom + 22, sil=sil)
         placements = pl
     # footer: handle + url
@@ -326,10 +341,10 @@ def finish(key, imgs, placements_by_fmt, season, raw_letters):
 POSTS = {}
 
 
-def post(key, date, slot, title_match, caption, mascot, aesthetic, raw, season='standard', notes=''):
+def post(key, date, slot, title_match, caption, mascot, aesthetic, raw, season='standard', notes='', hint='hint: none'):
     def deco(fn):
         POSTS[key] = dict(fn=fn, date=date, slot=slot, title_match=title_match, caption=caption, mascot=mascot,
-                          aesthetic=aesthetic, raw=raw, season=season, notes=notes)
+                          aesthetic=aesthetic, raw=raw, season=season, notes=notes, hint=hint)
         return fn
     return deco
 
@@ -365,6 +380,220 @@ def p_launch_feed():
     return imgs, pl
 
 
+PALETTE = ['#8B2CF5', '#F5A623', '#8E96A8']      # purple / gold / grey tile family
+
+
+def text_img(s, size, fill=(255, 255, 255), stroke=STROKE, weight='Black', pad=None):
+    f = font(size, weight)
+    sw = max(3, size // 9) if stroke else 0
+    bb = ImageDraw.Draw(Image.new('RGBA', (4, 4))).textbbox((0, 0), s, font=f, anchor='lt', stroke_width=sw)
+    p = pad if pad is not None else sw + 4
+    im = Image.new('RGBA', (bb[2] - bb[0] + 2 * p, bb[3] - bb[1] + 2 * p), (0, 0, 0, 0))
+    ImageDraw.Draw(im).text((p - bb[0], p - bb[1]), s, font=f, fill=fill, anchor='lt', stroke_width=sw, stroke_fill=stroke)
+    return im
+
+
+def wrap(s, size, maxw, weight='Black'):
+    f = font(size, weight); words = s.split(); lines, cur = [], ''
+    for w in words:
+        t = (cur + ' ' + w).strip()
+        if f.getlength(t) <= maxw or not cur:
+            cur = t
+        else:
+            lines.append(cur); cur = w
+    return lines + [cur]
+
+
+def stack(imgs, gap=10, align='center'):
+    w = max(i.width for i in imgs); h = sum(i.height for i in imgs) + gap * (len(imgs) - 1)
+    out = Image.new('RGBA', (w, h), (0, 0, 0, 0)); y = 0
+    for i in imgs:
+        out.alpha_composite(i, ((w - i.width) // 2 if align == 'center' else 0, y)); y += i.height + gap
+    return out
+
+
+def card(inner, padx, pady, tint=(255, 255, 255)):
+    p = panel(inner.width + 2 * padx, inner.height + 2 * pady, tint)
+    sh = Image.new('RGBA', (p.width + 80, p.height + 80), (0, 0, 0, 0))
+    m = Image.new('L', sh.size, 0); ImageDraw.Draw(m).rounded_rectangle((40, 54, 40 + p.width, 54 + p.height), round(p.height * 0.12), fill=70)
+    sh.paste(Image.new('RGBA', sh.size, (70, 30, 110, 255)), (0, 0), m.filter(ImageFilter.GaussianBlur(14)))
+    sh.alpha_composite(p, (40, 40)); sh.alpha_composite(inner, (40 + padx, 40 + pady))
+    return sh.crop((20, 20, sh.width - 20, sh.height - 20))
+
+
+def wotd_card(word, tile, definition=None, pos=None, note=None):
+    """The Word of the Day card content: the word in glossy tiles on a soft glass card.
+    This is the function the daily WOTD quiz post uses: wotd_card('WORD', tile_px)."""
+    tr = tiles_row(list(word), tile, PALETTE[:2], gap=0.1)
+    parts = [tr]
+    if definition:
+        lines = wrap(definition, round(tile * 0.52), max(tr.width, 560) * 0.96)
+        parts += [text_img(l, round(tile * 0.52), fill=PURPLE_DEEP, stroke=None, pad=2) for l in lines]
+    if pos:
+        parts.insert(1, text_img(pos, round(tile * 0.36), fill=(140, 90, 200), stroke=None, weight='ExtraBold', pad=2))
+    if note:
+        parts.append(text_img(note, round(tile * 0.42), fill=PURPLE_DEEP, stroke=None, pad=2))
+    inner = stack(parts, gap=round(tile * 0.24))
+    return card(inner, round(tile * 0.5), round(tile * 0.42))
+
+
+def arrow_img(size):
+    ss = 4; w, h = size * ss, round(size * 0.7) * ss
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, h * 0.36, w * 0.62, h * 0.64), h * 0.14, fill=(124, 58, 237, 255))
+    d.polygon([(w * 0.55, h * 0.08), (w * 0.98, h * 0.5), (w * 0.55, h * 0.92)], fill=(124, 58, 237, 255))
+    return im.resize((size, round(size * 0.7)), Image.LANCZOS)
+
+
+def steps_card(tile, lines):
+    scr = tiles_row(list('GCRERO'), tile, PALETTE[:2], gap=0.1)
+    arrow = arrow_img(round(tile * 0.9))
+    sol = tiles_row(list('GROCER'), tile, ['#F5A623'], gap=0.1)
+    demo = Image.new('RGBA', (scr.width + sol.width + arrow.width + 60, scr.height), (0, 0, 0, 0))
+    demo.alpha_composite(scr, (0, 0)); demo.alpha_composite(arrow, (scr.width + 30, (scr.height - arrow.height) // 2))
+    demo.alpha_composite(sol, (scr.width + arrow.width + 60, 0))
+    fs = round(tile * 0.5)
+    rows = []
+    for n, l in enumerate(lines, 1):
+        num = letter_tile(str(n), round(fs * 1.5), '#8B2CF5', shadow=False)
+        t = text_img(l, fs, fill=PURPLE_DEEP, stroke=None, pad=2)
+        r = Image.new('RGBA', (num.width + 24 + t.width, max(num.height, t.height)), (0, 0, 0, 0))
+        r.alpha_composite(num, (0, (r.height - num.height) // 2)); r.alpha_composite(t, (num.width + 24, (r.height - t.height) // 2))
+        rows.append(r)
+    lw = max(r.width for r in rows)
+    lines_img = Image.new('RGBA', (lw, sum(r.height for r in rows) + 22 * (len(rows) - 1)), (0, 0, 0, 0)); y = 0
+    for r in rows:
+        lines_img.alpha_composite(r, (0, y)); y += r.height + 22
+    return card(stack([demo, lines_img], gap=round(tile * 0.5)), round(tile * 0.5), round(tile * 0.45))
+
+
+H_CAST = 'pass (hero composite; shipped Halloween costume art)'
+HAL_ALL = 'halloween'
+
+
+@post('2026-10-15-pin-1', '2026-10-15', 'pin', 'Game explainer pin',
+      'Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo (GCRERO to GROCER, from the already-played Oct 13 Muddle) and the three steps.',
+      'pass (hero composite)', 'pass', ['sheet4-7letters-muddleworks-capture.png'],
+      hint='hint: none (demo word GROCER comes from the already-played Oct 13 Muddle; bank checked)')
+def p_pin_explainer():
+    t = LAYOUT['pin']['tile']
+    c = steps_card(round(t * 0.6), ['Unscramble four words', 'Ringed letters spell the punchline', 'Finish the cartoon caption'])
+    im, pl = build('pin', 'standard', 'pin', 'how-muddle-works', sub=('text', 'A new cartoon puzzle every day.'), content=c, cast=['o3', 'd'])
+    return {'pin': im}, {'pin': pl}
+
+
+@post('2026-10-15-pin-2', '2026-10-15', 'pin', 'Word card pin',
+      'Pinterest word card pin: WORD OF THE DAY with JUBILANT in glossy tiles and its meaning (an evergreen word checked against every daily bank: not an answer anywhere).',
+      'pass (hero composite)', 'pass', ['sheet6-wotd-capture.png'],
+      hint='hint: none (JUBILANT is in no daily bank: checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)')
+def p_pin_word():
+    c = wotd_card('JUBILANT', 80, definition='Feeling or showing great happiness and triumph.', pos='adjective')
+    im, pl = build('pin', 'standard', 'pin', 'word-of-the-day', sub=('text', 'Learn one new word a day.'), content=c, cast=['c', 'd'])
+    return {'pin': im}, {'pin': pl}
+
+
+@post('2026-10-15-pin-3', '2026-10-15', 'pin', 'Cast art pin',
+      'Pinterest cast art pin: MEET THE CAST with all ten heroes and Bring your family.',
+      'pass (hero composite)', 'pass', ['sheet5-meet-cast-capture.png'])
+def p_pin_cast():
+    im, pl = build('pin', 'standard', 'pin', 'meet-the-cast', sub=('lettering', 'bring-your-family-b'), cast=FULL, head_cap=0.95)
+    return {'pin': im}, {'pin': pl}
+
+
+@post('2026-10-17-x', '2026-10-17', 'x', 'X: "The app got dressed."',
+      'Halloween reveal: THE APP GOT DRESSED. over the Halloween wall with the whole costumed cast (landscape for X, portrait alongside).',
+      H_CAST, 'pass', ['sheet2-halloween-dressed-capture.png'], season='halloween')
+def p_halloween():
+    imgs, pl = {}, {}
+    for fmt in ('landscape', 'portrait'):
+        imgs[fmt], pl[fmt] = build(fmt, 'halloween', 'x', 'app-got-dressed', sub=('text', 'Halloween is live through Oct 31.'), cast=FULL)
+    return imgs, pl
+
+
+def sweep(fmt, slot):
+    t = LAYOUT[fmt]['tile']
+    if fmt == 'landscape':
+        tiles = tiles_row([str(i) for i in range(1, 19)], round(t * 1.12), PALETTE, gap=0.1)
+        cast = ['w', 's', 'd']
+    else:
+        tiles = tiles_grid([[str(i) for i in range(r * 6 + 1, r * 6 + 7)] for r in range(3)], round(t * 0.84), PALETTE, gap=0.1)
+        cast = ['s', 'w']
+    return build(fmt, 'halloween', slot, 'sweep-sunday', sub=('text', 'All 18 dailies. One day.'), content=tiles, cast=cast)
+
+
+@post('2026-10-18-x', '2026-10-18', 'x', 'X: Sweep board + challenge',
+      'SWEEP SUNDAY: 18 numbered glossy tiles (the sweep board idea) under the headline with the leader and the speedster.',
+      H_CAST, 'pass', ['sheet3-sweep-muddle-capture.png'], season='halloween')
+def p_sweep_x():
+    im, pl = sweep('landscape', 'x')
+    return {'landscape': im}, {'landscape': pl}
+
+
+@post('2026-10-18-fb', '2026-10-18', 'fb', 'Facebook: Sweep post',
+      'SWEEP SUNDAY (portrait for Facebook): 18 numbered glossy tiles under the headline with the speedster and the leader.',
+      H_CAST, 'pass', ['sheet3-sweep-muddle-capture.png'], season='halloween')
+def p_sweep_fb():
+    im, pl = sweep('portrait', 'fb')
+    return {'portrait': im}, {'portrait': pl}
+
+
+@post('2026-10-19-x', '2026-10-19', 'x', 'X: Race-reset post + last week champion',
+      'MONDAY MASTERS: New week. Zero points. The crown is open. with the leader, the brain and the speedster.',
+      H_CAST, 'pass', ['sheet3-monday-wotd-capture.png', 'sheet4-newweek-crown-caption-capture.png'], season='halloween')
+def p_monday():
+    t = text_img('New week. Zero points.', LAYOUT['landscape']['sub_size'])
+    im, pl = build('landscape', 'halloween', 'x', 'monday-masters', sub=('lettering', 'the-crown-is-open'), content=t, cast=['w', 'd', 's'])
+    return {'landscape': im}, {'landscape': pl}
+
+
+@post('2026-10-20-x', '2026-10-20', 'x', 'X: WOTD quiz debut',
+      'WORD OF THE DAY QUIZ card for Oct 20: the day\'s real word PUNCH in glossy tiles on a soft card, definition hidden for the quiz.',
+      H_CAST, 'pass', ['sheet3-monday-wotd-capture.png'], season='halloween',
+      notes='Word = PUNCH (Oct 20 Word of the Day, computed by the Studio-post agent). Template: wotd_card(WORD, tile_px) in compose.py renders any other day.',
+      hint='hint: the day\'s own word PUNCH is shown as the quiz subject; its definition is hidden (founder-approved quiz format)')
+def p_wotd():
+    c = wotd_card('PUNCH', 90, note='Pick the real definition.')
+    im, pl = build('landscape', 'halloween', 'x', 'word-of-the-day-quiz', sub=None, content=c, cast=['d', 'c'])
+    return {'landscape': im}, {'landscape': pl}
+
+
+def muddle(fmt, slot):
+    cart = os.path.join(REPO, 'apps', 'web', 'public', 'muddle', 'md-7jpkkq-2de281017b.webp')
+    w = 400 if fmt == 'landscape' else 560
+    fr = cartoon_frame(cart, w)
+    return build(fmt, 'halloween', slot, 'muddle-wednesday', sub=('lettering', 'caption-this'), content=fr, cast=['o3', 'd'], cast_mode='sides')
+
+
+@post('2026-10-21-x', '2026-10-21', 'x', 'X: Yesterday',
+      'MUDDLE WEDNESDAY: the Oct 20 Muddle cartoon in a paper frame with Caption this. and the prankster and the brain at the sides.',
+      H_CAST, 'pass', ['sheet3-sweep-muddle-capture.png', 'sheet4-newweek-crown-caption-capture.png'], season='halloween',
+      notes='Cartoon = daily Muddle of 2026-10-20 (md-7jpkkq), shown only on Oct 21 when it is yesterday. Caption text not shown, so no answer on the image.',
+      hint='hint: none (Oct 20 Muddle cartoon, already played by Oct 21; caption and answer not shown)')
+def p_muddle_x():
+    im, pl = muddle('landscape', 'x')
+    return {'landscape': im}, {'landscape': pl}
+
+
+@post('2026-10-21-feed', '2026-10-21', 'feed', 'Feed: cartoon + reveal thread',
+      'MUDDLE WEDNESDAY (portrait for IG and Facebook): the Oct 20 Muddle cartoon in a paper frame with Caption this.',
+      H_CAST, 'pass', ['sheet3-sweep-muddle-capture.png', 'sheet4-newweek-crown-caption-capture.png'], season='halloween',
+      notes='Same cartoon note as the X post.',
+      hint='hint: none (Oct 20 Muddle cartoon, already played by Oct 21; caption and answer not shown)')
+def p_muddle_feed():
+    im, pl = muddle('portrait', 'feed')
+    return {'portrait': im}, {'portrait': pl}
+
+
+@post('2026-10-22-x', '2026-10-22', 'x', 'X: WOTD quiz + pangram tease',
+      'Hubbub pangram tease: 7 LETTERS. ONE WORD. with seven mystery tiles and the explorer, the sprout and the speedster.',
+      H_CAST, 'pass', ['sheet4-7letters-muddleworks-capture.png'], season='halloween')
+def p_pangram():
+    t = LAYOUT['landscape']['tile']
+    tiles = tiles_row(['?'] * 7, round(t * 1.2), PALETTE, gap=0.12)
+    im, pl = build('landscape', 'halloween', 'x', '7-letters-one-word', sub=('text', 'Today’s letters hide a seven-letter word.'), content=tiles, cast=['c', 'i', 's'])
+    return {'landscape': im}, {'landscape': pl}
+
+
 if __name__ == '__main__':
     only = sys.argv[1:]
     spec = json.load(open(SPEC))
@@ -379,7 +608,23 @@ if __name__ == '__main__':
         cands = [x for x in spec['posts'] if x['date'] == p['date'] and x['slot'] == p['slot'] and p['title_match'] in x['title']]
         pid = cands[0]['id'] if cands else None
         byid[key] = dict(key=key, post_id=pid, date=p['date'], slot=p['slot'], title=cands[0]['title'] if cands else p['title_match'],
-                         files=files, caption=p['caption'], mascot_check=p['mascot'], aesthetic_check=p['aesthetic'], notes=p['notes'])
+                         files=files, caption=p['caption'], mascot_check=p['mascot'], aesthetic_check=p['aesthetic'], hint=p['hint'], notes=p['notes'])
         print('built', key, list(files))
     manifest = sorted(byid.values(), key=lambda m: (m['date'], m['slot'], m['key']))
     json.dump(manifest, open(mpath, 'w'), indent=2)
+    # contact sheet of every final, side by side (one-family check)
+    thumbs = []
+    for m in manifest:
+        for fmt in ('landscape', 'portrait', 'pin'):
+            f = m['files'].get(fmt)
+            if f:
+                im = Image.open(os.path.join(HERE, f)).convert('RGB')
+                th = 300
+                thumbs.append((m['date'], im.resize((round(im.width * th / im.height), th), Image.LANCZOS)))
+    cols_w = 1900; x = y = 10; rowh = 0
+    sheet = Image.new('RGB', (cols_w, 4000), (36, 30, 52))
+    for d, im in thumbs:
+        if x + im.width > cols_w - 10:
+            x = 10; y += rowh + 10; rowh = 0
+        sheet.paste(im, (x, y)); x += im.width + 10; rowh = max(rowh, im.height)
+    sheet.crop((0, 0, cols_w, y + rowh + 10)).save(os.path.join(HERE, 'contact-sheet.png'), optimize=True)

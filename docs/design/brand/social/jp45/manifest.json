@@ -1,5 +1,50 @@
 [
   {
+    "key": "2026-10-15-pin-1",
+    "post_id": "79f2e335-7446-51e6-b3dc-9b7c53c6201d",
+    "date": "2026-10-15",
+    "slot": "pin",
+    "title": "Pin: Game explainer pin",
+    "files": {
+      "pin": "2026-10-15-pin-1/pin.png"
+    },
+    "caption": "Pinterest explainer pin: HOW MUDDLE WORKS with a scramble-to-solved tile demo (GCRERO to GROCER, from the already-played Oct 13 Muddle) and the three steps.",
+    "mascot_check": "pass (hero composite)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (demo word GROCER comes from the already-played Oct 13 Muddle; bank checked)",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-15-pin-2",
+    "post_id": "c1c193f3-3f14-50d3-8bd1-5a14b16942f4",
+    "date": "2026-10-15",
+    "slot": "pin",
+    "title": "Pin: Word card pin",
+    "files": {
+      "pin": "2026-10-15-pin-2/pin.png"
+    },
+    "caption": "Pinterest word card pin: WORD OF THE DAY with JUBILANT in glossy tiles and its meaning (an evergreen word checked against every daily bank: not an answer anywhere).",
+    "mascot_check": "pass (hero composite)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (JUBILANT is in no daily bank: checked solutions 5/6/7, scramble, hub, ladder, crossword, cryptogram, wordsearch, groups)",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-15-pin-3",
+    "post_id": "1c9c3340-1c60-5117-b16b-c572700357f9",
+    "date": "2026-10-15",
+    "slot": "pin",
+    "title": "Pin: Cast art pin",
+    "files": {
+      "pin": "2026-10-15-pin-3/pin.png"
+    },
+    "caption": "Pinterest cast art pin: MEET THE CAST with all ten heroes and Bring your family.",
+    "mascot_check": "pass (hero composite)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
     "key": "2026-10-15-x",
     "post_id": "941ebac0-e641-5626-b087-d8151871ad28",
     "date": "2026-10-15",
@@ -11,6 +56,7 @@
     "caption": "TOMORROW. in house lettering over the ten cast silhouettes lit at the edge, with 18 unlit grey tiles above them (teaser 3).",
     "mascot_check": "pass (hero composite; silhouettes cut from the real hero alpha)",
     "aesthetic_check": "pass",
+    "hint": "hint: none",
     "notes": ""
   },
   {
@@ -25,6 +71,7 @@
     "caption": "Launch day feed card: 18 DAILY GAMES. ONE SCORE. with the whole cast and Bring your family. (portrait for IG and Facebook).",
     "mascot_check": "pass (hero composite)",
     "aesthetic_check": "pass",
+    "hint": "hint: none",
     "notes": ""
   },
   {
@@ -39,6 +86,128 @@
     "caption": "Launch day: 18 DAILY GAMES. ONE SCORE. with the whole cast and Bring your family. (landscape for X).",
     "mascot_check": "pass (hero composite)",
     "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-17-x",
+    "post_id": "419e5ec9-4722-5c89-8894-4b30481f1388",
+    "date": "2026-10-17",
+    "slot": "x",
+    "title": "X: \"The app got dressed.\"",
+    "files": {
+      "landscape": "2026-10-17-x/landscape.png",
+      "portrait": "2026-10-17-x/portrait.png"
+    },
+    "caption": "Halloween reveal: THE APP GOT DRESSED. over the Halloween wall with the whole costumed cast (landscape for X, portrait alongside).",
+    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-18-fb",
+    "post_id": "b49c1d32-6fb1-58a3-a7d0-3a9c132800bb",
+    "date": "2026-10-18",
+    "slot": "fb",
+    "title": "Facebook: Sweep post",
+    "files": {
+      "portrait": "2026-10-18-fb/portrait.png"
+    },
+    "caption": "SWEEP SUNDAY (portrait for Facebook): 18 numbered glossy tiles under the headline with the speedster and the leader.",
+    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-18-x",
+    "post_id": "44ffa501-fe29-59bf-bcc3-7bf2057a8ff3",
+    "date": "2026-10-18",
+    "slot": "x",
+    "title": "X: Sweep board + challenge",
+    "files": {
+      "landscape": "2026-10-18-x/landscape.png"
+    },
+    "caption": "SWEEP SUNDAY: 18 numbered glossy tiles (the sweep board idea) under the headline with the leader and the speedster.",
+    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-19-x",
+    "post_id": "d1103d7d-c962-5bef-93a8-6385dabc8509",
+    "date": "2026-10-19",
+    "slot": "x",
+    "title": "X: Race-reset post + last week champion",
+    "files": {
+      "landscape": "2026-10-19-x/landscape.png"
+    },
+    "caption": "MONDAY MASTERS: New week. Zero points. The crown is open. with the leader, the brain and the speedster.",
+    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
+    "notes": ""
+  },
+  {
+    "key": "2026-10-20-x",
+    "post_id": "a7c6a65f-1a96-5689-857e-551128d44e12",
+    "date": "2026-10-20",
+    "slot": "x",
+    "title": "X: WOTD quiz debut",
+    "files": {
+      "landscape": "2026-10-20-x/landscape.png"
+    },
+    "caption": "WORD OF THE DAY QUIZ card for Oct 20: the day's real word PUNCH in glossy tiles on a soft card, definition hidden for the quiz.",
+    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: the day's own word PUNCH is shown as the quiz subject; its definition is hidden (founder-approved quiz format)",
+    "notes": "Word = PUNCH (Oct 20 Word of the Day, computed by the Studio-post agent). Template: wotd_card(WORD, tile_px) in compose.py renders any other day."
+  },
+  {
+    "key": "2026-10-21-feed",
+    "post_id": "c35527c4-906c-51f1-be9b-25b04be1277e",
+    "date": "2026-10-21",
+    "slot": "feed",
+    "title": "Feed: cartoon + reveal thread",
+    "files": {
+      "portrait": "2026-10-21-feed/portrait.png"
+    },
+    "caption": "MUDDLE WEDNESDAY (portrait for IG and Facebook): the Oct 20 Muddle cartoon in a paper frame with Caption this.",
+    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (Oct 20 Muddle cartoon, already played by Oct 21; caption and answer not shown)",
+    "notes": "Same cartoon note as the X post."
+  },
+  {
+    "key": "2026-10-21-x",
+    "post_id": "570c3a01-096d-558e-8933-244b394a4662",
+    "date": "2026-10-21",
+    "slot": "x",
+    "title": "X: Yesterday's cartoon \u2014 caption this",
+    "files": {
+      "landscape": "2026-10-21-x/landscape.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: the Oct 20 Muddle cartoon in a paper frame with Caption this. and the prankster and the brain at the sides.",
+    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none (Oct 20 Muddle cartoon, already played by Oct 21; caption and answer not shown)",
+    "notes": "Cartoon = daily Muddle of 2026-10-20 (md-7jpkkq), shown only on Oct 21 when it is yesterday. Caption text not shown, so no answer on the image."
+  },
+  {
+    "key": "2026-10-22-x",
+    "post_id": "e8668a15-dbe0-5bb6-a785-bfb6f54d62b2",
+    "date": "2026-10-22",
+    "slot": "x",
+    "title": "X: WOTD quiz + pangram tease",
+    "files": {
+      "landscape": "2026-10-22-x/landscape.png"
+    },
+    "caption": "Hubbub pangram tease: 7 LETTERS. ONE WORD. with seven mystery tiles and the explorer, the sprout and the speedster.",
+    "mascot_check": "pass (hero composite; shipped Halloween costume art)",
+    "aesthetic_check": "pass",
+    "hint": "hint: none",
     "notes": ""
   }
 ]

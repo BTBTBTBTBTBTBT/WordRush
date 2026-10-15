@@ -20,6 +20,7 @@ SHEETS = {
     'sheet3-sweep-muddle-capture.png': (40, ['sweep-sunday', 'muddle-wednesday']),
     'sheet4-newweek-crown-caption-capture.png': (40, ['new-week-zero-points', 'the-crown-is-open', 'caption-this']),
     'sheet4-7letters-muddleworks-capture.png': (40, ['7-letters-one-word', 'how-muddle-works']),
+    'sheet6-wotd-capture.png': (40, ['word-of-the-day', 'how-to-play']),
     'sheet5-meet-cast-capture.png': (40, ['meet-the-cast', 'bring-your-family-b']),
 }
 
