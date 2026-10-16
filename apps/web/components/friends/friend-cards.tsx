@@ -9,15 +9,15 @@
 // small resign flag that flips the row to "Resign Ghost?" Keep / Resign in place. The ⋯ is the friend's family menu. Words and
 // ordering come from core (friend-cards.ts) so the three apps match. iOS: FriendCardsView.swift · Android: FriendsPanel.kt.
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Clock } from 'lucide-react';
-import { FRIENDLY_KINDS, FRIENDLY_TITLES, type FriendCard, type FriendlyKind, type GameTile } from '@wordle-duel/core';
+import { FRIENDLY_KINDS, FRIENDLY_TITLES, gameRowLabel, type FriendCard, type FriendlyKind, type GameTile } from '@wordle-duel/core';
 import { CandyBadge } from '@/components/ui/candy-badge';
 import { FamIcon } from '@/components/ui/family-button';
 import { KIND_COLOR } from '@/lib/friends-play';
 import { FR_LOOK } from '@/lib/friends-look';
 import { prefersReducedMotion } from '@/lib/motion';
-import { softMix } from '@/lib/soft-surface';
+import { softMix, softMixCss } from '@/lib/soft-surface';
 import { FlameCount, FriendAvatar, GameGlyph } from './friends-ui';
 import type { FriendProfile } from '@/lib/friends-service';
 
@@ -40,7 +40,7 @@ function Tile({ tile, quiet, bare, onOpen }: { tile: GameTile; quiet?: boolean; 
         className="flex items-center justify-center"
         style={{
           width: 44, height: 44, borderRadius: 13,
-          background: softMix(color, tile.yourTurn ? 0.2 : 0.1),
+          background: softMixCss(color, tile.yourTurn ? 0.2 : 0.1),
           // A glow, not an outline: it is your move.
           boxShadow: tile.yourTurn ? `0 0 14px 1px ${softMix(color, 0.45)}` : undefined,
         }}
@@ -65,18 +65,19 @@ function Tile({ tile, quiet, bare, onOpen }: { tile: GameTile; quiet?: boolean; 
   );
 }
 
-/** The small resign flag at the row's right edge (a 30 px hit area around a 22 px coin). */
-function ResignFlag({ title, name, onTap }: { title: string; name: string; onTap: () => void }) {
+/** The small resign flag at the row's right edge (a 22 px coin in a 30 px slot; the hit area is 44 x the row, a11y review 10-16 #6). */
+function ResignFlag({ title, name, onTap, buttonRef }: { title: string; name: string; onTap: () => void; buttonRef?: React.Ref<HTMLButtonElement> }) {
   return (
     <button
+      ref={buttonRef}
       type="button"
       onClick={onTap}
       aria-label={`Resign ${title} against ${name}`}
       data-squish
       className="relative shrink-0 flex items-center justify-center"
-      style={{ width: 30, height: 30, background: 'transparent', border: 0 }}
+      style={{ width: 44, height: ROW_H, margin: '0 -7px', padding: 0, background: 'transparent', border: 0 }}
     >
-      <span className="flex items-center justify-center" style={{ width: 22, height: 22, borderRadius: 999, background: 'var(--fr-flag-coin, rgba(255,255,255,0.85))', boxShadow: `inset 0 0 0 1px ${softMix('#db2777', 0.45)}` }}>
+      <span className="flex items-center justify-center" style={{ width: 22, height: 22, borderRadius: 999, background: 'var(--fr-flag-coin, rgba(255,255,255,0.85))', boxShadow: `inset 0 0 0 1px ${softMixCss('#db2777', 0.45)}` }}>
         <FamIcon name="flag" size={12} ink="#db2777" />
       </span>
     </button>
@@ -90,30 +91,34 @@ function ResignConfirm({ title, onKeep, onResign }: { title: string; onKeep: () 
       role="group"
       aria-label={`Resign ${title}?`}
       className="min-w-0 flex items-center w-full"
-      style={{ borderRadius: 14, height: ROW_H, padding: '0 8px 0 10px', gap: 8, background: softMix('#db2777', 0.14) }}
+      style={{ borderRadius: 14, height: ROW_H, padding: '0 8px 0 10px', gap: 8, background: softMixCss('#db2777', 0.14) }}
+      // a11y review 10-16 #5: Escape keeps the game (focus lands on Keep when the row flips).
+      onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onKeep(); } }}
     >
       <FamIcon name="flag" size={18} ink="#db2777" />
       <span className="flex-1 min-w-0 flex flex-col">
         <span className="text-[12.5px] font-black leading-[1.15] truncate" style={{ color: FR_LOOK.ink }}>Resign {title}?</span>
         <span className="text-[11px] font-bold leading-[1.15] truncate" style={{ color: FR_LOOK.rowSub }}>They win this one</span>
       </span>
+      {/* the 26 px pills sit inside 44 px tall buttons (hit area only; the row stays 50) */}
       <button
         data-squish
         type="button"
         onClick={onKeep}
-        className="shrink-0 text-[11.5px] font-black"
-        style={{ height: 26, padding: '0 12px', borderRadius: 999, border: 0, color: FR_LOOK.lavender, background: softMix(FR_LOOK.lavender, 0.18) }}
+        autoFocus
+        className="shrink-0 flex items-center text-[11.5px] font-black"
+        style={{ height: 44, padding: 0, background: 'transparent', border: 0, color: FR_LOOK.lavender }}
       >
-        Keep
+        <span className="flex items-center" style={{ height: 26, padding: '0 12px', borderRadius: 999, background: softMixCss(FR_LOOK.lavender, 0.18) }}>Keep</span>
       </button>
       <button
         data-squish
         type="button"
         onClick={onResign}
-        className="shrink-0 text-[11.5px] font-black text-white"
-        style={{ height: 26, padding: '0 12px', borderRadius: 999, border: 0, background: 'linear-gradient(180deg, #f472b6, #db2777)' }}
+        className="shrink-0 flex items-center text-[11.5px] font-black text-white"
+        style={{ height: 44, padding: 0, background: 'transparent', border: 0 }}
       >
-        Resign
+        <span className="flex items-center" style={{ height: 26, padding: '0 12px', borderRadius: 999, background: 'linear-gradient(180deg, #f472b6, #db2777)' }}>Resign</span>
       </button>
     </div>
   );
@@ -159,7 +164,8 @@ function WaitChip() {
   return (
     <span
       className="shrink-0 flex items-center whitespace-nowrap"
-      style={{ height: 22, padding: '0 9px', gap: 4, borderRadius: 999, fontSize: 10, fontWeight: 800, letterSpacing: '0.5px', color: FR_LOOK.rowSub, background: 'var(--fr-chip-wait, rgba(124,58,237,0.14))' }}
+      // a11y review 10-16 #8: a step darker than rowSub so the 10 px caps clear 4.5:1 on the light wash (night keeps --fr-row-sub).
+      style={{ height: 22, padding: '0 9px', gap: 4, borderRadius: 999, fontSize: 10, fontWeight: 800, letterSpacing: '0.5px', color: 'var(--fr-row-sub, #604f7a)', background: 'var(--fr-chip-wait, rgba(124,58,237,0.14))' }}
     >
       <Clock size={9} strokeWidth={2.6} aria-hidden="true" />
       WAITING
@@ -173,6 +179,13 @@ function GameRow({ tile, name, confirming, onOpen, onAskResign, onKeep, onResign
   onOpen: () => void; onAskResign: () => void; onKeep: () => void; onResign: () => void;
 }) {
   const title = FRIENDLY_TITLES[tile.kind];
+  // a11y review 10-16 #5: Keep / Resign puts focus back on the flag when the row flips back.
+  const flagRef = useRef<HTMLButtonElement>(null);
+  const wasConfirming = useRef(false);
+  useEffect(() => {
+    if (wasConfirming.current && !confirming) flagRef.current?.focus();
+    wasConfirming.current = confirming;
+  }, [confirming]);
   if (confirming) return <ResignConfirm title={title} onKeep={onKeep} onResign={onResign} />;
   return (
     <div
@@ -188,7 +201,7 @@ function GameRow({ tile, name, confirming, onOpen, onAskResign, onKeep, onResign
         data-squish
         type="button"
         onClick={onOpen}
-        aria-label={`${title}, ${tile.word}`}
+        aria-label={gameRowLabel(tile.kind, tile.word, tile.yourTurn)}
         className="flex-1 min-w-0 h-full flex items-center text-left"
         style={{ gap: 10, paddingLeft: 8, background: 'transparent', border: 0 }}
       >
@@ -200,7 +213,7 @@ function GameRow({ tile, name, confirming, onOpen, onAskResign, onKeep, onResign
         {tile.yourTurn ? <TurnChip /> : <WaitChip />}
       </button>
       <span style={{ width: 6 }} aria-hidden="true" />
-      <ResignFlag title={title} name={name} onTap={onAskResign} />
+      <ResignFlag title={title} name={name} onTap={onAskResign} buttonRef={flagRef} />
     </div>
   );
 }
@@ -226,7 +239,8 @@ function MoreRow({ hidden, expanded, onToggle }: { hidden: number; expanded: boo
       aria-expanded={expanded}
       aria-label={expanded ? 'Show fewer games' : `Show ${hidden} more ${hidden === 1 ? 'game' : 'games'}`}
       className="w-full flex items-center justify-center text-[11.5px] font-black"
-      style={{ gap: 4, height: 28, borderRadius: 999, border: 0, color: FR_LOOK.lavender, background: 'transparent' }}
+      // 28 px tall on screen, 44 px to the finger (a11y review 10-16 #6)
+      style={{ gap: 4, height: 44, margin: '-8px 0', borderRadius: 999, border: 0, color: FR_LOOK.lavender, background: 'transparent' }}
     >
       {expanded ? 'Show fewer' : `+${hidden} more`}
       <ChevronDown size={11} strokeWidth={3} aria-hidden="true" style={{ transform: expanded ? 'rotate(180deg)' : 'none' }} />
@@ -264,7 +278,7 @@ export function FriendCards({ cards, profiles, onOpenGame, onStart, onMenu, onPr
             // The bubble headline ("1 game waiting on you") is not drawn on the card (the gold row says it); it stays here for screen readers.
             aria-label={c.headline ? `${c.name}, ${c.headline}` : c.name}
             className="relative"
-            style={{ borderRadius: 18, padding: 10, background: `var(--fr-season-card, ${softMix(c.online ? '#10b981' : FR_LOOK.lavender, c.online ? 0.07 : 0.1)})`, boxShadow: '0 6px 14px rgba(60,30,110,0.07)' }}
+            style={{ borderRadius: 18, padding: 10, background: `var(--fr-season-card, ${softMixCss(c.online ? '#10b981' : FR_LOOK.lavender, c.online ? 0.07 : 0.1)})`, boxShadow: '0 6px 14px rgba(60,30,110,0.07)' }}
           >
             {/* Top line: mascot (with the count badge), name + ONE sub line (presence, else the games count), streak, the ⋯. */}
             <div className="flex items-center gap-2.5">

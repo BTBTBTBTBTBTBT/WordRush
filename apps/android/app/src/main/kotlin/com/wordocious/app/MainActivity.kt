@@ -53,6 +53,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // DEBUG only: `--es dressDemo stage|titles|room-<tab>` shows Edit Profile for a local demo player (ui/DressDemo).
         com.wordocious.app.ui.DressDemo.applySeason(intent?.getStringExtra("dressSeason"))
+        // DEBUG only: `--es dressTod morning|day|evening|night|auto` pins the time-of-day look (pref `debug-tod`, ui/TimeOfDayState).
+        com.wordocious.app.ui.TimeOfDayState.applyExtra(intent?.getStringExtra("dressTod"))
         com.wordocious.app.ui.DressDemo.parseLook(intent?.getStringExtra("dressLook"))
         // DEBUG only: `--es dressDemo nudge` shows the Home seasonal nudge card for the demo player (10-05).
         if (com.wordocious.app.ui.DressDemo.isNudge(intent?.getStringExtra("dressDemo"))) {
@@ -79,6 +81,39 @@ class MainActivity : ComponentActivity() {
                         Box(Modifier.fillMaxSize().navigationBarsPadding().statusBarsPadding()) {
                             com.wordocious.app.ui.EditProfileScreen(onDone = { finish() })
                         }
+                    }
+                }
+            } })
+            return
+        }
+        // DEBUG only: `--es dressDemo sharesheet` opens the custom share sheet on a sample Starsweep result (visual checks, 10-16).
+        if (com.wordocious.app.BuildConfig.DEBUG && intent?.getStringExtra("dressDemo") == "sharesheet") {
+            com.wordocious.app.ui.DressDemo.start(com.wordocious.app.ui.DressDoor.Stage)
+            com.wordocious.app.data.ThemePref.load()
+            setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent {
+                WordociousTheme {
+                    Surface(modifier = Modifier.fillMaxSize(), color = WTheme.bg) {
+                        val ctx = androidx.compose.ui.platform.LocalContext.current
+                        val spec = remember {
+                            val seeds = listOf(0 to 0, 0 to 4, 2 to 2, 3 to 6, 5 to 1, 5 to 4, 7 to 0, 7 to 6)
+                            val regions = buildString { for (r in 0 until 8) for (c in 0 until 8) append(seeds.indices.minByOrNull { Math.abs(seeds[it].first - r) + Math.abs(seeds[it].second - c) }!!) }
+                            val board = buildString { for (r in 0 until 8) for (c in 0 until 8) append(if (c == (r * 3 + 1) % 8) '*' else '.') }
+                            com.wordocious.app.ui.ShareSheetSpec(
+                                ctx = com.wordocious.core.ShareSheetContext(
+                                    surface = com.wordocious.core.ShareSurface.FINISHED, mode = "regions", play = com.wordocious.core.SharePlay.DAILY,
+                                    cards = listOf(com.wordocious.core.ShareCardKind.RESULT), hasSpoilerVariant = true,
+                                    season = com.wordocious.app.ui.SeasonSkins.current(), caption = null,
+                                ),
+                                pageKinds = listOf(com.wordocious.core.ShareCardKind.RESULT), gameName = "Starsweep", gameMode = "regions",
+                                render = { _, _, look ->
+                                    com.wordocious.app.ui.SeasonSkins.withShareLook(look) {
+                                        com.wordocious.app.data.ShareImage.renderRegions(ctx, 8, regions, board, "0".repeat(64), true, "#24 · 8 × 8 · 0 mistakes · 0:56",
+                                            score = com.wordocious.app.data.ShareBreakdown.Input(com.wordocious.core.GameMode.REGIONS, true, 1, 56, 1, 1, 0, day = "2026-10-16"))
+                                    }
+                                },
+                            )
+                        }
+                        com.wordocious.app.ui.ShareSheetV2(spec, onDismiss = { finish() })
                     }
                 }
             } })
@@ -334,6 +369,8 @@ class MainActivity : ComponentActivity() {
                   // F2 the cold-start intro's state (drawn last, below); W waits for it.
                   var intro by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(coldStart) }
                   Box(Modifier.fillMaxSize().navigationBarsPadding()) {
+                    // Time of day (founder 10-16): the one boundary timer + the 600 ms window-color cross-fade; draws nothing.
+                    com.wordocious.app.ui.TimeOfDayHost()
                     val isLoading by AuthService.isLoading.collectAsState()
                     val isAuthenticated by AuthService.isAuthenticated.collectAsState()
                     val isGuest by AuthService.isGuest.collectAsState()
@@ -471,6 +508,7 @@ class MainActivity : ComponentActivity() {
         // makes this the activity's current intent, so anything that later reads
         // getIntent() (and a config change) sees the link, not the launch intent.
         setIntent(intent)
+        com.wordocious.app.ui.TimeOfDayState.applyExtra(intent.getStringExtra("dressTod"))
         com.wordocious.app.data.DeepLinkRouter.handle(intent.data)
         com.wordocious.app.data.DeepLinkRouter.handlePushUrl(intent.getStringExtra("url"))
         // The browser fallback almost always lands HERE rather than onCreate —

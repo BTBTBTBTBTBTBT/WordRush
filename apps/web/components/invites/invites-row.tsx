@@ -11,7 +11,7 @@ import { fetchPendingInvitesForUser, lookupUsernames, markInviteDeclined } from 
 import { fetchVsChallenges } from '@/lib/vs-challenges-client';
 import { buildInviteRows, loadDismissed, saveDismissed, type InviteRow } from '@/lib/invites-row';
 import { modeTitle } from '@/lib/vs-lobby';
-import { SOFT_INK, softMix } from '@/lib/soft-surface';
+import { SOFT_INK, softMix, softMixCss } from '@/lib/soft-surface';
 
 /**
  * The Invites row (FRIDAY-QUEUE 9f): everything waiting on you in one place: live VS invites sent to you
@@ -58,7 +58,7 @@ export function InvitesRow({ userId, screen = 'blue' }: { userId: string | undef
         INVITES{rows.length > SHOWN ? ` · ${rows.length}` : ''}
       </p>
       {rows.slice(0, SHOWN).map((r) => (
-        <div key={r.key} className="notice-in flex items-center gap-2.5 px-3 py-2" style={{ background: softMix('#8b5cf6', 0.1), borderRadius: 16 }}>
+        <div key={r.key} className="notice-in flex items-center gap-2.5 px-3 py-2" style={{ background: softMixCss('#8b5cf6', 0.1), borderRadius: 16 }}>
           <PlayerAvatar name={r.sender} userId={r.senderId} size={38} />
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-black leading-snug truncate" style={{ color: SOFT_INK.num }}>

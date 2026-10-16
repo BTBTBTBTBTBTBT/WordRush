@@ -53,7 +53,7 @@ import { WATCHED_REQUESTS_KEY, giftShareText, inviteShareText, parseWatched, tra
 import { FR_LOOK, frBar, frSurface, rowStripe } from '@/lib/friends-look';
 import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
 import { ART_SIZE, artSrc, poseArt } from '@/lib/art';
-import { softMix } from '@/lib/soft-surface';
+import { softMix, softMixCss } from '@/lib/soft-surface';
 import { LevelBadge } from '@/components/badges/badge-art';
 import { FeedbackPill } from '@/components/game/feedback-toast';
 import { HeadingArt } from '@/components/ui/heading-art';
@@ -331,7 +331,7 @@ export function FriendsPanel() {
               key={e.id}
               href={e.me ? '/profile' : `/profile/${e.id}`}
               className="flex items-center gap-2 px-3 py-1.5"
-              style={{ background: rowStripe(i + 1), borderTop: i === 0 ? undefined : `1px solid ${softMix(accent, 0.2)}` }}
+              style={{ background: rowStripe(i + 1), borderTop: i === 0 ? undefined : `1px solid ${softMixCss(accent, 0.2)}` }}
             >
               <SoftNum size={12} className="w-8 shrink-0 text-right">{ordinal(i + 4)}</SoftNum>
               <span className="flex-1 min-w-0 flex flex-col">
@@ -563,7 +563,7 @@ export function FriendsPanel() {
             return (
               <div
                 className="flex items-center gap-2 px-3 py-2"
-                style={{ background: softMix(tone, win ? 0.24 : 0.1), border: `1.5px solid ${softMix(tone, 0.34)}`, borderRadius: 12 }}
+                style={{ background: softMixCss(tone, win ? 0.24 : 0.1), border: `1.5px solid ${softMixCss(tone, 0.34)}`, borderRadius: 12 }}
               >
                 {win ? <Icon3D name="crown" size={20} /> : <UiIcon name={r.rank === 2 ? 'medal-silver' : r.rank === 3 ? 'medal-bronze' : 'medal'} size={20} />}
                 <span className="text-[11px] font-extrabold flex-1 min-w-0" style={{ color: win ? '#92400e' : FR_LOOK.ink }}>
@@ -720,7 +720,7 @@ export function FriendsPanel() {
       {friends.length > 0 && slackers.length > 0 && (
         <div
           className="flex items-center justify-between gap-2"
-          style={{ padding: '8px 12px', borderRadius: 16, background: `var(--fr-season-card, ${softMix(FR_LOOK.lavender, 0.1)})`, boxShadow: '0 6px 14px rgba(60,30,110,0.07)' }}
+          style={{ padding: '8px 12px', borderRadius: 16, background: `var(--fr-season-card, ${softMixCss(FR_LOOK.lavender, 0.1)})`, boxShadow: '0 6px 14px rgba(60,30,110,0.07)' }}
         >
           <span className="flex items-center min-w-0 flex-1" style={{ gap: 8 }}>
             <span className="flex items-center shrink-0" aria-hidden="true">
@@ -775,8 +775,8 @@ export function FriendsPanel() {
         {pending ? (
           <div className="animate-pulse" aria-hidden>
             {[0, 1, 2].map((i) => (
-              <div key={i} className="px-3 py-2.5" style={{ background: rowStripe(i), borderTop: `1px solid ${softMix(FR_LOOK.lavender, 0.1)}` }}>
-                <div className="h-8 rounded-xl" style={{ background: softMix(FR_LOOK.lavender, 0.16) }} />
+              <div key={i} className="px-3 py-2.5" style={{ background: rowStripe(i), borderTop: `1px solid ${softMixCss(FR_LOOK.lavender, 0.1)}` }}>
+                <div className="h-8 rounded-xl" style={{ background: softMixCss(FR_LOOK.lavender, 0.16) }} />
               </div>
             ))}
           </div>
@@ -791,7 +791,7 @@ export function FriendsPanel() {
                   // BJ7: one top line — avatar, name + chips and the streak / actions
                   // top-aligned; the presence line 4 under the name.
                   className="relative flex items-start gap-2.5 px-3 py-[7px] cursor-pointer"
-                  style={{ background: rowStripe(i + 1), borderTop: `1px solid ${softMix(FR_LOOK.lavender, 0.1)}` }}
+                  style={{ background: rowStripe(i + 1), borderTop: `1px solid ${softMixCss(FR_LOOK.lavender, 0.1)}` }}
                   onClick={(e) => {
                     if ((e.target as HTMLElement).closest('a,button')) return;
                     router.push(`/profile/${f.id}`);
@@ -861,7 +861,7 @@ export function FriendsPanel() {
             <CandyBadge count={incoming.length} size={16} label={`${incoming.length} waiting`} />
           </div>
           {incoming.map((r, i) => (
-            <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ background: rowStripe(i + 1), borderTop: `1px solid ${softMix(FR_LOOK.pink, 0.12)}` }}>
+            <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ background: rowStripe(i + 1), borderTop: `1px solid ${softMixCss(FR_LOOK.pink, 0.12)}` }}>
               <span className="relative shrink-0 inline-flex">
                 <FriendAvatar name={r.username} userId={r.id} url={r.avatar_url} config={r.avatar_config} castId={r.avatar_cast_id} frame={r.avatar_frame} pro={r.is_pro} level={r.level} size={34} />
                 <CandyBadge count={1} size={14} style={{ position: 'absolute', top: -5, right: -5 }} />
@@ -882,7 +882,7 @@ export function FriendsPanel() {
             </div>
           ))}
           {outgoing.map((r, i) => (
-            <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ background: rowStripe(incoming.length + i + 1), borderTop: `1px solid ${softMix(FR_LOOK.pink, 0.12)}` }}>
+            <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ background: rowStripe(incoming.length + i + 1), borderTop: `1px solid ${softMixCss(FR_LOOK.pink, 0.12)}` }}>
               <FriendAvatar name={r.username} userId={r.id} url={r.avatar_url} config={r.avatar_config} castId={r.avatar_cast_id} frame={r.avatar_frame} pro={r.is_pro} level={r.level} size={34} />
               <Link href={`/profile/${r.id}`} className="flex-1 min-w-0">
                 <span className="block text-[13px] font-black truncate" style={{ color: FR_LOOK.ink }}>@{r.username}</span>
@@ -966,7 +966,7 @@ export function FriendsPanel() {
               placeholder="Add by username"
               aria-label="Add by username"
               className="flex-1 min-w-0 px-3 text-[13px] font-bold outline-none"
-              style={{ height: 36, background: softMix(FR_LOOK.pink, 0.05), border: `1.5px solid ${softMix(FR_LOOK.pink, 0.32)}`, borderRadius: 12, color: FR_LOOK.ink }}
+              style={{ height: 36, background: softMixCss(FR_LOOK.pink, 0.05), border: `1.5px solid ${softMixCss(FR_LOOK.pink, 0.32)}`, borderRadius: 12, color: FR_LOOK.ink }}
             />
             <CastButton screen="pink"
               size="sm"
@@ -1002,7 +1002,7 @@ export function FriendsPanel() {
                     }
                   }}
                   className="w-full flex items-center gap-2.5 px-2 py-1.5 text-left"
-                  style={{ background: softMix(FR_LOOK.lavender, 0.1), border: `1.5px solid ${softMix(FR_LOOK.lavender, 0.26)}`, borderRadius: 12 }}
+                  style={{ background: softMixCss(FR_LOOK.lavender, 0.1), border: `1.5px solid ${softMixCss(FR_LOOK.lavender, 0.26)}`, borderRadius: 12 }}
                 >
                   <FriendAvatar name={u.username} userId={u.id} url={u.avatar_url} config={u.avatar_config} castId={u.avatar_cast_id} frame={u.avatar_frame} pro={u.is_pro} level={u.level} size={30} />
                   <span className="flex-1 min-w-0 text-xs font-extrabold truncate" style={{ color: FR_LOOK.ink }}>{u.username}</span>
@@ -1106,7 +1106,7 @@ export function FriendsPanel() {
                     key={t.id}
                     onClick={() => fireTaunt(t.id)}
                     className="w-full text-left px-4 py-3 text-xs font-extrabold"
-                    style={{ color: FR_LOOK.ink, background: rowStripe(i + 1), borderTop: `1px solid ${softMix(FR_LOOK.pink, 0.14)}` }}
+                    style={{ color: FR_LOOK.ink, background: rowStripe(i + 1), borderTop: `1px solid ${softMixCss(FR_LOOK.pink, 0.14)}` }}
                   >
                     {t.text}
                   </button>

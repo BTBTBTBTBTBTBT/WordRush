@@ -72,6 +72,16 @@ export const PODIUM_TONE_PLACE: Record<PodiumTone, 1 | 2 | 3> = { gold: 1, silve
 /** The image every podium shows first (the one-image stadium podium; core PODIUM_ART). */
 export const PODIUM_PRELOAD = ['art-podium-stage'] as const;
 
+/**
+ * The stadium image for a time of day (10-16): the per-time stage (morning / day / evening) only applies inside an active season
+ * (the same rule as the walls and the Home stage); night, no season, or a time whose file does not ship = the night stadium.
+ */
+export function podiumStageName(season: string | null | undefined, time: string, shipped: (name: string) => boolean): string {
+  if (!season || (time !== 'morning' && time !== 'day' && time !== 'evening')) return 'art-podium-stage';
+  const n = `art-podium-stage-${time}`;
+  return shipped(n) ? n : 'art-podium-stage';
+}
+
 let podiumPreloaded = false;
 /**
  * Warm the podium image into the image cache (decoded off the main thread via

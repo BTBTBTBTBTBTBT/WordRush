@@ -22,6 +22,7 @@ enum CastSkin {
     /// The active season (the admin preview first, else today's local date). Cached
     /// for 30 s — it's read per figure per frame by the animated cast rows.
     static var season: Season? {
+        if renderNormal { return nil }
         lock.lock(); defer { lock.unlock() }
         let now = Date()
         if let c = cached, now.timeIntervalSince(c.at) < 30 { return c.season }
@@ -29,6 +30,10 @@ enum CastSkin {
         cached = (now, s)
         return s
     }
+
+    /// The share sheet's "Normal" look: while a card is being captured with it, `season` reads nil so the
+    /// renderers draw the standard cast (main-thread only, set and cleared around one synchronous render).
+    static var renderNormal = false
 
     /// Drop the cache (the admin toggle flips the preview live).
     static func invalidate() {
@@ -114,6 +119,14 @@ enum CastSkin {
 
     /// Every Halloween prop's image set name (shipped or not; for prewarm).
     static var halloweenPropAssets: [String] { halloweenProps.map { "art-halloween-prop-\($0)" } }
+
+    /// 10-16: the props to prewarm at launch — Halloween's four (unchanged) plus the active season's registry props when it is
+    /// another season (Thanksgiving ships ten; the day-title pair rotates through all of them).
+    static var prewarmPropAssets: [String] {
+        var names = halloweenPropAssets
+        for n in SeasonKit.props where !names.contains(n) { names.append(n) }
+        return names
+    }
 
     /// Founder 10-05: the day title's props come in a PAIR — one per side, never a lone
     /// prop on one side. Two different props (picked by the day of the year among those

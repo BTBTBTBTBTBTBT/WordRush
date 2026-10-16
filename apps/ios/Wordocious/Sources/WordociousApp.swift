@@ -25,6 +25,7 @@ struct WordociousApp: App {
         #if DEBUG
         ShareCardDemo.runIfRequested()
         #endif
+        TimeOfDayState.shared.start()   // 10-16: the season's time-of-day slot (one boundary timer, in season only)
         LaunchWarm.start()   // Founder 10-10 (smoothness, launch): the first frame's decodes start on background threads now
         // Sized before any request so AsyncImage (avatars, Muddle cartoons, PN
         // photos) and Net's sessions share a real disk cache (founder, 2026-09-29).
@@ -122,6 +123,7 @@ struct WordociousApp: App {
                 // active players (mirrors the web SitePresenceProvider).
                 .onChange(of: scenePhase) { phase in
                     if phase == .active {
+                        TimeOfDayState.shared.foreground()   // 10-16: re-read the clock for the season's time-of-day look
                         // Warm resume across local midnight → reset the landing
                         // surface to Home/Daily, same as a cold start. Same-day
                         // resumes change nothing (nobody gets yanked out of a

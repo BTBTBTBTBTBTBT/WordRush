@@ -9,7 +9,7 @@
 // the card draws its plain fallback there.
 
 import { CAST, MASCOT_LETTER, type MascotId } from './mascots';
-import { activeSeason, castArt, castImageSources, reflowCastRow, seasonOfSrc } from './season';
+import { activeSeason, castArt, type Season, castImageSources, reflowCastRow, seasonOfSrc } from './season';
 import type { CastRowLayout } from './share-fit';
 import {
   FROSTED_TILE, SHARE_SITE, SOFT_INK, STAT_TONES, TILE_GLOSS, glossFrom,
@@ -379,8 +379,7 @@ export function drawInfoLine(ctx: CanvasRenderingContext2D, info: ShareInfo, cx:
  * during the season (or a `?season=` preview) each is the Halloween skin, with
  * the hero as that character's fallback.
  */
-export async function loadCastImages(): Promise<Record<MascotId, HTMLImageElement | null>> {
-  const season = activeSeason();
+export async function loadCastImages(season: Season | null | undefined = activeSeason()): Promise<Record<MascotId, HTMLImageElement | null>> {
   const imgs = await Promise.all(CAST.map((id) => loadShareImage(castImageSources(id, season))));
   return Object.fromEntries(CAST.map((id, i) => [id, imgs[i] ?? null])) as Record<MascotId, HTMLImageElement | null>;
 }

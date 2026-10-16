@@ -40,7 +40,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -551,12 +550,11 @@ fun FriendlyGameScreen(
 
     if (confirmClose) {
         // 9: ONE themed button. The game waits; Resign now lives in the Friends tab's ⋯ menu.
-        AlertDialog(
-            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
+        // Parity audit 10-16: the family sheet on the pocket night glass, not a Material dialog.
+        com.wordocious.app.ui.FamilyDialogSheet(
             onDismissRequest = { confirmClose = false },
             containerColor = DIALOG_TINT,
-            title = null,
-            text = {
+            body = {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     FriendlyGameIcon(kind, 56.dp)
                     Text(
@@ -571,7 +569,6 @@ fun FriendlyGameScreen(
                     )
                 }
             },
-            confirmButton = {},
         )
     }
 }

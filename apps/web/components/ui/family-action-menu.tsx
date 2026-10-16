@@ -9,7 +9,7 @@ import { castColorForAccent } from '@/lib/cast-accent';
 import { isNotesMenu } from '@/lib/friend-card-copy';
 import { MOTION } from '@/lib/motion-spec';
 import { prefersReducedMotion } from '@/lib/motion';
-import { softMix } from '@/lib/soft-surface';
+import { softMix, softMixCss } from '@/lib/soft-surface';
 
 // The family ACTION MENU (founder 10-05: "There shouldn't be any plain text menus looking like this").
 // Replaces every ad-hoc dropdown list in user-facing pages with the approved picker look (Pick a Friend
@@ -136,7 +136,7 @@ export function FamilyActionMenu({ title, subtitle, avatar, actions, onClose, la
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-2" aria-hidden="true" style={{ width: 40, height: 5, borderRadius: 999, background: softMix('#ec4899', 0.35) }} />
+        <div className="mx-auto mb-2" aria-hidden="true" style={{ width: 40, height: 5, borderRadius: 999, background: softMixCss('#ec4899', 0.35) }} />
         <div className="flex items-center gap-3" style={{ minHeight: 48, marginBottom: 8 }}>
           {avatar}
           <div className="min-w-0 flex-1" role="heading" aria-level={2}>

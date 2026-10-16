@@ -49,7 +49,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     title: 'Design',
     items: [
       { href: '/admin/art', label: 'Art Library', icon: Palette, blurb: 'Review art with JP: side-by-side previews, approvals, feedback' },
-      { href: '/admin/sounds', label: 'Sound Library', icon: AudioLines, blurb: 'Every sound by game: what ships vs the options, picks with JP, feedback' },
+      { href: '/admin/sounds', label: 'Sound Library', icon: AudioLines, blurb: 'Every sound by game: what ships vs the options, picks with JP, feedback; the secret songs by season' },
       { href: '/admin/seasons', label: 'Seasons', icon: Ghost, blurb: 'Halloween status, web preview and the costumed cast' },
     ],
   },

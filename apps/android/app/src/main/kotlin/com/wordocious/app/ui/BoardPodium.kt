@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -130,6 +131,35 @@ object PodiumArt {
     /** The stage image's height for a display [width]. */
     fun heightFor(width: Dp): Dp = width / PodiumArtGeometry.ASPECT.toFloat()
 
+    /**
+     * The stadium drawable for a time of day (10-16): inside a season morning / day / evening use `art_podium_stage_<slot>` (when it
+     * ships); night, out of season, or a missing file = the night stadium [STAGE_RES]. Share cards never call this (they stay night).
+     */
+    @androidx.annotation.DrawableRes
+    fun stageRes(context: android.content.Context, season: String?, tod: com.wordocious.core.TimeOfDay): Int {
+        if (season == null || tod == com.wordocious.core.TimeOfDay.Night) return STAGE_RES
+        return SeasonKit.drawable(context, "art-podium-stage-${tod.id}").takeIf { it != 0 } ?: STAGE_RES
+    }
+
+    /** The stadium for the app-wide slot right now (recomposes on a slot / season change), prewarming the next slot's before the boundary. */
+    @Composable
+    @androidx.annotation.DrawableRes
+    fun rememberStageRes(displayWidth: Dp): Int {
+        val context = LocalContext.current
+        val season = rememberSeason()
+        val tod = TimeOfDayState.slot
+        val res = remember(season, tod) { stageRes(context, season, tod) }
+        val bucket = ArtBitmaps.bucketPx(with(LocalDensity.current) { displayWidth.roundToPx() }.coerceAtLeast(1))
+        LaunchedEffect(season, tod) {
+            if (season == null || TimeOfDayState.pref != null) return@LaunchedEffect
+            kotlinx.coroutines.delay((TimeOfDayState.msToNextChange() - 120_000L).coerceAtLeast(0L))
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                stageRes(context, season, TimeOfDayState.next(tod)).takeIf { it != res }?.let { ArtBitmaps.get(context, it, bucket) }
+            }
+        }
+        return res
+    }
+
     /** The stage decoded into [ArtBitmaps] on the IO pool, before Home / the Leaderboard show it. */
     suspend fun prewarm(context: android.content.Context, density: Float) = withContext(Dispatchers.IO) {
         runCatching { ArtBitmaps.get(context, STAGE_RES, ArtBitmaps.bucketPx((PREWARM.value * density).roundToInt())) }
@@ -242,11 +272,20 @@ fun BoardPodium(
             val goldCrownTop = goldFeet + fig(1) * (CHEER_FEET_DROP - 1f + 0f) - fig(1) * geo.CROWN_RISE.toFloat()
             val headroom = (nameSlot + geo.CROWN_GAP_PT.dp + 4.dp - goldCrownTop).coerceAtLeast(0.dp)
             val tauntRow = if (taunts) 30.dp else 0.dp
+            // Time of day (10-16): the stadium follows the app-wide slot inside a season; two static layers cross-fade 600 ms (instant under
+            // Reduce Motion), decoded through the ArtBitmaps cache (never a raw full-size decode).
+            val stageRes = PodiumArt.rememberStageRes(w)
             Box(Modifier.size(w, headroom + imgH + tauntRow)) {
-                Image(
-                    artPainter(PodiumArt.STAGE_RES, w), contentDescription = null, contentScale = ContentScale.FillBounds,
-                    modifier = Modifier.offset(y = headroom).size(w, imgH).clearAndSetSemantics { },
-                )
+                androidx.compose.animation.Crossfade(
+                    stageRes, Modifier.offset(y = headroom).size(w, imgH).clearAndSetSemantics { },
+                    animationSpec = if (WTheme.reducedMotion) androidx.compose.animation.core.snap() else tween(com.wordocious.core.TimeOfDay.FADE_MS),
+                    label = "podiumStageTod",
+                ) { shownStage ->
+                    Image(
+                        artPainter(shownStage, w), contentDescription = null, contentScale = ContentScale.FillBounds,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
                 with(density) {
                     val wPx = w.toPx(); val imgHPx = imgH.toPx(); val topPx = headroom.toPx()
                     geo.ORDER.forEach { place ->

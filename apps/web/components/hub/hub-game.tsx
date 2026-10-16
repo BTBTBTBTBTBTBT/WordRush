@@ -57,7 +57,7 @@ import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { CandyButton, candyClass } from '@/components/ui/candy-button';
 import { hubTileSize } from '@/lib/hint-layout';
-import { softPill, softMix, darken } from '@/lib/soft-surface';
+import { softPill, softMix, darken, softMixCss } from '@/lib/soft-surface';
 import { HelperButton, QuietButton, famChromeSrc } from '@/components/ui/family-button';
 import { BubbleText } from '@/components/ui/bubble-text';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
@@ -453,7 +453,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       <span key={w} className={`relative inline-flex items-center gap-1 font-black rounded-lg ${desk ? 'text-[14px] px-3 py-1.5' : 'text-[11.5px] px-2.5 py-1'} ${dim ? 'opacity-60' : ''} ${!dim && idx === 0 && !prefersReducedMotion() ? 'gt-pop' : ''}`}
         aria-label={bonus ? hubRareLabel(w) : pangram ? `${w}, pangram` : undefined}
         style={{
-          background: `linear-gradient(${softMix(tint, pangram ? 0.42 : 0.2)}, ${softMix(tint, pangram ? 0.26 : 0.12)})`,
+          background: `linear-gradient(${softMixCss(tint, pangram ? 0.42 : 0.2)}, ${softMixCss(tint, pangram ? 0.26 : 0.12)})`,
           boxShadow: `inset 0 -2px 0 ${softMix(tint, 0.34)}`,
           color: pangram ? '#7a3d00' : revealed ? '#6d28d9' : darken('#7c3aed', 0.2),
         }}>

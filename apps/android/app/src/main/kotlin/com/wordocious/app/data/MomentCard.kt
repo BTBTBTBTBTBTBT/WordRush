@@ -89,7 +89,7 @@ object MomentCard {
             MomentShare.Kind.STREAK -> "${m.big}-day streak on Wordocious.\nwordocious.com"
         }
         val name = when (m.kind) { MomentShare.Kind.LEVEL_UP -> "Level up"; MomentShare.Kind.POCKET -> "Game result"; MomentShare.Kind.STREAK -> "Streak" }
-        val sent = ShareHelper.shareImage(context, bitmap, name, fallbackText = fallback, chooserTitle = "Share your ${name.lowercase()}")
+        val sent = ShareHelper.shareImage(context, bitmap, name, fallbackText = fallback, chooserTitle = "Share your ${name.lowercase()}", sheet = ShareHelper.SheetHint(com.wordocious.core.ShareSurface.MOMENT))
         ShareEvents.log(if (sent) "image" else "text", "", "moment-${m.kind.id}")
     }
 }

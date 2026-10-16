@@ -12,7 +12,7 @@ import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { isGameArtIcon, type TitleArtName } from '@/lib/art';
 import { VS, modeColor, modeTitle } from '@/lib/vs-lobby';
-import { SOFT, alphaHex, cardBarStyle, overAlpha, softMix, softShadow } from '@/lib/soft-surface';
+import { SOFT, alphaHex, cardBarStyle, overAlpha, softMix, softShadow, softMixCss } from '@/lib/soft-surface';
 import { botArt, type BotPose } from '@/lib/bot/bot-personas';
 import { HeadingArt, type HeadingSlug } from '@/components/ui/heading-art';
 
@@ -204,7 +204,7 @@ export function BotAvatar({ src, size = 36, ring, bg, accent = VS_ACCENT, faded 
   return (
     <span
       className="rounded-full flex items-center justify-center shrink-0 overflow-hidden"
-      style={{ width: size, height: size, background: bg ?? `radial-gradient(circle at 50% 35%, #ffffff, ${softMix(accent, 0.22)})`, boxShadow: ring ?? `inset 0 0 0 1.5px ${alphaHex(accent, 0.3)}`, opacity: faded ? 0.5 : 1, filter: faded ? 'grayscale(0.6)' : undefined }}
+      style={{ width: size, height: size, background: bg ?? `radial-gradient(circle at 50% 35%, #ffffff, ${softMixCss(accent, 0.22)})`, boxShadow: ring ?? `inset 0 0 0 1.5px ${alphaHex(accent, 0.3)}`, opacity: faded ? 0.5 : 1, filter: faded ? 'grayscale(0.6)' : undefined }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt="" aria-hidden="true" loading="lazy" decoding="async" width={Math.round(size * 0.96)} height={Math.round(size * 0.96)} draggable={false} style={{ width: size * 0.96, height: size * 0.96, objectFit: 'contain', marginTop: size * 0.06 }} />
@@ -237,7 +237,7 @@ export function BotSpeech({ text, accent = VS_ACCENT, side = 'left' }: { text: s
         className="absolute"
         style={{
           top: '50%', [side === 'left' ? 'left' : 'right']: -7, width: 12, height: 12, marginTop: -6,
-          background: softMix(accent, 0.16), borderLeft: side === 'left' ? `1.5px solid ${alphaHex(accent, 0.4)}` : undefined,
+          background: softMixCss(accent, 0.16), borderLeft: side === 'left' ? `1.5px solid ${alphaHex(accent, 0.4)}` : undefined,
           borderBottom: side === 'left' ? `1.5px solid ${alphaHex(accent, 0.4)}` : undefined,
           borderRight: side === 'right' ? `1.5px solid ${alphaHex(accent, 0.4)}` : undefined,
           borderTop: side === 'right' ? `1.5px solid ${alphaHex(accent, 0.4)}` : undefined,

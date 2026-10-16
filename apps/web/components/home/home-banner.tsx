@@ -5,10 +5,11 @@ import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { UNLIMITED_PEACH } from '@/components/game/finished-kit';
 import { CANDY_INK, candyPad, threeSlice } from '@/lib/candy-toggle';
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { headlineLabel } from '@wordle-duel/core';
+import { TIME_OF_DAY_FADE_MS as TOD_FADE_MS, headlineLabel } from '@wordle-duel/core';
+import { useTimeOfDay } from '@/lib/time-of-day';
 import { BubbleLine } from '@/components/ui/bubble-text';
 import { readSurfacesChoice, useSeason } from '@/lib/season';
-import { SEASON_ART_SIZE, seasonBanner, seasonHeadlineSpec, seasonStage, seasonSurfaces } from '@/lib/season-kit';
+import { SEASON_ART_SIZE, seasonBanner, seasonHeadlineSpec, seasonStage, seasonSurfaces, seasonTrio } from '@/lib/season-kit';
 import { SeasonArt } from '@/components/ui/season-art';
 import Image from 'next/image';
 import { alphaHex, softBorder, softIconTile } from '@/lib/soft-surface';
@@ -34,7 +35,12 @@ import { homeHostInviteAllowed } from '@/lib/home-host-cache';
 import { BANNER_SLOT, MODE_SWITCH, homeBannerContent, homeBannerSlots } from '@/lib/stationary-layout';
 import { HomeClock } from '@/components/home/home-clock';
 import { seasonTrimStops, trimPath } from '@/lib/card-trim';
-import { headlineRowHeight, headlineReserveHeight, homeHeadlineLayout } from '@/lib/home-headline';
+import { headlineRowHeight, headlineReserveHeight, headlineTextWidth, homeHeadlineLayout } from '@/lib/home-headline';
+import { useHomeHeadlinesFlag } from '@/hooks/use-home-headlines-flag';
+import { useAuth } from '@/lib/auth-context';
+import { historyIds, lastGameFor, pushShown, readHistory, readLastGame, writeHistory, type ShownLine } from '@/lib/home-headline-pool-web';
+import { HOLIDAY_TABLE } from '@/lib/holidays';
+import { holidayKeyForDay, selectHomeHeadline, timeBucket } from '@wordle-duel/core';
 
 // The home banner (founder-approved home redesign, 2026-10-01; spec:
 // docs/HOME_REDESIGN_SPEC.md). One window: a frosted headline strip over a
@@ -66,9 +72,8 @@ const SEASON_ART_H = 104;
 /** Unlimited on a swept / flawless day keeps the art frame (Z), in Unlimited's colors with U's loop. */
 const UNLIMITED_BAR = `linear-gradient(90deg, #fdba74, ${UNLIMITED_PEACH} 55%, #ec4899)`;
 const LOOP_ART = 'art-scene-unlimited-loop' as const;
-/** Founder 10-10: the swept day's live cast (O cheering, S flexing, W waving) and the Halloween idle scene's costumed O, W, R. */
+/** Founder 10-10: the swept day's live cast (O cheering, S flexing, W waving) and a season's idle scene = its costumed O, W, R (registry `cast` slot). */
 const SWEEP_TRIO = ['art-pose-o1-cheer', 'art-pose-s-flex', 'art-pose-w-wave'] as const;
-const HALLOWEEN_TRIO = ['art-halloween-o1', 'art-halloween-w', 'art-halloween-r'] as const;
 const FLAWLESS_TRIO = ['art-pose-d-cheer', 'art-pose-o2-cheer', 'art-pose-i-cheer'] as const;
 
 
@@ -197,6 +202,62 @@ function useSlotWidth(ref: React.RefObject<HTMLElement>): number {
   return width;
 }
 
+/** The local time bucket, re-read every 60 s; the state only changes when the bucket does (at most 7 times a day). */
+function useTimeBucket(on: boolean): string {
+  const [bucket, setBucket] = useState(() => timeBucket(new Date().getHours()));
+  useEffect(() => {
+    if (!on) return;
+    const tick = () => setBucket((b) => { const n = timeBucket(new Date().getHours()); return n === b ? b : n; });
+    tick();
+    const t = setInterval(tick, 60_000);
+    return () => clearInterval(t);
+  }, [on]);
+  return bucket;
+}
+
+interface PoolInput { name: string; dateKey: string; word: BannerRow; puzzles: BannerRow; nextGame: string | null; slotWidth: number }
+interface PoolHeadlines { daily: string; unlimited: string; dailyPool: boolean; unlimitedPool: boolean }
+
+/**
+ * home_headlines_v2: the pool's pick for both modes. Recomputed only when the bucket, progress, streaks, next game,
+ * last game, slot or history change (memoized; nothing per frame). The shown id lands in the last-10-days history
+ * (localStorage, try/catch) once per day; the last finished game is read from the record the finish wrote.
+ */
+function useHomeHeadlinePool(on: boolean, input: PoolInput): PoolHeadlines | null {
+  const { name, dateKey, word, puzzles, nextGame, slotWidth } = input;
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const bucket = useTimeBucket(on);
+  const [history, setHistory] = useState<ShownLine[] | null>(null);
+  useEffect(() => { if (on && history === null) setHistory(readHistory(dateKey)); }, [on, history, dateKey]);
+  const { progress: wp, streaks: ws } = word;
+  const { progress: pp, streaks: ps } = puzzles;
+  const textWidth = headlineTextWidth(slotWidth);
+  const choice = useMemo(() => {
+    if (!on || history === null) return null;
+    const now = new Date();
+    const lastGame = lastGameFor(readLastGame(), now.getTime());
+    const base = {
+      name, hour: now.getHours(), dateKey, word: wp, puzzles: pp, streaks: { word: ws, puzzles: ps }, nextGame, lastGame,
+      holiday: holidayKeyForDay(dateKey, HOLIDAY_TABLE), slotWidth: textWidth, userSeed: userId ?? '', history: historyIds(history),
+    };
+    return { daily: selectHomeHeadline(base), unlimited: selectHomeHeadline({ ...base, unlimited: true }) };
+    // `bucket` stands in for the hour: the pick only moves when the bucket does.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [on, history, name, dateKey, wp, pp, ws, ps, nextGame, textWidth, userId, bucket]);
+  // Remember the shown line (pool lines only; the legacy / streak lines need no memory).
+  useEffect(() => {
+    if (!choice || history === null) return;
+    const id = choice.daily.id;
+    if (id === 'legacy' || id.startsWith('streak:')) return;
+    const next = pushShown(history, id, dateKey);
+    if (next.length !== history.length) { writeHistory(next); setHistory(next); }
+  }, [choice, history, dateKey]);
+  if (!choice) return null;
+  const isPool = (id: string) => id !== 'legacy' && !id.startsWith('streak:');
+  return { daily: choice.daily.text, unlimited: choice.unlimited.text, dailyPool: isPool(choice.daily.id), unlimitedPool: isPool(choice.unlimited.id) };
+}
+
 export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, onOpen, next, onPlayNext }: Props) {
   const unlimited = playMode === 'unlimited';
   // FINISH_SPEC Z: the slots (frame, headline box, share box, art box, rows)
@@ -209,13 +270,21 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   const hour = new Date().getHours();
   // 2.8 items 7 + 48: a finished row speaks to its streak ("FLAWLESS 3-PEAT!"); the day's variant is picked by date.
   const streakNews = { streaks: { word: word.streaks, puzzles: puzzles.streaks }, dateKey: getTodayLocal() };
-  const dailyHeadline = bannerHeadline(word.progress, puzzles.progress, { hour, name, unlimited: false, ...streakNews });
-  const unlimitedHeadline = bannerHeadline(word.progress, puzzles.progress, { hour, name, unlimited: true });
+  const legacyDaily = bannerHeadline(word.progress, puzzles.progress, { hour, name, unlimited: false, ...streakNews });
+  const legacyUnlimited = bannerHeadline(word.progress, puzzles.progress, { hour, name, unlimited: true });
   const headSlot = useRef<HTMLDivElement>(null);
   const slotWidth = useSlotWidth(headSlot);
+  // home_headlines_v2 (docs/review/home-headlines/PROPOSAL.md): the headline pool. Flag off = the lines above, untouched.
+  const poolOn = useHomeHeadlinesFlag();
+  const pool = useHomeHeadlinePool(poolOn, { name, dateKey: streakNews.dateKey, word, puzzles, nextGame: next?.title ?? null, slotWidth });
+  const dailyHeadline = pool?.daily ?? legacyDaily;
+  const unlimitedHeadline = pool?.unlimited ?? legacyUnlimited;
   const headLayouts = useMemo(
-    () => ({ daily: homeHeadlineLayout(slotWidth, dailyHeadline, name), unlimited: homeHeadlineLayout(slotWidth, unlimitedHeadline, name) }),
-    [slotWidth, dailyHeadline, unlimitedHeadline, name],
+    () => ({
+      daily: homeHeadlineLayout(slotWidth, dailyHeadline, name, !!pool && pool.dailyPool),
+      unlimited: homeHeadlineLayout(slotWidth, unlimitedHeadline, name, !!pool && pool.unlimitedPool),
+    }),
+    [slotWidth, dailyHeadline, unlimitedHeadline, name, pool],
   );
   const headLayout = unlimited ? headLayouts.unlimited : headLayouts.daily;
   const layoutInput = {
@@ -240,10 +309,11 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   // through), a soft glow behind the banner art, the season's drip cap and a corner cobweb; no
   // tier washes, frost, sheen, confetti or shimmer. Static gradients only (no blur).
   const season = useSeason();
+  const tod = useTimeOfDay();
   const look = useMemo(() => {
-    const s = seasonSurfaces(season, readSurfacesChoice());
+    const s = seasonSurfaces(season, readSurfacesChoice(), season ? tod : 'night');
     return s && (s.hero || s.card) ? s : null;
-  }, [season]);
+  }, [season, tod]);
   const headSpec = useMemo(() => seasonHeadlineSpec(look), [look]);
   const background = look
     ? `${look.bannerGlow ? (look.tone === 'dark'
@@ -269,15 +339,17 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   // Season preview: the registry's Home banner for the active season (lib/season-kit.ts).
   const seasonBannerArt = seasonBanner(season);
   const seasonSlot = !!seasonBannerArt && !tierArt;
-  const halloweenIdle = seasonBannerArt === 'art-scene-banner-halloween';
+  // 10-16: every season's idle trio = its costumed O · W · R (Halloween's art lives in lib/art.ts, later seasons' in season-art.generated.json).
+  const idleTrio = seasonTrio(season, (n) => n in ART_SIZE);
+  const halloweenIdle = !!seasonBannerArt && !!idleTrio;
   const seasonArt = seasonSlot && seasonArtOk;
   // 2.8 (founder 10-15, Halloween only): the stage card. The curtain-stage art is drawn behind the strip + trio row (it carries its own
   // valance + curtains, so the card's drawn cap / cobweb step aside) and the animated trio's feet land in its three spotlight pools
   // (core CELEBRATION_STAGE). Outside Halloween (or on the standard look) the card is exactly as before.
   // 10-16: season-driven (registry `stage` slot; Halloween's art lives in lib/art.ts, later seasons' in season-art.generated.json).
-  const stageArt = seasonStage(season, (n) => n in ART_SIZE);
+  const stageArt = seasonStage(season, (n) => n in ART_SIZE, season ? tod : 'night');
   const stage = !!stageArt && !!look;
-  const stageTrio = tierArt && content.art === 'tier' ? (tierArt.art === 'art-scene-banner-flawless' ? FLAWLESS_TRIO : SWEEP_TRIO) : HALLOWEEN_TRIO;
+  const stageTrio = tierArt && content.art === 'tier' ? (tierArt.art === 'art-scene-banner-flawless' ? FLAWLESS_TRIO : SWEEP_TRIO) : idleTrio ?? [];
 
 
   // Z: fixed-width segments, one font weight in both states; only the thumb slides.
@@ -493,7 +565,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           />
           {halloweenIdle && seasonArtOk && !stage && (
             // Founder 10-10: the idle Halloween scene is alive: the costumed O, W, R sway slow and spooky (no sparkles, 0.7 s tempo, +-3 deg).
-            <CelebrationTrio images={HALLOWEEN_TRIO} bunting={false} sparkles={false} tempo={0.7} swayDegrees={3} style={{ width: '100%', maxWidth: 420, height: SEASON_ART_H }} />
+            <CelebrationTrio images={idleTrio ?? []} bunting={false} sparkles={false} tempo={0.7} swayDegrees={3} style={{ width: '100%', maxWidth: 420, height: SEASON_ART_H }} />
           )}
         </div>
       )}
@@ -600,16 +672,32 @@ const CAP_TRIM = { viewW: 360, drip: 4, bumps: 16 } as const;
  */
 function StageFrame({ on, art, topBar, trio, celebrating, children }: { on: boolean; art: string | null; topBar: number; trio: readonly string[]; celebrating: boolean; children: React.ReactNode }) {
   // The box is the card (its height comes from the fixed slots, never from the image); the art is an absolute cover-fit layer that
-  // FADES in when decoded, so nothing resizes or pops on load.
-  const [artReady, setArtReady] = useState(false);
+  // FADES in when decoded, so nothing resizes or pops on load. Time of day (10-16): when the art name changes (morning -> day ...)
+  // the old stage stays underneath until the new one has decoded and faded in (600 ms), then it is dropped: a crossfade of two
+  // static images, no per-frame work.
+  const [ready, setReady] = useState<string | null>(null);
+  const [shown, setShown] = useState<string | null>(art);
+  useEffect(() => {
+    if (!art || ready !== art || shown === art) return;
+    const t = setTimeout(() => setShown(art), TOD_FADE_MS + 60);
+    return () => clearTimeout(t);
+  }, [art, ready, shown]);
   if (!on || !art) return <>{children}</>;
-  const [artW, artH] = (ART_SIZE as Record<string, readonly [number, number]>)[art] ?? SEASON_ART_SIZE[art] ?? [1586, 992];
+  const sizeOf = (a: string) => (ART_SIZE as Record<string, readonly [number, number]>)[a] ?? SEASON_ART_SIZE[a] ?? [1586, 992];
+  const [artW, artH] = sizeOf(art);
+  const under = shown && shown !== art ? shown : null;
+  const fade = under ? TOD_FADE_MS : 220;
   return (
     <div className="relative" style={{ paddingTop: topBar }}>
+      {under && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={`/art/${under}.webp`} alt="" aria-hidden="true" width={sizeOf(under)[0]} height={sizeOf(under)[1]} decoding="async" draggable={false}
+          className="absolute inset-0 w-full h-full select-none pointer-events-none" style={{ objectFit: 'cover', zIndex: 0 }} />
+      )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img ref={(el) => { if (el?.complete && el.naturalWidth > 0 && !artReady) setArtReady(true); }} src={`/art/${art}.webp`} alt="" aria-hidden="true" width={artW} height={artH} decoding="async" draggable={false}
-        onLoad={() => setArtReady(true)}
-        className="absolute inset-0 w-full h-full select-none pointer-events-none" style={{ objectFit: 'cover', zIndex: 0, opacity: artReady ? 1 : 0, transition: 'opacity 220ms ease-out' }} />
+      <img key={art} ref={(el) => { if (el?.complete && el.naturalWidth > 0 && ready !== art) setReady(art); }} src={`/art/${art}.webp`} alt="" aria-hidden="true" width={artW} height={artH} decoding="async" draggable={false}
+        onLoad={() => setReady(art)}
+        className="absolute inset-0 w-full h-full select-none pointer-events-none" style={{ objectFit: 'cover', zIndex: 0, opacity: ready === art ? 1 : 0, transition: `opacity ${fade}ms ease-in-out` }} />
       <CelebrationTrio className="pointer-events-none" style={{ position: 'absolute', inset: 0, zIndex: 1 }} images={trio} bunting={false} sparkles={celebrating} tempo={celebrating ? 0.42 : 0.7} swayDegrees={celebrating ? 4 : 3} stage />
       <div className="relative" style={{ zIndex: 2 }}>{children}</div>
     </div>

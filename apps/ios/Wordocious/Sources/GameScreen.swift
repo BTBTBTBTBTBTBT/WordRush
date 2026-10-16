@@ -469,7 +469,7 @@ struct GameScreen: View {
         // Founder 10-02: the SHARE RESULTS candy (the share icon no longer floats beside
         // the strip) rides IN the dock's action row — beside Next daily / Leaderboard, or
         // in the Unlimited card's row — with "Next <Game> in …" inside it on a daily.
-        let shareCTA = AnyView(FinishedShareCTA(nextGame: vm.isDaily ? FinishedShareCTA.gameName(mode) : nil,
+        let shareCTA = AnyView(FinishedShareCTA(nextGame: vm.isDaily ? FinishedShareCTA.gameName(mode) : nil, modeDbKey: mode.rawValue,
                                                 onShare: { reveal in share(reveal: reveal) }))
         if vm.isDaily {
             NextDailyCTA(currentMode: mode.rawValue, compact: true, share: shareCTA)

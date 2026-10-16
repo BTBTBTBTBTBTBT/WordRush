@@ -29,7 +29,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -282,6 +281,8 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                             preview = { SeasonPreviewW(s.id) }) { SeasonSkins.pick(s.id) }
                     }
                     Divider(SettingsAccent.theme)
+                    TimeOfDayAdminRows(SettingsAccent.theme)
+                    Divider(SettingsAccent.theme)
                     AdsAdminRows()
                 }
             }
@@ -390,7 +391,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             title = "Delete your account?",
             text = "This will permanently delete your profile, stats, streak, medals, " +
                 "achievements, and all game data. This action cannot be undone.",
-            accent = SettingsAccent.account,
+            danger = true,
             onDismiss = { if (!deleting) showDeleteConfirm = false },
             confirm = {
                 CandyButton(
@@ -525,7 +526,7 @@ private fun LinkedSignIns() {
         SettingsDialog(
             title = "Unlink $label?",
             text = "You won’t be able to sign in to this account with $label anymore. Your stats and Pro stay put.",
-            accent = SettingsAccent.linked,
+            danger = true,
             onDismiss = { confirmUnlink = null },
             confirm = {
                 CandyButton("Unlink", onClick = {
@@ -806,22 +807,19 @@ private fun AdsAdminRows() {
     }
 }
 
-/** A8 a Settings dialog: a tinted container (A1) with candy buttons. */
+/** A8 a Settings dialog: the family confirm sheet (parity audit 10-16; iOS familyConfirm) with candy buttons. */
 @Composable
 private fun SettingsDialog(
     title: String,
     text: String,
     onDismiss: () -> Unit,
-    accent: Color = Color(0xFF7C3AED),
+    danger: Boolean = false,
     confirm: @Composable () -> Unit,
     dismiss: (@Composable () -> Unit)? = null,
 ) {
-    AlertDialog(
-        modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
+    FamilyDialogSheet(
         onDismissRequest = onDismiss,
-        containerColor = accentWash(accent, 0.10f),
-        title = { Text(title, fontWeight = FontWeight.Black, color = WTheme.text) },
-        text = { Text(text, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary) },
+        title = title, message = text, danger = danger,
         confirmButton = confirm,
         dismissButton = dismiss,
     )

@@ -566,6 +566,13 @@ enum StoreDemoDriver {
             for _ in 0..<60 where AuthService.shared.profile == nil { await PerfDrive.sleep(0.1) }
             DressUp.shared.resetForDemo()
         }
+        // `-shareSheetDemo finished|leaderboard`: the custom share sheet over Home (docs/design/review/share-sheet-1016).
+        if let demo = ShareSheetDemo.kind {
+            PerfTour.send(.selectTab(.home))
+            await PerfDrive.sleep(2.0)
+            ShareSheetDemo.present(demo)
+            return
+        }
         switch StoreDemo.shot ?? "home" {
         case "classic": await classic(finish: false)
         case "finish": await classic(finish: true)

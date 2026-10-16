@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AudioLines, CheckCheck, ChevronDown, MessageSquareText, Play, Send, Square, X } from 'lucide-react';
 import { Callout, ErrorNote, LoadingGrid, PageHeader, useAdminData } from '../components/admin-ui';
+import { SecretSongs } from './secret-songs';
 import { ReviewerDiscs, TileActions } from '../art/review-panel';
 import { BATCH_MAX, type ArtFeedback, type ReviewDecision } from '@/lib/admin/art-review';
 import {
@@ -259,7 +260,7 @@ export default function SoundLibraryPage() {
   const sections = useMemo(() => groupSoundSections(statuses, ctx), [statuses, ctx]);
   const player = usePlayer();
 
-  const [view, setView] = useState<'sections' | 'feedback'>('sections');
+  const [view, setView] = useState<'sections' | 'songs' | 'feedback'>('sections');
   const [onlyMine, setOnlyMine] = useState(false);
   const [touched, setTouched] = useState<Set<string>>(() => new Set());
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -388,10 +389,10 @@ export default function SoundLibraryPage() {
 
       <div className="flex flex-wrap gap-2">
         <div className="inline-flex rounded-full bg-purple-50 p-1">
-          {(['sections', 'feedback'] as const).map((v) => (
+          {(['sections', 'songs', 'feedback'] as const).map((v) => (
             <button key={v} type="button" onClick={() => setView(v)}
               className={`h-9 rounded-full px-4 text-sm font-extrabold ${view === v ? 'bg-purple-600 text-white' : 'text-purple-700'}`}>
-              {v === 'sections' ? 'Sounds' : `Open feedback${feedback?.length ? ` (${feedback.length})` : ''}`}
+              {v === 'sections' ? 'Sounds' : v === 'songs' ? 'Secret songs' : `Open feedback${feedback?.length ? ` (${feedback.length})` : ''}`}
             </button>
           ))}
         </div>
@@ -403,7 +404,7 @@ export default function SoundLibraryPage() {
         )}
       </div>
 
-      {loading && !data ? <LoadingGrid tiles={4} /> : view === 'feedback' ? (
+      {view === 'songs' ? <SecretSongs /> : loading && !data ? <LoadingGrid tiles={4} /> : view === 'feedback' ? (
         <OpenFeedback items={feedback} loading={fbLoading} player={player} onResolve={resolve} />
       ) : (
         <div className="space-y-3">

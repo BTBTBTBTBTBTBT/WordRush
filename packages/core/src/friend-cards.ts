@@ -10,7 +10,7 @@
 // SAME words; the Swift and Kotlin ports assert against friend-cards-fixtures.json
 // (scripts/gen-parity-fixtures.ts).
 
-import { PASS_MAX_GUESSES, type FriendlyKind, type FriendlyState, type Side } from './friendly-games';
+import { FRIENDLY_TITLES, PASS_MAX_GUESSES, type FriendlyKind, type FriendlyState, type Side } from './friendly-games';
 
 /** The slice of a friend the cards need. */
 export interface CardFriend {
@@ -99,6 +99,15 @@ export function tileWord(kind: FriendlyKind, state: FriendlyState, me: Side, you
       return last ? `Your word must start with ${last.word[last.word.length - 1].toUpperCase()}` : 'Start the chain with any word';
     }
   }
+}
+
+/**
+ * A game row's accessibility label, whose turn it is included (a11y review 10-16 #2: the YOUR TURN / WAITING chips are
+ * hidden from assistive tech and not every tile word says whose move): "Ghost, Add a letter to GHO, your turn" /
+ * "Coin, Waiting for their call, waiting on them". The three apps use this for the row's label.
+ */
+export function gameRowLabel(kind: FriendlyKind, word: string, yourTurn: boolean): string {
+  return `${FRIENDLY_TITLES[kind]}, ${word}, ${yourTurn ? 'your turn' : 'waiting on them'}`;
 }
 
 /** "6 games waiting on you" / "1 game waiting on you" / "". */

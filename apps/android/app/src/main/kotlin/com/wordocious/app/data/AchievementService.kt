@@ -244,6 +244,18 @@ object AchievementService {
         // Daily Debut
         if (isDaily) tryUnlock("daily_debut")
 
+        // Moments (iOS / web parity, core momentAchievements): a daily finished at the local hour (Night Owl 0-4,
+        // Early Bird 4-7) or inside a READY season (Spooky Season, Harvest Feast; not-ready seasons are null here).
+        if (isDaily) {
+            val hour = java.time.LocalTime.now().hour
+            if (hour < 4) tryUnlock("night_owl")
+            if (hour in 4 until 7) tryUnlock("early_bird")
+            when (com.wordocious.core.currentSeason(java.time.LocalDate.now())) {
+                "halloween" -> tryUnlock("spooky_season")
+                "thanksgiving" -> tryUnlock("harvest_feast")
+            }
+        }
+
         // Speed Demon (Classic under 30s)
         if (gameMode == "DUEL" && won && timeSeconds < 30) tryUnlock("speed_demon")
 

@@ -6,15 +6,18 @@ import { openDressUp } from '@/components/profile/dress-up';
 import type { ReactNode } from 'react';
 import { type BoardAvatarData } from '@/components/leaderboard/board-rows';
 import { PODIUM_ART, PODIUM_ART_ORDER, PODIUM_WINNER_INTRO, podiumArtStep, placeWord, podiumStageCardLabel } from '@wordle-duel/core';
-import { BubbleOneLine } from '@/components/ui/bubble-text';
+import { BubbleOneLine, useIsoLayoutEffect } from '@/components/ui/bubble-text';
 import { nameColorHex, secondaryColorHex } from '@/lib/player-tint';
 import { PodiumFigure } from '@/components/leaderboard/podium-figure';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { PodiumStageCard } from '@/components/leaderboard/podium-stage-card';
 import { useFlags, useLivingMascotOn } from '@/hooks/use-flags';
-import { PODIUM_TONE_PLACE, podiumSlots, podiumTone } from '@/lib/leaderboard-podium';
+import { PODIUM_TONE_PLACE, podiumSlots, podiumStageName, podiumTone } from '@/lib/leaderboard-podium';
 import { alphaHex } from '@/lib/soft-surface';
-import { artSrc } from '@/lib/art';
+import { ART_SIZE, artSrc } from '@/lib/art';
+import { useSeason } from '@/lib/season';
+import { prewarmArt, upcomingTimeOfDay, useTimeOfDay } from '@/lib/time-of-day';
+import { TIME_OF_DAY_FADE_MS } from '@wordle-duel/core';
 
 // The podium (founder 10-15: "B, build both into the app"): ONE stadium image (art-podium-stage, 1536x1024, transparent soft
 // fade) with three tall glossy steps (silver 2 left, gold 1 center, bronze 3 right), each with its number baked in and a blank
@@ -308,6 +311,57 @@ function OpenStep({ step, title, line, w }: { step: 1 | 2 | 3; title: string; li
 }
 
 /**
+ * The stadium image. Time of day (10-16): inside a season it follows the app-wide slot (morning / day / evening; night otherwise);
+ * when the name changes the old image stays underneath until the new one has decoded and faded in (600 ms, instant under Reduce
+ * Motion), then it is dropped: a crossfade of two static images. The next slot's image is prewarmed at idle before the boundary.
+ */
+function PodiumStage() {
+  const season = useSeason();
+  const tod = useTimeOfDay();
+  const art = podiumStageName(season, tod, (n) => n in ART_SIZE);
+  const [ready, setReady] = React.useState<string | null>(null);
+  const [shown, setShown] = React.useState<string>(art);
+  const [still, setStill] = React.useState(false);
+  React.useEffect(() => {
+    setStill(typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  }, []);
+  const fadeMs = still ? 0 : TIME_OF_DAY_FADE_MS;
+  // The season + slot resolve in the first layout pass after mount: snap to them (no crossfade from the night default); only a
+  // later change (the clock crossing a boundary, the admin preview) fades.
+  const bornAt = React.useRef(Date.now());
+  useIsoLayoutEffect(() => {
+    if (Date.now() - bornAt.current < 250) { setShown(art); setReady(art); }
+  }, [art]);
+  React.useEffect(() => {
+    if (ready !== art || shown === art) return;
+    const t = setTimeout(() => setShown(art), fadeMs + 60);
+    return () => clearTimeout(t);
+  }, [art, ready, shown, fadeMs]);
+  React.useEffect(() => {
+    if (!season) return;
+    const next = upcomingTimeOfDay();
+    if (!next) return;
+    const n = podiumStageName(season, next, (x) => x in ART_SIZE);
+    if (n !== art) prewarmArt([artSrc(n)]);
+  }, [season, art]);
+  const under = shown !== art ? shown : null;
+  return (
+    <>
+      {under && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={artSrc(under)} alt="" aria-hidden="true" width={1536} height={1024} decoding="async" draggable={false}
+          className="absolute inset-0 w-full h-full select-none pointer-events-none" style={{ zIndex: 0, WebkitMaskImage: EDGE_FADE, maskImage: EDGE_FADE }} />
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img key={art} ref={(el) => { if (el?.complete && el.naturalWidth > 0 && ready !== art) setReady(art); }} src={artSrc(art)} alt="" aria-hidden="true" width={1536} height={1024} decoding="async" draggable={false}
+        onLoad={() => setReady(art)}
+        className="absolute inset-0 w-full h-full select-none pointer-events-none"
+        style={{ zIndex: 0, WebkitMaskImage: EDGE_FADE, maskImage: EDGE_FADE, opacity: art === shown || ready === art ? 1 : 0, transition: `opacity ${fadeMs}ms ease-in-out` }} />
+    </>
+  );
+}
+
+/**
  * The podium: the places in board order (1st, 2nd, 3rd; DOM = reading order) standing on the one-image stage, with an open
  * spot for every free place (BJ4, core podiumLayout). Spans its container's width (the image is 3:2), tablets scale with the
  * page up to core PODIUM_ART.maxWidthPt (680, so the whole podium fits above the tab bar). The mascots and names overflow the image's top, so the box keeps headroom (a % of its width).
@@ -323,8 +377,7 @@ export function Podium({ places, label = 'Top three' }: { places: PodiumPlace[];
       <div className="relative w-full" style={{ aspectRatio: String(PODIUM_ART.aspect) }}>
         {/* the stage: static, decoded once (the soft fade melts into the page wallpaper behind it) */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={artSrc('art-podium-stage')} alt="" aria-hidden="true" width={1536} height={1024} decoding="async" draggable={false}
-          className="absolute inset-0 w-full h-full select-none pointer-events-none" style={{ zIndex: 0, WebkitMaskImage: EDGE_FADE, maskImage: EDGE_FADE }} />
+        <PodiumStage />
         {slots.map((s) => {
           const step = PODIUM_ART_ORDER[s.column - 1];
           return s.kind === 'place'

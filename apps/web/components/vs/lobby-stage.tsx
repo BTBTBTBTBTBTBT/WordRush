@@ -19,7 +19,7 @@ import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { useLivingMascotOn } from '@/hooks/use-flags';
 import { ART_SIZE, artSrc, type ArtName } from '@/lib/art';
 import { prefersReducedMotion } from '@/lib/motion';
-import { softMix } from '@/lib/soft-surface';
+import { softMix, softMixCss } from '@/lib/soft-surface';
 import { useAuth } from '@/lib/auth-context';
 import { VS } from '@/lib/vs-lobby';
 
@@ -142,7 +142,7 @@ export function LobbyScene({ kind, name, elapsed, seatLabel, children }: {
 export function InviteChips({ code, onShare, onCopy }: { code: string; onShare: () => void; onCopy: () => void }) {
   return (
     <div className="flex flex-col items-center gap-2">
-      <span className="font-black tabular-nums px-4 py-1.5 rounded-2xl" style={{ fontSize: 22, letterSpacing: 5, color: VS.deep, background: softMix('#2dd4bf', 0.14) }}>{code}</span>
+      <span className="font-black tabular-nums px-4 py-1.5 rounded-2xl" style={{ fontSize: 22, letterSpacing: 5, color: VS.deep, background: softMixCss('#2dd4bf', 0.14) }}>{code}</span>
       <div className="flex items-center gap-2">
         <button type="button" onClick={onShare} className="candy candy-sm"><FamIcon name="share" /><span className="candy-label">Share</span></button>
         <button type="button" onClick={onCopy} className="candy candy-sm candy-peach"><FamIcon name="copy" /><span className="candy-label">Copy code</span></button>

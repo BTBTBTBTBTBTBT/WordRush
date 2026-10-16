@@ -9,7 +9,7 @@ import { CandyButton } from '@/components/ui/candy-button';
 import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { FR_LOOK, raceChipColor, rowStripe } from '@/lib/friends-look';
-import { softMix } from '@/lib/soft-surface';
+import { softMix, softMixCss } from '@/lib/soft-surface';
 import { SWEEP_MODES } from '@/lib/modes.generated';
 import { challengeFriend, type FriendProfile } from '@/lib/friends-service';
 import { vsHrefForMode } from '@/lib/invite-service';
@@ -82,7 +82,7 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
                 key={r.id}
                 className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl"
                 style={{
-                  background: r.me ? softMix(FR_LOOK.lavender, 0.14) : rowStripe(i),
+                  background: r.me ? softMixCss(FR_LOOK.lavender, 0.14) : rowStripe(i),
                   boxShadow: r.me ? `0 0 0 2px ${FR_LOOK.lavender}` : undefined,
                 }}
               >

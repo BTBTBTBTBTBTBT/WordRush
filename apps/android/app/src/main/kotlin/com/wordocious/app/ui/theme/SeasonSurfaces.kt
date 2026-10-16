@@ -26,6 +26,13 @@ data class SeasonSurfaces(
     val headline: List<Color>?,
     val bannerGlow: Color?,
     val cobweb: Color?,
+    /** The season accent as TEXT on a light surface (registry `accentText`; the palette accent is a fill, docs/review/a11y-1016.md #11). */
+    val accentText: Color? = null,
+    /**
+     * Time of day (registry `surfaces.tod.<t>.tone == "light"`): the ON-WALL chrome ink turns dark because the sky behind it is light.
+     * It never changes the card tone: the windows stay dark glass with light ink.
+     */
+    val wallInkDark: Boolean = false,
 ) {
     /** A card's translucent fill (null = the normal fill). */
     val cardFill: Color? get() = card?.copy(alpha = cardOpacity)
@@ -55,4 +62,34 @@ data class SeasonSurfaces(
         textMuted = textMuted ?: base.textMuted,
         textSecondary = textSecondary ?: base.textSecondary,
     )
+
+    /** The ink for chrome drawn straight on the wall (not on a card): the card ink, or its dark twin when the sky is light. */
+    fun wallInk(light: Color): Color = if (wallInkDark) WALL_INK_DARK else light
+
+    companion object {
+        /** The ON-WALL chrome ink when the time's sky is light (same value on iOS SeasonSurface.wallInk and web --season-wall-ink). */
+        val WALL_INK_DARK = Color(0xFF1B1230)
+
+        private fun mix(a: Color?, b: Color?, t: Float): Color? = when {
+            a == null -> b
+            b == null -> a
+            else -> androidx.compose.ui.graphics.lerp(a, b, t)
+        }
+
+        private fun mixList(a: List<Color>?, b: List<Color>?, t: Float): List<Color>? =
+            if (a == null || b == null || a.size != b.size) (if (t < 0.5f) a else b) else a.indices.map { androidx.compose.ui.graphics.lerp(a[it], b[it], t) }
+
+        /** The in-between look of a time-of-day cross-fade: every color / opacity lerps, the discrete bits (tone, wall ink) follow [to]. */
+        fun lerp(from: SeasonSurfaces, to: SeasonSurfaces, t: Float): SeasonSurfaces = when {
+            t <= 0f -> from
+            t >= 1f -> to
+            else -> to.copy(
+                card = mix(from.card, to.card, t), cardOpacity = from.cardOpacity + (to.cardOpacity - from.cardOpacity) * t,
+                hero = mix(from.hero, to.hero, t), heroOpacity = from.heroOpacity + (to.heroOpacity - from.heroOpacity) * t,
+                raised = mix(from.raised, to.raised, t), cap = mixList(from.cap, to.cap, t),
+                glow = mix(from.glow, to.glow, t), text = mix(from.text, to.text, t),
+                textMuted = mix(from.textMuted, to.textMuted, t), textSecondary = mix(from.textSecondary, to.textSecondary, t),
+            )
+        }
+    }
 }

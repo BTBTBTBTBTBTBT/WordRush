@@ -34,7 +34,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -429,21 +428,15 @@ fun FriendsScreen(
 
     // Unfriend confirm (§225).
     unfriendTarget?.let { target ->
-        AlertDialog(
-            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
-            onDismissRequest = { unfriendTarget = null },
-            containerColor = FRIENDS_SHEET,
-            title = { Text("Unfriend ${target.username}?", fontWeight = FontWeight.Black, fontFamily = Nunito, color = FriendsPink.heading) },
-            text = { Text("You can re-add them anytime.", fontFamily = Nunito, fontWeight = FontWeight.Bold, color = FriendsPink.muted) },
-            confirmButton = {
-                CastButton("Unfriend", onClick = {
-                    val id = target.id
-                    unfriendTarget = null
-                    scope.launch { FriendsService.remove(id); FriendsService.load(force = true) }
-                }, color = CastColor.PINK, size = CastSize.M)
-            },
-            dismissButton = {
-                CastButton("Keep", onClick = { unfriendTarget = null }, color = CastColor.SLATE, size = CastSize.M)
+        // Parity audit 10-16: the family confirm sheet (iOS FriendsPanelView.familyConfirm), same copy.
+        FamilyConfirm(
+            title = "Unfriend ${target.username}?", message = "You can re-add them anytime.",
+            confirm = "Unfriend", cancel = "Keep", danger = true,
+            onDismiss = { unfriendTarget = null },
+            onConfirm = {
+                val id = target.id
+                unfriendTarget = null
+                scope.launch { FriendsService.remove(id); FriendsService.load(force = true) }
             },
         )
     }
@@ -532,7 +525,7 @@ private fun InvitesSection(
                 }
                 inviteNote?.let {
                     Text(
-                        it, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.sub,
+                        it, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = com.wordocious.app.ui.theme.WTheme.wallInk() ?: FriendsPink.sub,
                         modifier = Modifier.squishClickable(label = null) { inviteNote = null },
                     )
                 }

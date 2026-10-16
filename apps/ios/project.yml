@@ -120,6 +120,11 @@ targets:
         # App Tracking Transparency prompt copy. AdsManager requests ATT itself,
         # once, before the LevelPlay SDK initializes (LevelPlay has no CMP).
         NSUserTrackingUsageDescription: Allow tracking to show you more relevant ads. Wordocious never sells your data.
+        # Share sheet (share_sheet_v2): "Save image" adds a card to Photos (add-only, no library read).
+        NSPhotoLibraryAddUsageDescription: Save your Wordocious share card to your photos.
+        # Share sheet: WhatsApp's image hand-off checks whether the app is installed before it offers the tile.
+        LSApplicationQueriesSchemes:
+          - whatsapp
         # Camera permission — used only when taking a new profile photo.
         NSCameraUsageDescription: Take a photo for your Wordocious profile picture.
         # SKAdNetwork attribution. su67r6k2v3 is ironSource's own id (LevelPlay

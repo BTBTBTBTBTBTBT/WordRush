@@ -2,7 +2,8 @@ import SwiftUI
 import UIKit
 
 /// Living wallpapers (FRIDAY-QUEUE items 15 + 45): slow drifting things on a MENU page's wall. Letter tiles
-/// (Default / Dark), bubbles (Ocean), leaves (Forest) and, while Seasonal is on, bats + a witch fly-by + fog + stars.
+/// (Default / Dark), bubbles (Ocean), leaves (Forest) and, while Seasonal is on, bats + a witch fly-by + fog + stars
+/// (Halloween) or a slow V of geese (Thanksgiving, 10-16).
 /// Never in a game board or a VS board (PageBackground only mounts it on menu tints).
 /// Founder 10-10 (smoothness, measured): the wall is REAL Core Animation now. Each drifting thing is one small CALayer
 /// with looping CABasicAnimation / CAKeyframeAnimation (same art, density, speeds, paths), so the render server moves
@@ -289,9 +290,10 @@ final class WallpaperView: UIView {
         // MARK: Seasonal (stars, fog, bats, witch)
 
         func seasonal(_ a: ThemeKit.SeasonalAmbient) {
+            // Every part is optional (Halloween: stars + fog + bats + witch; Thanksgiving: a flock of geese + a few stars).
             // Stars twinkle in the upper half.
-            let stars = Int((Double(a.stars.count) * trim).rounded())
-            let starColor = UIColor(Color(hexString: a.stars.color) ?? .yellow)
+            let stars = a.stars.map { Int((Double($0.count) * trim).rounded()) } ?? 0
+            let starColor = UIColor(Color(hexString: a.stars?.color ?? "") ?? .yellow)
             for i in 0..<stars {
                 let dur = lerp(3, 7, unit(i, 13))
                 let phase = unit(i, 14)
@@ -324,32 +326,32 @@ final class WallpaperView: UIView {
                 }
             }
             // Fog drifting along the bottom.
-            if let fogImg = WallpaperView.sprite("ambient-\(a.fog.sprite)") {
+            if let fog = a.fog, let fogImg = WallpaperView.sprite("ambient-\(fog.sprite)") {
                 let fogW = size.width * 1.3
                 let fogH = fogW * CGFloat(fogImg.height) / max(CGFloat(fogImg.width), 1)
-                let l = layer(fogImg, fogW, fogH, opacity: a.fog.opacity)
+                let l = layer(fogImg, fogW, fogH, opacity: fog.opacity)
                 let cy = size.height - fogH / 2
                 let cx = { (fp: Double) in -size.width * 0.14 + fp * size.width * 0.1 + fogW / 2 }
                 let fp = { (f: Double) in (1 + sin(f * .pi * 2)) / 2 }
-                let f0 = still ? 0.0 : wrap(now / a.fog.duration)
+                let f0 = still ? 0.0 : wrap(now / fog.duration)
                 l.position = CGPoint(x: cx(still ? 0.5 : fp(f0)), y: cy)
                 if !still {
                     // The drift is ~1 pt/s: stepped 5 times a second (a device pixel at a time) it looks the same, and the
                     // render server re-composites this wide translucent layer 5x a second instead of every frame.
-                    let steps = max(8, Int(a.fog.duration * 5))
+                    let steps = max(8, Int(fog.duration * 5))
                     let fogAnim = CAKeyframeAnimation(keyPath: "position.x")
                     fogAnim.values = (0..<steps).map { cx(fp(Double($0) / Double(steps))) }
                     fogAnim.calculationMode = .discrete
-                    l.add(loop(fogAnim, a.fog.duration, f0), forKey: "fog")
+                    l.add(loop(fogAnim, fog.duration, f0), forKey: "fog")
                 }
             }
             // Bats cross the sky at their own heights.
-            let bats = max(1, Int((Double(a.bats.count) * trim).rounded()))
-            if let batImg = WallpaperView.sprite("ambient-\(a.bats.sprite)") {
+            if let batsSpec = a.bats, let batImg = WallpaperView.sprite("ambient-\(batsSpec.sprite)") {
+                let bats = max(1, Int((Double(batsSpec.count) * trim).rounded()))
                 for i in 0..<bats {
-                    let w = lerp(a.bats.size[0], a.bats.size[1], unit(i, 21))
+                    let w = lerp(batsSpec.size[0], batsSpec.size[1], unit(i, 21))
                     let h = w * 0.69
-                    let dur = lerp(a.bats.duration[0], a.bats.duration[1], unit(i, 23))
+                    let dur = lerp(batsSpec.duration[0], batsSpec.duration[1], unit(i, 23))
                     let phase = unit(i, 24)
                     let f0 = still ? 0.7 : wrap(now / dur + phase)
                     func center(_ f: Double) -> CGPoint {
@@ -370,6 +372,8 @@ final class WallpaperView: UIView {
                     }
                 }
             }
+            if let flock = a.flock { self.flock(flock) }
+            guard let witch = a.witch else { return }
             // The witch flies by once per `every` seconds (hidden while frozen). Every third pass she crosses the wall's own
             // moon (a silhouette against it), on a gentle climb: one 3-pass cycle, shown for the first 20% of each pass.
             #if DEBUG
@@ -378,8 +382,8 @@ final class WallpaperView: UIView {
             #else
             let parkOnMoon = false
             #endif
-            guard !still || parkOnMoon, let witchImg = WallpaperView.sprite("ambient-\(a.witch.sprite)") else { return }
-            let w = CGFloat(a.witch.size)
+            guard !still || parkOnMoon, let witchImg = WallpaperView.sprite("ambient-\(witch.sprite)") else { return }
+            let w = CGFloat(witch.size)
             let h = w * CGFloat(witchImg.height) / max(CGFloat(witchImg.width), 1)
             let moon = WitchMoon.center(in: size)
             /// The witch's center at progress `p` (0...1) of a pass; `moonPass` = the climb across the moon.
@@ -394,7 +398,7 @@ final class WallpaperView: UIView {
                 l.position = moon
                 return
             }
-            let every = a.witch.every
+            let every = witch.every
             let cycle = every * 3
             var times: [NSNumber] = [], pts: [NSValue] = [], opTimes: [NSNumber] = [], ops: [Float] = []
             let eps = 0.0005
@@ -420,6 +424,103 @@ final class WallpaperView: UIView {
             l.opacity = 0
             l.add(loop(pos, cycle, frac), forKey: "fly")
             l.add(loop(op, cycle, frac), forKey: "show")
+        }
+
+        // MARK: Flock (the V of geese, 10-16)
+
+        /// The V the Thanksgiving wall engine baked (geese_v: lead + two trailing arms, 0.92 L step, 0.30 spread, the
+        /// upper arm a little tighter), from one goose sprite so each bird beats its wings with the bats' scaleY squash
+        /// (slower, about the body at the bottom of the sprite), out of step. Same numbers as web theme-wall.tsx
+        /// flockGeese / Android ThemeKit.flockGeese. Returns each goose's offset from the lead (pt), width, index.
+        func flockGeese(_ count: Int, _ size: Double, _ direction: Double, _ salt: Double) -> (geese: [(x: Double, y: Double, w: Double, k: Int)], trail: Double) {
+            let L = size * 0.56                       // the sprite is 1.78 L wide (goose() spans -0.70 L .. 1.00 L + padding)
+            let perArm = (count - 1) / 2
+            var geese: [(x: Double, y: Double, w: Double, k: Int)] = [(0, 0, size, 0)]
+            var k = 1
+            for (dy, tight, extra) in [(-1.0, 0.78, 0), (1.0, 1.0, (count - 1) % 2)] {
+                if perArm + extra >= 1 {
+                    for i in 1...(perArm + extra) {
+                        geese.append((
+                            x: -direction * (Double(i) * L * 0.92 + lerp(-0.05, 0.05, unit(k, salt + 1)) * L),
+                            y: dy * Double(i) * L * 0.30 * tight + lerp(-0.06, 0.06, unit(k, salt + 2)) * L,
+                            w: size * lerp(0.86, 1.0, unit(k, salt + 3)),
+                            k: k))
+                        k += 1
+                    }
+                }
+            }
+            return (geese, Double(perArm) * L * 0.92 + size)
+        }
+
+        /// Two flocks: 0 = always on its way across (one slow linear pass, 40-70 s, with a gentle rise and fall);
+        /// 1 = a smaller one that passes once every third cycle and is hidden the rest of the time (like the witch).
+        /// Frozen: the main flock parks mid sky (where the wall used to bake it), the rare one stays hidden.
+        func flock(_ f: ThemeKit.SeasonalAmbient.Flock) {
+            guard let img = WallpaperView.sprite("ambient-\(f.sprite)") else { return }
+            let direction: Double = f.direction < 0 ? -1 : 1
+            for which in 0...(trim >= 1 ? 1 : 0) {
+                let rare = which == 1
+                let count = rare ? max(3, f.count - 2) : f.count
+                let gw = lerp(f.size[0], f.size[1], unit(which, 31)) * (rare ? 0.8 : 1)   // one goose's width (pt)
+                let dur = lerp(f.duration[0], f.duration[1], unit(which, 32)) * (rare ? 1.15 : 1)
+                let (geese, trail) = flockGeese(count, gw, direction, 40 + Double(which) * 10)
+                let top = lerp(f.band[0], f.band[1], unit(which, 33)) / 100 * size.height
+                // Heading right: the lead enters at -10% and leaves at 110% + trail (the last goose off screen both ends).
+                let x0 = direction > 0 ? -0.1 * size.width : 1.1 * size.width + trail
+                let x1 = direction > 0 ? 1.1 * size.width + trail : -0.1 * size.width
+                func leadAt(_ p: Double) -> CGPoint { CGPoint(x: lerp(x0, x1, p), y: top + sin(p * .pi * 2) * -0.012 * size.height) }
+                if rare && still { continue }
+                let group = CALayer()
+                group.bounds = CGRect(x: 0, y: 0, width: 1, height: 1)
+                group.allowsEdgeAntialiasing = true
+                holder.addSublayer(group)
+                for g in geese {
+                    let l = CALayer()
+                    l.bounds = CGRect(x: 0, y: 0, width: g.w, height: g.w / 2)
+                    l.contents = img
+                    l.contentsGravity = .resize
+                    l.contentsScale = scale
+                    l.allowsEdgeAntialiasing = true
+                    l.anchorPoint = CGPoint(x: 0.5, y: 0.85)      // the body: the wings beat about it
+                    l.position = CGPoint(x: g.x, y: g.y + g.w / 2 * 0.35)
+                    group.addSublayer(l)
+                    if still {
+                        l.transform = CATransform3DMakeScale(CGFloat(direction), 1, 1)
+                    } else {
+                        let flapPhase = unit(g.k, 35 + Double(which))
+                        let flap = { (f: Double) in 0.80 + 0.20 * sin(f * .pi * 2) }
+                        let g0 = wrap(now / 1.1 + flapPhase)
+                        l.transform = CATransform3DMakeScale(CGFloat(direction), CGFloat(flap(g0)), 1)
+                        l.add(sampled("transform.scale.y", 12, 1.1, g0) { flap($0) }, forKey: "flap")
+                    }
+                }
+                if still {
+                    group.position = leadAt(0.5)
+                    continue
+                }
+                if !rare {
+                    let f0 = wrap(now / dur + unit(which, 34))
+                    group.position = leadAt(f0)
+                    group.add(sampled("position", 96, dur, f0) { NSValue(cgPoint: leadAt($0)) }, forKey: "cross")
+                } else {
+                    let cycle = dur * 3
+                    var times: [NSNumber] = [], pts: [NSValue] = []
+                    for j in 0...48 {
+                        let p = Double(j) / 48
+                        times.append(NSNumber(value: p / 3)); pts.append(NSValue(cgPoint: leadAt(p)))
+                    }
+                    times.append(1); pts.append(pts.last!)
+                    let frac = wrap(now / cycle)
+                    let pos = CAKeyframeAnimation(keyPath: "position")
+                    pos.values = pts; pos.keyTimes = times; pos.calculationMode = .linear
+                    let op = CAKeyframeAnimation(keyPath: "opacity")
+                    let eps = 0.0005
+                    op.values = [1, 1, 0, 0] as [Float]; op.keyTimes = [0, NSNumber(value: 1.0 / 3), NSNumber(value: 1.0 / 3 + eps), 1]; op.calculationMode = .linear
+                    group.opacity = 0
+                    group.add(loop(pos, cycle, frac), forKey: "cross")
+                    group.add(loop(op, cycle, frac), forKey: "show")
+                }
+            }
         }
     }
 }

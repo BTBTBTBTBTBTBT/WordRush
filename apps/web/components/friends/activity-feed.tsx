@@ -21,7 +21,7 @@ import { CandyButton } from '@/components/ui/candy-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { ART_SIZE, PAGE_SCENES, artSrc, poseArt, type PoseArtName } from '@/lib/art';
 import { FR_LOOK, frSurface, momentAccent, momentKey, momentPoses, numberRuns } from '@/lib/friends-look';
-import { softMix } from '@/lib/soft-surface';
+import { softMix, softMixCss } from '@/lib/soft-surface';
 import { haptic } from '@/lib/haptics';
 import { ReactionIcon, REACTION_TINT } from './reaction-icon';
 
@@ -236,7 +236,7 @@ export function ActivityFeed({ onRematch }: Props) {
       {events === null ? (
         <FrCard accent={FR_LOOK.pink}>
           <div className="p-3 space-y-2 animate-pulse" aria-hidden>
-            {[0, 1, 2].map((i) => <div key={i} className="h-8 rounded-xl" style={{ background: softMix(FR_LOOK.pink, 0.16) }} />)}
+            {[0, 1, 2].map((i) => <div key={i} className="h-8 rounded-xl" style={{ background: softMixCss(FR_LOOK.pink, 0.16) }} />)}
           </div>
         </FrCard>
       ) : events.length === 0 ? (
@@ -304,7 +304,7 @@ export function ActivityFeed({ onRematch }: Props) {
                             className="relative flex items-center gap-1 pl-1 pr-2 text-[11px] font-black rounded-full"
                             style={{
                               height: 26,
-                              background: `linear-gradient(180deg, ${softMix(accent, c.mine ? 0.2 : 0.08)}, ${softMix(accent, c.mine ? 0.32 : 0.16)})`,
+                              background: `linear-gradient(180deg, ${softMixCss(accent, c.mine ? 0.2 : 0.08)}, ${softMixCss(accent, c.mine ? 0.32 : 0.16)})`,
                               // BJ7: no outlined chips — mine reads by its deeper wash.
                               boxShadow: c.mine ? `inset 0 1px 0 rgba(255,255,255,0.7), 0 0 0 2px ${softMix(accent, 0.45)}` : 'inset 0 1px 0 rgba(255,255,255,0.7)',
                               color: FR_LOOK.ink,
@@ -353,7 +353,7 @@ export function ActivityFeed({ onRematch }: Props) {
                       bottom: 'calc(100% - 4px)',
                       // AM1: a tinted candy tray (glossy pink wash, white top light, soft drop).
                       ...frSurface(FR_LOOK.pink, { share: 0.1, radius: 999 }),
-                      background: `linear-gradient(180deg, ${softMix(FR_LOOK.pink, 0.14)}, ${softMix(FR_LOOK.pink, 0.26)})`,
+                      background: `linear-gradient(180deg, ${softMixCss(FR_LOOK.pink, 0.14)}, ${softMixCss(FR_LOOK.pink, 0.26)})`,
                       boxShadow: `inset 0 2px 0 rgba(255,255,255,0.75), inset 0 -3px 0 ${softMix(FR_LOOK.pink, 0.36)}, 0 10px 26px rgba(60,30,110,0.2)`,
                     }}
                     onClick={(ev) => ev.stopPropagation()}

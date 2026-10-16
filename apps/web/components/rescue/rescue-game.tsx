@@ -19,8 +19,8 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { shareResult } from '@/lib/share-utils';
-import { chooseShareVariant } from '@/components/share/share-variant-modal';
+import { shareFinished } from '@/lib/share-finished-flow';
+import { useShareSheetFlag } from '@/hooks/use-share-sheet-flag';
 import { boardToGrid, boardToLetters } from '@/lib/share-grid';
 import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
@@ -168,24 +168,27 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
     : computeScoreBreakdown('RESCUE', state.status === 'WON', guessesUsed, elapsedTime, state.boards.filter(b => b.status === 'WON').length, 4, 0, undefined, undefined, isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined).total;
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
+  const shareSheetOn = useShareSheetFlag();
   const handleShare = useCallback(async () => {
-    const variant = await chooseShareVariant();
-    if (!variant) return;
     const boards = state.boards.map(b => ({ grid: boardToGrid(b), letters: boardToLetters(b), won: b.status === 'WON', solution: b.solution }));
-    const out = await shareResult({
-      layout: 'multi',
-      mode: 'Deliverance',
-      won: state.status === 'WON',
-      guesses: guessesUsed,
-      maxGuesses: maxGuesses,
-      timeSeconds: elapsedTime,
-      boards,
-      boardsSolved: completedBoards,
-      totalBoards: 4,
-      reveal: variant === 'full',
+    const copied = await shareFinished({
+      sheet: shareSheetOn, catalogMode: 'rescue', gameName: 'Deliverance', isDaily: !!isDaily, won: state.status === 'WON',
+      multi: true, guesses: guessesUsed, timeSeconds: elapsedTime, boardsTotal: 4,
+      build: (reveal) => ({
+        layout: 'multi',
+        mode: 'Deliverance',
+        won: state.status === 'WON',
+        guesses: guessesUsed,
+        maxGuesses: maxGuesses,
+        timeSeconds: elapsedTime,
+        boards,
+        boardsSolved: completedBoards,
+        totalBoards: 4,
+        reveal,
+      }),
     });
-    if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
-  }, [state, guessesUsed, maxGuesses, elapsedTime, completedBoards]);
+    if (copied) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [state, guessesUsed, maxGuesses, elapsedTime, completedBoards, isDaily, shareSheetOn]);
 
   const handleRestart = () => {
     const newSeed = Date.now().toString();

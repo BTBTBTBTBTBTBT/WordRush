@@ -20,7 +20,7 @@ import { prefersReducedMotion } from '@/lib/motion';
 import { haptic } from '@/lib/haptics';
 import { BubbleOneLine } from '@/components/ui/bubble-text';
 import type { TrayState } from '@/lib/game-tray';
-import { softMix } from '@/lib/soft-surface';
+import { softMix, softMixCss } from '@/lib/soft-surface';
 import {
   CHAIN_BOARD_H, CHAIN_BOARD_W, CHAIN_INTERIOR, CHAIN_LINK_ASPECT, GHOST_PANEL, GHOST_TRAY_H, GHOST_TRAY_W, PASS_TRAY_H, PASS_TRAY_W,
   TTT_GRID_H, TTT_GRID_W, chainInputTile, chainLayout, ghostTileSize, passGeometry, tttCell, tttStrike,
@@ -36,7 +36,7 @@ import {
 // the actions are candy buttons.
 
 /** The light lilac wash every empty tile / key / pick card takes (A1: never plain white). */
-const EMPTY = { background: softMix('#7c3aed', 0.08), border: `1.5px solid ${softMix('#7c3aed', 0.26)}` } as const;
+const EMPTY = { background: softMixCss('#7c3aed', 0.08), border: `1.5px solid ${softMixCss('#7c3aed', 0.26)}` } as const;
 /** A key / pick card's soft bottom lip. */
 const LIP = `inset 0 -2.5px 0 ${softMix('#7c3aed', 0.3)}`;
 
@@ -1091,7 +1091,7 @@ export function ChainBoard({ state, me, them, active, busy, onMove, error }: Boa
               : ch
                 ? { ...EMPTY, color: '#2a1650', boxShadow: '0 0 0 2px #c4b5fd' }
                 : optional
-                  ? { background: softMix('#7c3aed', 0.04), color: '#2a1650', border: '1.5px dashed #c4b5fd' }
+                  ? { background: softMixCss('#7c3aed', 0.04), color: '#2a1650', border: '1.5px dashed #c4b5fd' }
                   : { ...EMPTY, color: '#2a1650', boxShadow: LIP };
             return (
               <span

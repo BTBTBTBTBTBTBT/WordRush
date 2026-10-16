@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -259,22 +258,16 @@ fun InvitePanel() {
     )
 
     cancelTarget?.let { target ->
-        AlertDialog(
-            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
-            onDismissRequest = { cancelTarget = null },
-            // A1: a gold-tinted dialog (the Friends page is fixed light).
-            containerColor = Wash.mix(GIFT_GOLD, 0.10f),
-            title = { Text("Cancel invite ${target.code}?", fontWeight = FontWeight.Black, fontFamily = Nunito, color = FinishInk.heading) },
-            text = { Text("The link stops working immediately and your invite slot frees up.", fontFamily = Nunito, color = FinishInk.label) },
-            confirmButton = {
-                CastButton("Cancel invite", onClick = {
-                    val id = target.id
-                    cancelTarget = null
-                    scope.launch { ReferralService.cancelInvite(id); reload++ }
-                }, color = CastColor.PINK, size = CastSize.M)
-            },
-            dismissButton = {
-                CastButton("Keep it", onClick = { cancelTarget = null }, color = CastColor.SLATE, size = CastSize.M)
+        // Parity audit 10-16: the family confirm sheet (iOS InvitePanelView.familyConfirm), same copy.
+        FamilyConfirm(
+            title = "Cancel invite ${target.code}?",
+            message = "The link stops working immediately and your invite slot frees up.",
+            confirm = "Cancel invite", cancel = "Keep it", danger = true,
+            onDismiss = { cancelTarget = null },
+            onConfirm = {
+                val id = target.id
+                cancelTarget = null
+                scope.launch { ReferralService.cancelInvite(id); reload++ }
             },
         )
     }

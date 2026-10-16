@@ -763,6 +763,8 @@ extension ShareService {
     /// §S1: present the share sheet with the image(s) ONLY — no URL, no text.
     @MainActor
     static func presentImages(_ images: [UIImage], game: String) {
+        // The custom share sheet renders a card by running the call site's share closure; keep the images, show nothing.
+        if ShareCaptureState.active { ShareCapture.append(images); return }
         present(items: images.map { ShareImageItem(image: $0, game: game) })
     }
 

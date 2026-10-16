@@ -137,7 +137,7 @@ struct AppHeaderView: View {
             HStack(spacing: 5) {
                 Icon3D(icon, size: HeaderControl.icon)
                     .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: 2.5, x: 0, y: 3)
-                Text("\(value)").softNumber(17)
+                Text("\(value)").softNumber(17, color: SeasonSurface.wallInk())
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }

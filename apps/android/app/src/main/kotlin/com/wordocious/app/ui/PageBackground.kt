@@ -135,6 +135,14 @@ private const val CONTRAST_VEIL_DARK = 0.70f
  * resolution); it is decoded scaled to the screen's width, so a 1080-px phone holds
  * ≈ 10 MB per wallpaper and the cache keeps the last three or four.
  */
+/** The outgoing wall of a time-of-day cross-fade (see wallpaperBackground); plain fields, read in the draw pass. */
+private class WallFade {
+    var wall: ImageBitmap? = null
+    var tod: com.wordocious.core.TimeOfDay? = null
+    var prev: ImageBitmap? = null
+    var pending: Boolean = false
+}
+
 private object Wallpapers {
     private const val ART_WIDTH = 1179
     private val cache = object : android.util.LruCache<Int, ImageBitmap>(40 * 1024 * 1024) {
@@ -197,7 +205,7 @@ fun preloadWallpaper(context: android.content.Context, @DrawableRes res: Int) {
  */
 fun introSeasonWallpaper(context: android.content.Context, season: String?): ImageBitmap? {
     if (season == null) return null
-    val res = SeasonKit.wall(context, R.drawable.art_wall_home, season, true) ?: return null
+    val res = SeasonKit.wall(context, R.drawable.art_wall_home, season, true, TimeOfDayState.slot) ?: return null
     return Wallpapers.get(context, res)
 }
 
@@ -262,15 +270,47 @@ private fun Modifier.wallpaperBackground(
     val context = LocalContext.current
     // Season preview: the season's calm wallpaper (light twin in light mode); its own art, so no tiles.
     val season = rememberSeason()
-    val seasonal = remember(res, season, isDark) { res?.let { SeasonKit.wall(context, it, season, isDark) } }
+    // Time of day (founder 10-16): the season's wall for the current slot (night art whenever that time's file doesn't ship).
+    val tod = TimeOfDayState.slot
+    val seasonal = remember(res, season, isDark, tod) { res?.let { SeasonKit.wall(context, it, season, isDark, tod) } }
     val shown = seasonal ?: res
     val wall: ImageBitmap? = remember(shown) { shown?.let { Wallpapers.get(context, it) } }
+    // The 600 ms slot cross-fade: two static layers, an alpha on the top one; no per-frame decode or layout. The outgoing wall is held
+    // here from the composition the slot changes in (so the new wall never pops in for a frame), then released.
+    val wallFade = remember { WallFade() }
+    if (wallFade.wall !== wall) {
+        val old = wallFade.wall
+        if (old != null && wall != null && wallFade.tod != tod && season != null && !WTheme.reducedMotion) {
+            wallFade.prev = old
+            wallFade.pending = true
+        } else wallFade.prev = null
+        wallFade.wall = wall
+    }
+    wallFade.tod = tod
+    val fadeAlpha = remember { androidx.compose.animation.core.Animatable(1f) }
+    LaunchedEffect(wall) {
+        if (wallFade.pending) {
+            fadeAlpha.snapTo(0f)
+            wallFade.pending = false
+            fadeAlpha.animateTo(1f, androidx.compose.animation.core.tween(com.wordocious.core.TimeOfDay.FADE_MS, easing = androidx.compose.animation.core.LinearEasing))
+            wallFade.prev = null
+        } else fadeAlpha.snapTo(1f)
+    }
+    // Perf: decode the NEXT slot's wall off the main thread a couple of minutes before the boundary (nothing to do while pinned).
+    LaunchedEffect(res, season, isDark, tod) {
+        if (season == null || res == null || TimeOfDayState.pref != null) return@LaunchedEffect
+        kotlinx.coroutines.delay((TimeOfDayState.msToNextChange() - 120_000L).coerceAtLeast(0L))
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            SeasonKit.wall(context, res, season, isDark, TimeOfDayState.next(tod))?.let { preloadWallpaper(context, it) }
+        }
+    }
     // Item 25: the theme's wall, drawn in code from the registry (a season's own wall wins). Reading the palette makes a Settings pick recompose.
     val themeId = remember(WTheme.palette) { com.wordocious.app.data.ThemeChoiceRules.fromStored(com.wordocious.app.data.ThemePref.current()) }
     val themeWall = if (menu && season == null && !(alwaysLight && themeId == "dark")) ThemeKit.wallLook(themeId, false) else null
     val ambientOn = menu && com.wordocious.app.data.FlagsService.isLive("living_wallpapers")
     // Founder 10-10 (smoothness): a theme with no drifting things (and no season) never ticks the clock.
-    val moving = ambientOn && (season != null || (ThemeKit.entry(themeId)?.ambient?.count ?: 0) > 0)
+    // 10-16: a season without its own ambient (Thanksgiving) draws the base theme's, so it ticks only when that has sprites.
+    val moving = ambientOn && (ThemeKit.seasonal(season)?.ambient != null || (ThemeKit.entry(themeId)?.ambient?.count ?: 0) > 0)
     val clock = ThemeKit.rememberClock(moving)
     val tiles = if (seasonal != null || themeWall != null) null else tiles
     // Season surfaces: the season wall is the finished backdrop (a dark-tone wall is already night
@@ -306,6 +346,23 @@ private fun Modifier.wallpaperBackground(
             } else if (wall == null || wall.width <= 0 || wall.height <= 0) {
                 // Fallback: the tint's gradient, top-left → bottom-right of the window.
                 drawRect(Brush.linearGradient(stops, start = -origin, end = Offset(root.width, root.height) - origin))
+            } else if (wallFade.prev != null) {
+                // Mid cross-fade (time of day): the outgoing wall opaque, the incoming one over it at the fade's alpha.
+                val prev = wallFade.prev!!
+                val a = if (wallFade.pending) 0f else fadeAlpha.value
+                clipRect {
+                    for ((bmp, alpha) in listOf(prev to 1f, wall to a)) {
+                        if (alpha <= 0f) continue
+                        val sc = ContentScale.Crop.computeScaleFactor(Size(bmp.width.toFloat(), bmp.height.toFloat()), root)
+                        val d = Size(bmp.width * sc.scaleX, bmp.height * sc.scaleY)
+                        drawImage(
+                            bmp,
+                            dstOffset = IntOffset(((root.width - d.width) / 2f - origin.x).roundToInt(), ((root.height - d.height) / 2f - origin.y).roundToInt()),
+                            dstSize = IntSize(d.width.roundToInt(), d.height.roundToInt()),
+                            alpha = alpha, filterQuality = FilterQuality.Medium,
+                        )
+                    }
+                }
             } else if (bakeKey != null && BakedWalls.peek(bakeKey) != null) {
                 val baked = BakedWalls.peek(bakeKey)!!
                 clipRect {

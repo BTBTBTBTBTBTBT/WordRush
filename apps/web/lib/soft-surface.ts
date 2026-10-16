@@ -61,6 +61,16 @@ export function softMix(accent: string, share: number, base = '#ffffff'): string
 }
 
 /**
+ * `softMix` as a CSS color that follows the season window (10-16 time of day): the accent at `share` over the season's opaque
+ * card (`--season-tile-base`, set only while a dark season shows and re-tinted per time) and over white everywhere else, so
+ * a pill / chip / stripe background tints with the sky and is unchanged out of season. Background / border use only (the
+ * result is a `color-mix()` string, not a hex).
+ */
+export function softMixCss(accent: string, share: number, base = '#ffffff'): string {
+  return `color-mix(in srgb, ${accent} ${Math.round(share * 100)}%, var(--season-tile-base, ${base}))`;
+}
+
+/**
  * The alpha a border needs, drawn over a background that already carries the
  * accent at `under`, so the two together read as the accent at `total`:
  * 1 − (1 − total) / (1 − under). (A border paints over its own background.)

@@ -87,6 +87,8 @@ export const NEW_ACHIEVEMENTS: readonly AchievementCatalogEntry[] = [
   e('dress_up', 'Dress Up', 'Save a mascot with a hat, an extra and a backdrop', 'mascot', 'sparkles'),
   // Moments
   e('spooky_season', 'Spooky Season', 'Finish a daily during the Halloween season', 'seasonal', 'calendar'),
+  // Thanksgiving (founder 10-16): the same one-moment badge, gated to the Nov 14 – 29 window (momentAchievements)
+  e('harvest_feast', 'Harvest Feast', 'Finish a daily during the Thanksgiving season', 'seasonal', 'calendar'),
   e('early_bird', 'Early Bird', 'Finish a daily before 7 AM', 'streaks', 'calendar'),
   e('night_owl', 'Night Owl', 'Finish a daily between midnight and 4 AM', 'streaks', 'calendar'),
   // The musical cast (secret: listed only once unlocked; musical-cast.ts MUSICAL_MELODIES)
@@ -103,6 +105,12 @@ export const NEW_ACHIEVEMENTS: readonly AchievementCatalogEntry[] = [
   secret('tune_danse_macabre', 'Danse Macabre', 'Played Danse Macabre on the cast'),
   secret('tune_bald_mountain', 'Bald Mountain', 'Played Night on Bald Mountain on the cast'),
   secret('tune_sorcerers_apprentice', "Sorcerer's Apprentice", "Played The Sorcerer's Apprentice on the cast"),
+  // Thanksgiving tunes (founder 10-16): playable only in season (musical-cast.ts THANKSGIVING_MELODIES); the
+  // achievements stay forever. One per wired tune: the rest of the batch joins as its notation is checked.
+  secret('tune_simple_gifts', 'Simple Gifts', 'Played Simple Gifts on the cast'),
+  secret('tune_we_gather', 'We Gather Together', 'Played We Gather Together on the cast'),
+  secret('tune_thankful_people', 'Thankful People', 'Played Come, Ye Thankful People, Come on the cast'),
+  secret('tune_now_thank', 'Now Thank We', 'Played Now Thank We All Our God on the cast'),
 ];
 
 /** The secret keys: awarded, but a locked one is never listed (it appears once unlocked). */
@@ -251,12 +259,16 @@ export function avatarAchievements(config: { head?: string; face?: string; neck?
 /**
  * A daily finished at the player's LOCAL hour (0–23) in `season`: Night Owl
  * from midnight to 4 AM, Early Bird from 4 to 7 AM (so one finish never earns
- * both), Spooky Season during the Halloween season.
+ * both), Spooky Season during the Halloween season, Harvest Feast during
+ * Thanksgiving. `season` is `currentSeason(today)`: a not-ready season is null
+ * there, so the public never earns a season badge before its art ships (the
+ * admin preview passes the id straight through).
  */
 export function momentAchievements(m: { localHour: number; season: string | null }): string[] {
   return keep([
     m.localHour >= 0 && m.localHour < 4 && 'night_owl',
     m.localHour >= 4 && m.localHour < 7 && 'early_bird',
     m.season === 'halloween' && 'spooky_season',
+    m.season === 'thanksgiving' && 'harvest_feast',
   ]);
 }

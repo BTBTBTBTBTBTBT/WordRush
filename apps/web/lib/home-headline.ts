@@ -5,7 +5,7 @@
 // its own gold line(s) when the greeting doesn't fit on one. Pure; the look lives in
 // components/home/home-banner.tsx.
 
-import { homeHeadlineFit, type HeadlineLayout } from '@wordle-duel/core';
+import { MIN_FIT_SCALE, bubbleFit, headlineFontSize, homeHeadlineFit, type HeadlineLayout } from '@wordle-duel/core';
 
 /** A LiveHeadline line box in em: .lh line-height 1.12 + its 0.08 / 0.16 em padding (globals.css). */
 export const HEADLINE_LINE_EM = 1.36;
@@ -29,12 +29,22 @@ export function headlineTextWidth(slotWidth: number): number {
   return Math.max(60, w - 2 * HEADLINE_SPARKLE_ROOM);
 }
 
-/** One headline laid out for a slot `slotWidth` px wide (the size never shrinks for a long name). */
-export function homeHeadlineLayout(slotWidth: number, headline: string, name: string): HomeHeadlineLayout {
+/**
+ * One headline laid out for a slot `slotWidth` px wide (the size never shrinks for a long name). `pool` = a line from
+ * the headline pool (home_headlines_v2): it was picked to fit two lines at >= MIN_FIT_SCALE of the device's size, so
+ * it wraps at that floor (maxLines 2) instead of shrinking the way a legacy line may (the same rule as core's
+ * headlineFitsSlot, so the words shown are the words checked).
+ */
+export function homeHeadlineLayout(slotWidth: number, headline: string, name: string, pool = false): HomeHeadlineLayout {
   const textWidth = headlineTextWidth(slotWidth);
   // 2.8 item 6: core's bubble-text fit — the name keeps its stacked gold lines; every other
   // headline that is too long wraps in balanced lines (never a shrink-and-clip, never "…").
-  const fit = homeHeadlineFit(headline, name, textWidth);
+  let fit = homeHeadlineFit(headline, name, textWidth);
+  if (pool && fit.nameLines.length === 0) {
+    const full = headlineFontSize(textWidth);
+    const minSize = Math.ceil(full * MIN_FIT_SCALE);
+    if (fit.wrapped || fit.size < minSize) fit = { ...bubbleFit(headline, textWidth, { maxSize: full, minSize, maxLines: 2 }), nameLines: [] };
+  }
   return { lines: fit.lines, nameLines: fit.nameLines, size: fit.size, lineHeight: Math.ceil(fit.size * HEADLINE_LINE_EM), textWidth };
 }
 

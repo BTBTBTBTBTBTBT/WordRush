@@ -587,7 +587,9 @@ struct PodiumView: View {
         let h = w / CGFloat(PodiumArt.aspect)
         let top = w * (shareWidth != nil ? shareHeadroom : Self.headroom)
         return ZStack(alignment: .topLeading) {
-            ArtThumbs.image("art-podium-stage", points: w)
+            // Time of day (10-16): the live podium wears the slot's stadium inside a season (the root rebuild dissolves the
+            // swap, 0.6 s, instant under Reduce Motion); share cards stay on the night stadium.
+            ArtThumbs.image(shareWidth != nil ? "art-podium-stage" : SeasonKit.podiumStage, points: w)
                 .resizable().interpolation(.high)
                 .frame(width: w, height: h)
                 .offset(y: top)
@@ -676,7 +678,7 @@ struct PodiumView: View {
 
     /// BJ2: the podium image + the pedestals decoded off main before the Leaderboard / Home first shows them.
     static func prewarm() {
-        var items: [(String, CGFloat)] = [("art-podium-stage", 400)]
+        var items: [(String, CGFloat)] = [(SeasonKit.podiumStage, 400)]
         for t in 1...3 { items.append((pedestalArt(tone: t, numbered: true), 96)) }
         ArtThumbs.prewarm(items)
     }
@@ -913,14 +915,14 @@ struct PodiumPlace: View {
                                          center: .center, startRadius: 0, endRadius: d / 2))
                     .frame(width: d, height: d).opacity(PodiumWinnerIntro.glowRestOpacity)
                     .position(x: feet.x, y: figTop + side / 2)
-            } else if first {
+            } else if first && Self.introOn {
                 PodiumWinnerGlow(diameter: side * CGFloat(PodiumWinnerIntro.glowSize))
                     .position(x: feet.x, y: figTop + side / 2)
             }
             unit(e, side: side, living: living, cw: cw, nameWidth: nameWidth, nameSize: nameSize,
                  unitH: unitH, figTop: figTop - nameTop, crownTop: crownTop - nameTop, crownSize: crownSize, first: iconCrown, ownsCard: ownsCard)
                 .position(x: feet.x, y: nameTop + unitH / 2)
-            if first && Self.sparkling && !staticShare {
+            if first && Self.introOn && Self.sparkling && !staticShare {
                 ForEach(0..<PodiumWinnerIntro.sparkleOffsets.count, id: \.self) { i in
                     let o = PodiumWinnerIntro.sparkleOffsets[i]
                     PodiumWinnerSparkle(size: side * CGFloat(PodiumWinnerIntro.sparkleSize),
@@ -940,6 +942,9 @@ struct PodiumPlace: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
+
+    /// The #1 load-in (glow + sparkles + the crown's drop) is behind the `podium_burst` switch, like Android and web.
+    private static var introOn: Bool { FlagsService.shared.isLive("podium_burst") }
 
     private static var sparkling: Bool { !(Theme.reduceMotion || ProcessInfo.processInfo.isLowPowerModeEnabled) }
 
@@ -967,7 +972,7 @@ struct PodiumPlace: View {
                 .frame(width: side, height: side)
                 .offset(x: (cw - side) / 2, y: figTop)
             if first {
-                PodiumWinnerCrown(size: crownSize)
+                PodiumWinnerCrown(size: crownSize, animate: Self.introOn)
                     .offset(x: (cw - crownSize) / 2, y: crownTop)
             }
         }
@@ -1149,12 +1154,14 @@ private struct PodiumSparkleShape: Shape {
 /// move, then back to rest. Once.
 private struct PodiumWinnerCrown: View {
     let size: CGFloat
+    /// False = the crown just sits on the head (the `podium_burst` switch is off).
+    var animate = true
     /// 0 = above (hidden), 1 = dipped slightly below rest, 2 = at rest.
     @State private var stage = 0
     @Environment(\.accessibilityReduceMotion) private var envReduce
 
     var body: some View {
-        let calm = envReduce || Theme.reduceMotion
+        let calm = envReduce || Theme.reduceMotion || !animate
         let st = calm ? 2 : stage
         Icon3D(.crown, size: size)
             .offset(y: st == 0 ? -CGFloat(PodiumWinnerIntro.crownDropPt) : (st == 1 ? CGFloat(PodiumWinnerIntro.crownSettlePt) : 0))

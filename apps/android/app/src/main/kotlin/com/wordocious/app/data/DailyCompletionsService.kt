@@ -182,6 +182,8 @@ object DailyCompletionsService {
         current[gameMode] = Completion(gameMode = gameMode, completed = completed, guessCount = guessCount, timeSeconds = timeSeconds, score = score)
         writeCache(current)
         _completionTick.value++
+        // Founder 10-16: the Home headline pool's `{last}` reaction (home_headlines_v2) reads this local record.
+        com.wordocious.app.ui.HomeHeadlineLastGame.note(gameMode, completed)
         // Home-screen widget snapshot (iOS WidgetBridge.update on record) —
         // the widget flips this chip the instant the puzzle finishes.
         com.wordocious.app.widget.WidgetBridge.update(current)

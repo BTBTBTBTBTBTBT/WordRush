@@ -100,7 +100,7 @@ struct HomeBannerView: View {
         }
     }
     /// The banner art as live figures: Flawless = D · O · I cheering under the bunting; Sweep = O cheering, S flexing,
-    /// W waving; the Halloween idle scene = the costumed O · W · R swaying slow. nil = draw the art as given.
+    /// W waving; a season's idle scene = its costumed O · W · R swaying slow. nil = draw the art as given.
     private static func liveTrio(art: String, moment: Moment?) -> CelebrationTrio? {
         func all(_ names: [String]) -> Bool { names.allSatisfy { ArtAsset.exists($0) } }
         switch moment {
@@ -110,9 +110,10 @@ struct HomeBannerView: View {
             let n = ["art-pose-o1-cheer", "art-pose-s-flex", "art-pose-w-wave"]
             return all(n) ? CelebrationTrio(images: n) : nil
         case nil:
-            guard art == "art-scene-banner-halloween" else { return nil }
-            let n = ["art-halloween-o1", "art-halloween-w", "art-halloween-r"]
-            return all(n) ? CelebrationTrio(images: n, sparkles: false, tempo: 0.7, swayDegrees: 3) : nil
+            // 10-16: every season — the season's costumed O · W · R (registry `cast` slot), not only Halloween's.
+            guard art == CastSkin.bannerArt else { return nil }
+            let n = ["o1", "w", "r"].compactMap { SeasonKit.cast($0) }
+            return n.count == 3 ? CelebrationTrio(images: n, sparkles: false, tempo: 0.7, swayDegrees: 3) : nil
         }
     }
 
@@ -360,10 +361,17 @@ struct HomeBannerView: View {
             let hour = Self.greetingHour(ctx.date)
             // §Z: both modes' headlines are laid out in one slot (the taller sets its
             // height) and crossfade, so the switch never changes the strip's height.
-            let dailyHeadline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: false,
-                                                          wordStreaks: word.streaks, puzzleStreaks: puzzles.streaks,
-                                                          dateKey: LeaderboardService.todayLocal())
-            let unlimitedHeadline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: true)
+            // Founder 10-16: behind `home_headlines_v2` (testers / admins, fail closed) the POOL picks the line
+            // (HomeHeadlinePool, parity-pinned; memoized — only a bucket / progress / last-game change recomputes).
+            let pooled = HomeHeadlinesV2.enabled
+            let dailyHeadline = pooled
+                ? HomeHeadlinesV2.headline(poolContext(hour: hour, unlimited: false), shown: !unlimited)
+                : HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: false,
+                                            wordStreaks: word.streaks, puzzleStreaks: puzzles.streaks,
+                                            dateKey: LeaderboardService.todayLocal())
+            let unlimitedHeadline = pooled
+                ? HomeHeadlinesV2.headline(poolContext(hour: hour, unlimited: true), shown: unlimited)
+                : HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: true)
             // FINISH_SPEC BI21 (founder 10-03: "fill that space better … it doesn't look
             // even"): headline centered on the card's center line, then a centered wide
             // DAILY | UNLIMITED switch, then the centered meta line.
@@ -478,6 +486,27 @@ struct HomeBannerView: View {
         return headlineRow(text, oneLine: true, trophy: trophy)
     }
 
+    /// Home headline pool (home_headlines_v2): everything Home already holds, no new network calls. `{next}` = the first
+    /// unplayed daily in the player's own order (the rows arrive ordered); `{last}` = the last finish recorded on this
+    /// device (title resolved by its dbKey); holiday from the bundled table; the slot = the width headlineFit uses.
+    private func poolContext(hour: Int, unlimited: Bool) -> HomeHeadlinePool.Context {
+        let modes = word.modes + puzzles.modes
+        let next = modes.first { m in m.dbKey.map { byMode[$0] == nil } ?? false }?.title
+        let last = HomeHeadlinesV2.lastGame().flatMap { g -> HomeHeadlinePool.LastGame? in
+            guard let m = modes.first(where: { $0.dbKey == g.mode }) else { return nil }
+            let minutes = Int((Date().timeIntervalSince1970 * 1000 - Double(g.finishedAt)) / 60000)
+            return .init(title: m.title, won: g.won, minutesAgo: minutes, record: g.record)
+        }
+        let today = LeaderboardService.todayLocal()
+        let slot = headWidth > 0 ? headWidth : UIScreen.main.bounds.width - 90
+        return HomeHeadlinePool.Context(
+            name: name, hour: hour, dateKey: today, word: word.progress, puzzles: puzzles.progress,
+            streaks: .init(word: word.streaks, puzzles: puzzles.streaks), unlimited: unlimited,
+            nextGame: next, lastGame: last, holiday: holidayKeyForDay(today, table: HolidayTable.bundled),
+            slotWidth: Double(max(1, slot - (dailyDouble && !unlimited ? 26 : 0))),
+            userSeed: auth.profile?.id ?? "")
+    }
+
     /// The headline (+ the double-flawless trophy; FINISH_SPEC §Y: Unlimited has no
     /// infinity glyph any more). FINISH_SPEC BJ6 (founder 10-03: "a clever way to populate
     /// longer usernames without shrinking anything down or scrolling off screen"): the core
@@ -526,12 +555,15 @@ struct HomeBannerView: View {
     private static var fitCache: [String: (size: CGFloat, layout: BubbleText.Fit)] = [:]
     static func headlineFit(_ text: String, name: String, width: CGFloat) -> (size: CGFloat, layout: BubbleText.Fit) {
         let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
-        let key = "\(text)|\(name)|\(Int(width))|\(dyn)"
+        // home_headlines_v2: a pool line was chosen to fit two lines at >= 85% of full size, so it gets the pool fit
+        // (wraps instead of today's 72% shrink); the legacy / streak lines keep homeFit.
+        let pool = HomeHeadlinesV2.enabled && HomeHeadlinesV2.isPooled(text)
+        let key = "\(text)|\(name)|\(Int(width))|\(dyn)|\(pool)"
         if let hit = fitCache[key] { return hit }
         let w = max(1, Double(width))
         // 2.8 item 6: core's bubble-text fit — the name keeps its stacked gold lines, every other
         // headline that is too long wraps in balanced lines (never "…", never a clip).
-        let layout = BubbleText.homeFit(text, name: name, slotWidth: w)
+        let layout = pool ? HomeHeadlinePool.poolFit(text, name: name, slotWidth: w) : BubbleText.homeFit(text, name: name, slotWidth: w)
         let out = (size: CGFloat(layout.size) / dyn, layout: layout)
         if fitCache.count > 64 { fitCache.removeAll() }
         fitCache[key] = out

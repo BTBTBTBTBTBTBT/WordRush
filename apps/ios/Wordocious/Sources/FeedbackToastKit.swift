@@ -178,7 +178,7 @@ struct G5CandyMessage: View {
             ZStack {
                 Capsule().fill(dark ? accent.opacity(0.45) : accent.wash(0.38)).offset(y: 2.5)
                 Capsule().fill(dark
-                    ? LinearGradient(colors: [Theme.surface, Theme.surface], startPoint: .top, endPoint: .bottom)
+                    ? LinearGradient(colors: [SeasonSurface.raised ?? Theme.surface, SeasonSurface.raised ?? Theme.surface], startPoint: .top, endPoint: .bottom)
                     : LinearGradient(colors: [accent.wash(0.05), accent.wash(0.16)], startPoint: .top, endPoint: .bottom))
                 if dark { Capsule().fill(accent.opacity(0.14)) }
                 Capsule().strokeBorder(accent.opacity(0.45), lineWidth: 1.5)

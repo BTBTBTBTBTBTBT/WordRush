@@ -44,9 +44,19 @@ describe('theme registry (item 25)', () => {
     }
     const h = seasonalEntry('halloween')!;
     const ha = h.ambient!;
-    for (const s of [ha.bats.sprite, ha.witch.sprite, ha.fog.sprite]) read(`apps/web/public${ambientSrc(s)}`);
-    // 10-16: a seasonal entry may ship without an ambient (Thanksgiving); the base theme's keeps running.
-    expect(seasonalEntry('thanksgiving')?.ambient).toBeUndefined();
+    for (const s of [ha.bats!.sprite, ha.witch!.sprite, ha.fog!.sprite]) read(`apps/web/public${ambientSrc(s)}`);
+    expect(ha.flock).toBeUndefined();
+    // 10-16: Thanksgiving's ambient is the V of geese (flock) + a few faint stars, no bats / witch / fog; the flock
+    // crosses slowly (calm: >= 40 s) in the top band, the sprite ships on web.
+    const ta = seasonalEntry('thanksgiving')!.ambient!;
+    expect(ta.kind).toBe('thanksgiving');
+    expect(ta.bats ?? ta.witch ?? ta.fog).toBeUndefined();
+    expect(ta.flock!.count).toBeGreaterThanOrEqual(5);
+    expect(ta.flock!.duration[0]).toBeGreaterThanOrEqual(40);
+    expect(ta.flock!.band[0]).toBeLessThan(ta.flock!.band[1]);
+    expect(ta.flock!.band[1]).toBeLessThanOrEqual(30);
+    expect([1, -1]).toContain(ta.flock!.direction);
+    read(`apps/web/public${ambientSrc(ta.flock!.sprite)}`);
     expect(seasonalEntry('thanksgiving')?.title).toBe('Seasonal — Thanksgiving');
   });
 

@@ -73,10 +73,14 @@ internal fun LeaderboardHeadline(bleed: Dp) {
         dayArt != null -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             PageHeadline(dayArt, titleCaseLabel(title), bleed = bleed, maxHeight = LB_TITLE_MAX)
             val doy = remember(day) { java.time.LocalDate.parse(day).dayOfYear }
-            val left = DAY_PROPS[doy % DAY_PROPS.size]
-            val right = DAY_PROPS[(doy + 1) % DAY_PROPS.size]
-            HalloweenPropSlot(left, DAY_PROP, Modifier.align(Alignment.CenterStart).padding(start = 14.dp).offset(y = 16.dp).rotate(-10f))
-            HalloweenPropSlot(right, DAY_PROP, Modifier.align(Alignment.CenterEnd).padding(end = 14.dp).offset(y = 16.dp).rotate(10f))
+            // 10-16: the season's registry props that ship (iOS CastSkin.dayProps parity): Halloween's four, Thanksgiving's ten.
+            val propSeason = rememberSeason()
+            val propCtx = androidx.compose.ui.platform.LocalContext.current
+            val props = remember(propSeason) { SeasonKit.props(propCtx, propSeason) }
+            if (props.size >= 2) {
+                SeasonPropSlot(props[doy % props.size], DAY_PROP, Modifier.align(Alignment.CenterStart).padding(start = 14.dp).offset(y = 16.dp).rotate(-10f))
+                SeasonPropSlot(props[(doy + 1) % props.size], DAY_PROP, Modifier.align(Alignment.CenterEnd).padding(end = 14.dp).offset(y = 16.dp).rotate(10f))
+            }
         }
         !holiday.isNullOrBlank() -> Column(
             Modifier.fillMaxWidth().clearAndSetSemantics {
@@ -89,12 +93,12 @@ internal fun LeaderboardHeadline(bleed: Dp) {
             PageHeadline(com.wordocious.app.R.drawable.art_titlecast_leaderboard, "Leaderboard", bleed = bleed, maxHeight = 80.dp)
             Text(
                 title.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.14.em,
-                color = if (WTheme.isDark) WTheme.textSecondary else LB_LABEL, maxLines = 1, textAlign = TextAlign.Center,
+                color = WTheme.wallInk() ?: if (WTheme.isDark) WTheme.textSecondary else LB_LABEL, maxLines = 1, textAlign = TextAlign.Center,
             )
         }
         else -> Text(
             title, fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 0.02.em,
-            color = if (WTheme.isDark) WTheme.text else FinishInk.heading, textAlign = TextAlign.Center, maxLines = 2,
+            color = WTheme.wallInk() ?: if (WTheme.isDark) WTheme.text else FinishInk.heading, textAlign = TextAlign.Center, maxLines = 2,
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).semantics { heading() },
         )
     }
@@ -140,8 +144,7 @@ internal fun LeaderboardPicker(
 /** The Leaderboard day title's height cap (founder 10-05: 78 was "still very small"; iOS LeaderboardArt.dayCap). */
 private val LB_TITLE_MAX = 124.dp
 
-/** The Halloween day-title props (one per side) and their size (iOS CastSkin.dayProps parity). */
-private val DAY_PROPS = listOf("pumpkin", "bat", "candy", "ghost")
+/** The day-title props' size (one per side; the props come from the season's registry `props` slot, iOS CastSkin.dayProps parity). */
 private val DAY_PROP = 50.dp
 
 /** "OCT 2 · RESETS IN 12:41:17" — reads the ticking clock in its own scope so only it recomposes. */
@@ -160,7 +163,7 @@ private fun ResetClockLabel(modifier: Modifier = Modifier, prefix: String? = nul
 private fun HeaderCaps(text: String, modifier: Modifier = Modifier, maxLines: Int = 1) {
     Text(
         text, fontSize = 11.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.06.em,
-        color = if (WTheme.isDark) WTheme.textSecondary else LB_LABEL,
+        color = WTheme.wallInk() ?: if (WTheme.isDark) WTheme.textSecondary else LB_LABEL,
         maxLines = maxLines, overflow = TextOverflow.Ellipsis, modifier = modifier,
     )
 }
@@ -170,7 +173,7 @@ private fun HeaderCaps(text: String, modifier: Modifier = Modifier, maxLines: In
 private fun HeaderLink(text: String, description: String, onClick: () -> Unit) {
     Text(
         text, fontSize = 11.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.06.em,
-        color = if (WTheme.isDark) WTheme.textSecondary else LB_LABEL, maxLines = 1,
+        color = WTheme.wallInk() ?: if (WTheme.isDark) WTheme.textSecondary else LB_LABEL, maxLines = 1,
         modifier = Modifier
             .squishClickable(label = description, role = Role.Button, onClick = onClick)
             .heightIn(min = 32.dp)

@@ -19,7 +19,8 @@ import { getTodayLocal } from '@/lib/daily-service';
 import { ART_SIZE, artSrc, dayArtName, type ArtName } from '@/lib/art';
 import { softPill } from '@/lib/soft-surface';
 import { LB_GOLD } from './board-rows';
-import { useSeason, halloweenPropSrc, HALLOWEEN_PROPS } from '@/lib/season';
+import { useSeason } from '@/lib/season';
+import { seasonProps } from '@/lib/season-kit';
 import { SeasonArt } from '@/components/ui/season-art';
 import { Host, OwnMascot } from './leaderboard-stage';
 
@@ -75,11 +76,12 @@ export function HeaderChipLink({ href, children }: { href: string; children: Rea
  * FINISH_SPEC X + founder 10-05: during Halloween the day title wears ONE prop on
  * EACH side (two different props, by the day of the year — never a lone prop on one
  * side), level with the lettering, just outside the art (`artW` = the art's drawn width).
+ * 10-16: registry-driven (`props` slot, season-kit seasonProps) so every season's pair rotates through ALL its props; Halloween's four are unchanged.
  */
-function HalloweenDayProps({ today, artW }: { today: string; artW: number }) {
+function SeasonDayProps({ today, artW, season }: { today: string; artW: number; season: string | null }) {
   const d = new Date(today + 'T00:00:00');
   const doy = Math.round((d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86_400_000);
-  const pair = dayPropPair(HALLOWEEN_PROPS, doy);
+  const pair = dayPropPair(seasonProps(season, (n) => n in ART_SIZE), doy);
   if (!pair) return null;
   const off = `calc(50% + ${artW / 2 + 6}px)`;
   const base: React.CSSProperties = {
@@ -88,9 +90,9 @@ function HalloweenDayProps({ today, artW }: { today: string; artW: number }) {
   };
   return (
     <>
-      <SeasonArt src={halloweenPropSrc(pair[0])} className="absolute pointer-events-none"
+      <SeasonArt src={`/art/${pair[0]}.webp`} className="absolute pointer-events-none"
         style={{ ...base, right: off, transform: 'translateY(-50%) rotate(-10deg)' }} />
-      <SeasonArt src={halloweenPropSrc(pair[1])} className="absolute pointer-events-none"
+      <SeasonArt src={`/art/${pair[1]}.webp`} className="absolute pointer-events-none"
         style={{ ...base, left: off, transform: 'translateY(-50%) rotate(10deg)' }} />
     </>
   );

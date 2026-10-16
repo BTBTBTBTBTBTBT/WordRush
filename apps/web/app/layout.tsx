@@ -20,6 +20,7 @@ import { FirstRunTour } from '@/components/onboarding/first-run-tour';
 import { WhatsNewTour } from '@/components/modals/whats-new-tour';
 import { SharePreviewHost } from '@/components/share/share-preview-modal';
 import { ShareVariantHost } from '@/components/share/share-variant-modal';
+import { ShareSheetHost } from '@/components/share/share-sheet';
 import { AuthGate } from '@/components/auth/auth-gate';
 import { DataCacheProvider } from '@/components/providers/data-cache-provider';
 import { RotateOverlay } from '@/components/ui/rotate-overlay';
@@ -199,6 +200,7 @@ export default function RootLayout({
                     <AchievementWatcher />
                     <SharePreviewHost />
                     <ShareVariantHost />
+                    <ShareSheetHost />
                     <PwaProvider />
                     <Toaster />
                     <AdBanner />

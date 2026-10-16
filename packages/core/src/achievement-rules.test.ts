@@ -6,10 +6,11 @@ import {
 } from './achievement-rules';
 
 describe('BE achievement catalog', () => {
-  it('has the 37 new achievements (clean_crack dropped: Clean Crack already exists) + the 12 secret tunes (5 everyday, 7 Halloween), unique keys, art per key', () => {
-    expect(NEW_ACHIEVEMENTS).toHaveLength(49);
-    expect(new Set(NEW_ACHIEVEMENTS.map((a) => a.key)).size).toBe(49);
-    expect(NEW_ACHIEVEMENTS.filter((a) => a.secret)).toHaveLength(12);
+  it('has the 38 new achievements (37 + Harvest Feast; clean_crack dropped: Clean Crack already exists) + the 16 secret tunes (5 everyday, 7 Halloween, 4 Thanksgiving), unique keys, art per key', () => {
+    expect(NEW_ACHIEVEMENTS).toHaveLength(54);
+    expect(new Set(NEW_ACHIEVEMENTS.map((a) => a.key)).size).toBe(54);
+    expect(NEW_ACHIEVEMENTS.filter((a) => a.secret)).toHaveLength(16);
+    expect(NEW_ACHIEVEMENTS.filter((a) => a.category === 'seasonal').map((a) => a.key)).toEqual(['spooky_season', 'harvest_feast']);
     expect(NEW_ACHIEVEMENTS.find((a) => a.key === 'kindred_regular')?.name).toBe('Kindred Fan');
     expect(achievementArt('night_owl')).toBe('art-ach-night_owl');
   });
@@ -62,5 +63,8 @@ describe('BE rules', () => {
     expect(momentAchievements({ localHour: 2, season: null })).toEqual(['night_owl']);
     expect(momentAchievements({ localHour: 6, season: 'halloween' })).toEqual(['early_bird', 'spooky_season']);
     expect(momentAchievements({ localHour: 7, season: null })).toEqual([]);
+    expect(momentAchievements({ localHour: 12, season: 'thanksgiving' })).toEqual(['harvest_feast']);
+    expect(momentAchievements({ localHour: 2, season: 'thanksgiving' })).toEqual(['night_owl', 'harvest_feast']);
+    expect(momentAchievements({ localHour: 12, season: 'winter-holidays' })).toEqual([]);
   });
 });

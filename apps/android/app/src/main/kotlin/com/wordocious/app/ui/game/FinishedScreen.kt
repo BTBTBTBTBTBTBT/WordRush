@@ -286,11 +286,19 @@ fun stripSentence(won: Boolean, items: List<StripItem>): String =
 /** The shortest screen (dp) that shows the strip's live headline. */
 const val STRIP_HEADLINE_MIN_SCREEN_DP = 700
 
-/** AR the strip's live headline: "SOLVED IN 4 GUESSES" (the first count chip), "SOLVED!", or "SO CLOSE". */
+/**
+ * AR the strip's live headline (the screen-reader label of the SOLVED! / NOT TODAY art; same set as iOS and web):
+ * "SOLVED IN 4" · "ALL 4 SOLVED" · "3 OF 4 SOLVED" · "SO CLOSE"; the puzzle games (no guess count) read "SOLVED!".
+ */
 fun stripHeadline(won: Boolean, items: List<StripItem>): String {
+    val boards = items.firstOrNull { it.glyph == StripGlyph.CHECK && (it.label == "boards" || it.label == "solved") && it.value.contains('/') }
+    if (boards != null) {
+        val (solved, total) = boards.value.split('/', limit = 2)
+        return if (solved == total) "ALL $total SOLVED" else "$solved OF $total SOLVED"
+    }
     if (!won) return "SO CLOSE"
     val first = items.firstOrNull { it.glyph == StripGlyph.CHECK }
-    return if (first != null) "SOLVED IN ${first.value} ${first.label}".uppercase() else "SOLVED!"
+    return if (first != null && first.label.startsWith("guess")) "SOLVED IN ${first.value}" else "SOLVED!"
 }
 
 @Composable

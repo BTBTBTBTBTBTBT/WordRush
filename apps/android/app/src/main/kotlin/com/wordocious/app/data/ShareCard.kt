@@ -50,7 +50,7 @@ internal object ShareCard {
     const val TITLE_MAX_W = W - 2 * TITLE_MARGIN
     const val TITLE_MAX_H = 150f
     /** The leaderboards' day title above the game title (SPEC: ~210 px). */
-    const val DAY_MAX_H = 210f
+    const val DAY_MAX_H = 190f   // iOS dayBox + web NIGHT_DAY_H parity
     const val DAY_MAX_W = 620f
     /** The lettered title's band when the art doesn't decode. */
     const val TITLE_FALLBACK_H = 96f

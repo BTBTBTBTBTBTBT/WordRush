@@ -39,6 +39,7 @@ import { streakHeadline } from '../src/streak-headline';
 import { ageGateView, AGE_GATE_MAX_WAIT_MS } from '../src/age-check';
 import { flawlessSealLabel, headlineLabel, mascotLabel, placeWord, podiumOpenSpotLabel, podiumPlaceLabel, podiumStageCardLabel, progressLabel } from '../src/a11y-labels';
 import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, dayRunTotals, type GroupProgress } from '../src/home-banner';
+import { HEADLINE_BANK, headlinePack, selectHomeHeadline, timeBucket, weekdayOf, type HeadlineContext } from '../src/home-headline-pool';
 import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
 import { leaderboardTitle } from '../src/leaderboard-title';
 import { headlineTokens, headlineLayout, headlineWidthEm, headlineFontSize, HEADLINE_SIZING_LINE } from '../src/headline-tokens';
@@ -49,14 +50,15 @@ import { podiumLayout, podiumOpenSpot, podiumWinnerHead, PODIUM_ART, PODIUM_ART_
 import { nameHex, plateHexes } from '../src/player-tint';
 import { AVATAR_MANIFEST, applyAvatarPick, avatarLayout, avatarPatternShapes, avatarPickConflict } from '../src/avatar-layout';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
+import { TIMES_OF_DAY, nextTimeOfDayChange, timeOfDay } from '../src/time-of-day';
 import { SEASON_WINDOWS, calendarSeason, currentSeason, levelTier, levelTierLabel } from '../src/level-season';
 import { AVATAR_ACCESS_TABLE, avatarAccessKey, avatarEarnedKeys, avatarLockedCardLines, avatarPartAccess, avatarPartRule, avatarSaveCheck, enforceAvatarAccess, evaluateEarn, type AvatarAccessContext, type AvatarEarnCondition, type AvatarEarnStats } from '../src/avatar-access';
-import { HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO, SEASON_NOTE_PREFIX, activeMelodies, MELODY_GAP_MS, MELODY_START, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_POP_KEYS, MUSICAL_SCALE, MUSICAL_TIMING, matchMelody, melodyIntervals, melodyReplay, melodyReplayDuration, melodySong, melodyTap, midiNoteName, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState } from '../src/musical-cast';
+import { ALL_MELODIES, HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO, SEASON_NOTE_PREFIX, THANKSGIVING_MELODIES, THANKSGIVING_TUNES_TODO, activeMelodies, MELODY_GAP_MS, MELODY_START, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_POP_KEYS, MUSICAL_SCALE, MUSICAL_TIMING, matchMelody, melodyIntervals, melodyReplay, melodyReplayDuration, melodySong, melodyTap, midiNoteName, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState } from '../src/musical-cast';
 import { SECRET_ACHIEVEMENT_KEYS, achievementListed } from '../src/achievement-rules';
 import { avatarPartSeason, isPartAvailable, mascotSeason, seasonNudgeDue, seasonNudgeKey, seasonTag, seasonalShelf, wearsSeasonalPart } from '../src/avatar-season';
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
 import { BOT_CAST, botSolveLine, canonicalBotId, migrateLegacyLadderCleared, botOfTheDay } from '../src/bot-cast';
-import { friendsLayout, raceBadge, raceBadgeLines, tileWord, waitingHeadline, theirTurnLine, cardPresence, allFriendsLabel, type CardFriend, type CardGame } from '../src/friend-cards';
+import { friendsLayout, gameRowLabel, raceBadge, raceBadgeLines, tileWord, waitingHeadline, theirTurnLine, cardPresence, allFriendsLabel, type CardFriend, type CardGame } from '../src/friend-cards';
 import { POCKET_HELP, FIRST_PLAY_FLAG, shouldAutoShowTutorial, tutorialShouldRecordSeen, withTutorialSeen, mergeTutorialsSeen, pocketTutorialKey } from '../src/pocket-help';
 import { ADS_SERVING } from '../src/ads';
 import { PRO_BENEFIT_CAPTION, proBenefitForReason } from '../src/stats-profile';
@@ -307,6 +309,56 @@ export function renderRegionsFixtures() {
 // these two — they exist for the native ports).
 // Home redesign (founder, 2026-10-01): the banner's words and streak runs, so
 // iOS and Android print exactly what the web prints.
+// Home headline pool (docs/review/home-headlines/PROPOSAL.md §5): buckets, packs, weekdays, the bank (byte-equal
+// native copies, gen-headline-bank.ts) and selectHomeHeadline over a grid of users × dates × buckets × states × names × slots × history.
+export function renderHomeHeadlinePoolFixtures() {
+  const g = (played: number, won: number, total: number): GroupProgress => ({ played, won, total });
+  const buckets = Array.from({ length: 24 }, (_, hour) => ({ hour, bucket: timeBucket(hour) }));
+  const days: string[] = [];
+  for (let i = 0; i < 366; i++) {
+    const d = new Date(Date.UTC(2026, 0, 1 + i));
+    days.push(d.toISOString().slice(0, 10));
+  }
+  const calendar = days.map((dateKey) => ({ dateKey, pack: headlinePack(dateKey), weekday: weekdayOf(dateKey) }));
+  const states: Array<Partial<HeadlineContext> & { label: string }> = [
+    { label: 'fresh', word: g(0, 0, 8), puzzles: g(0, 0, 10) },
+    { label: 'holiday', word: g(0, 0, 8), puzzles: g(0, 0, 10), holiday: 'halloween' },
+    { label: 'nextUp', word: g(3, 2, 8), puzzles: g(1, 1, 10), nextGame: 'Muddle' },
+    { label: 'lastWon', word: g(3, 3, 8), puzzles: g(0, 0, 10), nextGame: 'QuadWord', lastGame: { title: 'Muddle', won: true, minutesAgo: 3 } },
+    { label: 'lastLost', word: g(3, 2, 8), puzzles: g(0, 0, 10), nextGame: 'QuadWord', lastGame: { title: 'Muddle', won: false, minutesAgo: 12 } },
+    { label: 'newRecord', word: g(5, 5, 8), puzzles: g(2, 2, 10), nextGame: 'Sudoku', lastGame: { title: 'Sudoku', won: true, minutesAgo: 1, record: true } },
+    { label: 'rowDone', word: g(8, 7, 8), puzzles: g(4, 4, 10), nextGame: 'Regions' },
+    { label: 'flawlessRow', word: g(8, 8, 8), puzzles: g(4, 4, 10), nextGame: 'Regions', streaks: { word: { sweep: 1, flawless: 1 }, puzzles: { sweep: 0, flawless: 0 } } },
+    { label: 'allDone', word: g(8, 7, 8), puzzles: g(10, 10, 10), streaks: { word: { sweep: 1, flawless: 0 }, puzzles: { sweep: 1, flawless: 1 } } },
+    { label: 'doubleFlawless', word: g(8, 8, 8), puzzles: g(10, 10, 10), streaks: { word: { sweep: 3, flawless: 3, bestSweep: 5, bestFlawless: 5 }, puzzles: { sweep: 3, flawless: 3 } } },
+    { label: 'streakNews', word: g(8, 8, 8), puzzles: g(2, 2, 10), nextGame: 'Regions', streaks: { word: { sweep: 7, flawless: 7, bestSweep: 7, bestFlawless: 7 }, puzzles: { sweep: 0, flawless: 0 } } },
+    { label: 'unlimited', word: g(0, 0, 8), puzzles: g(0, 0, 10), unlimited: true },
+  ];
+  const dates = ['2026-10-16', '2026-11-26', '2026-12-24', '2027-01-01', '2026-02-14', '2026-08-10'];
+  const hours = [2, 6, 9, 12, 15, 19, 22];
+  const users = ['', 'u1', 'user-2'];
+  const names = ['', 'BMT', 'Maximillian_The_Great'];
+  const slots = [285, 334, 358];
+  const selections: Array<{ ctx: HeadlineContext; text: string; id: string; context: string; bucket: string }> = [];
+  let i = 0;
+  for (const userSeed of users) for (const dateKey of dates) for (const hour of hours) for (const st of states) {
+    // Rotate name and slot so the grid stays ~1,500 cases while every combination appears.
+    const name = names[i % names.length];
+    const slotWidth = slots[Math.floor(i / names.length) % slots.length];
+    i++;
+    const { label, ...rest } = st;
+    const ctx: HeadlineContext = { name, hour, dateKey, word: rest.word!, puzzles: rest.puzzles!, ...rest, slotWidth, userSeed };
+    const first = selectHomeHeadline(ctx);
+    selections.push({ ctx, text: first.text, id: first.id, context: first.context, bucket: first.bucket });
+    if (i % 4 === 0) {
+      const withHistory = { ...ctx, history: [first.id] };
+      const second = selectHomeHeadline(withHistory);
+      selections.push({ ctx: withHistory, text: second.text, id: second.id, context: second.context, bucket: second.bucket });
+    }
+  }
+  return { buckets, calendar, bank: HEADLINE_BANK, selections };
+}
+
 export function renderHomeBannerFixtures() {
   const g = (played: number, won: number, total: number): GroupProgress => ({ played, won, total });
   const pairs: Array<[GroupProgress, GroupProgress]> = [
@@ -807,6 +859,17 @@ export function renderLevelSeasonFixtures() {
   return { levels, days, windows };
 }
 
+// Time of day (10-16): the slot per hour and the next boundary, as LOCAL calendar fields (timezone-proof).
+export function renderTimeOfDayFixtures() {
+  const hours = Array.from({ length: 24 }, (_, h) => ({ hour: h, time: timeOfDay(h) }));
+  const edges = [4.99, 5, 9.99, 10, 15.99, 16, 18.99, 19, 23.99].map((hour) => ({ hour, time: timeOfDay(hour) }));
+  const f = (d: Date) => ({ y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate(), h: d.getHours(), mi: d.getMinutes() });
+  const froms = [[2026, 11, 20, 0, 0], [2026, 11, 20, 4, 59], [2026, 11, 20, 5, 0], [2026, 11, 20, 9, 30], [2026, 11, 20, 10, 0], [2026, 11, 20, 15, 59],
+    [2026, 11, 20, 16, 0], [2026, 11, 20, 18, 59], [2026, 11, 20, 19, 0], [2026, 11, 20, 23, 59], [2026, 12, 31, 20, 0], [2028, 2, 28, 23, 30]];
+  const next = froms.map(([y, m, d, h, mi]) => ({ from: { y, m, d, h, mi }, next: f(nextTimeOfDayChange(new Date(y, m - 1, d, h, mi))) }));
+  return { times: [...TIMES_OF_DAY], hours, edges, next };
+}
+
 // FINISH_SPEC AE: the push copy bank, filled.
 export function renderPushCopyFixtures() {
   const kinds = Object.keys(PUSH_COPY) as PushKind[];
@@ -1063,7 +1126,7 @@ export function renderAchievementRuleFixtures() {
       { name: '10 pass games finished, none won', games: win('pass', 10, false) },
     ].map((c) => ({ ...c, keys: pocketAchievements(c.games) })),
     avatars: [null, { head: 'none', face: 'none', neck: 'none', bg: 'auto' }, { head: 'wizard', face: 'none', neck: 'cape', bg: 'galaxy' }, { head: 'wizard', face: 'monocle', neck: 'none', bg: 'auto' }].map((config) => ({ config, keys: avatarAchievements(config) })),
-    moments: [[0, null], [3, null], [4, null], [6, 'halloween'], [7, null], [23, 'halloween']].map(([h, s]) => ({ localHour: h, season: s, keys: momentAchievements({ localHour: h as number, season: s as string | null }) })),
+    moments: [[0, null], [3, null], [4, null], [6, 'halloween'], [7, null], [23, 'halloween'], [12, 'thanksgiving'], [2, 'thanksgiving'], [12, 'winter-holidays']].map(([h, s]) => ({ localHour: h, season: s, keys: momentAchievements({ localHour: h as number, season: s as string | null }) })),
   };
 }
 
@@ -1171,7 +1234,7 @@ export function renderFriendCardFixtures() {
     ['ghost', states.ghost0, 'a', true], ['ghost', states.ghost3, 'b', true], ['ghost', states.ghost3, 'a', false],
     ['chain', states.chain0, 'a', true], ['chain', states.chain1, 'b', true], ['chain', states.chain1, 'a', false],
   ];
-  const tiles = tileCases.map(([kind, state, me, yourTurn]) => ({ kind, state, me, yourTurn, word: tileWord(kind, state, me, yourTurn) }));
+  const tiles = tileCases.map(([kind, state, me, yourTurn]) => { const word = tileWord(kind, state, me, yourTurn); return { kind, state, me, yourTurn, word, rowLabel: gameRowLabel(kind, word, yourTurn) }; });
   const f = (id: string, username: string, online: boolean, activity: string | null = null, lastSeenMs: number | null = null): CardFriend => ({ id, username, online, activity, lastSeenMs });
   const g = (id: string, kind: any, opponentId: string, state: FriendlyState, yourTurn: boolean, updatedAt: string, me: 'a' | 'b' = 'a'): CardGame => ({ id, kind, opponentId, opponentName: opponentId.toUpperCase(), me, state, yourTurn, updatedAt });
   const layoutCases: Array<{ name: string; friends: CardFriend[]; games: CardGame[] }> = [
@@ -1283,12 +1346,34 @@ export function renderMusicalCastFixtures() {
     active: ([null, 'halloween', 'valentines'] as Array<string | null>).map((season) => ({ season, ids: activeMelodies(season).map((m) => m.id) })),
     taps: hTaps,
   };
+  // Founder 10-16: the Thanksgiving batch, same shape (only in its own season; Halloween tunes stay out; normal voices).
+  const tSeqs: Array<{ name: string; season: string | null; taps: Array<{ id: string; at: number }> }> = [];
+  for (const m of THANKSGIVING_MELODIES) {
+    for (const season of ['thanksgiving', null, 'halloween'] as Array<string | null>) {
+      tSeqs.push({ name: `${m.id}-in-${season ?? 'no-season'}`, season, taps: m.notes.map((n, i) => ({ id: hIdFor(n), at: 1000 + i * 300 })) });
+    }
+  }
+  tSeqs.push({ name: 'mountain-king-not-in-thanksgiving', season: 'thanksgiving', taps: HALLOWEEN_MELODIES[0].notes.map((n, i) => ({ id: hIdFor(n), at: i * 300 })) });
+  tSeqs.push({ name: 'mary-still-works-in-thanksgiving', season: 'thanksgiving', taps: tune('mary').map((n, i) => ({ id: hIdFor(n), at: i * 300 })) });
+  const tTaps = tSeqs.map(({ name, season, taps: list }) => {
+    let st: MelodyState = MELODY_START;
+    const steps = list.map(({ id, at }) => { const r = melodyTap(st, id, at, season); st = r.state; return { id, at, midi: r.note?.midi ?? null, sound: r.note?.sound ?? null, matched: r.matched?.id ?? null }; });
+    return { name, season, steps };
+  });
+  const thanksgiving = {
+    melodies: THANKSGIVING_MELODIES.map((m) => ({ ...m, intervals: melodyIntervals(m.notes) })),
+    todo: THANKSGIVING_TUNES_TODO,
+    notePrefix: SEASON_NOTE_PREFIX,
+    sounds: [...MUSICAL_CAST_IDS, 'zz'].map((id) => ({ season: 'thanksgiving', id, sound: musicalNote(id, 'thanksgiving')?.sound ?? null })),
+    active: (['thanksgiving', 'winter-holidays'] as Array<string | null>).map((season) => ({ season, ids: activeMelodies(season).map((m) => m.id) })),
+    taps: tTaps,
+  };
   return {
     scale: MUSICAL_SCALE, timing: MUSICAL_TIMING, popKeys: MUSICAL_POP_KEYS, gapMs: MELODY_GAP_MS,
     melodies: MUSICAL_MELODIES.map((m) => ({ ...m, intervals: melodyIntervals(m.notes) })), secrets: SECRET_ACHIEVEMENT_KEYS,
-    notes, names, transform, taps, matches, listed, halloween,
-    // Founder 10-13: the playback finishes the jingle in its own rhythm (every tune, everyday + Halloween).
-    replays: [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES].map((m) => ({ id: m.id, song: melodySong(m), steps: melodyReplay(m), duration: melodyReplayDuration(m) })),
+    notes, names, transform, taps, matches, listed, halloween, thanksgiving,
+    // Founder 10-13: the playback finishes the jingle in its own rhythm (every tune, everyday + every season's batch).
+    replays: ALL_MELODIES.map((m) => ({ id: m.id, song: melodySong(m), steps: melodyReplay(m), duration: melodyReplayDuration(m) })),
   };
 }
 
@@ -1524,6 +1609,7 @@ const FILES: Array<[string, unknown]> = [
   ['leaderboard-title-fixtures.json', renderLeaderboardTitleFixtures()],
   ['share-captions-fixtures.json', renderShareCaptionFixtures()],
   ['level-season-fixtures.json', renderLevelSeasonFixtures()],
+  ['time-of-day-fixtures.json', renderTimeOfDayFixtures()],
   ['push-copy-fixtures.json', renderPushCopyFixtures()],
   ['avatar-config-fixtures.json', renderAvatarConfigFixtures()],
   ['headline-tokens-fixtures.json', renderHeadlineTokenFixtures()],
@@ -1544,6 +1630,7 @@ const FILES: Array<[string, unknown]> = [
   ['ad-copy-fixtures.json', renderAdCopyFixtures()],
   ['share-spoilers-fixtures.json', renderShareSpoilerFixtures()],
   ['share-sheet-fixtures.json', renderShareSheetFixtures()],
+  ['home-headline-pool-fixtures.json', renderHomeHeadlinePoolFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

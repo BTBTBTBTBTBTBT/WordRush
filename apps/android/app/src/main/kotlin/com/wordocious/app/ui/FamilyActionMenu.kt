@@ -9,6 +9,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -331,6 +333,113 @@ private fun FamilyMenuNote(a: FamilyMenuAction, onPick: () -> Unit) {
             tint = tint.copy(alpha = if (night) 0.9f else 0.7f), modifier = Modifier.size(15.dp),
         )
     }
+}
+
+// ── The family confirm / dialog sheet ────────────────────────────────────────
+// Parity audit 10-16 (Top 10 #5): iOS replaced every system alert with the family confirm (FamilyConfirm in
+// FamilyActionMenu.swift) and web uses house modals; Android's 15 Material AlertDialogs now present this sheet:
+// the same soft sheet as the action menu (lavender, or the season's night glass), the grabber, the question in the
+// bubble lettering, the line under it, then the buttons. [FamilyConfirm] is the yes/no (and one-button notice)
+// form; [FamilyDialogSheet] is the AlertDialog-shaped form for the dialogs that carry a body (pickers, forms,
+// read-only detail), same content, same actions.
+
+/**
+ * An AlertDialog-shaped family sheet. [title] draws in the bubble lettering ([danger] = the pink one); [titleContent]
+ * replaces it with custom heading art; [message] is the line under it; [body] is any content (scrolls when tall);
+ * the buttons sit in a row, [dismissButton] first then [confirmButton] (iOS order).
+ */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun FamilyDialogSheet(
+    onDismissRequest: () -> Unit,
+    title: String? = null,
+    titleContent: (@Composable () -> Unit)? = null,
+    message: String? = null,
+    danger: Boolean = false,
+    containerColor: Color? = null,
+    body: (@Composable ColumnScope.() -> Unit)? = null,
+    confirmButton: (@Composable () -> Unit)? = null,
+    dismissButton: (@Composable () -> Unit)? = null,
+) {
+    SoftModalSheet(
+        onDismissRequest = onDismissRequest,
+        containerColor = containerColor ?: FamilyMenuInk.SHEET,
+        dragHandle = {
+            Box(
+                Modifier.padding(top = 10.dp, bottom = 4.dp).size(width = 40.dp, height = 5.dp)
+                    .clip(RoundedCornerShape(50)).background(friendsLine(FRIENDS_CARD_ACCENT, 0.5f)),
+            )
+        },
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 18.dp).padding(bottom = 20.dp).navigationBarsPadding().imePadding(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            if (titleContent != null) {
+                Box(Modifier.semantics(mergeDescendants = true) { heading() }) { titleContent() }
+            } else if (title != null) {
+                Box(Modifier.padding(horizontal = 8.dp).semantics(mergeDescendants = true) { heading() }) {
+                    BubbleText(
+                        title.uppercase(),
+                        ThemeKit.accentPalette(if (danger) Color(0xFFEC4899) else Color(0xFF8B5CF6), dark = FamilyMenuInk.night),
+                        maxSize = 28, minSize = 16, sound = false, animated = false,
+                    )
+                }
+            }
+            if (message != null) {
+                androidx.compose.material3.Text(
+                    message, fontSize = 14.5.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito, color = FamilyMenuInk.SUB,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 12.dp),
+                )
+            }
+            if (body != null) {
+                androidx.compose.runtime.CompositionLocalProvider(
+                    androidx.compose.material3.LocalContentColor provides FamilyMenuInk.SUB,
+                ) {
+                    Column(
+                        Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                        content = body,
+                    )
+                }
+            }
+            if (confirmButton != null || dismissButton != null) {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    dismissButton?.invoke()
+                    confirmButton?.invoke()
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The family yes/no (iOS FamilyConfirm). [cancel] null = a one-button notice (the confirm). Danger confirms (Unfriend,
+ * Delete Forever) take the pink candy. [onConfirm] runs at the tap; the caller clears its own state there.
+ */
+@Composable
+fun FamilyConfirm(
+    title: String,
+    message: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    confirm: String = "OK",
+    danger: Boolean = false,
+    cancel: String? = "Cancel",
+    containerColor: Color? = null,
+    confirmEnabled: Boolean = true,
+) {
+    FamilyDialogSheet(
+        onDismissRequest = onDismiss, title = title, message = message, danger = danger, containerColor = containerColor,
+        dismissButton = cancel?.let { c -> { QuietButton(c, onClick = onDismiss, size = CandySize.LARGE, enabled = confirmEnabled) } },
+        confirmButton = {
+            CastButton(confirm, onClick = onConfirm, color = if (danger) CastColor.PINK else CastColor.PURPLE, size = CastSize.M, enabled = confirmEnabled)
+        },
+    )
 }
 
 /** DEBUG screenshot harness (MainActivity `--es menuDemo friend|profile|photo`): the menu over a plain page; tap to reopen. */

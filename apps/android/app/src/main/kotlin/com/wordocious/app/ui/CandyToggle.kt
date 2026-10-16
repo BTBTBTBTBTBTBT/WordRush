@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -161,9 +162,10 @@ fun <T> CandySegmentedToggle(
             options.forEach { (key, label) ->
                 val on = key == selected
                 Box(
+                    // A 48 dp touch target (requiredHeight centers it on the visual segment, which keeps its size).
                     Modifier.squishClickable(label, role = Role.Tab) { if (!on) onChange(key) }
                         .semantics { this.selected = on }
-                        .width(half).height(height),
+                        .width(half).requiredHeight(maxOf(height, 48.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     androidx.compose.material3.Text(

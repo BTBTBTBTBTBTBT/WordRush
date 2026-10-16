@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
 import { feedback } from '@/lib/sound-events';
@@ -23,7 +23,7 @@ import { useDecodedEntrance } from '@/hooks/use-decoded-entrance';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { useHomeHost } from '@/components/avatar/player-avatar';
 import { emitMascotMoment } from '@/lib/living-mascot';
-import { seasonArtShips, seasonEntry } from '@/lib/season-kit';
+import { SEASON_ART_SIZE, seasonArtShips, seasonEntry } from '@/lib/season-kit';
 import { useFlags } from '@/hooks/use-flags';
 import { flawlessSealLabel } from '@wordle-duel/core';
 import { useSeason } from '@/lib/season';
@@ -133,13 +133,34 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
     return () => clearTimeout(t);
   }, [flawless]);
 
+  // a11y review 10-16 #1: a real modal. Escape closes; Tab cycles inside the dialog; focus starts on Close and
+  // returns to whatever had it when the celebration opened.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
+      if (e.key !== 'Tab' || !dialogRef.current) return;
+      const items = Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'));
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !dialogRef.current.contains(active))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('keydown', onKey); opener?.focus?.(); };
+  }, [onClose]);
+
   const handleShare = async () => {
     if (sharing) return;
     setSharing(true);
     try { await (more ? shareMoreSweep(completions) : shareDailySweep(completions)); } finally { setSharing(false); }
   };
 
-  const [aw, ah] = ART_SIZE[look.art];
+  // The drawn scene's own size (a season's costumed scene can be a different shape), so the floats clear its edge.
+  const [aw, ah] = (seasonScene && SEASON_ART_SIZE[seasonScene]) || ART_SIZE[look.art];
 
   const artW = (ART_H * aw) / ah; // the scene's drawn width at ART_H
   // AZ: the scene + lettering are decoded before the spring-in starts.
@@ -163,14 +184,16 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
 
       <div className="min-h-full flex items-center justify-center px-5 py-8">
         <div
+          ref={dialogRef}
           role="dialog"
+          aria-modal="true"
           aria-label={title}
           className="relative max-w-sm w-full flex flex-col items-center text-center"
           onClick={(e) => e.stopPropagation()}
         >
           {/* SWEEP! / FLAWLESS! lettering (docs/ART_SPEC.md §6) under a small DAILY /
               PUZZLES kicker; the full title ("DAILY SWEEP!", "PUZZLES FLAWLESS!") is its name. */}
-          <span aria-hidden="true" className="text-[12px] font-black uppercase text-white" style={{ letterSpacing: 1.6, textShadow: INK_SHADOW }}>
+          <span aria-hidden="true" className="text-[12px] font-black uppercase" style={{ letterSpacing: 1.6, color: look.ink }}>
             {more ? 'Puzzles' : 'Daily'}
           </span>
           {/* 2.8.1: a row — streamer · lettering · streamer — so the streamers frame the lettering from outside and
@@ -246,7 +269,7 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
             )}
           </div>
 
-          <p className="text-sm font-extrabold mt-2 text-white" style={{ textShadow: INK_SHADOW }}>
+          <p className="text-sm font-extrabold mt-2" style={{ color: look.ink }}>
             {flawless
               ? `All ${totals.total} ${noun} won today!`
               : `All ${totals.total} ${noun} done today!`}
@@ -297,7 +320,7 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
               {sharing ? 'Sharing…' : 'Share'}
             </CastButton>
             {/* 2.8 item 23: the family QUIET button, sized to its label. */}
-            <QuietButton size="md" onClick={onClose}>
+            <QuietButton size="md" onClick={onClose} autoFocus>
               Close
             </QuietButton>
           </div>
@@ -313,11 +336,10 @@ const SCRIM_CSS = '.sweep-celebration{--sweep-scrim:rgba(14,9,27,0.1)}html[data-
 /** The scene art's height (px). */
 const ART_H = 200;
 
-/** White lettering's soft dark edge on the colored overlay. */
-const INK_SHADOW = '0 1px 0 rgba(59, 26, 120, 0.55), 0 2px 6px rgba(59, 26, 120, 0.35)';
-
 interface Look {
   accent: string;
+  /** The kicker + summary line's ink: the moment's dark ink (a11y review 10-16 #4: white was 1.4:1 on the gold top tint). */
+  ink: string;
   overlay: string;
   glow: string;
   art: 'art-scene-sweep-broom' | 'art-scene-flawless-star';
@@ -329,6 +351,7 @@ interface Look {
 const LOOKS: Record<'sweep' | 'more' | 'flawless', Look> = {
   sweep: {
     accent: '#f5a524',
+    ink: '#5A3200',
     overlay: 'radial-gradient(circle at 50% 38%, rgba(255, 214, 120, 0.96), rgba(245, 165, 36, 0.95) 48%, rgba(194, 94, 12, 0.97))',
     glow: 'radial-gradient(circle, rgba(255, 255, 255, 0.8), rgba(255, 236, 170, 0.45) 42%, rgba(255, 214, 120, 0) 70%)',
     art: 'art-scene-sweep-broom',
@@ -337,6 +360,7 @@ const LOOKS: Record<'sweep' | 'more' | 'flawless', Look> = {
   },
   more: {
     accent: '#6366f1',
+    ink: '#1e1b4b',
     overlay: 'radial-gradient(circle at 50% 38%, rgba(165, 180, 252, 0.96), rgba(99, 102, 241, 0.95) 48%, rgba(55, 48, 163, 0.97))',
     glow: 'radial-gradient(circle, rgba(255, 255, 255, 0.75), rgba(199, 210, 254, 0.45) 42%, rgba(165, 180, 252, 0) 70%)',
     art: 'art-scene-sweep-broom',
@@ -345,6 +369,7 @@ const LOOKS: Record<'sweep' | 'more' | 'flawless', Look> = {
   },
   flawless: {
     accent: '#ec4899',
+    ink: '#5a1038',
     overlay: 'radial-gradient(circle at 50% 38%, rgba(251, 182, 216, 0.96), rgba(236, 72, 153, 0.95) 48%, rgba(134, 25, 143, 0.97))',
     glow: 'radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(253, 230, 138, 0.5) 40%, rgba(251, 182, 216, 0) 70%)',
     art: 'art-scene-flawless-star',

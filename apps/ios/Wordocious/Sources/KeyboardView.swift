@@ -311,7 +311,7 @@ private struct QuadrantKeyView: View, Equatable {
         // Ruled out on this board: in the dark theme a near-black cell that sinks BELOW the unused cells (the slate read
         // lighter than them there, so "wrong" looked lit); the light theme keeps the slate.
         case .absent: c = AnyShapeStyle(Theme.isDark ? Color(hex: 0x17132A) : TilePalette.slate.base)
-        default: c = AnyShapeStyle(Theme.isDark ? Color(hex: 0x3D355F) : Color(hex: 0xFBFAFF))
+        default: c = AnyShapeStyle(Theme.isDark ? (SeasonSurface.raised ?? Color(hex: 0x3D355F)) : Color(hex: 0xFBFAFF))
         }
         return Rectangle().fill(c).frame(maxWidth: .infinity, maxHeight: .infinity)
     }

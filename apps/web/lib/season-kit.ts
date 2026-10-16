@@ -7,6 +7,7 @@
 // Pure (no React); lib/season.ts decides WHICH season is active (the date or the admin preview).
 import registryJson from '../../../packages/core/src/season-registry.json';
 import generatedSizes from './season-art.generated.json';
+import type { TimeOfDay } from '@wordle-duel/core';
 
 export interface SeasonPalette {
   accent: string;
@@ -15,6 +16,13 @@ export interface SeasonPalette {
   wallLight: [string, string, string];
   wallDark: [string, string, string];
 }
+
+/**
+ * An art slot that may follow the clock (10-16 time of day): a plain art name (the same at every time) or
+ * `{ night, morning, day, evening }`. Night is the base look and the fallback when a time's key is missing or its
+ * file doesn't ship.
+ */
+export type TimedName = string | Partial<Record<TimeOfDay, string>>;
 
 export interface SeasonSlots {
   /** The cast skin pattern, `{id}` = the cast id (w, o1, r …). */
@@ -25,11 +33,11 @@ export interface SeasonSlots {
   /** Normal art name → seasonal art name (titles). */
   titles?: Record<string, string>;
   /** Normal wall name (or `prefix*`) → seasonal wall; `<name>-light` wins in light mode. */
-  walls?: Record<string, string>;
+  walls?: Record<string, TimedName>;
   props?: string[];
   banner?: string;
   /** The Home curtain-stage card art (10-16; core CELEBRATION_STAGE geometry). Absent / unshipped = the plain card. */
-  stage?: string;
+  stage?: TimedName;
   extras?: Record<string, string>;
   /** Seasonal sound slots (item 49): `intro` = the cold-start jingle, `note` = the musical cast's note, `{id}` = the cast id. */
   sounds?: { intro?: string; note?: string };
@@ -58,6 +66,16 @@ export interface SeasonSurfaces {
   headline?: [string, string, string, string, string];
   bannerGlow?: string;
   cobweb?: string;
+  /** The season's accent as TEXT on a light surface (the palette accent is a fill / glow color and fails AA as ink; docs/review/a11y-1016.md #11). */
+  accentText?: string;
+  /** Resolved only (never in the registry): the ink on the bare wall chrome (streak / shield digits, on-wall labels): 'dark' by day. */
+  wallInk?: 'light' | 'dark';
+  /**
+   * Per-time overrides (10-16): a PARTIAL surfaces object per morning / day / evening (night = the base above). Any key
+   * present replaces the base for that time. `tone: 'light'` there only flips the ON-WALL ink (`wallInk` 'dark'), never
+   * the card tone.
+   */
+  tod?: Partial<Record<Exclude<TimeOfDay, 'night'>, Omit<SeasonSurfaces, 'tod' | 'wallInk' | 'headline' | 'bannerGlow' | 'cobweb' | 'capTint'>>>;
 }
 
 export interface SeasonEntry {
@@ -83,10 +101,10 @@ export function seasonArtShips(name: string): boolean {
 }
 
 /** A slot map lookup: the exact key first, then the longest `prefix*` key. */
-export function slotLookup(map: Record<string, string> | undefined, name: string): string | null {
+export function slotLookup<T extends string | TimedName = string>(map: Record<string, T> | undefined, name: string): T | null {
   if (!map) return null;
   if (map[name]) return map[name];
-  let best: string | null = null;
+  let best: T | null = null;
   let len = -1;
   for (const [k, v] of Object.entries(map)) {
     if (k.endsWith('*') && name.startsWith(k.slice(0, -1)) && k.length > len) {
@@ -95,6 +113,22 @@ export function slotLookup(map: Record<string, string> | undefined, name: string
     }
   }
   return best;
+}
+
+/** The art names a slot offers for a time, best first: that time's, then night's (the string form is every time's). */
+export function timedCandidates(v: TimedName | null | undefined, time: TimeOfDay): string[] {
+  if (!v) return [];
+  if (typeof v === 'string') return [v];
+  const out: string[] = [];
+  if (v[time]) out.push(v[time]!);
+  if (time !== 'night' && v.night) out.push(v.night);
+  return out;
+}
+
+/** Every art name a slot can resolve to (the string form's one name, or each time's), de-duplicated. */
+export function timedNames(v: TimedName | null | undefined): string[] {
+  if (!v) return [];
+  return typeof v === 'string' ? [v] : Array.from(new Set(Object.values(v).filter((n): n is string => !!n)));
 }
 
 /** The season's title that replaces `name` (an art-titlecast-* / art-game-* name), when it ships. */
@@ -109,12 +143,15 @@ export function seasonalTitle(name: string, season: string | null | undefined): 
  * The season's wallpaper for a normal wall name, per scheme: light mode takes `<wall>-light` when it
  * ships (dark-on-light text keeps reading), else the base wall; dark mode the base. Null = keep normal.
  */
-export function seasonalWall(name: string, season: string | null | undefined, scheme: 'light' | 'dark'): string | null {
+export function seasonalWall(name: string, season: string | null | undefined, scheme: 'light' | 'dark', time: TimeOfDay = 'night'): string | null {
   const s = seasonEntry(season);
-  const swap = s ? slotLookup(s.slots.walls, name) : null;
-  if (!swap) return null;
-  if (scheme === 'light' && seasonArtShips(`${swap}-light`)) return `${swap}-light`;
-  return seasonArtShips(swap) ? swap : null;
+  const slot = s ? slotLookup<TimedName>(s.slots.walls, name) : null;
+  // The time's own wall when it ships, else night's (10-16 time of day).
+  for (const swap of timedCandidates(slot, time)) {
+    if (scheme === 'light' && seasonArtShips(`${swap}-light`)) return `${swap}-light`;
+    if (seasonArtShips(swap)) return swap;
+  }
+  return null;
 }
 
 /** The season's cold-start jingle sample name (public/sounds/<name>.m4a), else null = the normal jingle. */
@@ -128,16 +165,37 @@ export function seasonNoteSound(season: string | null | undefined, castId: strin
   return pattern ? pattern.replace('{id}', castId) : null;
 }
 
+/**
+ * The season's day-title props (registry `props`, in order) that ship (season-art.generated.json or lib/art.ts via `shipped`).
+ * The Leaderboard day title wears a PAIR of them (dayPropPair in lib/headline.ts); Halloween's four rotate exactly as before.
+ */
+export function seasonProps(season: string | null | undefined, shipped: (name: string) => boolean = seasonArtShips): string[] {
+  return (seasonEntry(season)?.slots.props ?? []).filter((n) => seasonArtShips(n) || shipped(n));
+}
+
+/** The season's accent as text on light surfaces (registry `surfaces.accentText`), else null = the caller's own ink. */
+export function seasonAccentText(season: string | null | undefined): string | null {
+  return seasonEntry(season)?.surfaces?.accentText ?? null;
+}
+
 /** The season's Home banner art (shipped), else null. */
 export function seasonBanner(season: string | null | undefined): string | null {
   const b = seasonEntry(season)?.slots.banner;
   return b && seasonArtShips(b) ? b : null;
 }
 
+/** The season's idle Home trio (its costumed O · W · R from the `cast` slot) when all three ship, else null. */
+export function seasonTrio(season: string | null | undefined, shipped: (name: string) => boolean = seasonArtShips): string[] | null {
+  const pattern = seasonEntry(season)?.slots.cast;
+  if (!pattern) return null;
+  const names = ['o1', 'w', 'r'].map((id) => pattern.replace('{id}', id));
+  return names.every((n) => seasonArtShips(n) || shipped(n)) ? names : null;
+}
+
 /** The season's Home curtain-stage art (registry `stage`) when it ships (season-art.generated.json or lib/art.ts), else null. */
-export function seasonStage(season: string | null | undefined, shipped: (name: string) => boolean = seasonArtShips): string | null {
-  const s = seasonEntry(season)?.slots.stage;
-  return s && (seasonArtShips(s) || shipped(s)) ? s : null;
+export function seasonStage(season: string | null | undefined, shipped: (name: string) => boolean = seasonArtShips, time: TimeOfDay = 'night'): string | null {
+  for (const n of timedCandidates(seasonEntry(season)?.slots.stage, time)) if (seasonArtShips(n) || shipped(n)) return n;
+  return null;
 }
 
 export function seasonPalette(season: string | null | undefined): SeasonPalette | null {
@@ -155,10 +213,23 @@ export function seasonLabel(id: string): string {
  * The season's surfaces: the registry's `surfaces`, unless the DEBUG choice is 'off'. Null = the
  * normal look.
  */
-export function seasonSurfaces(season: string | null | undefined, choice?: string | null): SeasonSurfaces | null {
+export function seasonSurfaces(season: string | null | undefined, choice?: string | null, time: TimeOfDay = 'night'): SeasonSurfaces | null {
   const s = seasonEntry(season);
   if (!s || choice === 'off') return null;
-  return s.surfaces ?? null;
+  return resolveSurfaces(s.surfaces, time);
+}
+
+/**
+ * The surfaces at a time of day (10-16): the base (= night) with that time's `tod` keys laid over it. `tone` in a tod entry
+ * only sets `wallInk` (the on-wall chrome ink); the card tone stays the base's. Night, or a time with no entry, is the base.
+ */
+export function resolveSurfaces(base: SeasonSurfaces | undefined, time: TimeOfDay): SeasonSurfaces | null {
+  if (!base) return null;
+  const { tod, ...rest } = base;
+  const o = time === 'night' ? undefined : tod?.[time];
+  if (!o) return { ...rest, wallInk: 'light' };
+  const { tone, ...over } = o;
+  return { ...rest, ...over, wallInk: tone === 'light' ? 'dark' : 'light' };
 }
 
 /** The hero greeting's lettering in the season's colors (registry `headline`: top, bottom, deep,
@@ -190,6 +261,12 @@ export function surfaceCssVars(s: SeasonSurfaces): Record<string, string> {
     v['--color-surface-alt'] = s.raised;
     v['--color-surface-hover'] = s.raised;
   }
+  // The share sheet's glass (raised -> card -> hero): its own night violet out of season (components/share/share-sheet.tsx).
+  if (s.tone === 'dark' && s.card) {
+    v['--season-sheet-top'] = s.raised ?? s.card;
+    v['--season-sheet-mid'] = s.card;
+    v['--season-sheet-bot'] = s.hero ?? s.card;
+  }
   if (s.text) v['--color-text'] = s.text;
   if (s.textMuted) v['--color-text-muted'] = s.textMuted;
   if (s.textSecondary) {
@@ -204,8 +281,10 @@ export function surfaceCssVars(s: SeasonSurfaces): Record<string, string> {
   }
   if (s.glow) v['--season-glow'] = rgba(s.glow, s.tone === 'dark' ? 0.32 : 0.22);
   if (s.bannerGlow) v['--season-banner-glow'] = rgba(s.bannerGlow, s.tone === 'dark' ? 0.34 : 0.26);
+  if (s.accentText) v['--season-accent-text'] = s.accentText;
   if (s.cobweb) v['--season-cobweb'] = rgba(s.cobweb, s.tone === 'dark' ? 0.42 : 0.38);
   if (s.tone === 'dark') v['--banner-gloss'] = '0.04';
+  if (s.wallInk) v['--season-wall-ink'] = s.wallInk === 'dark' ? '#1B1230' : '#FFFFFF';
   // A finished daily on dark glass wears its game color (mode-card modeCardSurface, home-banner Tile).
   if (s.tone === 'dark' && s.card) {
     v['--season-done-pct'] = `${SEASON_DONE.wash * 100}%`;
@@ -229,6 +308,6 @@ export const SURFACE_CSS_VARS = [
   '--color-card-base', '--color-surface', '--season-hero-fill', '--color-surface-alt', '--color-surface-hover',
   '--color-text', '--color-text-muted', '--color-text-secondary', '--banner-ink',
   '--season-cap-0', '--season-cap-1', '--season-cap-2', '--season-cap-tint',
-  '--season-glow', '--season-banner-glow', '--season-cobweb', '--banner-gloss',
-  '--season-done-pct', '--season-idle-pct', '--season-done-glow', '--season-tile-idle-pct', '--season-tile-base',
+  '--season-glow', '--season-banner-glow', '--season-cobweb', '--season-accent-text', '--banner-gloss',
+  '--season-wall-ink', '--season-sheet-top', '--season-sheet-mid', '--season-sheet-bot', '--season-done-pct', '--season-idle-pct', '--season-done-glow', '--season-tile-idle-pct', '--season-tile-base',
 ] as const;

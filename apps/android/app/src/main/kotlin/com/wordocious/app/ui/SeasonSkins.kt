@@ -103,7 +103,17 @@ object SeasonSkins {
      * The season right now: the admin preview first, else the calendar's (items 24 + 25) unless the off-switch is
      * off or this player picked another theme for this season (Settings > Theme).
      */
+    /** The share sheet's look swatch: set on the RENDER thread only ("normal" = no season), so a card draws in the picked look without touching the UI. */
+    private val shareLook = ThreadLocal<String?>()
+
+    /** Runs [block] (a share-card render) with the season forced to [look] on this thread; "" / null = the player's own season. */
+    fun <T> withShareLook(look: String?, block: () -> T): T {
+        shareLook.set(look?.takeIf { it.isNotEmpty() })
+        try { return block() } finally { shareLook.remove() }
+    }
+
     fun current(): String? {
+        shareLook.get()?.let { return if (it == "normal") null else it }
         epoch // read: Compose callers recompose when a pick / the switch changes it
         preview?.let { return it }
         val s = calendarSeason() ?: return null
@@ -199,20 +209,11 @@ fun rememberSeason(): String? {
 }
 
 /**
- * X a Halloween prop for the day titles (`art_halloween_prop_<name>`): drawn only in
- * season AND only when the art has shipped (nothing at all otherwise). Decorative.
+ * X a season prop for the day titles (a drawable from the registry `props` slot, SeasonKit.props): decorative.
+ * 10-16: any season (was Halloween's four by name); the caller picks the pair by the day of the year.
  */
 @Composable
-fun HalloweenPropSlot(name: String, size: Dp, modifier: Modifier = Modifier) {
-    val season = rememberSeason() ?: return
-    val context = LocalContext.current
-    // The registry's props for the season (`name` picks one of the Halloween four by name; any
-    // other season uses its own props in the same order).
-    val res = remember(name, season) {
-        val all = SeasonKit.props(context, season)
-        val idx = listOf("pumpkin", "bat", "candy", "ghost").indexOf(name)
-        if (season == Season.HALLOWEEN) SeasonSkins.propRes(context, name) else all.getOrNull(idx) ?: 0
-    }
+fun SeasonPropSlot(@androidx.annotation.DrawableRes res: Int, size: Dp, modifier: Modifier = Modifier) {
     if (res == 0) return
     Image(artPainter(res, size), null, modifier.size(size).clearAndSetSemantics { }, contentScale = ContentScale.Fit)
 }

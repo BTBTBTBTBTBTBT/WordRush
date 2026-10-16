@@ -14,7 +14,8 @@ import { ambientSrc, seasonalEntry, themeEntry, themeWallVars, type ThemeAmbient
 // upscaled image. Default keeps its art walls. Season skins layer on top (SeasonWallLayer renders after this).
 //
 // LivingWallpaper: slow drifting particles on the wall: letter tiles (Default / Dark), bubbles (Ocean), leaves
-// (Forest) and, while Seasonal is on, bats + a witch fly-by + fog + stars. Static under Reduce Motion
+// (Forest) and, while Seasonal is on, bats + a witch fly-by + fog + stars (Halloween) or a slow V of geese
+// (Thanksgiving, 10-16). Static under Reduce Motion
 // (the in-app toggle, prefers-reduced-motion) and when saving data; trimmed on struggling devices; off with the
 // `living_wallpapers` switch. CSS transforms only (compositor), no JS per frame.
 
@@ -135,27 +136,80 @@ function useWitchMoonPath(witchW: number): React.CSSProperties {
 }
 
 function SeasonalAmbient({ entry, trim }: { entry: NonNullable<NonNullable<ReturnType<typeof seasonalEntry>>['ambient']>; trim: number }) {
-  const moonPath = useWitchMoonPath(entry.witch.size);
-  const bats = Math.max(1, Math.round(entry.bats.count * trim));
-  const stars = Math.round(entry.stars.count * trim);
+  // Every part is optional (Halloween: stars + fog + bats + witch; Thanksgiving: a flock of geese + a few stars).
+  const moonPath = useWitchMoonPath(entry.witch?.size ?? 0);
+  const bats = entry.bats ? Math.max(1, Math.round(entry.bats.count * trim)) : 0;
+  const stars = entry.stars ? Math.round(entry.stars.count * trim) : 0;
   return (
     <>
-      {Array.from({ length: stars }, (_, i) => (
-        <span key={`s${i}`} className="amb-star" style={{ left: `${unit(i, 11) * 96}%`, top: `${unit(i, 12) * 55}%`, background: entry.stars.color, ['--dur' as string]: `${lerp(3, 7, unit(i, 13))}s`, ['--delay' as string]: `${-unit(i, 14) * 6}s` }} />
+      {entry.stars && Array.from({ length: stars }, (_, i) => (
+        <span key={`s${i}`} className="amb-star" style={{ left: `${unit(i, 11) * 96}%`, top: `${unit(i, 12) * 55}%`, background: entry.stars!.color, ['--dur' as string]: `${lerp(3, 7, unit(i, 13))}s`, ['--delay' as string]: `${-unit(i, 14) * 6}s` }} />
       ))}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="amb-fog" src={ambientSrc(entry.fog.sprite)} alt="" decoding="async" draggable={false} style={{ opacity: entry.fog.opacity, ['--dur' as string]: `${entry.fog.duration}s` }} />
-      {Array.from({ length: bats }, (_, i) => {
-        const size = lerp(entry.bats.size[0], entry.bats.size[1], unit(i, 21));
+      {entry.fog && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="amb-fog" src={ambientSrc(entry.fog.sprite)} alt="" decoding="async" draggable={false} style={{ opacity: entry.fog.opacity, ['--dur' as string]: `${entry.fog.duration}s` }} />
+      )}
+      {entry.bats && Array.from({ length: bats }, (_, i) => {
+        const b = entry.bats!;
+        const size = lerp(b.size[0], b.size[1], unit(i, 21));
         return (
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={`b${i}`} className="amb-bat" src={ambientSrc(entry.bats.sprite)} alt="" width={size} height={size * 0.69} decoding="async" draggable={false}
-            style={{ top: `${6 + unit(i, 22) * 40}%`, ['--dur' as string]: `${lerp(entry.bats.duration[0], entry.bats.duration[1], unit(i, 23))}s`, ['--delay' as string]: `${-unit(i, 24) * 14}s`, ['--flap-delay' as string]: `${-unit(i, 25) * 0.6}s` }} />
+          <img key={`b${i}`} className="amb-bat" src={ambientSrc(b.sprite)} alt="" width={size} height={size * 0.69} decoding="async" draggable={false}
+            style={{ top: `${6 + unit(i, 22) * 40}%`, ['--dur' as string]: `${lerp(b.duration[0], b.duration[1], unit(i, 23))}s`, ['--delay' as string]: `${-unit(i, 24) * 14}s`, ['--flap-delay' as string]: `${-unit(i, 25) * 0.6}s` }} />
         );
       })}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="amb-witch" src={ambientSrc(entry.witch.sprite)} alt="" width={entry.witch.size} decoding="async" draggable={false}
-        style={{ ['--every' as string]: `${entry.witch.every}s`, ['--dur' as string]: `${entry.witch.every * 3}s`, ...moonPath }} />
+      {entry.witch && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="amb-witch" src={ambientSrc(entry.witch.sprite)} alt="" width={entry.witch.size} decoding="async" draggable={false}
+          style={{ ['--every' as string]: `${entry.witch.every}s`, ['--dur' as string]: `${entry.witch.every * 3}s`, ...moonPath }} />
+      )}
+      {entry.flock && <Flock f={entry.flock} which={0} />}
+      {entry.flock && trim >= 1 && <Flock f={entry.flock} which={1} />}
     </>
+  );
+}
+
+/**
+ * The V of geese (10-16, founder: "animate that V of ducks like the bats"): the same formation the Thanksgiving wall
+ * engine baked (geese_v: lead + two trailing arms, 0.92 L step, 0.30 spread, the upper arm a little tighter), built
+ * from one goose sprite so each bird beats its wings with the bats' scaleY squash, out of step. The whole V crosses
+ * the top band in one slow linear pass (40-70 s) with a gentle rise and fall. `which` 0 = the flock that is always
+ * on its way; 1 = a smaller flock that passes once every third cycle (hidden the rest of the time, like the witch).
+ */
+export function flockGeese(count: number, size: number, direction: 1 | -1, salt: number) {
+  const L = size * 0.56;                       // the sprite is 1.78 L wide (goose() spans -0.70 L .. 1.00 L + padding)
+  const perArm = Math.floor((count - 1) / 2);
+  const geese: { x: number; y: number; w: number; k: number }[] = [{ x: 0, y: 0, w: size, k: 0 }];
+  let k = 1;
+  for (const [dy, tight, extra] of [[-1, 0.78, 0], [1, 1.0, (count - 1) % 2]] as const) {
+    for (let i = 1; i <= perArm + extra; i++, k++) {
+      geese.push({
+        x: -direction * (i * L * 0.92 + lerp(-0.05, 0.05, unit(k, salt + 1)) * L),
+        y: dy * i * L * 0.30 * tight + lerp(-0.06, 0.06, unit(k, salt + 2)) * L,
+        w: size * lerp(0.86, 1.0, unit(k, salt + 3)),
+        k,
+      });
+    }
+  }
+  const trail = perArm * L * 0.92 + size;     // how far the last goose trails the lead (+ its own width)
+  return { geese, trail };
+}
+
+function Flock({ f, which }: { f: NonNullable<NonNullable<NonNullable<ReturnType<typeof seasonalEntry>>['ambient']>['flock']>; which: 0 | 1 }) {
+  const count = which ? Math.max(3, f.count - 2) : f.count;
+  const size = lerp(f.size[0], f.size[1], unit(which, 31)) * (which ? 0.8 : 1);
+  const dur = lerp(f.duration[0], f.duration[1], unit(which, 32)) * (which ? 1.15 : 1);
+  const { geese, trail } = useMemo(() => flockGeese(count, size, f.direction, 40 + which * 10), [count, size, f.direction, which]);
+  const top = lerp(f.band[0], f.band[1], unit(which, 33));
+  // Heading right: the lead enters at -10vw and leaves at 110vw + trail (so the last goose is off screen both ends).
+  const [x0, x1] = f.direction === 1 ? ['-10vw', `calc(110vw + ${trail}px)`] : [`calc(110vw + ${trail}px)`, '-10vw'];
+  return (
+    <span className={`amb-flock ${which ? 'amb-flock-rare' : ''}`} style={{ top: `${top}%`, ['--dur' as string]: `${which ? dur * 3 : dur}s`, ['--delay' as string]: `${-unit(which, 34) * dur}s`, ['--x0' as string]: x0, ['--x1' as string]: x1, ['--xmid' as string]: `calc(50vw + ${trail / 2}px)` }}>
+      {geese.map((g) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={g.k} className="amb-goose" src={ambientSrc(f.sprite)} alt="" width={g.w} height={g.w / 2} decoding="async" draggable={false}
+          style={{ left: g.x - g.w / 2, top: g.y - g.w / 2 * 0.85, ['--dx' as string]: f.direction, ['--flap-delay' as string]: `${-unit(g.k, 35 + which) * 1.1}s` }} />
+      ))}
+    </span>
   );
 }

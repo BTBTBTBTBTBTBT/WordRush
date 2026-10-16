@@ -603,8 +603,8 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
               artHeight={96}
               accent="leaderboard"
               className="py-6"
-              title="NO SWEEPS TODAY"
-              line="Nobody's swept today. Be the first!"
+              title="NO SWEEPS YET"
+              line="Nobody has swept today. Be the first!"
               actionLabel="Play today's dailies"
               actionHref="/daily"
               actionColor="amber"
@@ -622,8 +622,8 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
             artHeight={96}
             accent="leaderboard"
             className="py-6"
-            title="NO RESULTS YET"
-            line="Nobody's finished today's puzzle. Be the first!"
+            title={friendsOnly && userId ? 'FRIENDS ARE STILL ASLEEP' : 'NO RESULTS YET'}
+            line={friendsOnly && userId ? 'None of your friends have played yet today.' : 'Nobody has finished today. Be the first!'}
             actionLabel="Play today's dailies"
             actionHref="/daily"
             actionColor="amber"
@@ -902,7 +902,7 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
                 artHeight={80}
                 accent="leaderboard"
                 title="NO SWEEPS YET"
-                line="Finish every daily in one day to land here."
+                line="Finish every daily in one day and you top this board. Be the first!"
               />
             ) : (
               // Service already filters blocked; the RPC rank is authoritative.
@@ -930,7 +930,7 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
             artHeight={80}
             accent="leaderboard"
             title="NO RECORDS YET"
-            line="Play this game and the first records are up for grabs."
+            line="Every daily you finish can set one. The board starts with you."
           />
         ) : (
           <div className="grid grid-cols-2 gap-2.5">

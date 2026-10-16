@@ -18,7 +18,17 @@ class AvatarArtCoverageTest {
     private val app = File("../app/src/main")
     private val m: AvatarFitManifest by lazy { AvatarFitManifest.parse(File(app, "assets/avatar-parts.json").readText())!! }
 
-    private fun ships(art: String) = File(app, "res/drawable-nodpi/${art.replace('-', '_').lowercase()}.webp").exists()
+    /** Byte-identical parts keep one file; the other names are resource aliases (scripts/android-art-optimize.py). */
+    private val aliases: Set<String> by lazy {
+        val f = File(app, "res/values/art_aliases.xml")
+        if (!f.exists()) emptySet()
+        else Regex("<item name=\"([^\"]+)\" type=\"drawable\">").findAll(f.readText()).map { it.groupValues[1] }.toSet()
+    }
+
+    private fun ships(art: String): Boolean {
+        val name = art.replace('-', '_').lowercase()
+        return File(app, "res/drawable-nodpi/$name.webp").exists() || name in aliases
+    }
 
     private fun combos(): List<AvatarConfig> {
         val base = defaultAvatar("coverage").copy(pattern = "solid")

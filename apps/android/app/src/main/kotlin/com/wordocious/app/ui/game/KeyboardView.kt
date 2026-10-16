@@ -176,7 +176,10 @@ private data class KeyLook(val fill: Color, val ink: Color)
 
 /** The unstated key: #fbfaff with the deep purple letter; dark #3d355f with #efe9ff. */
 private val KEY_PLAIN = KeyLook(Color(0xFFFBFAFF), Color(0xFF3B1A78))
-private val KEY_PLAIN_DARK = KeyLook(Color(0xFF3D355F), Color(0xFFEFE9FF))
+private val KEY_PLAIN_NIGHT = KeyLook(Color(0xFF3D355F), Color(0xFFEFE9FF))
+/** Time of day (founder 10-16): in a dark season the unstated key is that look's `raised` window color (it tints with the sky). */
+private val KEY_PLAIN_DARK: KeyLook get() = WTheme.season?.takeIf { it.dark && it.raised != null }
+    ?.let { KeyLook(it.raised!!, it.text ?: KEY_PLAIN_NIGHT.ink) } ?: KEY_PLAIN_NIGHT
 /** A multi-board letter ruled out on every board (founder 10-10): dark and flat, below every live key. */
 private val KEY_DEAD = KeyLook(Color(0xFF515B70), Color.White.copy(alpha = 0.45f))
 private val KEY_DEAD_DARK = KeyLook(Color(0xFF1A1630), Color.White.copy(alpha = 0.45f))

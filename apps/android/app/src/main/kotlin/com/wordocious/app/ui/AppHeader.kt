@@ -183,7 +183,7 @@ private fun HeaderControlsRow(
                 SoftControl(
                     Icon3DName.FLAME, "$streak day streak",
                     onClick = { if (profile != null) open = HeaderPop.STREAK },
-                    number = "$streak",
+                    number = "$streak", numberColor = WTheme.wallInk(),
                 )
             }
             // §244: flawless-streak count — the day-stamped cache written by
@@ -194,7 +194,7 @@ private fun HeaderControlsRow(
                 SoftControl(
                     Icon3DName.TROPHY, "$flawlessStreak day flawless streak",
                     onClick = { open = HeaderPop.FLAWLESS },
-                    number = "$flawlessStreak",
+                    number = "$flawlessStreak", numberColor = WTheme.wallInk(),
                 )
             }
             val shields = AuthService.headerShields
@@ -202,7 +202,7 @@ private fun HeaderControlsRow(
                 SoftControl(
                     Icon3DName.SHIELD, "$shields streak ${if (shields == 1) "shield" else "shields"}",
                     onClick = { if (profile != null) open = HeaderPop.SHIELD },
-                    number = "$shields",
+                    number = "$shields", numberColor = WTheme.wallInk(),
                 )
             }
         }

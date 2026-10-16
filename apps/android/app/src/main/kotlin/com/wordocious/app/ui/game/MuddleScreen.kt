@@ -1243,8 +1243,8 @@ private fun MuddleFinished(
         strip = {
             ResultStrip(
                 won,
-                listOfNotNull(
-                    if (!won) stripCount("$solvedCount/$SCRAMBLE_TOTAL_BOARDS", "solved") else null,
+                listOf(
+                    // Parity audit 10-16 (F5): checks · time · pts, like iOS and web (no loss-only "n/m solved" chip).
                     stripCount("${s.checks}", if (s.checks == 1) "check" else "checks", StripGlyph.CROWN),
                     stripTime(secs), stripPoints(session.points),
                 ),

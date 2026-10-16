@@ -11,7 +11,7 @@ import { SoftNum } from '@/components/ui/soft-number';
 import { GiftProCard, InviteCodeTiles, InviteSentCard, PendingPill } from '@/components/friends/invite-screens';
 import { FR_LOOK, rowStripe } from '@/lib/friends-look';
 import { GIFT_SLOTS, giftShareText, giftsLeft } from '@/lib/invite-screens';
-import { softMix } from '@/lib/soft-surface';
+import { softMix, softMixCss } from '@/lib/soft-surface';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { logShareEvent } from '@/lib/share-events';
@@ -285,7 +285,7 @@ export function InvitePanel() {
                 key={inv.id}
                 className="credit-row flex items-center gap-2 px-3 py-2 text-xs font-bold"
                 data-leaving={leaving.has(inv.id) ? 'true' : undefined}
-                style={{ background: rowStripe(i + 1), borderTop: i === 0 ? undefined : `1px solid ${softMix(FR_LOOK.gold, 0.2)}`, minHeight: 44 }}
+                style={{ background: rowStripe(i + 1), borderTop: i === 0 ? undefined : `1px solid ${softMixCss(FR_LOOK.gold, 0.2)}`, minHeight: 44 }}
               >
                 {open ? (
                   <span className="flex-1 min-w-0 flex flex-col items-start gap-1">

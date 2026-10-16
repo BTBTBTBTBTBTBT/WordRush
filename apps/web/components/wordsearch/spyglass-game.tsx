@@ -335,7 +335,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
         <>
           <PuzzleFinished
             strip={
-              <ResultStrip won={won} guesses={state.misses} guessLabel={state.misses === 1 ? 'miss' : 'misses'} time={formatTime(elapsedSeconds)} points={points}
+              <ResultStrip won={won} guesses={`${state.found.length}/${state.words.length}`} guessLabel="found" time={formatTime(elapsedSeconds)} points={points}
                 srText={`${won ? (gc === 10 ? 'Clean clear' : state.wordsShown ? 'Cleared with the list' : 'Grid cleared') : 'Revealed'}. ${state.found.length}/${state.words.length} found · ${missLabel} · ${formatTime(elapsedSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`} />
             }
             board={(box) => <div className="px-1 pb-1 w-full"><SpyglassGrid state={state} onSelect={() => {}} disabled revealMissing={!won} maxSize={deskSquare(box)} /></div>}

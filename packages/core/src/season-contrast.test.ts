@@ -20,6 +20,10 @@ interface Surfaces {
   textMuted?: string;
   textSecondary?: string;
   headline?: string[];
+  /** The accent as INK on the light walls / under white (a11y review 10-16 #11: thanksgiving's #F0824A accent is 2.1-2.6:1 as text). */
+  accentText?: string;
+  /** Time of day (10-16): a `tone: "light"` entry flips only the ON-WALL chrome ink dark (never the card tone). */
+  tod?: Partial<Record<'morning' | 'day' | 'evening', { tone?: 'dark' | 'light' }>>;
 }
 interface Season {
   id: string;
@@ -28,6 +32,8 @@ interface Season {
 }
 
 const SEASONS = (registry as unknown as { seasons: Season[] }).seasons;
+/** The dark on-wall chrome ink (web --season-wall-ink, iOS SeasonSurface.wallInk, Android SeasonSurfaces.WALL_INK_DARK). */
+const WALL_INK_DARK = '#1B1230';
 const AA = 4.5;
 const AA_LARGE = 3;
 
@@ -78,6 +84,23 @@ describe('season palette tokens meet WCAG AA on their surfaces', () => {
             }
           });
         }
+      }
+
+      // A season whose accent is not a text color names a darker accentText: body ink on every light wall, and a fill under white.
+      if (sf.accentText) {
+        it(`accentText ${sf.accentText} clears ${AA}:1 on the light walls and under white`, () => {
+          for (const wall of s.palette.wallLight) expect(contrastRatio(sf.accentText!, wall), `accentText on wall ${wall}`).toBeGreaterThanOrEqual(AA);
+          expect(contrastRatio('#ffffff', sf.accentText!), 'white on accentText').toBeGreaterThanOrEqual(AA);
+        });
+      }
+
+      // Time of day: a time whose sky is light (tod.<t>.tone = "light") draws the on-wall chrome in WALL_INK_DARK. It must read on the
+      // season's light wall stops (body 4.5:1); the REAL per-time wall pixels are checked by apps/web/lib/wall-ink-contrast.test.ts.
+      const lightTimes = (['morning', 'day', 'evening'] as const).filter((t) => sf.tod?.[t]?.tone === 'light');
+      if (lightTimes.length) {
+        it(`WALL_INK_DARK ${WALL_INK_DARK} (used at ${lightTimes.join(' + ')}) clears ${AA}:1 on the light wall stops`, () => {
+          for (const wall of s.palette.wallLight) expect(contrastRatio(WALL_INK_DARK, wall), `wall ink on ${wall}`).toBeGreaterThanOrEqual(AA);
+        });
       }
 
       // The season's button tint is a filled control (non-text UI, 3:1) on the card; on a dark-tone

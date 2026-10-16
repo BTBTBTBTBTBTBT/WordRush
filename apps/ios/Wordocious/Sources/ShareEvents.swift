@@ -12,6 +12,10 @@ import Supabase
 /// The dual-share chooser's pick is encoded here — "Full results" → 'image',
 /// "No spoilers" (colors only, the emoji-grid-style variant) → 'text'.
 /// Invite links (VS private match / invite sheet) → 'link_invite'.
+/// True while the share sheet renders a card by running a call site's own share closure (ShareCapture):
+/// the closure's `ShareEvents.log` must not count a preview as a share.
+enum ShareCaptureState { static var active = false }
+
 enum ShareEvents {
     private struct Insert: Encodable {
         let user_id: String?
@@ -23,6 +27,7 @@ enum ShareEvents {
 
     /// Fire-and-forget: never blocks or surfaces errors to the share flow.
     static func log(kind: String, gameMode: String, surface: String) {
+        if ShareCaptureState.active { return }
         Task {
             let client = AuthService.shared.client
             let uid = (try? await client.auth.session)?.user.id.uuidString

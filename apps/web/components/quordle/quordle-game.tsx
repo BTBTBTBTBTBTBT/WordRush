@@ -19,8 +19,8 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { shareResult } from '@/lib/share-utils';
-import { chooseShareVariant } from '@/components/share/share-variant-modal';
+import { shareFinished } from '@/lib/share-finished-flow';
+import { useShareSheetFlag } from '@/hooks/use-share-sheet-flag';
 import { boardToGrid, boardToLetters } from '@/lib/share-grid';
 import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
@@ -166,25 +166,28 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
   const finishedPoints = state.status === 'PLAYING' ? null
     : computeScoreBreakdown('QUORDLE', state.status === 'WON', totalGuesses, elapsedTime, state.boards.filter(b => b.status === 'WON').length, 4, 0, undefined, undefined, isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined).total;
 
+  const shareSheetOn = useShareSheetFlag();
   const handleShare = useCallback(async () => {
-    const variant = await chooseShareVariant();
-    if (!variant) return;
     const boards = state.boards.map(b => ({ grid: boardToGrid(b), letters: boardToLetters(b), won: b.status === 'WON', solution: b.solution }));
     const boardsSolved = boards.filter(b => b.won).length;
-    const out = await shareResult({
-      layout: 'multi',
-      mode: 'QuadWord',
-      won: state.status === 'WON',
-      guesses: totalGuesses,
-      maxGuesses: state.boards[0]?.maxGuesses || 9,
-      timeSeconds: elapsedTime,
-      boards,
-      boardsSolved,
-      totalBoards: 4,
-      reveal: variant === 'full',
+    const copied = await shareFinished({
+      sheet: shareSheetOn, catalogMode: 'quordle', gameName: 'QuadWord', isDaily: !!isDaily, won: state.status === 'WON',
+      multi: true, guesses: totalGuesses, timeSeconds: elapsedTime, boardsTotal: 4,
+      build: (reveal) => ({
+        layout: 'multi',
+        mode: 'QuadWord',
+        won: state.status === 'WON',
+        guesses: totalGuesses,
+        maxGuesses: state.boards[0]?.maxGuesses || 9,
+        timeSeconds: elapsedTime,
+        boards,
+        boardsSolved,
+        totalBoards: 4,
+        reveal,
+      }),
     });
-    if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
-  }, [state, totalGuesses, elapsedTime]);
+    if (copied) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [state, totalGuesses, elapsedTime, isDaily, shareSheetOn]);
 
   const handleRestart = () => {
     const newSeed = Date.now().toString();

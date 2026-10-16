@@ -389,7 +389,7 @@ private fun DailyRecordsTab(
                 if (sweepEntries.isEmpty()) {
                     // An empty board gets R asleep (ART_SPEC §7 scene).
                     BrandEmptyState(
-                        title = "NO SWEEPS YET", line = "Finish all of today's dailies to land on this board.",
+                        title = "NO SWEEPS YET", line = "Nobody has swept today. Be the first!",
                         scene = SceneArt.ASLEEP, lineColor = lbSubInk(),
                     )
                 } else {
@@ -415,8 +415,8 @@ private fun DailyRecordsTab(
             } else if (entries.isEmpty()) {
                 // Web parity (records page): an empty board gets R asleep (ART_SPEC §7 scene).
                 BrandEmptyState(
-                    title = "NO RESULTS YET",
-                    line = if (friendsOnly && userId != null) "None of your friends have played yet today." else "Nobody has finished this daily yet. Be the first!",
+                    title = if (friendsOnly && userId != null) "FRIENDS ARE STILL ASLEEP" else "NO RESULTS YET",
+                    line = if (friendsOnly && userId != null) "None of your friends have played yet today." else "Nobody has finished today. Be the first!",
                     scene = SceneArt.ASLEEP, lineColor = lbSubInk(),
                 )
             } else {
@@ -693,7 +693,7 @@ private fun AllTimeTab(
                         // Still loading — the same pulsing rows every other board uses.
                         board == null -> Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) { LeaderboardSkeleton() }
                         board.isEmpty() -> BrandEmptyState(
-                            title = "NO SWEEPS YET", line = "Sweep every daily in one day to start the all-time board.",
+                            title = "NO SWEEPS YET", line = "Finish every daily in one day and you top this board. Be the first!",
                             scene = SceneArt.ASLEEP, lineColor = lbSubInk(),
                         )
                         else -> board.forEachIndexed { i, e ->
@@ -702,7 +702,7 @@ private fun AllTimeTab(
                     }
                 } else if (modeRecords.isEmpty()) {
                     BrandEmptyState(
-                        title = "NO RECORDS YET", line = "The first big finish here sets the mark.",
+                        title = "NO RECORDS YET", line = "Every daily you finish can set one. The board starts with you.",
                         scene = SceneArt.ASLEEP, lineColor = lbSubInk(),
                     )
                 } else {

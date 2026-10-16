@@ -764,12 +764,11 @@ fun PublicProfileScreen(
 
     // Report reason picker (iOS confirmationDialog parity, context "public_profile").
     if (showReportDialog) {
-        androidx.compose.material3.AlertDialog(
-            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
+        // Parity audit 10-16: the family sheet (the reasons are its body), not a Material dialog.
+        FamilyDialogSheet(
             onDismissRequest = { showReportDialog = false },
-            containerColor = accentWash(PROFILE_PINK, 0.10f),
-            title = { Text("Report this user?", fontWeight = FontWeight.Black, color = WTheme.text) },
-            text = {
+            title = "Report this user?", danger = true,
+            body = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Reports are reviewed by the Wordocious team.", fontSize = 12.sp, color = WTheme.textMuted)
                     Spacer(Modifier.height(2.dp))
@@ -794,7 +793,6 @@ fun PublicProfileScreen(
                     }
                 }
             },
-            confirmButton = {},
             dismissButton = {
                 CandyButton("Cancel", onClick = { showReportDialog = false }, color = CandyColor.PEACH, size = CandySize.MEDIUM)
             },
@@ -802,28 +800,17 @@ fun PublicProfileScreen(
     }
     // Block confirmation (iOS confirmationDialog parity).
     if (showBlockConfirm) {
-        androidx.compose.material3.AlertDialog(
-            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
-            onDismissRequest = { showBlockConfirm = false },
-            containerColor = accentWash(PROFILE_PINK, 0.10f),
-            title = { Text("Block this user?", fontWeight = FontWeight.Black, color = WTheme.text) },
-            text = { Text("You won't see this player on leaderboards or records.", color = WTheme.textSecondary) },
-            confirmButton = {
-                CandyButton(
-                    "Block",
-                    onClick = {
-                        showBlockConfirm = false
-                        moderationScope.launch {
-                            ModerationService.block(userId)
-                            blocked = true
-                            moderationToast = "User blocked"
-                        }
-                    },
-                    color = CandyColor.PINK, size = CandySize.MEDIUM,
-                )
-            },
-            dismissButton = {
-                CandyButton("Cancel", onClick = { showBlockConfirm = false }, color = CandyColor.PEACH, size = CandySize.MEDIUM)
+        FamilyConfirm(
+            title = "Block this user?", message = "You won't see this player on leaderboards or records.",
+            confirm = "Block", cancel = "Cancel", danger = true,
+            onDismiss = { showBlockConfirm = false },
+            onConfirm = {
+                showBlockConfirm = false
+                moderationScope.launch {
+                    ModerationService.block(userId)
+                    blocked = true
+                    moderationToast = "User blocked"
+                }
             },
         )
     }

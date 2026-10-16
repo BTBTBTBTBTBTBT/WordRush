@@ -236,6 +236,7 @@ enum AchievementService {
             if hour < 7 && hour >= 4 { await tryUnlockNew("early_bird") }
             if hour < 4 { await tryUnlockNew("night_owl") }
             if Season.current(day: today) == .halloween { await tryUnlockNew("spooky_season") }
+            if Season.current(day: today) == .thanksgiving { await tryUnlockNew("harvest_feast") }
         }
         if gameMode == "DUEL" && won && guessCount <= 2 { await tryUnlock("no_sweat") }
         if won && timeSeconds < 15 { await tryUnlock("blitz") }

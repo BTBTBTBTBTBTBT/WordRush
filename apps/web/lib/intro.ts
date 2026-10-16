@@ -128,12 +128,16 @@ export const SPLASH_NIGHT = '#0E091B';
  * the in-season intro. It mirrors lib/season.ts activeSeason (preview ?season= / session key, the calendar
  * window, the player's "no Seasonal" opt-out, the `season_halloween` + `opening_animation_season` off-switches
  * from the cached flags table, fail open); any mismatch only costs one frame of color. The windows + wall
- * names are baked in from the registry at render time, so a new season needs no edit here.
+ * names are baked in from the registry at render time, so a new season needs no edit here. A not-ready season
+ * (core `ready: false`) is matched only by the admin preview override, never by the calendar (its art ships for the
+ * preview before the public gets it).
  */
 export function seasonLoaderScript(): string {
   const seasons = SEASON_WINDOWS.flatMap((w) => {
     const wall = seasonalWall('art-wall-home', w.id, 'dark');
-    return wall ? [{ id: w.id, start: w.start[0] * 100 + w.start[1], end: w.end[0] * 100 + w.end[1], wall }] : [];
+    // 10-16 time of day: the launch screen wears the wall for the local hour (the script picks by the clock; night = wall).
+    const tod = { morning: seasonalWall('art-wall-home', w.id, 'dark', 'morning'), day: seasonalWall('art-wall-home', w.id, 'dark', 'day'), evening: seasonalWall('art-wall-home', w.id, 'dark', 'evening') };
+    return wall ? [{ id: w.id, start: w.start[0] * 100 + w.start[1], end: w.end[0] * 100 + w.end[1], wall, tod, ready: w.ready }] : [];
   });
   return `(function(){try{
 var S=${JSON.stringify(seasons)};
@@ -142,7 +146,7 @@ try{ov=new URLSearchParams(location.search).get('season')||sessionStorage.getIte
 if(ov==='none'||ov==='off')return;
 for(i=0;i<S.length;i++){s=S[i];
  if(ov===s.id){id=i;break}
- if(!id&&id!==0&&(s.start<=s.end?(k>=s.start&&k<=s.end):(k>=s.start||k<=s.end)))id=i}
+ if(s.ready&&!id&&id!==0&&(s.start<=s.end?(k>=s.start&&k<=s.end):(k>=s.start||k<=s.end)))id=i}
 if(id==null)return;s=S[id];
 var auto=ov!==s.id;
 if(auto){try{if(localStorage.getItem('wordocious-season-optout')===s.id+':'+d.getFullYear())return}catch(e){}}
@@ -150,6 +154,9 @@ try{var f=JSON.parse(localStorage.getItem('wordocious-app-flags')||'null');
  if(f)for(var n=auto?['season_halloween','opening_animation_season']:['opening_animation_season'],j=0;j<n.length;j++){var r=f[n[j]];if(r&&(!r.enabled||r.audience!=='all'))return}}catch(e){}
 var el=document.getElementById('app-loader');if(!el)return;
 var wide=matchMedia('(min-aspect-ratio: 1/1), (min-width: 1024px)').matches;
-el.style.background='${SPLASH_NIGHT} url("/art/'+s.wall+(wide?'-wide':'')+'.webp") center/cover no-repeat';
+var h=d.getHours(),ov2=null;try{ov2=new URLSearchParams(location.search).get('tod')||sessionStorage.getItem('wordocious-tod-preview')}catch(e){}
+var t=ov2==='morning'||ov2==='day'||ov2==='evening'||ov2==='night'?ov2:(h>=19||h<5?'night':h>=16?'evening':h>=10?'day':'morning');
+var wl=(t!=='night'&&s.tod[t])||s.wall;
+el.style.background='${SPLASH_NIGHT} url("/art/'+wl+(wide?'-wide':'')+'.webp") center/cover no-repeat';
 }catch(e){}})();`;
 }

@@ -34,6 +34,12 @@ data class MusicalMelody(
     val song: List<Int>? = null,
     /** Each sung note's length in replay beats (same length as `song ?: notes`). null → 1 each. */
     val beats: List<Double>? = null,
+    /** The season (registry id) it only counts in; null = every day. Data for the admin Sound Library. */
+    val season: String? = null,
+    /** Where the public-domain tune comes from (composer / origin, year). */
+    val source: String = "",
+    /** The discovery hint: a short, spoiler-light nudge. Never the title. */
+    val hint: String = "",
 )
 
 data class MelodyState(val notes: List<Int> = emptyList(), val lastAt: Long? = null)
@@ -143,25 +149,25 @@ object MusicalCast {
     /** Public-domain tunes (their best-known opening, every note on a cast key). */
     val MELODIES: List<MusicalMelody> = listOf(
         MusicalMelody(
-            "mary", "Mary Had a Little Lamb", "tune_little_lamb", listOf(E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4),
+            "mary", "Mary Had a Little Lamb", "tune_little_lamb", listOf(E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4), source = "Sarah Josepha Hale, 1830; traditional tune", hint = "A lamb whose fleece was white as snow",
             song = listOf(E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4, E4, D4, C4, D4, E4, E4, E4, E4, D4, D4, E4, D4, C4),
             beats = listOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0),
         ),
         MusicalMelody(
-            "twinkle", "Twinkle, Twinkle, Little Star", "tune_little_star", listOf(C4, C4, G4, G4, A4, A4, G4, F4, F4, E4, E4, D4, D4, C4),
+            "twinkle", "Twinkle, Twinkle, Little Star", "tune_little_star", listOf(C4, C4, G4, G4, A4, A4, G4, F4, F4, E4, E4, D4, D4, C4), source = "French folk tune, 1761; words Jane Taylor, 1806", hint = "A little star, up above the world so high",
             beats = listOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0),
         ),
         MusicalMelody(
-            "ode", "Ode to Joy", "tune_ode_to_joy", listOf(E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4),
+            "ode", "Ode to Joy", "tune_ode_to_joy", listOf(E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4), source = "Ludwig van Beethoven, Symphony No. 9, 1824", hint = "Beethoven's big finale, four notes up the scale",
             song = listOf(E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4, E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, D4, C4, C4),
             beats = listOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 0.5, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 0.5, 2.0),
         ),
         MusicalMelody(
-            "birthday", "Happy Birthday", "tune_happy_birthday", listOf(G4, G4, A4, G4, C5, B4, G4, G4, A4, G4, D5, C5),
+            "birthday", "Happy Birthday", "tune_happy_birthday", listOf(G4, G4, A4, G4, C5, B4, G4, G4, A4, G4, D5, C5), source = "Patty and Mildred Hill, 1893 (public domain since 2016)", hint = "The song with the candles, once a year",
             beats = listOf(0.75, 0.25, 1.0, 1.0, 1.0, 2.0, 0.75, 0.25, 1.0, 1.0, 1.0, 2.0),
         ),
         MusicalMelody(
-            "buns", "Hot Cross Buns", "tune_hot_cross_buns", listOf(E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4),
+            "buns", "Hot Cross Buns", "tune_hot_cross_buns", listOf(E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4), source = "English street cry, 1798", hint = "One a penny, two a penny",
             beats = listOf(1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 2.0),
         ),
     )
@@ -177,30 +183,66 @@ object MusicalCast {
      * keys by interval shape (see musical-cast.ts). Only active in season; each is a hidden achievement.
      */
     val HALLOWEEN_MELODIES: List<MusicalMelody> = listOf(
-        MusicalMelody("mountain_king", "In the Hall of the Mountain King", "tune_mountain_king", listOf(A4, B4, C5, D5, E5, C5, E5, D5, B4, D5),
+        MusicalMelody("mountain_king", "In the Hall of the Mountain King", "tune_mountain_king", listOf(A4, B4, C5, D5, E5, C5, E5, D5, B4, D5), season = "halloween", source = "Edvard Grieg, Peer Gynt, 1875", hint = "Tiptoe up the steps of the mountain king's hall",
             song = listOf(D4, E4, F4, G4, A4, F4, A4, G4, E4, G4, G4, E4, G4, D4, E4, F4, G4, A4, F4, A4, D5, C5, A4, F4, A4, C5),
             beats = listOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 3.0),
         ),
-        MusicalMelody("toccata", "Toccata and Fugue in D minor", "tune_toccata", listOf(A4, G4, A4, G4, F4, E4, D4, C4, D4),
+        MusicalMelody("toccata", "Toccata and Fugue in D minor", "tune_toccata", listOf(A4, G4, A4, G4, F4, E4, D4, C4, D4), season = "halloween", source = "Johann Sebastian Bach, BWV 565, c. 1704", hint = "The spookiest organ opening ever written",
             song = listOf(A4, G4, A4, G4, F4, E4, D4, C4, D4, A4, G4, A4, E4, F4, C4, D4),
             beats = listOf(0.25, 0.25, 2.0, 0.25, 0.25, 0.25, 0.25, 0.5, 2.5, 0.25, 0.25, 2.0, 0.25, 0.25, 0.5, 3.0),
         ),
-        MusicalMelody("funeral_march", "Funeral March", "tune_funeral_march", listOf(A4, A4, A4, A4, C5, B4, B4, A4, A4, G4, A4)),
-        MusicalMelody("marionette", "Funeral March of a Marionette", "tune_marionette", listOf(A4, A4, G4, F4, G4, A4, B4)),
-        MusicalMelody("danse_macabre", "Danse Macabre", "tune_danse_macabre", listOf(A4, A4, C5, A4, B4, C5, A4, C5, A4, C5, B4, C5, B4, A4)),
-        MusicalMelody("bald_mountain", "Night on Bald Mountain", "tune_bald_mountain", listOf(B4, C5, B4, A4, B4, C5, C5, E5, B4),
+        MusicalMelody("funeral_march", "Funeral March", "tune_funeral_march", listOf(A4, A4, A4, A4, C5, B4, B4, A4, A4, G4, A4), season = "halloween", source = "Frederic Chopin, Piano Sonata No. 2, 1839", hint = "A slow march on one low note"),
+        MusicalMelody("marionette", "Funeral March of a Marionette", "tune_marionette", listOf(A4, A4, G4, F4, G4, A4, B4), season = "halloween", source = "Charles Gounod, 1872", hint = "A puppet's march (a certain TV host liked it too)"),
+        MusicalMelody("danse_macabre", "Danse Macabre", "tune_danse_macabre", listOf(A4, A4, C5, A4, B4, C5, A4, C5, A4, C5, B4, C5, B4, A4), season = "halloween", source = "Camille Saint-Saens, 1874", hint = "Skeletons waltzing at midnight"),
+        MusicalMelody("bald_mountain", "Night on Bald Mountain", "tune_bald_mountain", listOf(B4, C5, B4, A4, B4, C5, C5, E5, B4), season = "halloween", source = "Modest Mussorgsky, 1867", hint = "A wild night on a bare mountain",
             song = listOf(B4, C5, B4, A4, B4, C5, C5, E5, B4, B4, C5, D5, E5, E5, D5, C5, B4, A4),
             beats = listOf(1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 0.5, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 1.0),
         ),
-        MusicalMelody("sorcerers_apprentice", "The Sorcerer's Apprentice", "tune_sorcerers_apprentice", listOf(A4, E5, A4, C5, A4, C5, B4, C5, A4, C5)),
+        MusicalMelody("sorcerers_apprentice", "The Sorcerer's Apprentice", "tune_sorcerers_apprentice", listOf(A4, E5, A4, C5, A4, C5, B4, C5, A4, C5), season = "halloween", source = "Paul Dukas, 1897", hint = "Brooms that will not stop marching"),
     )
 
     /** Halloween tunes still waiting for checked notation: none (all five from the plan are wired above). */
     val HALLOWEEN_TUNES_TODO: List<String> = emptyList()
 
-    /** The tunes that count right now: the everyday five, plus the season's own (halloween). */
-    fun activeMelodies(season: String? = null): List<MusicalMelody> =
-        if (season == "halloween") MELODIES + HALLOWEEN_MELODIES else MELODIES
+    /**
+     * The Thanksgiving tunes (founder 10-16): public-domain compositions on the cast's white keys, matched by interval
+     * shape, only in the Thanksgiving window (and only once the season is READY: SeasonKit gates it; the admin preview
+     * passes the id). Normal voices (no seasonal note prefix). Simple Gifts (Brackett, 1848): the first phrase a fifth
+     * up (D4 pickup, G4 tonic); the sung continuation ends on D4 with F standing in for F# (see musical-cast.ts).
+     */
+    val THANKSGIVING_MELODIES: List<MusicalMelody> = listOf(
+        MusicalMelody("simple_gifts", "Simple Gifts", "tune_simple_gifts", listOf(D4, D4, G4, G4, A4, B4, A4, B4, C5, D5, D5, C5, B4, A4, G4), season = "thanksgiving", source = "Joseph Brackett, Shaker, 1848", hint = "'Tis the gift to be simple",
+            song = listOf(D4, D4, G4, G4, A4, B4, A4, B4, C5, D5, D5, C5, B4, A4, G4, A4, A4, A4, A4, A4, B4, A4, F4, D4),
+            beats = listOf(0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 1.0, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 2.0),
+        ),
+        MusicalMelody("we_gather", "We Gather Together", "tune_we_gather", listOf(G4, G4, A4, G4, E4, F4, G4, F4, E4, D4, E4, C4), season = "thanksgiving", source = "Dutch folk tune, 1626; arr. Eduard Kremser, 1877", hint = "A Dutch melody for the whole table, asking a blessing",
+            song = listOf(G4, G4, A4, G4, E4, F4, G4, F4, E4, D4, E4, C4, G4, G4, A4, B4, C5, D5, B4, A4, G4, A4, G4, G4, G4, A4, B4, C5, G4, G4, G4, A4, F4, G4, E4, C4, C4, F4, G4, A4, F4, G4, F4, E4, E4, F4, D4, C4, C4),
+            beats = listOf(1.0, 1.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.5, 0.5, 1.0, 1.5, 0.5, 1.0, 1.5, 0.5, 1.0, 2.0, 1.0, 1.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.5, 0.5, 0.5, 0.5, 1.5, 0.5, 0.5, 0.5, 1.0, 1.5, 0.5, 2.0),
+        ),
+        MusicalMelody("thankful_people", "Come, Ye Thankful People, Come", "tune_thankful_people", listOf(E4, E4, G4, E4, C4, D4, E4, E4, E4, G4, E4, C4, D4, E4), season = "thanksgiving", source = "George J. Elvey, St. George's Windsor, 1858", hint = "The last wagon of the harvest rolls home",
+            beats = listOf(1.5, 0.5, 1.0, 1.0, 1.0, 1.0, 2.0, 1.5, 0.5, 1.0, 1.0, 1.0, 1.0, 2.0),
+        ),
+        MusicalMelody("now_thank", "Now Thank We All Our God", "tune_now_thank", listOf(G4, G4, G4, A4, A4, G4, E4, F4, E4, D4), season = "thanksgiving", source = "Johann Cruger, Nun danket, 1647", hint = "A grand old chorale: thanks with heart, hands and voices",
+            beats = listOf(2.0, 1.5, 0.5, 1.0, 1.0, 3.0, 1.0, 1.0, 1.0, 2.0),
+        ),
+    )
+
+    /** Thanksgiving tunes still waiting for checked notation (public domain; wired once checked against a score). */
+    val THANKSGIVING_TUNES_TODO: List<String> = listOf(
+        "Over the River and Through the Wood", "Bringing in the Sheaves", "For the Beauty of the Earth",
+    )
+
+    /** Each season's own tunes (only count in that season; the achievements stay forever). */
+    val SEASON_MELODIES: Map<String, List<MusicalMelody>> = mapOf("halloween" to HALLOWEEN_MELODIES, "thanksgiving" to THANKSGIVING_MELODIES)
+
+    /** Every tune in catalog order: the everyday five, then each season's batch (Halloween, Thanksgiving). */
+    val ALL_MELODIES: List<MusicalMelody> = MELODIES + HALLOWEEN_MELODIES + THANKSGIVING_MELODIES
+
+    /** The tunes that count right now: the everyday five, plus the season's own (SEASON_MELODIES). */
+    fun activeMelodies(season: String? = null): List<MusicalMelody> {
+        val own = season?.let { SEASON_MELODIES[it] } ?: return MELODIES
+        return MELODIES + own
+    }
 
     /** The steps between consecutive notes (the shape of a tune, key-free). */
     fun melodyIntervals(notes: List<Int>): List<Int> = (1 until notes.size).map { notes[it] - notes[it - 1] }
@@ -236,7 +278,7 @@ object MusicalCast {
     }
 
     /** The secret achievement keys (achievement-rules NEW_ACHIEVEMENTS, `secret`: shown only once unlocked). */
-    val ACHIEVEMENT_KEYS: List<String> = (MELODIES + HALLOWEEN_MELODIES).map { it.achievement }
+    val ACHIEVEMENT_KEYS: List<String> = ALL_MELODIES.map { it.achievement }
 
     /**
      * The playback (founder 10-12): a completed tune is sung back once, cleanly — [REPLAY_LEAD_IN_MS] after the last tap,

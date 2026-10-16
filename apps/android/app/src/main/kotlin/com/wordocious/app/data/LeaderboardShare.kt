@@ -748,7 +748,10 @@ object LeaderboardShare {
 
     /** Draws the stage art feathered into the night page: the edges fade to nothing so no rectangle shows. */
     private fun drawStageFeathered(context: Context, c: Canvas, dst: RectF, shown: Float) {
-        val art = runCatching { BitmapFactory.decodeResource(context.resources, com.wordocious.app.ui.PodiumArt.STAGE_RES) }.getOrNull() ?: return
+        // The display-size art cache (the in-app podium's bitmap, BoardPodium): no fresh full-res decode per share render.
+        val art = com.wordocious.app.ui.ArtBitmaps.get(
+            context, com.wordocious.app.ui.PodiumArt.STAGE_RES, com.wordocious.app.ui.ArtBitmaps.bucketPx(dst.width().toInt()),
+        )?.asAndroidBitmap() ?: return
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
         val layer = c.saveLayer(dst.left - 2f, dst.top - 2f, dst.right + 2f, dst.bottom + 2f, null)
         c.drawBitmap(art, android.graphics.Rect(0, 0, art.width, (art.height * shown).toInt()), dst, paint)
@@ -1032,6 +1035,7 @@ object LeaderboardShare {
                 listOf(bitmap to ShareHelper.fileName(name.split(" ").joinToString("") { it.replaceFirstChar { ch -> ch.titlecase() } })),
                 "Share your $name",
                 fallbackText = "wordocious.com",
+                sheet = ShareHelper.SheetHint(surface = com.wordocious.core.ShareSurface.LEADERBOARD, mode = input.gameModeLower),
             )
             ShareEvents.log(if (sent) "image" else "text", input.gameModeLower, SURFACE)
         }

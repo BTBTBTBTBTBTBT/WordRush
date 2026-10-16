@@ -674,8 +674,8 @@ private fun SudokuFinished(
             ResultStrip(
                 won,
                 listOf(
-                    if (won) stripCount("${s.mistakes}", if (s.mistakes == 1) "mistake" else "mistakes", StripGlyph.CROWN)
-                    else stripCount("$remaining", if (remaining == 1) "cell left" else "cells left"),
+                    // Parity audit 10-16 (F5): mistakes · time · pts on a loss too, like iOS and web (no "cells left" chip).
+                    stripCount("${s.mistakes}", if (s.mistakes == 1) "mistake" else "mistakes", if (won) StripGlyph.CROWN else StripGlyph.CHECK),
                     stripTime(secs), stripPoints(points),
                 ),
                 srText = (if (won) "Sudocious solved" else "Out of mistakes") + ". " +

@@ -160,7 +160,7 @@ object DailySweepShare {
         val fallback = if (flawless) "Puzzles Flawless on Wordocious! All ${totals.total} puzzles won.\nwordocious.com"
                        else "Puzzles Sweep on Wordocious! All ${totals.total} puzzles done.\nwordocious.com"
         // S1: the image only (no hosted link, no caption).
-        val sent = ShareHelper.shareImage(context, bitmap, "Puzzles", fallbackText = fallback)
+        val sent = ShareHelper.shareImage(context, bitmap, "Puzzles", fallbackText = fallback, sheet = ShareHelper.SheetHint(com.wordocious.core.ShareSurface.SWEEP))
         ShareEvents.log(if (sent) "image" else "text", "", "more_sweep")
     }
 
@@ -188,7 +188,7 @@ object DailySweepShare {
             images += render(context, moreRows, moreTotals, flawless, title = title, puzzles = true) to "Wordocious-Puzzles.png"
         }
         // S1: the images only (one ACTION_SEND, or SEND_MULTIPLE for both cards); no text.
-        val sent = ShareHelper.shareImages(context, images, "Share today's progress", fallbackText = "$headline\nwordocious.com")
+        val sent = ShareHelper.shareImages(context, images, "Share today's progress", fallbackText = "$headline\nwordocious.com", sheet = ShareHelper.SheetHint(com.wordocious.core.ShareSurface.SWEEP))
         ShareEvents.log(if (sent) "image" else "text", "", "home_banner")
     }
 
@@ -198,7 +198,7 @@ object DailySweepShare {
         if (rows.isEmpty()) return
         val totals = DailyCompletionsService.totals(byMode)
         val bitmap = render(context, rows, totals, totals.flawless)
-        val sent = ShareHelper.shareImage(context, bitmap, if (totals.flawless) "Flawless Victory" else "Daily Sweep", fallbackText = sweepCaption())
+        val sent = ShareHelper.shareImage(context, bitmap, if (totals.flawless) "Flawless Victory" else "Daily Sweep", fallbackText = sweepCaption(), sheet = ShareHelper.SheetHint(com.wordocious.core.ShareSurface.SWEEP))
         ShareEvents.log(if (sent) "image" else "text", "", "daily_sweep")
     }
 }
@@ -289,7 +289,7 @@ object ProfileShare {
     fun share(context: Context, input: ProfileInput) {
         val bitmap = render(context, input)
         val fallback = "My Wordocious stats: Level ${input.level} ${input.tier}, ${input.totalWins} wins.\nwordocious.com"
-        val sent = ShareHelper.shareImage(context, bitmap, "Stats", fallbackText = fallback, chooserTitle = "Share your stats")
+        val sent = ShareHelper.shareImage(context, bitmap, "Stats", fallbackText = fallback, chooserTitle = "Share your stats", sheet = ShareHelper.SheetHint(com.wordocious.core.ShareSurface.PROFILE))
         ShareEvents.log(if (sent) "image" else "text", "", "profile")
     }
 }

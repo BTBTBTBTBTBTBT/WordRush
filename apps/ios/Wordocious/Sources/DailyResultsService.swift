@@ -188,6 +188,8 @@ enum DailyResultsService {
                            timeSeconds: timeSeconds, totalBoards: totalBoards) else { return }
         let day = seed.flatMap(getDailySeedDate) ?? LeaderboardService.todayLocal()
         guard day == LeaderboardService.todayLocal() else { return }
+        // Home headline pool (home_headlines_v2): the last finished daily, local only (`{last}` / won reactions).
+        HomeHeadlinesV2.recordFinish(mode: gameMode.rawValue, won: completed)
         let composite = DailyScoring.compositeScore(
             gameMode: gameMode.rawValue, completed: completed, guessCount: guessCount,
             timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,

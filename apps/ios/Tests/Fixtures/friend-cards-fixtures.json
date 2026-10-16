@@ -13,7 +13,8 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "Pick rock, paper or scissors"
+      "word": "Pick rock, paper or scissors",
+      "rowLabel": "Rock Paper Scissors, Pick rock, paper or scissors, your turn"
     },
     {
       "kind": "rps",
@@ -30,7 +31,8 @@
       },
       "me": "a",
       "yourTurn": false,
-      "word": "Waiting for their pick"
+      "word": "Waiting for their pick",
+      "rowLabel": "Rock Paper Scissors, Waiting for their pick, waiting on them"
     },
     {
       "kind": "rps",
@@ -47,7 +49,8 @@
       },
       "me": "b",
       "yourTurn": true,
-      "word": "Pick rock, paper or scissors"
+      "word": "Pick rock, paper or scissors",
+      "rowLabel": "Rock Paper Scissors, Pick rock, paper or scissors, your turn"
     },
     {
       "kind": "ttt",
@@ -74,7 +77,8 @@
       },
       "me": "b",
       "yourTurn": true,
-      "word": "Your turn to place a tile"
+      "word": "Your turn to place a tile",
+      "rowLabel": "Tic-Tac-Tile, Your turn to place a tile, your turn"
     },
     {
       "kind": "ttt",
@@ -101,7 +105,8 @@
       },
       "me": "b",
       "yourTurn": false,
-      "word": "Waiting for their move"
+      "word": "Waiting for their move",
+      "rowLabel": "Tic-Tac-Tile, Waiting for their move, waiting on them"
     },
     {
       "kind": "ttt",
@@ -128,7 +133,8 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "Your turn to place a tile"
+      "word": "Your turn to place a tile",
+      "rowLabel": "Tic-Tac-Tile, Your turn to place a tile, your turn"
     },
     {
       "kind": "coin",
@@ -144,7 +150,8 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "Call heads or tails"
+      "word": "Call heads or tails",
+      "rowLabel": "Call It, Call heads or tails, your turn"
     },
     {
       "kind": "coin",
@@ -160,7 +167,8 @@
       },
       "me": "b",
       "yourTurn": false,
-      "word": "Waiting for their call"
+      "word": "Waiting for their call",
+      "rowLabel": "Call It, Waiting for their call, waiting on them"
     },
     {
       "kind": "pass",
@@ -172,7 +180,8 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "Your guess (1 of 6)"
+      "word": "Your guess (1 of 6)",
+      "rowLabel": "Pass the Puzzle, Your guess (1 of 6), your turn"
     },
     {
       "kind": "pass",
@@ -207,7 +216,8 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "Your guess (3 of 6)"
+      "word": "Your guess (3 of 6)",
+      "rowLabel": "Pass the Puzzle, Your guess (3 of 6), your turn"
     },
     {
       "kind": "pass",
@@ -242,7 +252,8 @@
       },
       "me": "b",
       "yourTurn": false,
-      "word": "Waiting for their guess"
+      "word": "Waiting for their guess",
+      "rowLabel": "Pass the Puzzle, Waiting for their guess, waiting on them"
     },
     {
       "kind": "ghost",
@@ -260,7 +271,8 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "Start the word: add a letter"
+      "word": "Start the word: add a letter",
+      "rowLabel": "Ghost, Start the word: add a letter, your turn"
     },
     {
       "kind": "ghost",
@@ -282,7 +294,8 @@
       },
       "me": "b",
       "yourTurn": true,
-      "word": "Add a letter to GHO"
+      "word": "Add a letter to GHO",
+      "rowLabel": "Ghost, Add a letter to GHO, your turn"
     },
     {
       "kind": "ghost",
@@ -304,7 +317,8 @@
       },
       "me": "a",
       "yourTurn": false,
-      "word": "Waiting for their letter"
+      "word": "Waiting for their letter",
+      "rowLabel": "Ghost, Waiting for their letter, waiting on them"
     },
     {
       "kind": "chain",
@@ -319,7 +333,8 @@
       },
       "me": "a",
       "yourTurn": true,
-      "word": "Start the chain with any word"
+      "word": "Start the chain with any word",
+      "rowLabel": "Word Chain, Start the chain with any word, your turn"
     },
     {
       "kind": "chain",
@@ -340,7 +355,8 @@
       },
       "me": "b",
       "yourTurn": true,
-      "word": "Your word must start with E"
+      "word": "Your word must start with E",
+      "rowLabel": "Word Chain, Your word must start with E, your turn"
     },
     {
       "kind": "chain",
@@ -361,7 +377,8 @@
       },
       "me": "a",
       "yourTurn": false,
-      "word": "Waiting for their word"
+      "word": "Waiting for their word",
+      "rowLabel": "Word Chain, Waiting for their word, waiting on them"
     }
   ],
   "layouts": [

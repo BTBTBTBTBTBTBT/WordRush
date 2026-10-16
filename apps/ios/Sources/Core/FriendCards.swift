@@ -114,6 +114,11 @@ public enum FriendCards {
         }
     }
 
+    /// A game row's accessibility label, whose turn it is included (core gameRowLabel; the chips are hidden from VoiceOver).
+    public static func gameRowLabel(kind: FriendlyKind, word: String, yourTurn: Bool) -> String {
+        "\(kind.title), \(word), \(yourTurn ? "your turn" : "waiting on them")"
+    }
+
     /// "6 games waiting on you" / "1 game waiting on you" / "".
     public static func waitingHeadline(_ n: Int) -> String {
         if n <= 0 { return "" }

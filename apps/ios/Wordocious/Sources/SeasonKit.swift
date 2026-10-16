@@ -22,14 +22,43 @@ enum SeasonKit {
     struct Slots: Decodable {
         let cast: String?
         let titles: [String: String]?
-        let walls: [String: String]?
+        /// 10-16 time of day: each wall is a name OR {night, morning, day, evening} (night = base art).
+        let walls: [String: TimedName]?
         let props: [String]?
         let banner: String?
         /// 10-16: the Home curtain-stage card art (core CelebrationStage geometry); absent / unshipped = the plain card.
-        let stage: String?
+        let stage: TimedName?
         let extras: [String: String]?
         /// Item 49: the season's sound slots (names of `sfx-<name>.m4a` in Resources/Sounds).
         let sounds: Sounds?
+    }
+
+    /// 10-16 time of day: a slot value that is either one image-set name (every time) or `{night, morning, day, evening}`.
+    /// `night` is the base art and the fallback whenever a time's key is missing or its image set doesn't ship.
+    struct TimedName: Decodable {
+        let night: String
+        let byTime: [TimeOfDay: String]
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.singleValueContainer()
+            if let one = try? c.decode(String.self) { night = one; byTime = [:]; return }
+            let m = try c.decode([String: String].self)
+            guard let n = m["night"] else { throw DecodingError.dataCorruptedError(in: c, debugDescription: "timed name without night") }
+            night = n
+            var by: [TimeOfDay: String] = [:]
+            for t in TimeOfDay.allCases where t != .night { if let v = m[t.rawValue] { by[t] = v } }
+            byTime = by
+        }
+
+        /// The name to draw at `slot`: that time's image set when it ships, else night's.
+        func resolved(_ slot: TimeOfDay, light: Bool = false) -> String? {
+            if slot != .night, let n = byTime[slot] {
+                if light, ArtAsset.exists(n + "-light") { return n + "-light" }
+                if ArtAsset.exists(n) { return n }
+            }
+            if light, ArtAsset.exists(night + "-light") { return night + "-light" }
+            return ArtAsset.exists(night) ? night : nil
+        }
     }
 
     /// `slots.sounds`: `intro` = the cold-start jingle's sample name, `note` = the musical cast's note pattern (`{id}` = the
@@ -66,6 +95,21 @@ enum SeasonKit {
         let headline: [String]?
         let bannerGlow: String?
         let cobweb: String?
+        /// The accent as TEXT on a light surface (the palette accent is a fill; docs/review/a11y-1016.md #11).
+        let accentText: String?
+        /// 10-16 time of day: a PARTIAL override of the above per time (night = the base). Any key present replaces the base value
+        /// for that time; `tone == "light"` here only flips the ON-WALL ink dark (`Look.wallInkDark`), never the card tone.
+        let tod: [String: Surfaces]?
+
+        /// The base with `o`'s present keys replacing it (`tone` stays the base's: see `Look.wallInkDark`).
+        func merged(_ o: Surfaces) -> Surfaces {
+            Surfaces(tone: tone, card: o.card ?? card, cardOpacity: o.cardOpacity ?? cardOpacity,
+                     hero: o.hero ?? hero, heroOpacity: o.heroOpacity ?? heroOpacity, raised: o.raised ?? raised,
+                     cap: o.cap ?? cap, capTint: o.capTint ?? capTint, glow: o.glow ?? glow,
+                     text: o.text ?? text, textMuted: o.textMuted ?? textMuted, textSecondary: o.textSecondary ?? textSecondary,
+                     headline: o.headline ?? headline, bannerGlow: o.bannerGlow ?? bannerGlow, cobweb: o.cobweb ?? cobweb,
+                     accentText: o.accentText ?? accentText, tod: nil)
+        }
     }
 
     /// The resolved surfaces, colors parsed once.
@@ -85,8 +129,14 @@ enum SeasonKit {
         let headline: [Color]?
         let bannerGlow: Color?
         let cobweb: Color?
+        /// The season accent as ink on a light surface (nil = the caller's own ink).
+        let accentText: Color?
+        /// 10-16 time of day: the ON-WALL chrome ink (stats-row streak / shield digits, on-wall labels) is dark here (the
+        /// time's `tone == "light"`); the cards keep their own tone and ink.
+        let wallInkDark: Bool
 
-        init(_ s: Surfaces) {
+        init(_ s: Surfaces, wallInkDark: Bool = false) {
+            self.wallInkDark = wallInkDark
             func c(_ h: String?) -> Color? { h.flatMap { Color(hexString: $0) } }
             dark = s.tone == "dark"
             card = c(s.card); cardOpacity = s.cardOpacity ?? 1
@@ -100,6 +150,7 @@ enum SeasonKit {
             let h = (s.headline ?? []).compactMap { Color(hexString: $0) }
             headline = h.count == 5 ? h : nil
             bannerGlow = c(s.bannerGlow); cobweb = c(s.cobweb)
+            accentText = c(s.accentText)
         }
 
         /// A card's translucent fill (nil = the normal fill).
@@ -134,29 +185,52 @@ enum SeasonKit {
     static let surfacesKey = "debug-season-surfaces"
     private static let surfacesChoice = UserDefaults.standard.string(forKey: surfacesKey) ?? ""
     private static let lookLock = NSLock()
-    private static var lookCache: (id: String?, look: Look?)?
+    private static var lookCache: (key: String, look: Look?)?
 
-    /// The active season's windows (nil out of season / none / preview off).
+    /// The active season's windows at the APPLIED time slot (nil out of season / none / preview off). Base merged with
+    /// `surfaces.tod[slot]`; cached per (season, slot).
     static var surfaces: Look? {
         let entry = current
+        let slot = TimeOfDayState.appliedSlot
+        let key = "\(entry?.id ?? "-")|\(slot.rawValue)"
         lookLock.lock(); defer { lookLock.unlock() }
-        if let c = lookCache, c.id == entry?.id { return c.look }
+        if let c = lookCache, c.key == key { return c.look }
         var look: Look?
-        if let entry, surfacesChoice != "off" {
-            look = entry.surfaces.map(Look.init)
+        if let entry, surfacesChoice != "off", let base = entry.surfaces {
+            if slot != .night, let o = base.tod?[slot.rawValue] {
+                look = Look(base.merged(o), wallInkDark: o.tone == "light")
+            } else {
+                look = Look(base)
+            }
         }
-        lookCache = (entry?.id, look)
+        lookCache = (key, look)
         return look
     }
 
-    private struct File: Decodable { let seasons: [Entry] }
+    /// One bad season entry never empties the registry: each entry decodes on its own (a failure drops only that one).
+    private struct File: Decodable {
+        let seasons: [Entry]
+        private struct Lossy: Decodable {
+            let entry: Entry?
+            init(from decoder: Decoder) throws { entry = try? Entry(from: decoder) }
+        }
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: Key.self)
+            seasons = try c.decode([Lossy].self, forKey: .seasons).compactMap(\.entry)
+        }
+        private enum Key: String, CodingKey { case seasons }
+    }
+
+    /// Decode registry JSON (tests call this on the real file).
+    static func decodeRegistry(_ data: Data) -> [Entry] {
+        (try? JSONDecoder().decode(File.self, from: data))?.seasons ?? []
+    }
 
     /// Every registry season (bundle order = calendar order).
     static let registry: [Entry] = {
         guard let url = Bundle.main.url(forResource: "season-registry", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let file = try? JSONDecoder().decode(File.self, from: data) else { return [] }
-        return file.seasons
+              let data = try? Data(contentsOf: url) else { return [] }
+        return decodeRegistry(data)
     }()
 
     static func entry(_ id: String?) -> Entry? {
@@ -168,10 +242,10 @@ enum SeasonKit {
     static var current: Entry? { entry(CastSkin.season?.rawValue) }
 
     /// A slot map lookup: the exact name first, then the longest `prefix*` key.
-    static func lookup(_ map: [String: String]?, _ name: String) -> String? {
+    static func lookup<V>(_ map: [String: V]?, _ name: String) -> V? {
         guard let map else { return nil }
         if let hit = map[name] { return hit }
-        var best: (len: Int, value: String)?
+        var best: (len: Int, value: V)?
         for (k, v) in map where k.hasSuffix("*") {
             let prefix = String(k.dropLast())
             if name.hasPrefix(prefix), prefix.count > (best?.len ?? -1) { best = (prefix.count, v) }
@@ -189,9 +263,13 @@ enum SeasonKit {
     /// The seasonal wallpaper for a normal wall (nil = keep the normal one). Light mode takes the
     /// `<wall>-light` twin when it ships, so dark-on-light text keeps reading.
     static func wall(_ name: String, dark: Bool) -> String? {
+        wall(name, dark: dark, slot: TimeOfDayState.appliedSlot)
+    }
+
+    /// The wall at a given time slot (night / a missing or unshipped time = the base art).
+    static func wall(_ name: String, dark: Bool, slot: TimeOfDay) -> String? {
         guard let swap = lookup(current?.slots.walls, name) else { return nil }
-        if !dark, ArtAsset.exists(swap + "-light") { return swap + "-light" }
-        return ArtAsset.exists(swap) ? swap : nil
+        return swap.resolved(slot, light: !dark)
     }
 
     /// The season's helper-pill tint (nil out of season).
@@ -231,8 +309,18 @@ enum SeasonKit {
     }
 
     /// The season's Home curtain-stage art (registry `stage`; nil when none / not shipped = the plain card).
-    static var stage: String? {
-        guard let s = current?.slots.stage, ArtAsset.exists(s) else { return nil }
-        return s
+    static var stage: String? { stage(slot: TimeOfDayState.appliedSlot) }
+
+    /// The stage art at a given time slot (night / a missing or unshipped time = the base art).
+    static func stage(slot: TimeOfDay) -> String? { current?.slots.stage?.resolved(slot) }
+
+    /// The podium stadium (10-16): inside a season, morning / day / evening use `art-podium-stage-<slot>` (when it ships); night,
+    /// out of season, or a missing file = the night stadium `art-podium-stage`. Share cards always use the night one.
+    static var podiumStage: String { podiumStage(slot: TimeOfDayState.appliedSlot) }
+
+    static func podiumStage(slot: TimeOfDay) -> String {
+        guard current != nil, slot != .night else { return "art-podium-stage" }
+        let n = "art-podium-stage-\(slot.rawValue)"
+        return ArtAsset.exists(n) ? n : "art-podium-stage"
     }
 }

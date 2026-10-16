@@ -1,7 +1,151 @@
 {
+ "art-btn-thanksgiving-acorn": [
+  640,
+  168
+ ],
+ "art-btn-thanksgiving-apple-cider": [
+  640,
+  167
+ ],
+ "art-btn-thanksgiving-cranberry": [
+  640,
+  167
+ ],
+ "art-btn-thanksgiving-harvest-gold": [
+  640,
+  167
+ ],
+ "art-btn-thanksgiving-maple": [
+  640,
+  171
+ ],
+ "art-btn-thanksgiving-pumpkinpie": [
+  640,
+  192
+ ],
+ "art-celebration-stage-halloween-day": [
+  1586,
+  992
+ ],
+ "art-celebration-stage-halloween-evening": [
+  1586,
+  992
+ ],
+ "art-celebration-stage-halloween-morning": [
+  1586,
+  992
+ ],
+ "art-celebration-stage-thanksgiving": [
+  1586,
+  992
+ ],
+ "art-celebration-stage-thanksgiving-day": [
+  1586,
+  992
+ ],
+ "art-celebration-stage-thanksgiving-evening": [
+  1586,
+  992
+ ],
+ "art-celebration-stage-thanksgiving-morning": [
+  1586,
+  992
+ ],
+ "art-dress-tab-thanksgiving": [
+  144,
+  95
+ ],
+ "art-dress-tag-thanksgiving": [
+  444,
+  143
+ ],
  "art-scene-banner-halloween": [
   902,
   570
+ ],
+ "art-scene-banner-thanksgiving": [
+  902,
+  570
+ ],
+ "art-thanksgiving-c": [
+  320,
+  320
+ ],
+ "art-thanksgiving-d": [
+  320,
+  320
+ ],
+ "art-thanksgiving-i": [
+  320,
+  320
+ ],
+ "art-thanksgiving-o1": [
+  320,
+  320
+ ],
+ "art-thanksgiving-o2": [
+  320,
+  320
+ ],
+ "art-thanksgiving-o3": [
+  320,
+  320
+ ],
+ "art-thanksgiving-prop-acorn": [
+  256,
+  256
+ ],
+ "art-thanksgiving-prop-apple": [
+  256,
+  256
+ ],
+ "art-thanksgiving-prop-corn": [
+  256,
+  256
+ ],
+ "art-thanksgiving-prop-cornucopia": [
+  256,
+  256
+ ],
+ "art-thanksgiving-prop-leaf-maple": [
+  256,
+  256
+ ],
+ "art-thanksgiving-prop-leaf-oak": [
+  256,
+  256
+ ],
+ "art-thanksgiving-prop-pie-slice": [
+  256,
+  256
+ ],
+ "art-thanksgiving-prop-pumpkin-pie": [
+  256,
+  256
+ ],
+ "art-thanksgiving-prop-turkey-platter": [
+  256,
+  256
+ ],
+ "art-thanksgiving-prop-wheat": [
+  256,
+  256
+ ],
+ "art-thanksgiving-r": [
+  320,
+  320
+ ],
+ "art-thanksgiving-s": [
+  320,
+  320
+ ],
+ "art-thanksgiving-u": [
+  320,
+  320
+ ],
+ "art-thanksgiving-w": [
+  320,
+  320
  ],
  "art-title-halloween-crossword": [
   880,
@@ -99,9 +243,157 @@
   815,
   169
  ],
+ "art-title-thanksgiving-crossword": [
+  1080,
+  504
+ ],
+ "art-title-thanksgiving-cryptogram": [
+  1080,
+  171
+ ],
+ "art-title-thanksgiving-dailies": [
+  1080,
+  287
+ ],
+ "art-title-thanksgiving-friends": [
+  1080,
+  216
+ ],
+ "art-title-thanksgiving-gauntlet": [
+  888,
+  171
+ ],
+ "art-title-thanksgiving-groups": [
+  929,
+  192
+ ],
+ "art-title-thanksgiving-hub": [
+  1080,
+  249
+ ],
+ "art-title-thanksgiving-ladder": [
+  1080,
+  546
+ ],
+ "art-title-thanksgiving-leaderboard": [
+  1080,
+  159
+ ],
+ "art-title-thanksgiving-octordle": [
+  1038,
+  178
+ ],
+ "art-title-thanksgiving-pocket-chain": [
+  1080,
+  395
+ ],
+ "art-title-thanksgiving-pocket-coin": [
+  1080,
+  215
+ ],
+ "art-title-thanksgiving-pocket-ghost": [
+  1080,
+  257
+ ],
+ "art-title-thanksgiving-pocket-pass": [
+  1080,
+  389
+ ],
+ "art-title-thanksgiving-pocket-rps": [
+  1080,
+  308
+ ],
+ "art-title-thanksgiving-pocket-ttt": [
+  1080,
+  177
+ ],
+ "art-title-thanksgiving-practice": [
+  859,
+  186
+ ],
+ "art-title-thanksgiving-propernoundle": [
+  1080,
+  179
+ ],
+ "art-title-thanksgiving-puzzles": [
+  961,
+  196
+ ],
+ "art-title-thanksgiving-quordle": [
+  1080,
+  180
+ ],
+ "art-title-thanksgiving-regions": [
+  917,
+  170
+ ],
+ "art-title-thanksgiving-rescue": [
+  1080,
+  155
+ ],
+ "art-title-thanksgiving-scramble": [
+  774,
+  174
+ ],
+ "art-title-thanksgiving-sequence": [
+  1080,
+  184
+ ],
+ "art-title-thanksgiving-seven": [
+  1080,
+  565
+ ],
+ "art-title-thanksgiving-six": [
+  1080,
+  156
+ ],
+ "art-title-thanksgiving-stats": [
+  1080,
+  268
+ ],
+ "art-title-thanksgiving-sudoku": [
+  1080,
+  169
+ ],
+ "art-title-thanksgiving-vs": [
+  1080,
+  419
+ ],
+ "art-title-thanksgiving-wordsearch": [
+  1080,
+  201
+ ],
+ "art-title-thanksgiving-wotd": [
+  1080,
+  427
+ ],
  "art-wall-halloween-friends": [
   1290,
   2796
+ ],
+ "art-wall-halloween-friends-day": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-friends-day-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-halloween-friends-evening": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-friends-evening-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-halloween-friends-morning": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-friends-morning-wide": [
+  2400,
+  1500
  ],
  "art-wall-halloween-friends-wide": [
   2400,
@@ -111,6 +403,30 @@
   1290,
   2796
  ],
+ "art-wall-halloween-games-day": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-games-day-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-halloween-games-evening": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-games-evening-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-halloween-games-morning": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-games-morning-wide": [
+  2400,
+  1500
+ ],
  "art-wall-halloween-games-wide": [
   2400,
   1500
@@ -118,6 +434,30 @@
  "art-wall-halloween-home": [
   1290,
   2796
+ ],
+ "art-wall-halloween-home-day": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-home-day-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-halloween-home-evening": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-home-evening-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-halloween-home-morning": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-home-morning-wide": [
+  2400,
+  1500
  ],
  "art-wall-halloween-home-wide": [
   2400,
@@ -127,6 +467,30 @@
   1290,
   2796
  ],
+ "art-wall-halloween-leaderboard-day": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-leaderboard-day-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-halloween-leaderboard-evening": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-leaderboard-evening-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-halloween-leaderboard-morning": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-leaderboard-morning-wide": [
+  2400,
+  1500
+ ],
  "art-wall-halloween-leaderboard-wide": [
   2400,
   1500
@@ -135,8 +499,208 @@
   1290,
   2796
  ],
+ "art-wall-halloween-stats-day": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-stats-day-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-halloween-stats-evening": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-stats-evening-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-halloween-stats-morning": [
+  1290,
+  2796
+ ],
+ "art-wall-halloween-stats-morning-wide": [
+  2400,
+  1500
+ ],
  "art-wall-halloween-stats-wide": [
   2400,
   1500
+ ],
+ "art-wall-thanksgiving-friends": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-friends-day": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-friends-day-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-friends-evening": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-friends-evening-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-friends-morning": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-friends-morning-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-friends-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-games": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-games-day": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-games-day-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-games-evening": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-games-evening-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-games-morning": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-games-morning-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-games-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-home": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-home-day": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-home-day-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-home-evening": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-home-evening-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-home-morning": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-home-morning-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-home-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-leaderboard": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-leaderboard-day": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-leaderboard-day-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-leaderboard-evening": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-leaderboard-evening-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-leaderboard-morning": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-leaderboard-morning-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-leaderboard-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-stats": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-stats-day": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-stats-day-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-stats-evening": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-stats-evening-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-stats-morning": [
+  1290,
+  2796
+ ],
+ "art-wall-thanksgiving-stats-morning-wide": [
+  2400,
+  1500
+ ],
+ "art-wall-thanksgiving-stats-wide": [
+  2400,
+  1500
+ ],
+ "celebrate-h-scene-flawless-star": [
+  682,
+  914
+ ],
+ "celebrate-h-scene-sweep-broom": [
+  900,
+  744
+ ],
+ "celebrate-t-scene-flawless-star": [
+  764,
+  914
+ ],
+ "celebrate-t-scene-sweep-broom": [
+  840,
+  807
  ]
 }

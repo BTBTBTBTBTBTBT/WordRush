@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { darken, softMix } from '@/lib/soft-surface';
+import { darken, softMix, softMixCss } from '@/lib/soft-surface';
 
 // Moment reactions in our own style (FINISH_SPEC AM1, founder 10-02: "all new
 // emojis made using our style"). The stored keys never change (clap, fire, wow,
@@ -86,7 +86,7 @@ export function ReactionIcon({ reaction, size = 22 }: { reaction: ReactionArtKey
         padding: `0 ${Math.max(5, Math.round(size * 0.28))}px`,
         fontSize: Math.max(9, Math.round(size * 0.44)),
         letterSpacing: '0.02em',
-        background: `linear-gradient(180deg, ${softMix(tint, 0.2)}, ${softMix(tint, 0.34)})`,
+        background: `linear-gradient(180deg, ${softMixCss(tint, 0.2)}, ${softMixCss(tint, 0.34)})`,
         boxShadow: `inset 0 1px 0 rgba(255,255,255,0.7), 0 1px 2px ${softMix(tint, 0.5)}`,
       }}
     >

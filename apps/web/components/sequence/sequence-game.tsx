@@ -17,8 +17,8 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { shareResult } from '@/lib/share-utils';
-import { chooseShareVariant } from '@/components/share/share-variant-modal';
+import { shareFinished } from '@/lib/share-finished-flow';
+import { useShareSheetFlag } from '@/hooks/use-share-sheet-flag';
 import { boardToGrid, boardToLetters } from '@/lib/share-grid';
 import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
@@ -259,24 +259,27 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   const boardAreaRef = useRef<HTMLDivElement>(null);
   const boardFit = useSquareBoardFit(boardAreaRef, 4, maxGuesses, 18);
 
+  const shareSheetOn = useShareSheetFlag();
   const handleShare = useCallback(async () => {
-    const variant = await chooseShareVariant();
-    if (!variant) return;
     const boards = state.boards.map(b => ({ grid: boardToGrid(b), letters: boardToLetters(b), won: b.status === GameStatus.WON, solution: b.solution }));
-    const out = await shareResult({
-      layout: 'multi',
-      mode: 'Succession',
-      won: state.status === 'WON',
-      guesses: guessesUsed,
-      maxGuesses,
-      timeSeconds: elapsedTime,
-      boards,
-      boardsSolved: solvedCount,
-      totalBoards: 4,
-      reveal: variant === 'full',
+    const copied = await shareFinished({
+      sheet: shareSheetOn, catalogMode: 'sequence', gameName: 'Succession', isDaily: !!isDaily, won: state.status === 'WON',
+      multi: true, guesses: guessesUsed, timeSeconds: elapsedTime, boardsTotal: 4,
+      build: (reveal) => ({
+        layout: 'multi',
+        mode: 'Succession',
+        won: state.status === 'WON',
+        guesses: guessesUsed,
+        maxGuesses,
+        timeSeconds: elapsedTime,
+        boards,
+        boardsSolved: solvedCount,
+        totalBoards: 4,
+        reveal,
+      }),
     });
-    if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
-  }, [state, guessesUsed, maxGuesses, elapsedTime, solvedCount]);
+    if (copied) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [state, guessesUsed, maxGuesses, elapsedTime, solvedCount, isDaily, shareSheetOn]);
 
   // FINISH_SPEC BI5: the result popup waits for the final row's reveal (Succession boards don't hop).
   const popupReady = useFinishHold(showVictory || showGameOver, REVEAL.finishHoldMs(5, false, true));

@@ -146,6 +146,215 @@
     },
     "scenes/banner-halloween": {
       "where": "Home banner art under the greeting (when today has no Sweep / Flawless celebration)"
+    },
+    "seasons/halloween/extras/scene-flawless-star": {
+      "where": "Flawless celebration scene (O2 in the witch hat on the gem); replaces the gold crown overlay"
+    },
+    "seasons/halloween/extras/scene-sweep-broom": {
+      "where": "Sweep celebration scene (S on the broom in the skeleton costume)"
+    }
+  },
+  "thanksgiving": {
+    "seasons/thanksgiving/cast/w": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "seasons/thanksgiving/cast/o1": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "seasons/thanksgiving/cast/r": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "seasons/thanksgiving/cast/d": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "seasons/thanksgiving/cast/o2": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "seasons/thanksgiving/cast/c": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "seasons/thanksgiving/cast/i": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "seasons/thanksgiving/cast/o3": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "seasons/thanksgiving/cast/u": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "seasons/thanksgiving/cast/s": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "seasons/thanksgiving/props/turkey-platter": {
+      "where": "Leaderboard day title, one prop on each side"
+    },
+    "seasons/thanksgiving/props/pumpkin-pie": {
+      "where": "Leaderboard day title, one prop on each side and the Mascot maker Thanksgiving tab icon"
+    },
+    "seasons/thanksgiving/props/leaf-maple": {
+      "where": "Leaderboard day title, one prop on each side"
+    },
+    "seasons/thanksgiving/props/acorn": {
+      "where": "Leaderboard day title, one prop on each side"
+    },
+    "seasons/thanksgiving/titles/dailies": {
+      "where": "Home DAILIES section title"
+    },
+    "seasons/thanksgiving/titles/puzzles": {
+      "where": "Home PUZZLES section title"
+    },
+    "seasons/thanksgiving/titles/page-friends": {
+      "where": "Friends page title"
+    },
+    "seasons/thanksgiving/titles/page-leaderboard": {
+      "where": "Leaderboard page title (holiday days and share cards)"
+    },
+    "seasons/thanksgiving/titles/page-stats": {
+      "where": "Stats page title"
+    },
+    "seasons/thanksgiving/titles/page-wordoftheday": {
+      "where": "Word of the Day title"
+    },
+    "seasons/thanksgiving/titles/game-classic": {
+      "where": "Classic game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-classicsix": {
+      "where": "Six game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-classicseven": {
+      "where": "Seven game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-quadword": {
+      "where": "QuadWord game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-octoword": {
+      "where": "OctoWord game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-succession": {
+      "where": "Succession game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-deliverance": {
+      "where": "Deliverance game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-gauntlet": {
+      "where": "Gauntlet game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-propernoundle": {
+      "where": "ProperNoundle game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-sudocious": {
+      "where": "Sudocious game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-muddle": {
+      "where": "Muddle game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-hubbub": {
+      "where": "Hubbub game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-crosswordocious": {
+      "where": "Crosswordocious game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-kindred": {
+      "where": "Kindred game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-letterladder": {
+      "where": "Letter Ladder game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-codebreaker": {
+      "where": "Codebreaker game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-spyglass": {
+      "where": "Spyglass game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-starsweep": {
+      "where": "Starsweep game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/thanksgiving/titles/game-vs": {
+      "where": "VS lobby title, VS share cards, VS Battle strategy title"
+    },
+    "seasons/thanksgiving/titles/game-rockpaperscissors": {
+      "where": "Rock Paper Scissors title (Friends play, help card)"
+    },
+    "seasons/thanksgiving/titles/game-tictactile": {
+      "where": "Tic-Tac-Tile title (Friends play, help card)"
+    },
+    "seasons/thanksgiving/titles/game-callit": {
+      "where": "Call It title (Friends play, help card)"
+    },
+    "seasons/thanksgiving/titles/game-passthepuzzle": {
+      "where": "Pass the Puzzle title (Friends play, help card)"
+    },
+    "seasons/thanksgiving/titles/game-ghost": {
+      "where": "Ghost title (Friends play, help card)"
+    },
+    "seasons/thanksgiving/titles/game-wordchain": {
+      "where": "Word Chain title (Friends play, help card)"
+    },
+    "seasons/thanksgiving/walls/wall-home": {
+      "where": "Home wallpaper (Settings, Pro and help pages too), light and dark mode, harvest dusk in both"
+    },
+    "seasons/thanksgiving/walls/wall-home-wide": {
+      "where": "Home wallpaper (Settings, Pro and help pages too), light and dark mode, desktop web"
+    },
+    "seasons/thanksgiving/walls/wall-leaderboard": {
+      "where": "Leaderboard and Records wallpaper, light and dark mode, harvest dusk in both"
+    },
+    "seasons/thanksgiving/walls/wall-leaderboard-wide": {
+      "where": "Leaderboard and Records wallpaper, light and dark mode, desktop web"
+    },
+    "seasons/thanksgiving/walls/wall-stats": {
+      "where": "Stats wallpaper, light and dark mode, harvest dusk in both"
+    },
+    "seasons/thanksgiving/walls/wall-stats-wide": {
+      "where": "Stats wallpaper, light and dark mode, desktop web"
+    },
+    "seasons/thanksgiving/walls/wall-friends": {
+      "where": "Friends wallpaper, light and dark mode, harvest dusk in both"
+    },
+    "seasons/thanksgiving/walls/wall-friends-wide": {
+      "where": "Friends wallpaper, light and dark mode, desktop web"
+    },
+    "seasons/thanksgiving/walls/wall-games": {
+      "where": "every solo game screen and VS wallpaper, light and dark mode, harvest dusk in both"
+    },
+    "seasons/thanksgiving/walls/wall-games-wide": {
+      "where": "every solo game screen and VS wallpaper, light and dark mode, desktop web"
+    },
+    "seasons/thanksgiving/extras/celebration-stage-thanksgiving": {
+      "where": "Home curtain-stage card behind the greeting + cast row"
+    },
+    "seasons/thanksgiving/extras/scene-flawless-star": {
+      "where": "Flawless celebration scene (O2 in a harvest beanie on the gem); replaces the gold crown overlay"
+    },
+    "seasons/thanksgiving/extras/scene-sweep-broom": {
+      "where": "Sweep celebration scene (S on the broom in the turkey hat)"
+    },
+    "seasons/thanksgiving/props/apple": {
+      "where": "Leaderboard day title, one prop on each side (the pair rotates through all ten Thanksgiving props by day)"
+    },
+    "seasons/thanksgiving/props/corn": {
+      "where": "Leaderboard day title, one prop on each side (the pair rotates through all ten Thanksgiving props by day)"
+    },
+    "seasons/thanksgiving/props/cornucopia": {
+      "where": "Leaderboard day title, one prop on each side (the pair rotates through all ten Thanksgiving props by day)"
+    },
+    "seasons/thanksgiving/props/leaf-oak": {
+      "where": "Leaderboard day title, one prop on each side (the pair rotates through all ten Thanksgiving props by day)"
+    },
+    "seasons/thanksgiving/props/pie-slice": {
+      "where": "Leaderboard day title, one prop on each side (the pair rotates through all ten Thanksgiving props by day)"
+    },
+    "seasons/thanksgiving/props/wheat": {
+      "where": "Leaderboard day title, one prop on each side (the pair rotates through all ten Thanksgiving props by day)"
+    },
+    "seasons/thanksgiving/extras/dress-tag-thanksgiving": {
+      "where": "Dressing Room season tag on Thanksgiving items (the THANKSGIVING pill on each tile)"
+    },
+    "seasons/thanksgiving/extras/art-ach-harvest_feast": {
+      "where": "Harvest Feast achievement badge (Trophy case, unlock celebration)"
+    },
+    "seasons/thanksgiving/extras/art-ach-tune_simple_gifts": {
+      "where": "Simple Gifts secret-tune achievement badge (Trophy case, unlock celebration)"
     }
   }
 }

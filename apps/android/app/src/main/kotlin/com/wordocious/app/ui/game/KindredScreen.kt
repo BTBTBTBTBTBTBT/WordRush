@@ -734,9 +734,8 @@ private fun KindredFinished(
         strip = {
             ResultStrip(
                 won,
-                listOfNotNull(
-                    // A win is always 4/4; the groups chip only says something on a loss.
-                    if (!won) stripCount("${s.solved.size}/$GROUPS_TOTAL_BOARDS", "groups") else null,
+                listOf(
+                    // Parity audit 10-16 (F5): mistakes · time · pts, like iOS and web (no loss-only "n/4 groups" chip).
                     stripCount("${s.mistakes}", if (s.mistakes == 1) "mistake" else "mistakes", StripGlyph.CROWN, GROUPS_ACCENT),
                     stripTime(secs), stripPoints(session.points),
                 ),

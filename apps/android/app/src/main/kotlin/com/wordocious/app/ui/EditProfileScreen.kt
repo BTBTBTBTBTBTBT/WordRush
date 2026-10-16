@@ -616,12 +616,11 @@ fun EditProfileScreen(onDone: () -> Unit) {
         )
     }
     sheet?.let { which ->
-        androidx.compose.material3.AlertDialog(
-            modifier = PopupWidth,
+        // Parity audit 10-16: the family sheet (same content), not a Material dialog.
+        FamilyDialogSheet(
             onDismissRequest = { sheet = null },
-            containerColor = accentWash(EDIT_PURPLE, 0.10f),
-            title = { Text(when (which) { "socials" -> "Your links"; "privacy" -> "Private profile"; else -> "Favorite game" }, fontWeight = FontWeight.Black, color = Color(0xFF6D28D9)) },
-            text = {
+            title = when (which) { "socials" -> "Your links"; "privacy" -> "Private profile"; else -> "Favorite game" },
+            body = {
                 when (which) {
                     "socials" -> Column {
                         SOCIAL_PLATFORMS.forEach { (key, label, placeholder) ->

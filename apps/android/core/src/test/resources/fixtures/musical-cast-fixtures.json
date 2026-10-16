@@ -55,6 +55,8 @@
       "id": "mary",
       "name": "Mary Had a Little Lamb",
       "achievement": "tune_little_lamb",
+      "source": "Sarah Josepha Hale, 1830; traditional tune",
+      "hint": "A lamb whose fleece was white as snow",
       "notes": [
         64,
         62,
@@ -145,6 +147,8 @@
       "id": "twinkle",
       "name": "Twinkle, Twinkle, Little Star",
       "achievement": "tune_little_star",
+      "source": "French folk tune, 1761; words Jane Taylor, 1806",
+      "hint": "A little star, up above the world so high",
       "notes": [
         60,
         60,
@@ -197,6 +201,8 @@
       "id": "ode",
       "name": "Ode to Joy",
       "achievement": "tune_ode_to_joy",
+      "source": "Ludwig van Beethoven, Symphony No. 9, 1824",
+      "hint": "Beethoven's big finale, four notes up the scale",
       "notes": [
         64,
         64,
@@ -299,6 +305,8 @@
       "id": "birthday",
       "name": "Happy Birthday",
       "achievement": "tune_happy_birthday",
+      "source": "Patty and Mildred Hill, 1893 (public domain since 2016)",
+      "hint": "The song with the candles, once a year",
       "notes": [
         67,
         67,
@@ -345,6 +353,8 @@
       "id": "buns",
       "name": "Hot Cross Buns",
       "achievement": "tune_hot_cross_buns",
+      "source": "English street cry, 1798",
+      "hint": "One a penny, two a penny",
       "notes": [
         64,
         62,
@@ -415,7 +425,11 @@
     "tune_marionette",
     "tune_danse_macabre",
     "tune_bald_mountain",
-    "tune_sorcerers_apprentice"
+    "tune_sorcerers_apprentice",
+    "tune_simple_gifts",
+    "tune_we_gather",
+    "tune_thankful_people",
+    "tune_now_thank"
   ],
   "notes": [
     {
@@ -2260,6 +2274,9 @@
         "id": "mountain_king",
         "name": "In the Hall of the Mountain King",
         "achievement": "tune_mountain_king",
+        "season": "halloween",
+        "source": "Edvard Grieg, Peer Gynt, 1875",
+        "hint": "Tiptoe up the steps of the mountain king's hall",
         "notes": [
           69,
           71,
@@ -2344,6 +2361,9 @@
         "id": "toccata",
         "name": "Toccata and Fugue in D minor",
         "achievement": "tune_toccata",
+        "season": "halloween",
+        "source": "Johann Sebastian Bach, BWV 565, c. 1704",
+        "hint": "The spookiest organ opening ever written",
         "notes": [
           69,
           67,
@@ -2406,6 +2426,9 @@
         "id": "funeral_march",
         "name": "Funeral March",
         "achievement": "tune_funeral_march",
+        "season": "halloween",
+        "source": "Frederic Chopin, Piano Sonata No. 2, 1839",
+        "hint": "A slow march on one low note",
         "notes": [
           69,
           69,
@@ -2436,6 +2459,9 @@
         "id": "marionette",
         "name": "Funeral March of a Marionette",
         "achievement": "tune_marionette",
+        "season": "halloween",
+        "source": "Charles Gounod, 1872",
+        "hint": "A puppet's march (a certain TV host liked it too)",
         "notes": [
           69,
           69,
@@ -2458,6 +2484,9 @@
         "id": "danse_macabre",
         "name": "Danse Macabre",
         "achievement": "tune_danse_macabre",
+        "season": "halloween",
+        "source": "Camille Saint-Saens, 1874",
+        "hint": "Skeletons waltzing at midnight",
         "notes": [
           69,
           69,
@@ -2494,6 +2523,9 @@
         "id": "bald_mountain",
         "name": "Night on Bald Mountain",
         "achievement": "tune_bald_mountain",
+        "season": "halloween",
+        "source": "Modest Mussorgsky, 1867",
+        "hint": "A wild night on a bare mountain",
         "notes": [
           71,
           72,
@@ -2560,6 +2592,9 @@
         "id": "sorcerers_apprentice",
         "name": "The Sorcerer's Apprentice",
         "achievement": "tune_sorcerers_apprentice",
+        "season": "halloween",
+        "source": "Paul Dukas, 1897",
+        "hint": "Brooms that will not stop marching",
         "notes": [
           69,
           76,
@@ -4491,6 +4526,1747 @@
       }
     ]
   },
+  "thanksgiving": {
+    "melodies": [
+      {
+        "id": "simple_gifts",
+        "name": "Simple Gifts",
+        "achievement": "tune_simple_gifts",
+        "season": "thanksgiving",
+        "source": "Joseph Brackett, Shaker, 1848",
+        "hint": "'Tis the gift to be simple",
+        "notes": [
+          62,
+          62,
+          67,
+          67,
+          69,
+          71,
+          69,
+          71,
+          72,
+          74,
+          74,
+          72,
+          71,
+          69,
+          67
+        ],
+        "song": [
+          62,
+          62,
+          67,
+          67,
+          69,
+          71,
+          69,
+          71,
+          72,
+          74,
+          74,
+          72,
+          71,
+          69,
+          67,
+          69,
+          69,
+          69,
+          69,
+          69,
+          71,
+          69,
+          65,
+          62
+        ],
+        "beats": [
+          0.5,
+          0.5,
+          1,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1,
+          0.5,
+          0.5,
+          1,
+          0.5,
+          0.5,
+          1,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1,
+          2
+        ],
+        "intervals": [
+          0,
+          5,
+          0,
+          2,
+          2,
+          -2,
+          2,
+          1,
+          2,
+          0,
+          -2,
+          -1,
+          -2,
+          -2
+        ]
+      },
+      {
+        "id": "we_gather",
+        "name": "We Gather Together",
+        "achievement": "tune_we_gather",
+        "season": "thanksgiving",
+        "source": "Dutch folk tune, 1626; arr. Eduard Kremser, 1877",
+        "hint": "A Dutch melody for the whole table, asking a blessing",
+        "notes": [
+          67,
+          67,
+          69,
+          67,
+          64,
+          65,
+          67,
+          65,
+          64,
+          62,
+          64,
+          60
+        ],
+        "song": [
+          67,
+          67,
+          69,
+          67,
+          64,
+          65,
+          67,
+          65,
+          64,
+          62,
+          64,
+          60,
+          67,
+          67,
+          69,
+          71,
+          72,
+          74,
+          71,
+          69,
+          67,
+          69,
+          67,
+          67,
+          67,
+          69,
+          71,
+          72,
+          67,
+          67,
+          67,
+          69,
+          65,
+          67,
+          64,
+          60,
+          60,
+          65,
+          67,
+          69,
+          65,
+          67,
+          65,
+          64,
+          64,
+          65,
+          62,
+          60,
+          60
+        ],
+        "beats": [
+          1,
+          1.5,
+          0.5,
+          1,
+          1,
+          1,
+          1,
+          1.5,
+          0.5,
+          1,
+          1,
+          1,
+          1,
+          1.5,
+          0.5,
+          1,
+          1.5,
+          0.5,
+          1,
+          1.5,
+          0.5,
+          1,
+          2,
+          1,
+          1.5,
+          0.5,
+          1,
+          1,
+          1,
+          1,
+          1.5,
+          0.5,
+          0.5,
+          0.5,
+          1,
+          1,
+          1,
+          1.5,
+          0.5,
+          0.5,
+          0.5,
+          1.5,
+          0.5,
+          0.5,
+          0.5,
+          1,
+          1.5,
+          0.5,
+          2
+        ],
+        "intervals": [
+          0,
+          2,
+          -2,
+          -3,
+          1,
+          2,
+          -2,
+          -1,
+          -2,
+          2,
+          -4
+        ]
+      },
+      {
+        "id": "thankful_people",
+        "name": "Come, Ye Thankful People, Come",
+        "achievement": "tune_thankful_people",
+        "season": "thanksgiving",
+        "source": "George J. Elvey, St. George's Windsor, 1858",
+        "hint": "The last wagon of the harvest rolls home",
+        "notes": [
+          64,
+          64,
+          67,
+          64,
+          60,
+          62,
+          64,
+          64,
+          64,
+          67,
+          64,
+          60,
+          62,
+          64
+        ],
+        "beats": [
+          1.5,
+          0.5,
+          1,
+          1,
+          1,
+          1,
+          2,
+          1.5,
+          0.5,
+          1,
+          1,
+          1,
+          1,
+          2
+        ],
+        "intervals": [
+          0,
+          3,
+          -3,
+          -4,
+          2,
+          2,
+          0,
+          0,
+          3,
+          -3,
+          -4,
+          2,
+          2
+        ]
+      },
+      {
+        "id": "now_thank",
+        "name": "Now Thank We All Our God",
+        "achievement": "tune_now_thank",
+        "season": "thanksgiving",
+        "source": "Johann Cruger, Nun danket, 1647",
+        "hint": "A grand old chorale: thanks with heart, hands and voices",
+        "notes": [
+          67,
+          67,
+          67,
+          69,
+          69,
+          67,
+          64,
+          65,
+          64,
+          62
+        ],
+        "beats": [
+          2,
+          1.5,
+          0.5,
+          1,
+          1,
+          3,
+          1,
+          1,
+          1,
+          2
+        ],
+        "intervals": [
+          0,
+          0,
+          2,
+          0,
+          -2,
+          -3,
+          1,
+          -1,
+          -2
+        ]
+      }
+    ],
+    "todo": [
+      "Over the River and Through the Wood",
+      "Bringing in the Sheaves",
+      "For the Beauty of the Earth"
+    ],
+    "notePrefix": {
+      "halloween": "note-h-"
+    },
+    "sounds": [
+      {
+        "season": "thanksgiving",
+        "id": "w",
+        "sound": "note-w"
+      },
+      {
+        "season": "thanksgiving",
+        "id": "o1",
+        "sound": "note-o1"
+      },
+      {
+        "season": "thanksgiving",
+        "id": "r",
+        "sound": "note-r"
+      },
+      {
+        "season": "thanksgiving",
+        "id": "d",
+        "sound": "note-d"
+      },
+      {
+        "season": "thanksgiving",
+        "id": "o2",
+        "sound": "note-o2"
+      },
+      {
+        "season": "thanksgiving",
+        "id": "c",
+        "sound": "note-c"
+      },
+      {
+        "season": "thanksgiving",
+        "id": "i",
+        "sound": "note-i"
+      },
+      {
+        "season": "thanksgiving",
+        "id": "o3",
+        "sound": "note-o3"
+      },
+      {
+        "season": "thanksgiving",
+        "id": "u",
+        "sound": "note-u"
+      },
+      {
+        "season": "thanksgiving",
+        "id": "s",
+        "sound": "note-s"
+      },
+      {
+        "season": "thanksgiving",
+        "id": "zz",
+        "sound": null
+      }
+    ],
+    "active": [
+      {
+        "season": "thanksgiving",
+        "ids": [
+          "mary",
+          "twinkle",
+          "ode",
+          "birthday",
+          "buns",
+          "simple_gifts",
+          "we_gather",
+          "thankful_people",
+          "now_thank"
+        ]
+      },
+      {
+        "season": "winter-holidays",
+        "ids": [
+          "mary",
+          "twinkle",
+          "ode",
+          "birthday",
+          "buns"
+        ]
+      }
+    ],
+    "taps": [
+      {
+        "name": "simple_gifts-in-thanksgiving",
+        "season": "thanksgiving",
+        "steps": [
+          {
+            "id": "o1",
+            "at": 1000,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 1300,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1600,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1900,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2200,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2500,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2800,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 3100,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3400,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 3700,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 4000,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 4300,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 4600,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 4900,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 5200,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": "simple_gifts"
+          }
+        ]
+      },
+      {
+        "name": "simple_gifts-in-no-season",
+        "season": null,
+        "steps": [
+          {
+            "id": "o1",
+            "at": 1000,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 1300,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1600,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1900,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2200,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2500,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2800,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 3100,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3400,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 3700,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 4000,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 4300,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 4600,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 4900,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 5200,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "simple_gifts-in-halloween",
+        "season": "halloween",
+        "steps": [
+          {
+            "id": "o1",
+            "at": 1000,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 1300,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1600,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1900,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2200,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2500,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2800,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 3100,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3400,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 3700,
+            "midi": 74,
+            "sound": "note-h-u",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 4000,
+            "midi": 74,
+            "sound": "note-h-u",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 4300,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 4600,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 4900,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 5200,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "we_gather-in-thanksgiving",
+        "season": "thanksgiving",
+        "steps": [
+          {
+            "id": "o2",
+            "at": 1000,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1300,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1600,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1900,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 2200,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 2500,
+            "midi": 65,
+            "sound": "note-d",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 2800,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 3100,
+            "midi": 65,
+            "sound": "note-d",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3400,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 3700,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 4000,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 4300,
+            "midi": 60,
+            "sound": "note-w",
+            "matched": "we_gather"
+          }
+        ]
+      },
+      {
+        "name": "we_gather-in-no-season",
+        "season": null,
+        "steps": [
+          {
+            "id": "o2",
+            "at": 1000,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1300,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1600,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1900,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 2200,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 2500,
+            "midi": 65,
+            "sound": "note-d",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 2800,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 3100,
+            "midi": 65,
+            "sound": "note-d",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3400,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 3700,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 4000,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 4300,
+            "midi": 60,
+            "sound": "note-w",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "we_gather-in-halloween",
+        "season": "halloween",
+        "steps": [
+          {
+            "id": "o2",
+            "at": 1000,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1300,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1600,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1900,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 2200,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 2500,
+            "midi": 65,
+            "sound": "note-h-d",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 2800,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 3100,
+            "midi": 65,
+            "sound": "note-h-d",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3400,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 3700,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 4000,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 4300,
+            "midi": 60,
+            "sound": "note-h-w",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "thankful_people-in-thanksgiving",
+        "season": "thanksgiving",
+        "steps": [
+          {
+            "id": "r",
+            "at": 1000,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 1300,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1600,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 1900,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 2200,
+            "midi": 60,
+            "sound": "note-w",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 2500,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 2800,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3100,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3400,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 3700,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 4000,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 4300,
+            "midi": 60,
+            "sound": "note-w",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 4600,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 4900,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": "thankful_people"
+          }
+        ]
+      },
+      {
+        "name": "thankful_people-in-no-season",
+        "season": null,
+        "steps": [
+          {
+            "id": "r",
+            "at": 1000,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 1300,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1600,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 1900,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 2200,
+            "midi": 60,
+            "sound": "note-w",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 2500,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 2800,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3100,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3400,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 3700,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 4000,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 4300,
+            "midi": 60,
+            "sound": "note-w",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 4600,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 4900,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "thankful_people-in-halloween",
+        "season": "halloween",
+        "steps": [
+          {
+            "id": "r",
+            "at": 1000,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 1300,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1600,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 1900,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 2200,
+            "midi": 60,
+            "sound": "note-h-w",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 2500,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 2800,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3100,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3400,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 3700,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 4000,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 4300,
+            "midi": 60,
+            "sound": "note-h-w",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 4600,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 4900,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "now_thank-in-thanksgiving",
+        "season": "thanksgiving",
+        "steps": [
+          {
+            "id": "o2",
+            "at": 1000,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1300,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1600,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1900,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2200,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 2500,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 2800,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 3100,
+            "midi": 65,
+            "sound": "note-d",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3400,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 3700,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": "now_thank"
+          }
+        ]
+      },
+      {
+        "name": "now_thank-in-no-season",
+        "season": null,
+        "steps": [
+          {
+            "id": "o2",
+            "at": 1000,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1300,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1600,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1900,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2200,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 2500,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 2800,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 3100,
+            "midi": 65,
+            "sound": "note-d",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3400,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 3700,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "now_thank-in-halloween",
+        "season": "halloween",
+        "steps": [
+          {
+            "id": "o2",
+            "at": 1000,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1300,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1600,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1900,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2200,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 2500,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 2800,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 3100,
+            "midi": 65,
+            "sound": "note-h-d",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3400,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 3700,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "mountain-king-not-in-thanksgiving",
+        "season": "thanksgiving",
+        "steps": [
+          {
+            "id": "c",
+            "at": 0,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 300,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 600,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 900,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 1200,
+            "midi": 76,
+            "sound": "note-s",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1500,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 1800,
+            "midi": 76,
+            "sound": "note-s",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 2100,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2400,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 2700,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "mary-still-works-in-thanksgiving",
+        "season": "thanksgiving",
+        "steps": [
+          {
+            "id": "r",
+            "at": 0,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 300,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 600,
+            "midi": 60,
+            "sound": "note-w",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 900,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 1200,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 1500,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 1800,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 2100,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 2400,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 2700,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3000,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 3300,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 3600,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": "mary"
+          }
+        ]
+      }
+    ]
+  },
   "replays": [
     {
       "id": "mary",
@@ -5841,6 +7617,636 @@
         }
       ],
       "duration": 3450
+    },
+    {
+      "id": "simple_gifts",
+      "song": {
+        "notes": [
+          62,
+          62,
+          67,
+          67,
+          69,
+          71,
+          69,
+          71,
+          72,
+          74,
+          74,
+          72,
+          71,
+          69,
+          67,
+          69,
+          69,
+          69,
+          69,
+          69,
+          71,
+          69,
+          65,
+          62
+        ],
+        "beats": [
+          0.5,
+          0.5,
+          1,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1,
+          0.5,
+          0.5,
+          1,
+          0.5,
+          0.5,
+          1,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1,
+          2
+        ]
+      },
+      "steps": [
+        {
+          "castId": "o1",
+          "atMs": 450
+        },
+        {
+          "castId": "o1",
+          "atMs": 600
+        },
+        {
+          "castId": "o2",
+          "atMs": 750
+        },
+        {
+          "castId": "o2",
+          "atMs": 1050
+        },
+        {
+          "castId": "c",
+          "atMs": 1200
+        },
+        {
+          "castId": "i",
+          "atMs": 1350
+        },
+        {
+          "castId": "c",
+          "atMs": 1500
+        },
+        {
+          "castId": "i",
+          "atMs": 1650
+        },
+        {
+          "castId": "o3",
+          "atMs": 1800
+        },
+        {
+          "castId": "u",
+          "atMs": 1950
+        },
+        {
+          "castId": "u",
+          "atMs": 2250
+        },
+        {
+          "castId": "o3",
+          "atMs": 2400
+        },
+        {
+          "castId": "i",
+          "atMs": 2550
+        },
+        {
+          "castId": "c",
+          "atMs": 2850
+        },
+        {
+          "castId": "o2",
+          "atMs": 3000
+        },
+        {
+          "castId": "c",
+          "atMs": 3150
+        },
+        {
+          "castId": "c",
+          "atMs": 3450
+        },
+        {
+          "castId": "c",
+          "atMs": 3600
+        },
+        {
+          "castId": "c",
+          "atMs": 3750
+        },
+        {
+          "castId": "c",
+          "atMs": 3900
+        },
+        {
+          "castId": "i",
+          "atMs": 4050
+        },
+        {
+          "castId": "c",
+          "atMs": 4200
+        },
+        {
+          "castId": "d",
+          "atMs": 4350
+        },
+        {
+          "castId": "o1",
+          "atMs": 4650
+        }
+      ],
+      "duration": 5250
+    },
+    {
+      "id": "we_gather",
+      "song": {
+        "notes": [
+          67,
+          67,
+          69,
+          67,
+          64,
+          65,
+          67,
+          65,
+          64,
+          62,
+          64,
+          60,
+          67,
+          67,
+          69,
+          71,
+          72,
+          74,
+          71,
+          69,
+          67,
+          69,
+          67,
+          67,
+          67,
+          69,
+          71,
+          72,
+          67,
+          67,
+          67,
+          69,
+          65,
+          67,
+          64,
+          60,
+          60,
+          65,
+          67,
+          69,
+          65,
+          67,
+          65,
+          64,
+          64,
+          65,
+          62,
+          60,
+          60
+        ],
+        "beats": [
+          1,
+          1.5,
+          0.5,
+          1,
+          1,
+          1,
+          1,
+          1.5,
+          0.5,
+          1,
+          1,
+          1,
+          1,
+          1.5,
+          0.5,
+          1,
+          1.5,
+          0.5,
+          1,
+          1.5,
+          0.5,
+          1,
+          2,
+          1,
+          1.5,
+          0.5,
+          1,
+          1,
+          1,
+          1,
+          1.5,
+          0.5,
+          0.5,
+          0.5,
+          1,
+          1,
+          1,
+          1.5,
+          0.5,
+          0.5,
+          0.5,
+          1.5,
+          0.5,
+          0.5,
+          0.5,
+          1,
+          1.5,
+          0.5,
+          2
+        ]
+      },
+      "steps": [
+        {
+          "castId": "o2",
+          "atMs": 450
+        },
+        {
+          "castId": "o2",
+          "atMs": 750
+        },
+        {
+          "castId": "c",
+          "atMs": 1200
+        },
+        {
+          "castId": "o2",
+          "atMs": 1350
+        },
+        {
+          "castId": "r",
+          "atMs": 1650
+        },
+        {
+          "castId": "d",
+          "atMs": 1950
+        },
+        {
+          "castId": "o2",
+          "atMs": 2250
+        },
+        {
+          "castId": "d",
+          "atMs": 2550
+        },
+        {
+          "castId": "r",
+          "atMs": 3000
+        },
+        {
+          "castId": "o1",
+          "atMs": 3150
+        },
+        {
+          "castId": "r",
+          "atMs": 3450
+        },
+        {
+          "castId": "w",
+          "atMs": 3750
+        },
+        {
+          "castId": "o2",
+          "atMs": 4050
+        },
+        {
+          "castId": "o2",
+          "atMs": 4350
+        },
+        {
+          "castId": "c",
+          "atMs": 4800
+        },
+        {
+          "castId": "i",
+          "atMs": 4950
+        },
+        {
+          "castId": "o3",
+          "atMs": 5250
+        },
+        {
+          "castId": "u",
+          "atMs": 5700
+        },
+        {
+          "castId": "i",
+          "atMs": 5850
+        },
+        {
+          "castId": "c",
+          "atMs": 6150
+        },
+        {
+          "castId": "o2",
+          "atMs": 6600
+        },
+        {
+          "castId": "c",
+          "atMs": 6750
+        },
+        {
+          "castId": "o2",
+          "atMs": 7050
+        },
+        {
+          "castId": "o2",
+          "atMs": 7650
+        },
+        {
+          "castId": "o2",
+          "atMs": 7950
+        },
+        {
+          "castId": "c",
+          "atMs": 8400
+        },
+        {
+          "castId": "i",
+          "atMs": 8550
+        },
+        {
+          "castId": "o3",
+          "atMs": 8850
+        },
+        {
+          "castId": "o2",
+          "atMs": 9150
+        },
+        {
+          "castId": "o2",
+          "atMs": 9450
+        },
+        {
+          "castId": "o2",
+          "atMs": 9750
+        },
+        {
+          "castId": "c",
+          "atMs": 10200
+        },
+        {
+          "castId": "d",
+          "atMs": 10350
+        },
+        {
+          "castId": "o2",
+          "atMs": 10500
+        },
+        {
+          "castId": "r",
+          "atMs": 10650
+        },
+        {
+          "castId": "w",
+          "atMs": 10950
+        },
+        {
+          "castId": "w",
+          "atMs": 11250
+        },
+        {
+          "castId": "d",
+          "atMs": 11550
+        },
+        {
+          "castId": "o2",
+          "atMs": 12000
+        },
+        {
+          "castId": "c",
+          "atMs": 12150
+        },
+        {
+          "castId": "d",
+          "atMs": 12300
+        },
+        {
+          "castId": "o2",
+          "atMs": 12450
+        },
+        {
+          "castId": "d",
+          "atMs": 12900
+        },
+        {
+          "castId": "r",
+          "atMs": 13050
+        },
+        {
+          "castId": "r",
+          "atMs": 13200
+        },
+        {
+          "castId": "d",
+          "atMs": 13350
+        },
+        {
+          "castId": "o1",
+          "atMs": 13650
+        },
+        {
+          "castId": "w",
+          "atMs": 14100
+        },
+        {
+          "castId": "w",
+          "atMs": 14250
+        }
+      ],
+      "duration": 14850
+    },
+    {
+      "id": "thankful_people",
+      "song": {
+        "notes": [
+          64,
+          64,
+          67,
+          64,
+          60,
+          62,
+          64,
+          64,
+          64,
+          67,
+          64,
+          60,
+          62,
+          64
+        ],
+        "beats": [
+          1.5,
+          0.5,
+          1,
+          1,
+          1,
+          1,
+          2,
+          1.5,
+          0.5,
+          1,
+          1,
+          1,
+          1,
+          2
+        ]
+      },
+      "steps": [
+        {
+          "castId": "r",
+          "atMs": 450
+        },
+        {
+          "castId": "r",
+          "atMs": 900
+        },
+        {
+          "castId": "o2",
+          "atMs": 1050
+        },
+        {
+          "castId": "r",
+          "atMs": 1350
+        },
+        {
+          "castId": "w",
+          "atMs": 1650
+        },
+        {
+          "castId": "o1",
+          "atMs": 1950
+        },
+        {
+          "castId": "r",
+          "atMs": 2250
+        },
+        {
+          "castId": "r",
+          "atMs": 2850
+        },
+        {
+          "castId": "r",
+          "atMs": 3300
+        },
+        {
+          "castId": "o2",
+          "atMs": 3450
+        },
+        {
+          "castId": "r",
+          "atMs": 3750
+        },
+        {
+          "castId": "w",
+          "atMs": 4050
+        },
+        {
+          "castId": "o1",
+          "atMs": 4350
+        },
+        {
+          "castId": "r",
+          "atMs": 4650
+        }
+      ],
+      "duration": 5250
+    },
+    {
+      "id": "now_thank",
+      "song": {
+        "notes": [
+          67,
+          67,
+          67,
+          69,
+          69,
+          67,
+          64,
+          65,
+          64,
+          62
+        ],
+        "beats": [
+          2,
+          1.5,
+          0.5,
+          1,
+          1,
+          3,
+          1,
+          1,
+          1,
+          2
+        ]
+      },
+      "steps": [
+        {
+          "castId": "o2",
+          "atMs": 450
+        },
+        {
+          "castId": "o2",
+          "atMs": 1050
+        },
+        {
+          "castId": "o2",
+          "atMs": 1500
+        },
+        {
+          "castId": "c",
+          "atMs": 1650
+        },
+        {
+          "castId": "c",
+          "atMs": 1950
+        },
+        {
+          "castId": "o2",
+          "atMs": 2250
+        },
+        {
+          "castId": "r",
+          "atMs": 3150
+        },
+        {
+          "castId": "d",
+          "atMs": 3450
+        },
+        {
+          "castId": "r",
+          "atMs": 3750
+        },
+        {
+          "castId": "o1",
+          "atMs": 4050
+        }
+      ],
+      "duration": 4650
     }
   ]
 }

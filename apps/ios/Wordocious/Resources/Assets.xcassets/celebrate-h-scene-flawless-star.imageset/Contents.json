@@ -1,0 +1,15 @@
+{
+  "images": [
+    {
+      "filename": "celebrate-h-scene-flawless-star.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "compression-type": "lossy"
+  }
+}

@@ -154,10 +154,10 @@ fun TodayCard(
                 )
             } else {
                 StatsCardLabel(
-                    "TODAY · ${dateLabel.uppercase()}", swatch,
+                    "Today · $dateLabel", swatch,
                     Modifier.semantics(mergeDescendants = true) { contentDescription = "Today, $completed of $total dailies played" },
                 ) {
-                    SoftNumber("$completed / $total", 15.sp, color = if (WTheme.isDark) null else swatch.ink)
+                    SoftNumber("$completed/$total PLAYED", 15.sp, color = if (WTheme.isDark) null else swatch.ink)
                 }
             }
 

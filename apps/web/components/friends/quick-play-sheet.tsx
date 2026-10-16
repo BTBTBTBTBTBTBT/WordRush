@@ -25,7 +25,7 @@ import { artSrc } from '@/lib/art';
 import { avatarRadiusPx } from '@/lib/avatar-render';
 import { MOTION } from '@/lib/motion-spec';
 import { prefersReducedMotion } from '@/lib/motion';
-import { softMix } from '@/lib/soft-surface';
+import { softMix, softMixCss } from '@/lib/soft-surface';
 
 // The quick-play sheet (Friends overhaul §3): pick a pocket game (and a stake
 // for Call It) or one of the two Wordocious ways to play, then INVITE. Opened
@@ -160,7 +160,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
                 className="px-3 text-[11px] font-black rounded-full"
                 style={{
                   height: 30,
-                  background: softMix(KIND_COLOR.coin, sel ? 0.24 : 0.12),
+                  background: softMixCss(KIND_COLOR.coin, sel ? 0.24 : 0.12),
                   border: sel ? `2px solid ${KIND_COLOR.coin}` : `1.5px solid ${softMix(KIND_COLOR.coin, 0.32)}`,
                   boxShadow: sel ? `0 0 0 3px ${softMix(KIND_COLOR.coin, 0.22)}` : undefined,
                   color: sel ? '#713f12' : FR_LOOK.ink,

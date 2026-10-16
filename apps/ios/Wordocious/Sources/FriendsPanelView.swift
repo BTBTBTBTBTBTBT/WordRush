@@ -613,7 +613,7 @@ struct FriendsPanelView: View {
                 friendCardsBlock(friends, slackers: slackers)
             }
             if let note {
-                Text(note).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.section)
+                Text(note).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.wallSection)
                     .padding(.horizontal, 2)
             }
         }
@@ -990,7 +990,7 @@ struct FriendsPanelView: View {
                     .disabled(resolvingShare)
                 }
                 if let addNote {
-                    Text(addNote).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.section)
+                    Text(addNote).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.wallSection)
                 }
                 // §T1: the request is out — INVITE SENT! with the name on a glossy pill.
                 if let sent = sentRequestTo {
@@ -1106,7 +1106,7 @@ struct FriendsPanelView: View {
 
                 if let inviteNote {
                     // Transient confirmation — clears itself after 2.5 s (tap dismisses).
-                    Text(inviteNote).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.section)
+                    Text(inviteNote).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.wallSection)
                         .padding(.horizontal, 12).padding(.top, 6)
                         .onTapGesture { self.inviteNote = nil }
                         .task(id: inviteNote) {

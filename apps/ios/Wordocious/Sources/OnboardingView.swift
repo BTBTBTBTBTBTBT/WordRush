@@ -111,7 +111,7 @@ struct OnboardingHost: View {
 }
 
 /// How to Play / Guides "Take the tour": steps 1–2 (welcome + the four cards).
-/// `onFinish(true)` = "Play today's Classic", `false` = Close.
+/// The last card is "Got it" (closes; same as Android and web) — the replay never launches a game. `onFinish(true)` is unused here.
 struct OnboardingView: View {
     var replay: Bool = false
     var onFinish: (Bool) -> Void
@@ -124,8 +124,8 @@ struct OnboardingView: View {
         ZStack {
             PageBackground(tint: .home).ignoresSafeArea()
             if welcomed {
-                OnboardingTour(skipTitle: "Close", lastTitle: "Play today's Classic", onSkip: { onFinish(false) },
-                               onDone: { onFinish(true) })
+                OnboardingTour(skipTitle: "Close", lastTitle: "Got it", onSkip: { onFinish(false) },
+                               onDone: { onFinish(false) })
                     .transition(still ? .opacity : .move(edge: .trailing).combined(with: .opacity))
             } else {
                 OnboardingWelcome(showSignIn: false, onGo: {
@@ -311,7 +311,7 @@ struct OnboardingTour: View {
             Button {
                 if last { onDone() } else { go(page + 1) }
             } label: {
-                if last { CandyLabel(title: lastTitle, symbol: lastTitle == "Next" ? "arrow.right" : "play.fill") }
+                if last { CandyLabel(title: lastTitle, symbol: lastTitle == "Next" ? "arrow.right" : "checkmark") }
                 else { CandyLabel(title: "Next", symbol: "arrow.right") }
             }
             .buttonStyle(CastButtonStyle(size: .large))

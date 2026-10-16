@@ -645,7 +645,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                             Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) { LeaderboardSkeleton() }
                         } else if (isSweep) {
                             if (sweepEntries.isEmpty()) {
-                                EmptyBoardCard("Finish all of today's dailies to land on this board.")
+                                EmptyBoardCard("Nobody has swept today. Be the first!")
                             } else {
                                 // BJ4: the Sweep board's leaders on the podium too.
                                 val sp = boardPodium(sweepEntries.indices.map { it + 1 })
@@ -659,7 +659,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 // the ghost rows list below the stage
                             } else if (friendsOnly) {
                                 BrandEmptyState(
-                                    title = "NO FRIENDS HERE YET",
+                                    title = "YOUR BOARD IS EMPTY",
                                     line = Mascots.addFriendLine,
                                     scene = SceneArt.INVITE,
                                     lineColor = lbSubInk(),
@@ -670,7 +670,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 val playMode = if (completions[selectedMode] == null) modeCardForKey(selectedMode)?.engineMode else null
                                 BrandEmptyState(
                                     title = "NO RESULTS YET",
-                                    line = "Nobody has finished today's ${modeCardForKey(selectedMode)?.title ?: "daily"} yet. Be the first!",
+                                    line = "Nobody has finished today. Be the first!",
                                     scene = SceneArt.ASLEEP,
                                     lineColor = lbSubInk(),
                                     actionLabel = if (playMode != null) "Play now" else null,

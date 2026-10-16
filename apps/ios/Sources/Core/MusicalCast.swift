@@ -85,20 +85,25 @@ public enum MusicalCast {
     /// Public-domain tunes (their best-known opening, every note on a cast key).
     public static let melodies: [MusicalMelody] = [
         MusicalMelody(id: "mary", name: "Mary Had a Little Lamb", achievement: "tune_little_lamb",
+                      source: "Sarah Josepha Hale, 1830; traditional tune", hint: "A lamb whose fleece was white as snow",
                       notes: [E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4],
                       song: [E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4, E4, D4, C4, D4, E4, E4, E4, E4, D4, D4, E4, D4, C4],
                       beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2]),
         MusicalMelody(id: "twinkle", name: "Twinkle, Twinkle, Little Star", achievement: "tune_little_star",
+                      source: "French folk tune, 1761; words Jane Taylor, 1806", hint: "A little star, up above the world so high",
                       notes: [C4, C4, G4, G4, A4, A4, G4, F4, F4, E4, E4, D4, D4, C4],
                       beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2]),
         MusicalMelody(id: "ode", name: "Ode to Joy", achievement: "tune_ode_to_joy",
+                      source: "Ludwig van Beethoven, Symphony No. 9, 1824", hint: "Beethoven's big finale, four notes up the scale",
                       notes: [E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4],
                       song: [E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4, E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, D4, C4, C4],
                       beats: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 0.5, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 0.5, 2]),
         MusicalMelody(id: "birthday", name: "Happy Birthday", achievement: "tune_happy_birthday",
+                      source: "Patty and Mildred Hill, 1893 (public domain since 2016)", hint: "The song with the candles, once a year",
                       notes: [G4, G4, A4, G4, C5, B4, G4, G4, A4, G4, D5, C5],
                       beats: [0.75, 0.25, 1, 1, 1, 2, 0.75, 0.25, 1, 1, 1, 2]),
         MusicalMelody(id: "buns", name: "Hot Cross Buns", achievement: "tune_hot_cross_buns",
+                      source: "English street cry, 1798", hint: "One a penny, two a penny",
                       notes: [E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4],
                       beats: [1, 1, 2, 1, 1, 2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 2]),
     ]
@@ -112,33 +117,78 @@ public enum MusicalCast {
     ///     checked against a score and realized on the white keys by interval shape (see musical-cast.ts).
     public static let halloweenMelodies: [MusicalMelody] = [
         MusicalMelody(id: "mountain_king", name: "In the Hall of the Mountain King", achievement: "tune_mountain_king",
+                      season: "halloween", source: "Edvard Grieg, Peer Gynt, 1875", hint: "Tiptoe up the steps of the mountain king's hall",
                       notes: [A4, B4, C5, D5, E5, C5, E5, D5, B4, D5],
                       song: [D4, E4, F4, G4, A4, F4, A4, G4, E4, G4, G4, E4, G4, D4, E4, F4, G4, A4, F4, A4, D5, C5, A4, F4, A4, C5],
                       beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]),
         MusicalMelody(id: "toccata", name: "Toccata and Fugue in D minor", achievement: "tune_toccata",
+                      season: "halloween", source: "Johann Sebastian Bach, BWV 565, c. 1704", hint: "The spookiest organ opening ever written",
                       notes: [A4, G4, A4, G4, F4, E4, D4, C4, D4],
                       song: [A4, G4, A4, G4, F4, E4, D4, C4, D4, A4, G4, A4, E4, F4, C4, D4],
                       beats: [0.25, 0.25, 2, 0.25, 0.25, 0.25, 0.25, 0.5, 2.5, 0.25, 0.25, 2, 0.25, 0.25, 0.5, 3]),
         MusicalMelody(id: "funeral_march", name: "Funeral March", achievement: "tune_funeral_march",
+                      season: "halloween", source: "Frederic Chopin, Piano Sonata No. 2, 1839", hint: "A slow march on one low note",
                       notes: [A4, A4, A4, A4, C5, B4, B4, A4, A4, G4, A4]),
         MusicalMelody(id: "marionette", name: "Funeral March of a Marionette", achievement: "tune_marionette",
+                      season: "halloween", source: "Charles Gounod, 1872", hint: "A puppet's march (a certain TV host liked it too)",
                       notes: [A4, A4, G4, F4, G4, A4, B4]),
         MusicalMelody(id: "danse_macabre", name: "Danse Macabre", achievement: "tune_danse_macabre",
+                      season: "halloween", source: "Camille Saint-Saens, 1874", hint: "Skeletons waltzing at midnight",
                       notes: [A4, A4, C5, A4, B4, C5, A4, C5, A4, C5, B4, C5, B4, A4]),
         MusicalMelody(id: "bald_mountain", name: "Night on Bald Mountain", achievement: "tune_bald_mountain",
+                      season: "halloween", source: "Modest Mussorgsky, 1867", hint: "A wild night on a bare mountain",
                       notes: [B4, C5, B4, A4, B4, C5, C5, E5, B4],
                       song: [B4, C5, B4, A4, B4, C5, C5, E5, B4, B4, C5, D5, E5, E5, D5, C5, B4, A4],
                       beats: [1, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 0.5, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 1]),
         MusicalMelody(id: "sorcerers_apprentice", name: "The Sorcerer's Apprentice", achievement: "tune_sorcerers_apprentice",
+                      season: "halloween", source: "Paul Dukas, 1897", hint: "Brooms that will not stop marching",
                       notes: [A4, E5, A4, C5, A4, C5, B4, C5, A4, C5]),
     ]
 
     /// Halloween tunes still waiting for checked notation: none (all five from the plan are wired above).
     public static let halloweenTunesTodo: [String] = []
 
-    /// The tunes that count right now: the everyday five, plus the season's own (halloween).
+    /// The Thanksgiving tunes (founder 10-16): public-domain compositions on the cast's white keys, matched by interval
+    /// shape, only in the Thanksgiving window (and only once the season is READY: SeasonKit.current gates it; the admin
+    /// preview passes the id). Normal voices (no seasonal note prefix). Simple Gifts (Brackett, 1848): the first phrase
+    /// a fifth up (D4 pickup, G4 tonic); the sung continuation ends on D4 with F standing in for F# (see musical-cast.ts).
+    /// We Gather Together, Come Ye Thankful People and Now Thank We All Our God are checked against scores (sources in musical-cast.ts).
+    public static let thanksgivingMelodies: [MusicalMelody] = [
+        MusicalMelody(id: "simple_gifts", name: "Simple Gifts", achievement: "tune_simple_gifts",
+                      season: "thanksgiving", source: "Joseph Brackett, Shaker, 1848", hint: "'Tis the gift to be simple",
+                      notes: [D4, D4, G4, G4, A4, B4, A4, B4, C5, D5, D5, C5, B4, A4, G4],
+                      song: [D4, D4, G4, G4, A4, B4, A4, B4, C5, D5, D5, C5, B4, A4, G4, A4, A4, A4, A4, A4, B4, A4, F4, D4],
+                      beats: [0.5, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 0.5, 0.5, 1, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 2]),
+        MusicalMelody(id: "we_gather", name: "We Gather Together", achievement: "tune_we_gather",
+                      season: "thanksgiving", source: "Dutch folk tune, 1626; arr. Eduard Kremser, 1877", hint: "A Dutch melody for the whole table, asking a blessing",
+                      notes: [G4, G4, A4, G4, E4, F4, G4, F4, E4, D4, E4, C4],
+                      song: [G4, G4, A4, G4, E4, F4, G4, F4, E4, D4, E4, C4, G4, G4, A4, B4, C5, D5, B4, A4, G4, A4, G4, G4, G4, A4, B4, C5, G4, G4, G4, A4, F4, G4, E4, C4, C4, F4, G4, A4, F4, G4, F4, E4, E4, F4, D4, C4, C4],
+                      beats: [1, 1.5, 0.5, 1, 1, 1, 1, 1.5, 0.5, 1, 1, 1, 1, 1.5, 0.5, 1, 1.5, 0.5, 1, 1.5, 0.5, 1, 2, 1, 1.5, 0.5, 1, 1, 1, 1, 1.5, 0.5, 0.5, 0.5, 1, 1, 1, 1.5, 0.5, 0.5, 0.5, 1.5, 0.5, 0.5, 0.5, 1, 1.5, 0.5, 2]),
+        MusicalMelody(id: "thankful_people", name: "Come, Ye Thankful People, Come", achievement: "tune_thankful_people",
+                      season: "thanksgiving", source: "George J. Elvey, St. George's Windsor, 1858", hint: "The last wagon of the harvest rolls home",
+                      notes: [E4, E4, G4, E4, C4, D4, E4, E4, E4, G4, E4, C4, D4, E4],
+                      beats: [1.5, 0.5, 1, 1, 1, 1, 2, 1.5, 0.5, 1, 1, 1, 1, 2]),
+        MusicalMelody(id: "now_thank", name: "Now Thank We All Our God", achievement: "tune_now_thank",
+                      season: "thanksgiving", source: "Johann Cruger, Nun danket, 1647", hint: "A grand old chorale: thanks with heart, hands and voices",
+                      notes: [G4, G4, G4, A4, A4, G4, E4, F4, E4, D4],
+                      beats: [2, 1.5, 0.5, 1, 1, 3, 1, 1, 1, 2]),
+    ]
+
+    /// Thanksgiving tunes still waiting for checked notation (public domain; wired once checked against a score).
+    public static let thanksgivingTunesTodo: [String] = [
+        "Over the River and Through the Wood", "Bringing in the Sheaves", "For the Beauty of the Earth",
+    ]
+
+    /// Each season's own tunes (only count in that season; the achievements stay forever).
+    public static let seasonMelodies: [String: [MusicalMelody]] = ["halloween": halloweenMelodies, "thanksgiving": thanksgivingMelodies]
+
+    /// Every tune in catalog order: the everyday five, then each season's batch (Halloween, Thanksgiving).
+    public static let allMelodies: [MusicalMelody] = melodies + halloweenMelodies + thanksgivingMelodies
+
+    /// The tunes that count right now: the everyday five, plus the season's own (seasonMelodies).
     public static func activeMelodies(season: String? = nil) -> [MusicalMelody] {
-        season == "halloween" ? melodies + halloweenMelodies : melodies
+        if let season, let own = seasonMelodies[season] { return melodies + own }
+        return melodies
     }
 
     /// The steps between consecutive notes (the shape of a tune, key-free).
@@ -175,7 +225,7 @@ public enum MusicalCast {
     }
 
     /// The secret achievement keys (achievement-rules NEW_ACHIEVEMENTS, `secret`: shown only once unlocked).
-    public static let achievementKeys: [String] = (melodies + halloweenMelodies).map(\.achievement)
+    public static let achievementKeys: [String] = allMelodies.map(\.achievement)
 
     /// The playback (founder 10-12): a completed tune is sung back once, cleanly — `replayLeadInMs` after the last tap,
     /// each note on its own figure. Founder 10-13: the cast finishes the jingle (`song`) in its own rhythm (`beats`, in
@@ -255,10 +305,17 @@ public struct MusicalMelody: Equatable {
     public let song: [Int]?
     /// Each sung note's length in replay beats (same length as `song ?? notes`). nil → 1 each.
     public let beats: [Double]?
+    /// The season (registry id) it only counts in; nil = every day. Data for the admin Sound Library.
+    public let season: String?
+    /// Where the public-domain tune comes from (composer / origin, year).
+    public let source: String
+    /// The discovery hint: a short, spoiler-light nudge. Never the title.
+    public let hint: String
 
-    public init(id: String, name: String, achievement: String, notes: [Int], song: [Int]? = nil, beats: [Double]? = nil) {
+    public init(id: String, name: String, achievement: String, season: String? = nil, source: String = "", hint: String = "",
+                notes: [Int], song: [Int]? = nil, beats: [Double]? = nil) {
         self.id = id; self.name = name; self.achievement = achievement; self.notes = notes
-        self.song = song; self.beats = beats
+        self.song = song; self.beats = beats; self.season = season; self.source = source; self.hint = hint
     }
 }
 

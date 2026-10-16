@@ -66,6 +66,10 @@ class MusicalCastFixtureTest {
             assertEquals(m["id"]!!.jsonPrimitive.content, g.id)
             assertEquals(m["name"]!!.jsonPrimitive.content, g.name)
             assertEquals(m["achievement"]!!.jsonPrimitive.content, g.achievement)
+            assertEquals(g.id, m.str("season"), g.season)
+            assertEquals(g.id, m["source"]!!.jsonPrimitive.content, g.source)
+            assertEquals(g.id, m["hint"]!!.jsonPrimitive.content, g.hint)
+            assertTrue(g.id, g.name.lowercase() !in g.hint.lowercase())
             assertEquals(ints(m, "notes"), g.notes)
             assertEquals(ints(m, "intervals"), MusicalCast.melodyIntervals(g.notes))
             // Every note is on a cast key.
@@ -79,7 +83,7 @@ class MusicalCastFixtureTest {
     /** Founder 10-13: the playback finishes the jingle in its own rhythm — same song, steps and length as the TS core. */
     @Test fun replays_finish_the_jingle() {
         val rows = f["replays"]!!.jsonArray.map { it.jsonObject }
-        val all = MusicalCast.MELODIES + MusicalCast.HALLOWEEN_MELODIES
+        val all = MusicalCast.ALL_MELODIES
         assertEquals(rows.map { it["id"]!!.jsonPrimitive.content }, all.map { it.id })
         all.zip(rows).forEach { (m, w) ->
             val (notes, beats) = MusicalCast.song(m)
@@ -106,6 +110,10 @@ class MusicalCastFixtureTest {
             assertEquals(m["id"]!!.jsonPrimitive.content, g.id)
             assertEquals(m["name"]!!.jsonPrimitive.content, g.name)
             assertEquals(m["achievement"]!!.jsonPrimitive.content, g.achievement)
+            assertEquals(g.id, m.str("season"), g.season)
+            assertEquals(g.id, m["source"]!!.jsonPrimitive.content, g.source)
+            assertEquals(g.id, m["hint"]!!.jsonPrimitive.content, g.hint)
+            assertTrue(g.id, g.name.lowercase() !in g.hint.lowercase())
             assertEquals(ints(m, "notes"), g.notes)
             assertEquals(ints(m, "intervals"), MusicalCast.melodyIntervals(g.notes))
             assertTrue(g.id, g.notes.all { it in MusicalCast.SCALE })
@@ -132,6 +140,58 @@ class MusicalCastFixtureTest {
 
     @Test fun halloween_taps_are_season_aware() {
         for (c in f["halloween"]!!.jsonObject["taps"]!!.jsonArray.map { it.jsonObject }) {
+            val name = c["name"]!!.jsonPrimitive.content
+            val season = c.str("season")
+            var state = MusicalCast.MELODY_START
+            c["steps"]!!.jsonArray.forEachIndexed { i, se ->
+                val s = se.jsonObject
+                val r = MusicalCast.melodyTap(state, s["id"]!!.jsonPrimitive.content, s["at"]!!.jsonPrimitive.long, season)
+                val label = "$name step $i"
+                assertEquals(label, s["midi"]!!.jsonPrimitive.intOrNull, r.note?.midi)
+                assertEquals(label, s.str("sound"), r.note?.sound)
+                assertEquals(label, s.str("matched"), r.matched?.id)
+                state = r.state
+            }
+        }
+    }
+
+    // ── Thanksgiving (founder 10-16): the season's batch, normal voices, season-aware matching ────────────────
+
+    @Test fun thanksgiving_melodies_todo_and_no_prefix() {
+        val t = f["thanksgiving"]!!.jsonObject
+        val ms = t["melodies"]!!.jsonArray.map { it.jsonObject }
+        assertEquals(ms.size, MusicalCast.THANKSGIVING_MELODIES.size)
+        assertTrue(ms.isNotEmpty())
+        ms.forEachIndexed { i, m ->
+            val g = MusicalCast.THANKSGIVING_MELODIES[i]
+            assertEquals(m["id"]!!.jsonPrimitive.content, g.id)
+            assertEquals(m["name"]!!.jsonPrimitive.content, g.name)
+            assertEquals(m["achievement"]!!.jsonPrimitive.content, g.achievement)
+            assertEquals(g.id, m.str("season"), g.season)
+            assertEquals(g.id, m["source"]!!.jsonPrimitive.content, g.source)
+            assertEquals(g.id, m["hint"]!!.jsonPrimitive.content, g.hint)
+            assertTrue(g.id, g.name.lowercase() !in g.hint.lowercase())
+            assertEquals(ints(m, "notes"), g.notes)
+            assertEquals(ints(m, "intervals"), MusicalCast.melodyIntervals(g.notes))
+            assertTrue(g.id, g.notes.all { it in MusicalCast.SCALE })
+            assertTrue(g.achievement, g.achievement in SECRET_ACHIEVEMENT_KEYS)
+        }
+        assertEquals(t["todo"]!!.jsonArray.map { it.jsonPrimitive.content }, MusicalCast.THANKSGIVING_TUNES_TODO)
+        assertNull(MusicalCast.SEASON_NOTE_PREFIX["thanksgiving"])
+        assertEquals(listOf("halloween", "thanksgiving"), MusicalCast.SEASON_MELODIES.keys.sorted())
+        for (e in t["sounds"]!!.jsonArray.map { it.jsonObject }) {
+            assertEquals(e["id"]!!.jsonPrimitive.content, e.str("sound"), MusicalCast.note(e["id"]!!.jsonPrimitive.content, e.str("season"))?.sound)
+        }
+        for (e in t["active"]!!.jsonArray.map { it.jsonObject }) {
+            val season = e.str("season")
+            assertEquals("$season", e["ids"]!!.jsonArray.map { it.jsonPrimitive.content }, MusicalCast.activeMelodies(season).map { it.id })
+        }
+    }
+
+    @Test fun thanksgiving_taps_are_season_aware() {
+        val taps = f["thanksgiving"]!!.jsonObject["taps"]!!.jsonArray.map { it.jsonObject }
+        assertTrue(taps.isNotEmpty())
+        for (c in taps) {
             val name = c["name"]!!.jsonPrimitive.content
             val season = c.str("season")
             var state = MusicalCast.MELODY_START

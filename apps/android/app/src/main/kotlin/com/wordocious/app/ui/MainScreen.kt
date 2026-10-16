@@ -406,6 +406,8 @@ fun MainScreen() {
         mainLifecycleOwner.lifecycle.addObserver(obs)
         onDispose { mainLifecycleOwner.lifecycle.removeObserver(obs) }
     }
+    // The custom share sheet's host (flag share_sheet_v2): every ShareHelper.shareImage(s) call opens it from here.
+    com.wordocious.app.ui.ShareSheetHostUi()
     // Invite-accepted VS match (mode + invite code) from the pending-invites banner.
     var vsInvite by remember { mutableStateOf<Pair<com.wordocious.core.GameMode, String>?>(null) }
     // App-link VS invites (wordocious.com/vs/join/* via DeepLinkRouter) feed the

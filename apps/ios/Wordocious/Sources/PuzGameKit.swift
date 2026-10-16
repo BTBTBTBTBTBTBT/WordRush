@@ -344,7 +344,7 @@ struct PuzFinishedDock: View {
         // Founder 10-02 follow-up: the SHARE RESULTS candy (+ "Next <Game> in 3h 12m" inside
         // it on a daily, not in VS) rides an existing action row — never a row of its own
         // when the dock has one.
-        let shareCTA = onShare.map { AnyView(FinishedShareCTA(hasSpoilers: hasSpoilers, nextGame: isDaily && showNextDaily ? game : nil, onShare: $0)) }
+        let shareCTA = onShare.map { AnyView(FinishedShareCTA(hasSpoilers: hasSpoilers, nextGame: isDaily && showNextDaily ? game : nil, modeDbKey: currentMode, onShare: $0)) }
         let daily = isDaily && showNextDaily
         let card = !isDaily ? onNewPuzzle : nil
         VStack(spacing: 8) {

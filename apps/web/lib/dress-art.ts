@@ -33,5 +33,6 @@ export const DRESS_ART_SIZE: Record<string, readonly [number, number]> = {
   'art-dress-tag-halloween': [444, 150],
   'art-dress-tag-new': [160, 75],
   'art-dress-tag-pro': [180, 83],
+  'art-dress-tag-thanksgiving': [444, 143],
   'art-dress-title': [900, 129],
 };

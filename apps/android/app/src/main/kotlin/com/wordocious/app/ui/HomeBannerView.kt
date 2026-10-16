@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.Image
@@ -195,8 +196,25 @@ fun HomeBannerView(
     // when it ships; 0 = the card as ever.
     val stageSeason = rememberSeason()
     val stageCtx = LocalContext.current
-    val stageRes = remember(stageSeason) { SeasonKit.stage(stageCtx, stageSeason) }
+    // Time of day (founder 10-16): the stage art for the current slot (the night art whenever that time's file doesn't ship).
+    val stageTod = TimeOfDayState.slot
+    val stageRes = remember(stageSeason, stageTod) { SeasonKit.stage(stageCtx, stageSeason, stageTod) }
+    // Perf: decode the NEXT slot's stage off the main thread a couple of minutes before the boundary (same size bucket the Image uses).
+    val stageBucket = ArtBitmaps.bucketPx(with(androidx.compose.ui.platform.LocalDensity.current) { 400.dp.roundToPx() })
+    androidx.compose.runtime.LaunchedEffect(stageSeason, stageTod) {
+        if (stageSeason == null || TimeOfDayState.pref != null) return@LaunchedEffect
+        kotlinx.coroutines.delay((TimeOfDayState.msToNextChange() - 120_000L).coerceAtLeast(0L))
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            SeasonKit.stage(stageCtx, stageSeason, TimeOfDayState.next(stageTod)).takeIf { it != 0 }?.let { ArtBitmaps.get(stageCtx, it, stageBucket) }
+        }
+    }
     val stageArt = stageRes != 0
+    // The idle stage / banner trio: the season's costumed O · W · R (empty when the season's skins don't ship).
+    val idleTrio = remember(stageSeason) {
+        if (stageSeason == null) emptyList()
+        else listOf(MascotId.O1, MascotId.W, MascotId.R).map { SeasonSkins.fullRes(it, stageSeason) }
+            .takeIf { r -> r.zip(listOf(MascotId.O1, MascotId.W, MascotId.R)).none { (res, id) -> res == id.res } }.orEmpty()
+    }
 
     // Fixed card chrome: capped fontScale (the HomeScreen rule) so huge system text
     // can't balloon the strip or push the tile rows out of the card.
@@ -273,7 +291,14 @@ fun HomeBannerView(
                     // 2.8 item 6: core's bubble-text fit — the name keeps its stacked gold lines; every
                     // other headline that is too long wraps in balanced lines (never "…", never a clip).
                     val usable = (lineW.value - HOME_HEADLINE_ART_PAD).coerceAtLeast(1f).toDouble()
-                    val dailyLayout = remember(dailyHeadline, name, usable) { com.wordocious.core.homeHeadlineFit(dailyHeadline, name, usable) }
+                    val legacyDailyLayout = remember(dailyHeadline, name, usable) { com.wordocious.core.homeHeadlineFit(dailyHeadline, name, usable) }
+                    // Founder 10-16: the Home headline POOL behind `home_headlines_v2` (testers / admins; no row or flags not
+                    // loaded = off). Off = today's line byte for byte; on = ONLY the daily headline string (and its fit) change.
+                    val poolFlags by com.wordocious.app.data.FlagsService.flags.collectAsState()
+                    val poolOn = remember(poolFlags) { HomeHeadlinesFlag.on() }
+                    val (shownDaily, dailyLayout) = if (poolOn) {
+                        rememberPoolHeadline(word, puzzles, completions, name, usable, dailyHeadline, legacyDailyLayout)
+                    } else dailyHeadline to legacyDailyLayout
                     val unlimitedLayout = remember(unlimitedHeadline, name, usable) { com.wordocious.core.homeHeadlineFit(unlimitedHeadline, name, usable) }
                     // Z: both modes' headlines share one slot (the taller of the two), crossfading.
                     // Founder 10-15 (TestFlight recording): the headline changes on launch as the streaks arrive, and a slot
@@ -283,7 +308,7 @@ fun HomeBannerView(
                     val reserve = remember(usable) { com.wordocious.core.homeHeadlineFit("W", "", usable).let { it.copy(lines = listOf("W", "W"), nameLines = emptyList()) } }
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         BannerHeadlineLayer("", reserve, reserve.size, false, alpha = 0f, active = false)
-                        BannerHeadlineLayer(dailyHeadline, dailyLayout, dailyLayout.size, dailyDouble, alpha = 1f - modeFade, active = !unlimited, name = name)
+                        BannerHeadlineLayer(shownDaily, dailyLayout, dailyLayout.size, dailyDouble, alpha = 1f - modeFade, active = !unlimited, name = name)
                         BannerHeadlineLayer(unlimitedHeadline, unlimitedLayout, unlimitedLayout.size, false, alpha = modeFade, active = unlimited, name = name)
                     }
                 }
@@ -322,10 +347,17 @@ fun HomeBannerView(
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     // A wide card (tablet) reserves a taller trio slot so the bigger figures stay under the clock line.
                     val trioSlot = maxOf(HOME_STAGE_TRIO_SLOT, maxWidth * 0.30f)
-                    Image(
-                        artPainter(stageRes, 400.dp), contentDescription = null,
-                        contentScale = ContentScale.Crop, alignment = Alignment.BottomCenter, modifier = Modifier.matchParentSize().clearAndSetSemantics { },
-                    )
+                    // Time of day: the stage art cross-fades 600 ms (two static layers; instant under Reduce Motion).
+                    androidx.compose.animation.Crossfade(
+                        stageRes, Modifier.matchParentSize().clearAndSetSemantics { },
+                        animationSpec = if (WTheme.reducedMotion) androidx.compose.animation.core.snap() else androidx.compose.animation.core.tween(com.wordocious.core.TimeOfDay.FADE_MS),
+                        label = "stageTod",
+                    ) { shownStage ->
+                        Image(
+                            artPainter(shownStage, 400.dp), contentDescription = null,
+                            contentScale = ContentScale.Crop, alignment = Alignment.BottomCenter, modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                     Column(Modifier.fillMaxWidth()) {
                         stripContent()
                         Spacer(Modifier.height(trioSlot))
@@ -333,7 +365,8 @@ fun HomeBannerView(
                     val trio = when {
                         !unlimited && bandTier == BannerTier.FLAWLESS -> listOf(com.wordocious.app.R.drawable.art_pose_d_cheer, com.wordocious.app.R.drawable.art_pose_o2_cheer, com.wordocious.app.R.drawable.art_pose_i_cheer)
                         !unlimited && bandTier == BannerTier.SWEEP -> listOf(com.wordocious.app.R.drawable.art_pose_o1_cheer, com.wordocious.app.R.drawable.art_pose_s_flex, com.wordocious.app.R.drawable.art_pose_w_wave)
-                        else -> listOf(com.wordocious.app.R.drawable.art_halloween_o1, com.wordocious.app.R.drawable.art_halloween_w, com.wordocious.app.R.drawable.art_halloween_r)
+                        // 10-16: the season's own costumed O · W · R (registry `cast` slot), not only Halloween's.
+                        else -> idleTrio
                     }
                     val celebrating = !unlimited && bandTier != BannerTier.NONE
                     CelebrationTrio(
@@ -350,10 +383,9 @@ fun HomeBannerView(
             if (bandTier == BannerTier.NONE && !stageArt) HalloweenBannerSlot { res ->
                 // Founder 10-10: the idle Halloween scene is alive too: the costumed O, W, R sway slow and spooky (no sparkles,
                 // a slower 0.7 s tempo, +-3 degrees); a season without the trio art animates the still banner with the idle hop.
-                val trio = listOf(com.wordocious.app.R.drawable.art_halloween_o1, com.wordocious.app.R.drawable.art_halloween_w, com.wordocious.app.R.drawable.art_halloween_r)
                 Box(Modifier.fillMaxWidth().height(110.dp).padding(top = 4.dp, bottom = 6.dp, start = 10.dp, end = 10.dp).clearAndSetSemantics { }) {
-                    if (res == com.wordocious.app.R.drawable.art_scene_banner_halloween) {
-                        CelebrationTrio(100.dp, Modifier.fillMaxSize(), images = trio, bunting = false, sparkles = false, tempo = 0.7f, swayDegrees = 3f)
+                    if (idleTrio.size == 3) {
+                        CelebrationTrio(100.dp, Modifier.fillMaxSize(), images = idleTrio, bunting = false, sparkles = false, tempo = 0.7f, swayDegrees = 3f)
                     } else {
                         androidx.compose.foundation.Image(
                             androidx.compose.ui.res.painterResource(res), contentDescription = null,

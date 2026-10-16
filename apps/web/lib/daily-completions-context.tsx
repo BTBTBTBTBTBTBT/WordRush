@@ -13,6 +13,8 @@ import {
   updateResultStore,
 } from '@/lib/optimistic-results';
 import { cacheUser } from '@/lib/page-cache';
+import { writeLastGame } from '@/lib/home-headline-pool-web';
+import { modeTitle } from '@/lib/vs-lobby';
 
 /**
  * Server (or cached) completions plus today's results still sitting in the
@@ -208,6 +210,9 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
       // the leaderboard's own row and the Stats Today card all have it before
       // the server confirms. A guest's lands under GUEST_RESULTS_ID.
       const owner = userId ?? (guest ? GUEST_RESULTS_ID : undefined);
+      // home_headlines_v2: the Home headline's "last game" reaction reads this tiny local record (title, won); a
+      // personal best is not known here, so `record` stays false until a finish carries one.
+      writeLastGame({ title: modeTitle(gameMode), won: !!won, at: Date.now(), record: false });
       if (owner) {
         const day = getTodayLocal();
         updateResultStore((st) => applyLocalResult(pruneStore(st, day), {

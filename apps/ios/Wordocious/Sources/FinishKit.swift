@@ -527,7 +527,7 @@ private struct TintedPillChrome: ViewModifier {
                 let r = radius ?? g.size.height / 2
                 let shape = RoundedRectangle(cornerRadius: r, style: .continuous)
                 ZStack(alignment: .top) {
-                    shape.fill(dark ? Theme.surface : accent.wash(0.12))
+                    shape.fill(dark ? (SeasonSurface.raised ?? Theme.surface) : accent.wash(0.12))
                     if dark { shape.fill(accent.opacity(0.10)) }
                     accent.frame(height: 4).allowsHitTesting(false)
                 }
@@ -1023,7 +1023,11 @@ struct KeyCap<Label: View>: View {
 
     /// An unplayed key: pearl (light) / deep lavender (dark) under the light map (button family §5).
     private static var blank: (edge: Color, face: AnyShapeStyle, ink: Color) {
-        Theme.isDark ? (Color(hex: 0x231C40), AnyShapeStyle(Color(hex: 0x3D355F)), Color(hex: 0xEFE9FF))
+        // 10-16 time of day: in a season the idle key takes the season's `raised` (it follows morning / day / evening / night).
+        if let raised = SeasonSurface.raised, Theme.isDark, let edge = SeasonSurface.raisedEdge {
+            return (edge, AnyShapeStyle(raised), SeasonKit.surfaces?.text ?? Color(hex: 0xEFE9FF))
+        }
+        return Theme.isDark ? (Color(hex: 0x231C40), AnyShapeStyle(Color(hex: 0x3D355F)), Color(hex: 0xEFE9FF))
                      : (Color(hex: 0xCDB9F0), AnyShapeStyle(Color(hex: 0xFBFAFF)), FinishInk.softNumber)
     }
 }

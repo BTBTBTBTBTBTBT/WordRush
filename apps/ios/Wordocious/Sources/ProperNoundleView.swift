@@ -358,9 +358,6 @@ struct ProperNoundleView: View {
     @State private var showGuide = false
     /// The whole clue's soft-pop card (opens when the clue lands; "Read clue" reopens it).
     @State private var showFullClue = false
-    @State private var showShareOptions = false
-    /// The chooser's pick, consumed by the sheet's onDismiss (see ShareVariantSheet).
-    @State private var shareReveal: Bool?
 
     init(seed: String? = nil, onPlayAgain: (() -> Void)? = nil) {
         _vm = StateObject(wrappedValue: ProperNoundleVM(seed: seed))
@@ -390,11 +387,8 @@ struct ProperNoundleView: View {
                                         ? { onPlayAgain?() } : nil,
                                     onOtherGames: { dismiss() },
                                     showNextDaily: !vm.isVersus,
-                                    onShare: { _ in showShareOptions = true })
-                        .softSheet(isPresented: $showShareOptions,
-                               onDismiss: { if let r = shareReveal { shareReveal = nil; shareResult(reveal: r) } }) {
-                            ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(340)])
-                        }
+                                    onShare: { reveal in shareResult(reveal: reveal) },
+                                    hasSpoilers: true)
                 } extras: {
                     result
                 }
@@ -611,7 +605,7 @@ struct ProperNoundleView: View {
                     .tintedCard(accent: pnAccent, bar: [pnAccent, Color(hex: 0xFB923C)], radius: 16, barHeight: 6)
                     .padding(.horizontal, 10).padding(.top, 2)
             }
-            DailyRankBadge(gameMode: .propernoundle)
+            if vm.isDaily { DailyRankBadge(gameMode: .propernoundle) }
             ScoreBreakdownView(gameMode: GameMode.propernoundle.rawValue, completed: vm.status == .won,
                                guessCount: vm.guesses.count, timeSeconds: secs,
                                boardsSolved: vm.status == .won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed,

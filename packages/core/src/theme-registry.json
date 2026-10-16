@@ -1,5 +1,5 @@
 {
-  "_doc": "The theme registry (FRIDAY-QUEUE item 25): Default / Ocean / Forest / Dark as DATA, the way season-registry.json is. ONE source, copied byte-for-byte to apps/ios/Wordocious/Resources/theme-registry.json and apps/android/app/src/main/assets/theme-registry.json (apps/web/lib/theme-registry.test.ts checks the copies). Each theme names the slots the season system also uses: wall (3 gradient stops top -> bottom, drawn in CODE at full resolution, light + dark), glow (a soft radial lift near the top, code-drawn), card (the page-card wash), ink / inkSecondary (on-card text; contrast-tested >= 4.5 against card), accent (title + button-family tint), tiles (correct / present board colors; colorblind mode still wins), tabBar (tab dock fill), ambient (the living wallpaper: kind + sprite names + counts, menus only; a seasonal entry may leave it out = the base theme's ambient keeps running). 'light' null = the theme is dark-only (Dark). Season skins layer on top when Seasonal is on (season-registry.json). Sprites: ambient-<name> (web /ambient/<name>.webp, iOS image set ambient-<name>, Android drawable ambient_<name>).",
+  "_doc": "The theme registry (FRIDAY-QUEUE item 25): Default / Ocean / Forest / Dark as DATA, the way season-registry.json is. ONE source, copied byte-for-byte to apps/ios/Wordocious/Resources/theme-registry.json and apps/android/app/src/main/assets/theme-registry.json (apps/web/lib/theme-registry.test.ts checks the copies). Each theme names the slots the season system also uses: wall (3 gradient stops top -> bottom, drawn in CODE at full resolution, light + dark), glow (a soft radial lift near the top, code-drawn), card (the page-card wash), ink / inkSecondary (on-card text; contrast-tested >= 4.5 against card), accent (title + button-family tint), tiles (correct / present board colors; colorblind mode still wins), tabBar (tab dock fill), ambient (the living wallpaper: kind + sprite names + counts, menus only; a seasonal entry may leave it out = the base theme's ambient keeps running; a seasonal ambient's parts are each optional: bats / witch / fog / stars (Halloween), flock = a V of geese crossing the top band [min, max] % slowly, direction 1 = left to right, -1 mirrored (Thanksgiving); 10-16). 'light' null = the theme is dark-only (Dark). Season skins layer on top when Seasonal is on (season-registry.json). Sprites: ambient-<name> (web /ambient/<name>.webp, iOS image set ambient-<name>, Android drawable ambient_<name>).",
   "themes": [
     {
       "id": "default",
@@ -122,7 +122,12 @@
         { "letter": "O", "color": "#C8324F" },
         { "letter": "R", "color": "#F7D08C" },
         { "letter": "D", "color": "#7E2A5B" }
-      ]
+      ],
+      "ambient": {
+        "kind": "thanksgiving",
+        "flock": { "sprite": "goose", "count": 7, "size": [30, 40], "duration": [44, 68], "band": [5, 18], "direction": 1 },
+        "stars": { "count": 6, "color": "#FDE6C0" }
+      }
     }
   }
 }

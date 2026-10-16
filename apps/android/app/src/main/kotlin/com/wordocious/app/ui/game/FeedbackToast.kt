@@ -387,7 +387,7 @@ fun CandyMessagePill(text: String, tone: FeedbackToast.Tone, modifier: Modifier 
     val dark = WTheme.isDark
     val argb = acc.toArgb()
     val fill = if (dark) {
-        val base = WTheme.surface.toArgb()
+        val base = (WTheme.season?.takeIf { it.dark }?.raised ?: WTheme.surface).toArgb() // time of day: a dark season's pill sits on `raised`
         Brush.verticalGradient(listOf(Color(TintMath.over(argb, 0.20f, base)), Color(TintMath.over(argb, 0.32f, base))))
     } else Brush.verticalGradient(listOf(Wash.mix(acc, 0.08f), Wash.mix(acc, 0.20f)))
     Row(

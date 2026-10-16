@@ -89,6 +89,13 @@ final class FlagsService: ObservableObject {
     /// key's row exists and is disabled (or audience 'testers' for a non-tester). Re-read on foreground.
     func isLive(_ key: String) -> Bool { Self.resolveLive(key, flags: flags, isTester: viewerIsTester) }
 
+    /// A feature that ships dark: ON for admins and testers until its row says otherwise (no row / table unknown = testers
+    /// only; a row with audience "all" opens it to everyone, enabled=false kills it). Used by `share_sheet_v2`.
+    func isLiveForTestersFirst(_ key: String) -> Bool {
+        guard let flags, let row = flags[key] else { return viewerIsTester }
+        return Self.resolveLive(key, flags: [key: row], isTester: viewerIsTester)
+    }
+
     nonisolated static func resolveLive(_ key: String, flags: [String: AppFlag]?, isTester: Bool) -> Bool {
         guard let flags, let row = flags[key] else { return true }
         if !row.enabled { return false }

@@ -11,6 +11,7 @@ public enum AchievementRules {
         "tune_little_lamb", "tune_little_star", "tune_ode_to_joy", "tune_happy_birthday", "tune_hot_cross_buns",
         "tune_mountain_king", "tune_toccata", "tune_funeral_march", "tune_marionette", "tune_danse_macabre",
         "tune_bald_mountain", "tune_sorcerers_apprentice",
+        "tune_simple_gifts", "tune_we_gather", "tune_thankful_people", "tune_now_thank",
     ]
 
     /// Should a catalog entry show in a player's list? Hidden never; a secret only once the player has it.

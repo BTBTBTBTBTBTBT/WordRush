@@ -221,15 +221,10 @@ fun ProScreen(
     // Purchase errors are a dismissible alert on every state of the screen, not
     // a line of red text inside the plan list (iOS ProView.swift:54).
     if (lastError != null) {
-        androidx.compose.material3.AlertDialog(
-            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
-            onDismissRequest = { StoreManager.clearError() },
-            containerColor = accentWash(PRO_GOLD, 0.12f),
-            title = { Text("Purchase issue", fontWeight = FontWeight.Black, color = proInk) },
-            text = { Text(lastError ?: "", color = proMuted, fontWeight = FontWeight.Bold) },
-            confirmButton = {
-                CastButton("OK", onClick = { StoreManager.clearError() }, color = CastColor.GOLD, size = CastSize.M)
-            },
+        // Parity audit 10-16: the family confirm (one-button notice), not a Material dialog.
+        FamilyConfirm(
+            title = "Purchase issue", message = lastError ?: "", cancel = null,
+            onDismiss = { StoreManager.clearError() }, onConfirm = { StoreManager.clearError() },
         )
     }
 }

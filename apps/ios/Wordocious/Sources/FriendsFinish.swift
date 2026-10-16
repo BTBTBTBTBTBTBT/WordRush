@@ -30,6 +30,8 @@ enum FriendsInk {
     static var faces: Color { ink(0x8A4A6E, 0xF5D0FE) }
     /// Section labels on the pink wallpaper.
     static var section: Color { ink(0x8A2D63, 0xF9A8D4) }
+    /// 10-16 time of day: `section` for a note that sits directly on the WALL (dark ink while the time's sky is light).
+    static var wallSection: Color { SeasonSurface.wallInk() ?? section }
     /// The gold card's label.
     static var gold: Color { ink(0x8A4A12, 0xFCD34D) }
     /// The lavender card's label.

@@ -313,6 +313,7 @@ export type NightArtName =
   | 'art-podium-floor'
   // 2.8 one-image podium (stadium + 3 steps + blank panels, 1536x1024) and the Halloween curtain-stage celebration card art (1586x992)
   | 'art-podium-stage'
+  | `art-podium-stage-${'morning' | 'day' | 'evening'}`   // time-of-day stadiums (10-16); night = art-podium-stage
   | 'art-celebration-stage-halloween'
   // 2.8 item 11b: the Leaderboard stage (clouds, floor disc, Yesterday ledge, sunburst light, compact Your board pill)
   | `art-lb-${string}`
@@ -520,6 +521,7 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-ach-grand_sweep': [256, 256],
   'art-ach-groups_first': [256, 256],
   'art-ach-halfway_hero': [256, 256],
+  'art-ach-harvest_feast': [256, 256],
   'art-ach-hat_trick': [256, 256],
   'art-ach-hive_mind': [256, 256],
   'art-ach-hub_first': [256, 256],
@@ -581,6 +583,10 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-ach-thousand_words': [256, 256],
   'art-ach-three_in_a_row': [256, 256],
   'art-ach-triple_threat': [256, 256],
+  'art-ach-tune_simple_gifts': [256, 256],
+  'art-ach-tune_we_gather': [256, 256],
+  'art-ach-tune_thankful_people': [256, 256],
+  'art-ach-tune_now_thank': [256, 256],
   'art-ach-unbreakable': [256, 256],
   'art-ach-under_par': [256, 256],
   'art-ach-unstoppable': [256, 256],
@@ -762,6 +768,9 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-podium-3-plain': [300, 159],
   'art-podium-floor': [1080, 184],
   'art-podium-stage': [1536, 1024],
+  'art-podium-stage-morning': [1536, 1024],
+  'art-podium-stage-day': [1536, 1024],
+  'art-podium-stage-evening': [1536, 1024],
   'art-celebration-stage-halloween': [1586, 992],
   'art-lb-clouds': [420, 149],
   'art-lb-floor-disc': [418, 151],

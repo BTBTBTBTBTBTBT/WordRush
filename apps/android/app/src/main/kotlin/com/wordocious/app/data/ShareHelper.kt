@@ -184,11 +184,43 @@ object ShareHelper {
     }
 
     /**
+     * Where a share comes from, so the share sheet (flag `share_sheet_v2`) can build its model: the surface (the
+     * tracked link's `?s=`), the card kinds per image (default = the surface's own card), the mode id for `?m=`.
+     */
+    class SheetHint(
+        val surface: com.wordocious.core.ShareSurface = com.wordocious.core.ShareSurface.FINISHED,
+        val kinds: List<com.wordocious.core.ShareCardKind>? = null,
+        val mode: String = "",
+    )
+
+    /**
      * S1 share one or more result images, nothing else. Returns false (after the
      * [fallbackText] text share, when given) if no image could be written or the
-     * sheet could not open.
+     * sheet could not open. With the `share_sheet_v2` flag on (testers / admins until the founder
+     * approves) the custom share sheet opens instead of the system chooser; its "More" tile is that chooser.
      */
-    fun shareImages(context: Context, images: List<Pair<Bitmap, String>>, chooserTitle: String, fallbackText: String? = null): Boolean {
+    fun shareImages(
+        context: Context, images: List<Pair<Bitmap, String>>, chooserTitle: String, fallbackText: String? = null,
+        sheet: SheetHint? = null,
+    ): Boolean {
+        if (images.isNotEmpty() && com.wordocious.app.ui.ShareSheetFlag.on() && com.wordocious.app.ui.ShareSheetHost.mounted) {
+            val hint = sheet ?: SheetHint()
+            val default = com.wordocious.core.ShareSheet.SURFACE_DEFAULT_CARD.getValue(hint.surface)
+            val kinds = hint.kinds?.takeIf { it.size == images.size } ?: List(images.size) { default }
+            val game = images[0].second.removePrefix("Wordocious-").removeSuffix(".png").ifEmpty { "Share" }
+            com.wordocious.app.ui.ShareSheetHost.show(
+                com.wordocious.app.ui.ShareSheetSpec(
+                    ctx = com.wordocious.core.ShareSheetContext(
+                        surface = hint.surface, mode = hint.mode, play = null, cards = kinds.distinct(),
+                        hasSpoilerVariant = false, season = null, caption = null,
+                    ),
+                    pageKinds = kinds, gameName = game, gameMode = hint.mode,
+                    render = { i, _, _ -> images.getOrNull(i)?.first },
+                    fallbackText = fallbackText,
+                ),
+            )
+            return true
+        }
         val uris = images.mapNotNull { (bmp, name) -> writePng(context, bmp, name) }
         if (uris.isEmpty()) { fallbackText?.let { share(context, it, chooserTitle) }; return false }
         return runCatching {
@@ -205,8 +237,11 @@ object ShareHelper {
     }
 
     /** [shareImages] for a single image named after [game] ("Share your QuadWord"). */
-    fun shareImage(context: Context, bitmap: Bitmap, game: String, fallbackText: String? = null, chooserTitle: String = chooserTitle(game)): Boolean =
-        shareImages(context, listOf(bitmap to fileName(game)), chooserTitle, fallbackText)
+    fun shareImage(
+        context: Context, bitmap: Bitmap, game: String, fallbackText: String? = null, chooserTitle: String = chooserTitle(game),
+        sheet: SheetHint? = null,
+    ): Boolean =
+        shareImages(context, listOf(bitmap to fileName(game)), chooserTitle, fallbackText, sheet)
 
     fun modeLabel(mode: GameMode): String = when (mode) {
         GameMode.DUEL -> "Classic"

@@ -91,6 +91,9 @@ object WTheme {
     /** The active season's windows (SeasonKit.applySurfaces); null = the normal look. */
     var season by mutableStateOf<SeasonSurfaces?>(null)
 
+    /** 10-16 time of day: the dark on-wall chrome ink while the shown season's sky is light, else [normal] (null = the control's own ink). */
+    fun wallInk(normal: Color? = null): Color? = if (season?.wallInkDark == true) SeasonSurfaces.WALL_INK_DARK else normal
+
     /** The dark theme is on, or a season whose windows are dark (ART_SPEC §11 page tints pick their dark stops by this). */
     val isDark: Boolean get() = season?.dark ?: palette.night
 

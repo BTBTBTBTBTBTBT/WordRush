@@ -59,7 +59,7 @@ struct SolvedPuzzleView: View {
                     // Founder 10-02: the SHARE RESULTS candy (+ "Next <Game> in …" inside it)
                     // rides the dock's action row (no share icon floating beside the strip).
                     NextDailyCTA(currentMode: mode.rawValue, compact: true,
-                                 share: AnyView(FinishedShareCTA(nextGame: FinishedShareCTA.gameName(mode),
+                                 share: AnyView(FinishedShareCTA(nextGame: FinishedShareCTA.gameName(mode), modeDbKey: mode.rawValue,
                                                                  onShare: { reveal in share(reveal: reveal) })))
                         .padding(.bottom, 6)
                 }, extras: {

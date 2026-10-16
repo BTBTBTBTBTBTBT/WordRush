@@ -11,6 +11,7 @@ final class FriendCardsFixtureTests: XCTestCase {
         let me: FriendlySide
         let yourTurn: Bool
         let word: String
+        let rowLabel: String
     }
     private struct LayoutCase: Decodable {
         let name: String
@@ -45,6 +46,7 @@ final class FriendCardsFixtureTests: XCTestCase {
         XCTAssertFalse(f.tiles.isEmpty)
         for (i, t) in f.tiles.enumerated() {
             XCTAssertEqual(FriendCards.tileWord(kind: t.kind, state: t.state, me: t.me, yourTurn: t.yourTurn), t.word, "tile #\(i) \(t.kind.rawValue)")
+            XCTAssertEqual(FriendCards.gameRowLabel(kind: t.kind, word: t.word, yourTurn: t.yourTurn), t.rowLabel, "row label #\(i) \(t.kind.rawValue)")
         }
     }
 

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SEASON_IDS, SEASON_WINDOWS, seasonReady } from '@wordle-duel/core';
-import { SEASON_ART_SIZE, SEASON_REGISTRY, seasonBanner, seasonStage, seasonSurfaces, seasonalTitle, seasonalWall, slotLookup } from './season-kit';
+import { SEASON_ART_SIZE, SEASON_REGISTRY, seasonBanner, seasonStage, seasonSurfaces, seasonalTitle, seasonalWall, slotLookup, timedNames, resolveSurfaces } from './season-kit';
 import { HALLOWEEN_TRIM, castArt, parseSeasonParam, parseStoredSeason, resolveSeason, seasonOfSrc } from './season';
 
 // The season registry (docs/design/brand/seasons/README.md "How to add a season"): one JSON shared
@@ -33,7 +33,11 @@ describe('season registry', () => {
   it('points every title / wall / banner slot at art that ships on the web', () => {
     for (const s of ready) {
       for (const v of Object.values(s.slots.titles ?? {})) expect(SEASON_ART_SIZE[v], v).toBeDefined();
-      for (const v of Object.values(s.slots.walls ?? {})) expect(SEASON_ART_SIZE[v], v).toBeDefined();
+      for (const w of Object.values(s.slots.walls ?? {})) {
+        // Night (the base) must ship; a time's own wall may still be on its way (it falls back to night).
+        const night = typeof w === 'string' ? w : w.night!;
+        expect(SEASON_ART_SIZE[night], night).toBeDefined();
+      }
       if (s.slots.banner) expect(SEASON_ART_SIZE[s.slots.banner]).toBeDefined();
     }
   });
@@ -61,9 +65,48 @@ describe('season registry', () => {
     expect(resolveSeason('2026-11-20', 'thanksgiving')).toBe('thanksgiving'); // the admin preview
     expect(resolveSeason('2026-11-20', null)).toBeNull(); // the public, inside the window, art not ready
     expect(seasonSurfaces('thanksgiving')?.tone).toBe('dark'); // the harvest surfaces render in the preview
-    expect(t.slots.stage).toBe('art-celebration-stage-thanksgiving');
-    expect(seasonStage('thanksgiving')).toBeNull(); // nothing shipped: the plain card
+    expect(timedNames(t.slots.stage)).toContain('art-celebration-stage-thanksgiving');
+    expect(seasonStage('thanksgiving')).toBe('art-celebration-stage-thanksgiving'); // shipped 10-16 for the admin preview (the public still gets nothing: resolveSeason above)
     expect(seasonStage('halloween', (n) => n === 'art-celebration-stage-halloween')).toBe('art-celebration-stage-halloween');
+  });
+
+  // Time of day (10-16): walls / stage / surfaces by (season, time) with a night fallback.
+  it('resolves the wall and stage per time of day, falling back to night when a file does not ship', () => {
+    expect(seasonalWall('art-wall-home', 'thanksgiving', 'dark', 'morning')).toBe('art-wall-thanksgiving-home-morning');
+    expect(seasonalWall('art-wall-home', 'thanksgiving', 'dark', 'evening')).toBe('art-wall-thanksgiving-home-evening');
+    expect(seasonalWall('art-wall-home', 'thanksgiving', 'dark', 'night')).toBe('art-wall-thanksgiving-home');
+    expect(seasonalWall('art-wall-game-quordle', 'thanksgiving', 'dark', 'day')).toBe('art-wall-thanksgiving-games-day');
+    expect(seasonalWall('art-wall-home', 'halloween', 'dark', 'day')).toBe('art-wall-halloween-home-day');
+    expect(seasonalWall('art-wall-home', 'halloween', 'dark', 'night')).toBe('art-wall-halloween-home');
+    expect(seasonalWall('art-wall-home', null, 'dark', 'day')).toBeNull();
+    expect(seasonStage('thanksgiving', undefined, 'day')).toBe('art-celebration-stage-thanksgiving-day');
+    expect(seasonStage('thanksgiving', undefined, 'night')).toBe('art-celebration-stage-thanksgiving');
+    expect(seasonStage('halloween', (n) => n === 'art-celebration-stage-halloween', 'morning')).toBe('art-celebration-stage-halloween-morning');
+    // A time whose file is missing falls back to night's.
+    expect(seasonStage('halloween', (n) => n === 'art-celebration-stage-halloween', 'night')).toBe('art-celebration-stage-halloween');
+  });
+
+  it('lays a time\'s surfaces over the night base; tone there only flips the on-wall ink', () => {
+    const night = seasonSurfaces('thanksgiving', null, 'night')!;
+    const day = seasonSurfaces('thanksgiving', null, 'day')!;
+    const morning = seasonSurfaces('thanksgiving', null, 'morning')!;
+    expect(night.card).toBe('#2A1419');
+    expect(night.wallInk).toBe('light');
+    expect(morning.card).toBe('#4A3049');
+    expect(morning.cardOpacity).toBe(0.9);
+    expect(day.card).toBe('#303C64');
+    expect(day.glow).toBe('#86ADF2');
+    expect(day.tone).toBe('dark');          // the card tone never flips
+    expect(day.wallInk).toBe('dark');       // the on-wall chrome ink does
+    // Evening keeps the base card opacity and text; only the keys it names change.
+    const evening = seasonSurfaces('thanksgiving', null, 'evening')!;
+    expect(evening.card).toBe('#3A1A2C');
+    expect(evening.cardOpacity).toBe(0.92);
+    expect(evening.text).toBe(night.text);
+    expect(evening.textMuted).toBe('#E6C4B2');
+    // No tod entry (Halloween) = the base at every time; a missing base = null.
+    expect(seasonSurfaces('halloween', null, 'day')!.card).toBe(seasonSurfaces('halloween', null, 'night')!.card);
+    expect(resolveSurfaces(undefined, 'day')).toBeNull();
   });
 
   it('accepts every registry id as a preview', () => {
@@ -108,7 +151,9 @@ describe('season registry', () => {
       }
     };
     for (const s of ready) {
-      for (const v of new Set(Object.values(s.slots.walls ?? {}))) {
+      // Every wall name (any time) that ships on the web ships on iOS + Android too; night's always ships.
+      for (const v of new Set(Object.values(s.slots.walls ?? {}).flatMap(timedNames))) {
+        if (!(v in SEASON_ART_SIZE)) continue;
         expect(exists(`apps/web/public/art/${v}.webp`), v).toBe(true);
         expect(exists(`apps/web/public/art/${v}-wide.webp`), `${v}-wide`).toBe(true);
         expect(exists(`apps/ios/Wordocious/Resources/Wallpapers.xcassets/${v}.imageset/${v}.jpg`), `iOS ${v}`).toBe(true);

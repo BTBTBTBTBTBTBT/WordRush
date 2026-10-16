@@ -3,7 +3,7 @@
 import { SHARE_HERO_GAP, shareHeroBand, shareHeroResultFor, shareHeroResultForRank, type ShareFrame, type ShareHeroResult } from '@wordle-duel/core';
 import { getShareSender } from './share-sender';
 import { drawShareHero, loadShareHero } from './share-hero-canvas';
-import { activeSeason } from './season';
+import { activeSeason, type Season } from './season';
 import { seasonalTitle } from './season-kit';
 import { drawBreakdownPanel, drawInfoPill, drawNightHead, drawNightRows, drawPodium, renderBubbleName, type PodiumAssets } from './share-night';
 import { nameColorHex, secondaryColorHex } from './player-tint';
@@ -2047,6 +2047,8 @@ export function shareHeroResultOf(input: ShareImageInput): ShareHeroResult {
 export interface ShareRenderOpts {
   frame?: ShareFrame;
   hero?: ShareHeroResult | null;
+  /** The look: a season id, or null for the normal look; omitted = whatever is active today (the share sheet's look swatches). */
+  season?: Season | null;
 }
 
 /** A 1080 square around a message card: the card scaled to fit, centered on the night gradient. */
@@ -2095,7 +2097,7 @@ export async function generateShareImage(input: ShareImageInput, opts: ShareRend
   const day = shareDayKey(date);
   const { title, fallbackTitle, fallbackColor } = shareCardArt(input);
   // Night style: in season the title is the season's art (art-title-halloween-<mode>), else the standard title art.
-  const season = activeSeason();
+  const season = opts.season === undefined ? activeSeason() : opts.season;
   const swapped = title ? seasonalTitle(title, season) : null;
   const isLb = input.layout === 'leaderboard';
   const dayName: ArtName = DAY_ART[date.getDay()];
@@ -2106,7 +2108,7 @@ export async function generateShareImage(input: ShareImageInput, opts: ShareRend
       titleSrc: swapped?.src ?? null,
       icons: input.layout === 'daily-sweep' ? input.games.map((g) => g.mode) : undefined,
     }),
-    loadCastImages(),
+    loadCastImages(season),
     isLb ? loadShareImage([artSrc(dayName)]) : Promise.resolve(null),
     isLb && lbPlan?.podium ? loadPodiumAssets(input, lbPlan.filled, podiumGeometry(1000).w) : Promise.resolve(null),
   ]);

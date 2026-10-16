@@ -19,8 +19,8 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { shareResult } from '@/lib/share-utils';
-import { chooseShareVariant } from '@/components/share/share-variant-modal';
+import { shareFinished } from '@/lib/share-finished-flow';
+import { useShareSheetFlag } from '@/hooks/use-share-sheet-flag';
 import { boardToGrid, boardToLetters } from '@/lib/share-grid';
 import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
@@ -161,25 +161,28 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
   const finishedPoints = state.status === 'PLAYING' ? null
     : computeScoreBreakdown('OCTORDLE', state.status === 'WON', totalGuesses, elapsedTime, state.boards.filter(b => b.status === 'WON').length, 8, 0, undefined, undefined, isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined).total;
 
+  const shareSheetOn = useShareSheetFlag();
   const handleShare = useCallback(async () => {
-    const variant = await chooseShareVariant();
-    if (!variant) return;
     const boards = state.boards.map(b => ({ grid: boardToGrid(b), letters: boardToLetters(b), won: b.status === 'WON', solution: b.solution }));
     const boardsSolved = boards.filter(b => b.won).length;
-    const out = await shareResult({
-      layout: 'multi',
-      mode: 'OctoWord',
-      won: state.status === 'WON',
-      guesses: totalGuesses,
-      maxGuesses: state.boards[0]?.maxGuesses || 13,
-      timeSeconds: elapsedTime,
-      boards,
-      boardsSolved,
-      totalBoards: 8,
-      reveal: variant === 'full',
+    const copied = await shareFinished({
+      sheet: shareSheetOn, catalogMode: 'octordle', gameName: 'OctoWord', isDaily: !!isDaily, won: state.status === 'WON',
+      multi: true, guesses: totalGuesses, timeSeconds: elapsedTime, boardsTotal: 8,
+      build: (reveal) => ({
+        layout: 'multi',
+        mode: 'OctoWord',
+        won: state.status === 'WON',
+        guesses: totalGuesses,
+        maxGuesses: state.boards[0]?.maxGuesses || 13,
+        timeSeconds: elapsedTime,
+        boards,
+        boardsSolved,
+        totalBoards: 8,
+        reveal,
+      }),
     });
-    if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
-  }, [state, totalGuesses, elapsedTime]);
+    if (copied) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [state, totalGuesses, elapsedTime, isDaily, shareSheetOn]);
 
   const handleRestart = () => {
     const newSeed = Date.now().toString();

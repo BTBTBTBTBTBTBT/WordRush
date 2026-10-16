@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { podiumColumn, podiumSlots, podiumTone, rowBadge, solvedLine, splitPodium, type Ranked } from './leaderboard-podium';
+import { podiumColumn, podiumSlots, podiumStageName, podiumTone, rowBadge, solvedLine, splitPodium, type Ranked } from './leaderboard-podium';
 
 const rows = (...ranks: number[]): Ranked<string>[] => ranks.map((rank, i) => ({ entry: `p${i}`, rank }));
 
@@ -107,5 +107,19 @@ describe('BJ4: the podium for N results (open spots)', () => {
       expect({ filled: split.podium.length, open: split.open }).toEqual(c.layout);
       expect(podiumSlots(c.ranks).filter((s) => s.kind === 'place')).toHaveLength(c.layout.filled);
     }
+  });
+});
+
+describe('podiumStageName (time of day, 10-16)', () => {
+  const all = () => true;
+  it('uses the per-time stage only inside a season', () => {
+    expect(podiumStageName('halloween', 'morning', all)).toBe('art-podium-stage-morning');
+    expect(podiumStageName('halloween', 'day', all)).toBe('art-podium-stage-day');
+    expect(podiumStageName('thanksgiving', 'evening', all)).toBe('art-podium-stage-evening');
+    expect(podiumStageName(null, 'morning', all)).toBe('art-podium-stage');
+  });
+  it('night and unshipped files fall back to the night stadium', () => {
+    expect(podiumStageName('halloween', 'night', all)).toBe('art-podium-stage');
+    expect(podiumStageName('halloween', 'day', () => false)).toBe('art-podium-stage');
   });
 });

@@ -379,6 +379,8 @@ fun SoftControl(
     iconSize: Dp = SOFT_CONTROL_ICON,
     alpha: Float = 1f,
     colorFilter: ColorFilter? = null,
+    /** The number's ink when the control sits on the bare wall (null = the soft-number default). */
+    numberColor: Color? = null,
 ) {
     // 2.8 items 7 + 48: the counter pops for a beat the moment its number GROWS (the streak just extended).
     val n = number?.toIntOrNull()
@@ -407,7 +409,7 @@ fun SoftControl(
         Icon3D(icon, iconSize, alpha = alpha, colorFilter = colorFilter)
         if (number != null) {
             Spacer(Modifier.width(5.dp))
-            SoftNumber(number, SOFT_CONTROL_NUMBER)
+            SoftNumber(number, SOFT_CONTROL_NUMBER, color = numberColor)
         }
     }
 }

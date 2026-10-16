@@ -24,6 +24,8 @@ struct SettingsView: View {
     @AppStorage("pref-daily-reminder") private var dailyReminder = false
     /// FINISH_SPEC §X: the admin-only season preview ("halloween" | "" = by date).
     @AppStorage(CastSkin.debugKey) private var debugSeason = ""
+    /// 10-16: the admin time-of-day preview ("morning" | "day" | "evening" | "night" | "" = auto, the clock).
+    @AppStorage(TimeOfDayState.debugKey) private var debugTod = ""
     @State private var reminderDenied = false
     @State private var showDeleteConfirm = false
     /// BJ11: Manage Subscription shows the branded hand-off before Apple's sheet.
@@ -127,6 +129,17 @@ struct SettingsView: View {
                                     ForEach(SeasonKit.registry, id: \.id) { s in
                                         seasonRow(s.id, s.title, "Show the \(s.title) art today (admin preview)")
                                     }
+                                }
+                                .padding(.vertical, 4)
+                                G5Divider(accent: G5Accent.coral)
+                                // 10-16: the season's time-of-day look (wall, stage, windows); Auto follows the device clock.
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Time of day").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                                    todRow("auto", "Auto", "Follows the device clock", "clock")
+                                    todRow("morning", "Morning", "5 AM to 10 AM", "sunrise.fill")
+                                    todRow("day", "Day", "10 AM to 4 PM", "sun.max.fill")
+                                    todRow("evening", "Evening", "4 PM to 7 PM", "sunset.fill")
+                                    todRow("night", "Night", "7 PM to 5 AM (the base look)", "moon.stars.fill")
                                 }
                                 .padding(.vertical, 4)
                                 G5Divider(accent: G5Accent.coral)
@@ -269,11 +282,8 @@ struct SettingsView: View {
                           message: "Please try again or contact support@wordocious.com.")
             .softSheet(item: $infoKind) { InfoPage($0).presentationDetents([.large]).tabletSheet() }
             .fullScreenCover(isPresented: $showTour) {
-                OnboardingView(replay: true) { play in
-                    showTour = false
-                    // "Play today's Classic": once the tour is down, open the Classic daily from the tab root.
-                    if play { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { Onboarding.playClassic() } }
-                }
+                // The replay's last card is "Got it": it just closes (never launches a game).
+                OnboardingView(replay: true) { _ in showTour = false }
             }
         }
         .task {
@@ -342,6 +352,16 @@ struct SettingsView: View {
             CastSkin.invalidate()
             debugSeason = id ?? ""
             CastSkin.invalidate()
+        }
+    }
+
+    /// One Time of day preview choice (admin): writes `debug-tod`; the season look re-applies at once.
+    private func todRow(_ id: String, _ label: String, _ desc: String, _ symbol: String) -> some View {
+        SettingsOptionTile(label: label, desc: desc, active: (debugTod.isEmpty ? "auto" : debugTod) == id, accent: G5Accent.coral) {
+            Image(systemName: symbol).font(.system(size: 20, weight: .bold)).foregroundStyle(G5Accent.coral)
+                .frame(width: 34, height: 34).accessibilityHidden(true)
+        } action: {
+            TimeOfDayState.shared.setOverride(id)
         }
     }
 
@@ -415,7 +435,7 @@ struct SettingsOptionTile<Preview: View>: View {
             .frame(minHeight: 44)
             .background {
                 ZStack {
-                    shape.fill(dark ? accent.opacity(0.16) : accent.wash(0.11))
+                    shape.fill(dark ? (SeasonSurface.raised ?? accent.opacity(0.16)) : accent.wash(0.11))
                     // The glossy selected face: the accent, lighter at the top, a soft
                     // top sheen and a darker lip — opacity-faded in, never a ring.
                     ZStack(alignment: .top) {

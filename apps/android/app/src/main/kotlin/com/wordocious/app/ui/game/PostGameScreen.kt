@@ -168,9 +168,55 @@ fun PostGameScreen(
     }
     // Gauntlet's card is stage chips (zero tiles — already spoiler-free), so it
     // shares directly; every other mode gets the two-option chooser.
+    // Flag `share_sheet_v2` (testers / admins until the founder approves): the custom share sheet
+    // (card carousel, No spoilers | Full results toggle, season looks, channels) replaces the chooser
+    // AND the system sheet — Gauntlet included (its card has no variant, so the toggle hides).
     var showShareChooser by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-    val onSharePressed = { if (mode == GameMode.GAUNTLET) share(false) else showShareChooser = true }
-    if (showShareChooser) {
+    val sheetV2 = com.wordocious.app.ui.ShareSheetFlag.on()
+    val onSharePressed = { if (mode == GameMode.GAUNTLET && !sheetV2) share(false) else showShareChooser = true }
+    if (showShareChooser && sheetV2) {
+        val spec = androidx.compose.runtime.remember(state, mode, elapsedSeconds) {
+            val game = com.wordocious.app.data.ShareHelper.modeLabel(mode)
+            val day = runCatching { com.wordocious.core.getDailySeedDate(state.seed) }.getOrNull() ?: com.wordocious.app.todayLocalDate()
+            val secs = elapsedSeconds
+            val kind = when {
+                mode == GameMode.GAUNTLET -> if (won) com.wordocious.core.ShareCaptions.Kind.GAUNTLET_WIN else com.wordocious.core.ShareCaptions.Kind.GAUNTLET_LOSE
+                !won -> com.wordocious.core.ShareCaptions.Kind.LOSE
+                state.boards.size > 1 -> com.wordocious.core.ShareCaptions.Kind.MULTI_WIN
+                else -> com.wordocious.core.ShareCaptions.Kind.WIN
+            }
+            val pn = if (mode == GameMode.PROPERNOUNDLE) com.wordocious.core.ProperNoundle.puzzleFor(state.boards[0].solution) else null
+            com.wordocious.app.ui.ShareSheetSpec(
+                ctx = com.wordocious.core.ShareSheetContext(
+                    surface = com.wordocious.core.ShareSurface.FINISHED, mode = mode.name.lowercase(),
+                    play = if (state.seed.startsWith("daily-")) com.wordocious.core.SharePlay.DAILY else com.wordocious.core.SharePlay.UNLIMITED,
+                    cards = listOf(com.wordocious.core.ShareCardKind.RESULT),
+                    hasSpoilerVariant = mode != GameMode.GAUNTLET,
+                    season = com.wordocious.app.ui.SeasonSkins.current(),
+                    caption = com.wordocious.core.ShareSheetCaption(
+                        kind = kind, date = day, game = game,
+                        n = state.boards.maxOf { it.guesses.size }.toString(), t = "${secs / 60}:${(secs % 60).toString().padStart(2, '0')}",
+                        b = state.boards.size.toString(), k = ((state.gauntlet?.stageResults?.count { it.status == GameStatus.WON } ?: 0) + 1).toString(),
+                    ),
+                ),
+                pageKinds = listOf(com.wordocious.core.ShareCardKind.RESULT),
+                gameName = game, gameMode = mode.name.lowercase(),
+                render = { _, variant, look ->
+                    com.wordocious.app.ui.SeasonSkins.withShareLook(look) {
+                        com.wordocious.app.data.ShareImage.render(
+                            context = context, state = state, mode = mode, modeLabel = game, elapsedSeconds = secs,
+                            category = pn?.themeCategory,
+                            wordGroups = pn?.display?.split(" ")?.map { it.length }?.takeIf { it.size > 1 },
+                            reveal = variant == com.wordocious.core.ShareVariant.FULL,
+                            solutionDisplay = pn?.display,
+                        )
+                    }
+                },
+                fallbackText = com.wordocious.app.data.ShareHelper.buildShareText(state, mode, secs),
+            )
+        }
+        com.wordocious.app.ui.ShareSheetV2(spec, onDismiss = { showShareChooser = false })
+    } else if (showShareChooser) {
         com.wordocious.app.ui.ShareVariantSheet(
             onPick = { reveal -> showShareChooser = false; share(reveal) },
             onDismiss = { showShareChooser = false },
@@ -301,7 +347,7 @@ fun PostGameScreen(
                         )
                         // B6: today's word on its green card (single-board modes; "No definition" fallback).
                         if (!multiBoard && mode != GameMode.PROPERNOUNDLE) {
-                            DefinitionCard(solution, showTiles = true)
+                            DefinitionCard(solution, showTiles = true, daily = isDailySeed)
                         }
                     },
                 )
@@ -315,10 +361,11 @@ fun PostGameScreen(
                 // loss the unsolved boards spell out their missed word.
                 FinishedBoardsGrid(state.boards, revealMissed = !won, maxWidth = maxW, maxHeight = maxH)
             } else {
-                // ProperNoundle's name line, or a loss's answer tiles, sit under the board.
+                // ProperNoundle's name line sits under the board. Parity audit 10-16 (F7): a lost single board no
+                // longer carries answer tiles under it (iOS GameScreen / web practice-game keep the answer in the
+                // word card behind More and in the loss popup), so the board takes the room.
                 val reserve = when {
                     mode == GameMode.PROPERNOUNDLE -> 48.dp
-                    !won -> 54.dp
                     else -> 0.dp
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -340,8 +387,6 @@ fun PostGameScreen(
                             if (won) (pnPuzzle?.display ?: solution) else "The answer was: ${pnPuzzle?.display ?: solution}",
                             if (won) Color(0xFF7C3AED) else Color(0xFFEF4444),
                         )
-                    } else if (!won) {
-                        FinishedAnswer(solution, maxWidth = minOf(maxW, 360.dp))
                     }
                 }
             }
@@ -708,7 +753,7 @@ internal fun NextDailyRow(
  * definition available for this word." rather than a blank gap.
  */
 @Composable
-internal fun DefinitionCard(word: String, showTiles: Boolean = false) {
+internal fun DefinitionCard(word: String, showTiles: Boolean = false, daily: Boolean = true) {
     var loaded by remember(word) { mutableStateOf(false) }
     val def by produceState<com.wordocious.app.data.DefinitionService.WordDefinition?>(initialValue = null, key1 = word) {
         value = com.wordocious.app.data.DefinitionService.fetch(word)
@@ -725,7 +770,8 @@ internal fun DefinitionCard(word: String, showTiles: Boolean = false) {
         bar = Brush.horizontalGradient(listOf(green, Color(0xFF5ED59A))),
     ) {
         Text(
-            "TODAY'S WORD", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.3.sp,
+            // Parity (iOS GameScreen): "TODAY'S WORD" only for the daily; an Unlimited game's word is "THE WORD".
+            if (daily) "TODAY'S WORD" else "THE WORD", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.3.sp,
             color = if (dark) Color(0xFF5ED59A) else Color(0xFF137A3D),
         )
         if (showTiles && word.isNotBlank()) {

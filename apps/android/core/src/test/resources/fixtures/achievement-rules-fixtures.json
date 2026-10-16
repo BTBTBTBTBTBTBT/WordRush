@@ -247,6 +247,13 @@
       "icon": "calendar"
     },
     {
+      "key": "harvest_feast",
+      "name": "Harvest Feast",
+      "description": "Finish a daily during the Thanksgiving season",
+      "category": "seasonal",
+      "icon": "calendar"
+    },
+    {
       "key": "early_bird",
       "name": "Early Bird",
       "description": "Finish a daily before 7 AM",
@@ -352,6 +359,38 @@
       "key": "tune_sorcerers_apprentice",
       "name": "Sorcerer's Apprentice",
       "description": "Played The Sorcerer's Apprentice on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_simple_gifts",
+      "name": "Simple Gifts",
+      "description": "Played Simple Gifts on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_we_gather",
+      "name": "We Gather Together",
+      "description": "Played We Gather Together on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_thankful_people",
+      "name": "Thankful People",
+      "description": "Played Come, Ye Thankful People, Come on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_now_thank",
+      "name": "Now Thank We",
+      "description": "Played Now Thank We All Our God on the cast",
       "category": "mascot",
       "icon": "sparkles",
       "secret": true
@@ -827,6 +866,26 @@
       "keys": [
         "spooky_season"
       ]
+    },
+    {
+      "localHour": 12,
+      "season": "thanksgiving",
+      "keys": [
+        "harvest_feast"
+      ]
+    },
+    {
+      "localHour": 2,
+      "season": "thanksgiving",
+      "keys": [
+        "night_owl",
+        "harvest_feast"
+      ]
+    },
+    {
+      "localHour": 12,
+      "season": "winter-holidays",
+      "keys": []
     }
   ]
 }

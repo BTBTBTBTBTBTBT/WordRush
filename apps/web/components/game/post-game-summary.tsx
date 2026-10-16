@@ -6,6 +6,8 @@ import { accentInk, cardBarStyle } from '@/lib/soft-surface';
 
 interface PostGameSummaryProps {
   solution: string;
+  /** Unlimited / practice words read "The word" (iOS parity); the daily reads "Today's word". */
+  isDaily?: boolean;
 }
 
 /** The "Today's word" card's green. */
@@ -21,7 +23,7 @@ const WORD_INK = accentInk(WORD_GREEN, '#137a3d');
  * the "More" disclosure under the dock; the result strip, Share and the
  * Next daily / Unlimited actions live above it (components/game/finished-kit).
  */
-export function PostGameSummary({ solution }: PostGameSummaryProps) {
+export function PostGameSummary({ solution, isDaily = true }: PostGameSummaryProps) {
   const { definition, loaded } = useWordDefinition(solution);
   if (!loaded) return null;
   const letters = solution.toUpperCase().split('');
@@ -40,7 +42,7 @@ export function PostGameSummary({ solution }: PostGameSummaryProps) {
       <div aria-hidden="true" style={{ ...cardBarStyle(WORD_GREEN), background: 'linear-gradient(90deg, #22a866, #5ed59a)' }} />
       <div className="px-3.5 pt-2.5 pb-3 grid gap-2">
         <div className={`text-[11px] font-black uppercase ${WORD_INK.className}`} style={{ letterSpacing: '0.12em', ...WORD_INK.style }}>
-          Today&rsquo;s word
+          {isDaily ? 'Today\u2019s word' : 'The word'}
         </div>
         <div className="flex justify-center" style={{ gap: 5, ['--gt-font' as string]: `${Math.round(tile * 0.58)}px` } as React.CSSProperties} role="img" aria-label={solution.toUpperCase()}>
           {letters.map((ch, i) => (

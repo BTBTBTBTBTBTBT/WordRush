@@ -868,7 +868,7 @@ export default function DailyPage() {
                 <div className="px-3 pb-2"><LeaderboardSkeleton /></div>
               ) : isSweep ? (
                 sweepLeaderboard.length === 0 ? (
-                  <BrandEmptyState scene={PAGE_SCENES.empty} artHeight={96} accent="leaderboard" className="py-6" title="NO SWEEPS TODAY" line="Nobody's swept today. Be the first!" />
+                  <BrandEmptyState scene={PAGE_SCENES.empty} artHeight={96} accent="leaderboard" className="py-6" title="NO SWEEPS YET" line="Nobody has swept today. Be the first!" />
                 ) : (
                   <Podium places={sweepPodium} label="Top three sweepers" />
                 )
@@ -879,14 +879,14 @@ export default function DailyPage() {
                     artHeight={96}
                     accent="friends"
                     className="py-6"
-                    title="NO FRIENDS ON THE BOARD"
+                    title="YOUR BOARD IS EMPTY"
                     line={MASCOT_LINES.addFriend}
                     actionLabel="Add friends"
                     actionHref="/friends"
                     actionIcon="plus"
                   />
                 ) : (
-                  <BrandEmptyState scene={PAGE_SCENES.empty} artHeight={96} accent="leaderboard" className="py-6" title="NO RESULTS YET" line="Nobody's finished today's daily. Be the first!" />
+                  <BrandEmptyState scene={PAGE_SCENES.empty} artHeight={96} accent="leaderboard" className="py-6" title="NO RESULTS YET" line="Nobody has finished today. Be the first!" actionLabel={!playedSelected ? 'Play now' : undefined} onAction={!playedSelected ? handlePlayDaily : undefined} actionIcon="play" />
                 )
               ) : (
                 <Podium places={lbPodium} />

@@ -39,12 +39,16 @@ export interface ThemeEntry {
   ambient: ThemeAmbient;
 }
 
+/** A season's living wallpaper; every part is optional (Halloween: bats + witch + fog + stars; Thanksgiving: flock + stars). */
 export interface SeasonalAmbient {
-  kind: 'halloween';
-  bats: { count: number; sprite: string; size: [number, number]; duration: [number, number] };
-  witch: { sprite: string; size: number; every: number; duration: number };
-  fog: { sprite: string; opacity: number; duration: number };
-  stars: { count: number; color: string };
+  kind: 'halloween' | 'thanksgiving';
+  bats?: { count: number; sprite: string; size: [number, number]; duration: [number, number] };
+  witch?: { sprite: string; size: number; every: number; duration: number };
+  fog?: { sprite: string; opacity: number; duration: number };
+  stars?: { count: number; color: string };
+  /** A V of geese crossing the top band slowly (10-16): one flock on screen, a smaller second one now and then.
+   *  size = one goose's width (pt), band = the lead's height [min, max] % of the wall, direction 1 = left to right. */
+  flock?: { sprite: string; count: number; size: [number, number]; duration: [number, number]; band: [number, number]; direction: 1 | -1 };
 }
 
 export interface SeasonalEntry {
@@ -52,7 +56,7 @@ export interface SeasonalEntry {
   subtitle: string;
   previewWall: [string, string, string];
   previewTiles: { letter: string; color: string }[];
-  /** The season's living wallpaper; absent = the base theme's ambient keeps running (Thanksgiving ships none yet). */
+  /** The season's living wallpaper; absent = the base theme's ambient keeps running. */
   ambient?: SeasonalAmbient;
 }
 

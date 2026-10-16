@@ -864,6 +864,6 @@ object ShareImage {
     fun shareVs(context: Context, bitmap: Bitmap, text: String) {
         val game = synchronized(gameOf) { gameOf[bitmap] } ?: "VS battle"
         ShareHelper.shareImage(context, bitmap, game.removePrefix("VS ").let { "VS $it" }, fallbackText = text,
-            chooserTitle = "Share your VS battle")
+            chooserTitle = "Share your VS battle", sheet = ShareHelper.SheetHint(com.wordocious.core.ShareSurface.VS))
     }
 }

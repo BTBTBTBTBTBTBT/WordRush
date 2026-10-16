@@ -59,7 +59,7 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
         >
           {/* U, all done for today (docs/ART_SPEC.md §7), small enough for the strip. */}
           <ArtScene scene={PAGE_SCENES.allDone} height={48} maxWidthPct={30} center={false} />
-          All {SWEEP_MODES.length} dailies done — Sweep complete! <Icon3D name="trophy" size={18} />
+          All {SWEEP_MODES.length} dailies done. Sweep complete! <Icon3D name="trophy" size={18} />
         </div>
       )}
       <ViewLeaderboardLink currentMode={currentMode} homeFirst={homeFirst} />

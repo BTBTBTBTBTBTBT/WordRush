@@ -577,8 +577,7 @@ private fun TourStep(replay: Boolean, signedIn: Boolean, guest: Boolean) {
         OnboardDots(page, TOUR.size, Modifier.align(Alignment.CenterHorizontally).padding(vertical = 14.dp), noun = "Card")
         val last = page == TOUR.lastIndex
         val finalLabel = when {
-            replay -> "Got it!"
-            !signedIn && !guest -> "Make my profile"
+            replay -> "Got it"
             else -> "Next"
         }
         CandyButton(

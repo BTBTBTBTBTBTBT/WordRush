@@ -50,6 +50,13 @@ function StripChip({ accent, icon, value, label }: { accent: string; icon: React
   );
 }
 
+/** The strip headline's label, the same set as iOS and Android: "Solved in 4" · "All 4 solved" · "3 of 4 solved" · "So close"; puzzles read "Solved!". */
+export function stripHeadlineLabel(won: boolean, boards: { solved: number; total: number } | undefined, guesses: ReactNode, guessLabel: string): string {
+  if (boards) return boards.solved === boards.total ? `All ${boards.total} solved` : `${boards.solved} of ${boards.total} solved`;
+  if (!won) return 'So close';
+  return /^guess/.test(guessLabel) && guesses != null && guesses !== '' ? `Solved in ${guesses}` : 'Solved!';
+}
+
 /**
  * R2: ONE line — the W / L badge · guesses · time · points — compact pills
  * with soft numbers. `srText` keeps the old result sentence for screen readers.
@@ -74,7 +81,7 @@ export function ResultStrip({ won, boards, guesses, guessLabel = 'guesses', time
     {headline !== null && (
       <div className="w-full [@media(max-height:739.98px)]:hidden">
         {/* BJ16: SOLVED! / NOT TODAY lettering by result (the chips carry the counts; the text stays the label). */}
-        <HeadingArt slug={won ? 'solved' : 'nottoday'} label={headline ?? (won ? 'Solved!' : 'Not today')} height={36} />
+        <HeadingArt slug={won ? 'solved' : 'nottoday'} label={headline ?? stripHeadlineLabel(won, boards, guesses, guessLabel)} height={36} />
       </div>
     )}
     {/* 'safe center': a row wider than its column starts at the left edge (scrollable) instead of clipping the W / L badge. */}

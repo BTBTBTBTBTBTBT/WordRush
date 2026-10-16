@@ -1,6 +1,6 @@
 'use client';
 
-import { BubbleText } from '@/components/ui/bubble-text';
+import { BubbleOneLine } from '@/components/ui/bubble-text';
 import Link from 'next/link';
 import { type ReactNode } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -80,6 +80,7 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
   const wins = sweepToday.filter((m) => todayDailies.get(m.id)?.won).length;
   const total = sweepModes.length;
   const allDone = total > 0 && completed >= total;
+  const dateLabel = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const flawless = allDone && wins === total;
   const moreDaily = moreModes.filter((m) => m.dailyEligible && m.dbKey);
   const morePlayed = moreDaily.filter((m) => todayDailies.has(m.dbKey as string)).length;
@@ -120,7 +121,11 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
               />
             ) : (
               // FINISH_SPEC AR: the day's summary in live lettering (blue → violet, gold numbers).
-              <BubbleText text={`Today · ${completed} of ${total} done`} palette="stats" maxSize={16} minSize={12} align="left" level={3} />
+              // Same wording as iOS: "Today · Oct 16" on the left, "3/8 PLAYED" on the right.
+              <>
+                <div className="min-w-0 flex-1"><BubbleOneLine text={`Today · ${dateLabel}`} palette="stats" size={14} align="left" level={3} /></div>
+                <div style={{ width: 112, flexShrink: 0 }}><BubbleOneLine text={`${completed}/${total} PLAYED`} palette="stats" size={14} align="right" level={3} /></div>
+              </>
             )}
           </div>
 

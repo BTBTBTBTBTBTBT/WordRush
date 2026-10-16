@@ -30,8 +30,8 @@ import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
-import { shareResult } from '@/lib/share-utils';
-import { chooseShareVariant } from '@/components/share/share-variant-modal';
+import { shareFinished } from '@/lib/share-finished-flow';
+import { useShareSheetFlag } from '@/hooks/use-share-sheet-flag';
 import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
 import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/use-game-snapshot';
@@ -331,9 +331,8 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     }
   };
 
+  const shareSheetOn = useShareSheetFlag();
   const handleShare = useCallback(async () => {
-    const variant = await chooseShareVariant();
-    if (!variant) return;
     // Rows the player actually guessed, as CORRECT/PRESENT/ABSENT states.
     // Pad to maxGuesses with EMPTY rows so the share image mirrors the
     // full played board instead of floating above empty space.
@@ -353,24 +352,30 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       ...Array(padRows).fill(Array(currentBoard.solution.length).fill('')),
     ];
     const shareModeMap: Record<string, string> = { DUEL: 'Classic', DUEL_6: 'Six', DUEL_7: 'Seven' };
-    const out = await shareResult({
-      layout: 'single',
-      mode: (shareModeMap[mode] || 'Classic') as 'Classic' | 'Six' | 'Seven',
-      won: state.status === GameStatus.WON,
-      guesses: currentBoard.guesses.length,
-      maxGuesses: currentBoard.maxGuesses,
-      timeSeconds: elapsedTime,
-      grid,
-      reveal: variant === 'full',
-      letters,
-      solutionDisplay: currentBoard.solution,
-      // E1: the gold POINTS window shows the same total the score card does.
-      points: state.status === GameStatus.WON
-        ? computeScoreBreakdown(mode, true, currentBoard.guesses.length, elapsedTime, 1, 1, hintsUsed).total
-        : computeScoreBreakdown(mode, false, currentBoard.guesses.length, elapsedTime, 0, 1, hintsUsed, undefined, evaluations.reduce((best, e, i) => currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)).total,
+    const gameName = (shareModeMap[mode] || 'Classic') as 'Classic' | 'Six' | 'Seven';
+    const catalogMode = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : 'classic';
+    const copied = await shareFinished({
+      sheet: shareSheetOn, catalogMode, gameName, isDaily: !!isDaily, won: state.status === GameStatus.WON,
+      multi: false, guesses: currentBoard.guesses.length, timeSeconds: elapsedTime,
+      build: (reveal) => ({
+        layout: 'single',
+        mode: (shareModeMap[mode] || 'Classic') as 'Classic' | 'Six' | 'Seven',
+        won: state.status === GameStatus.WON,
+        guesses: currentBoard.guesses.length,
+        maxGuesses: currentBoard.maxGuesses,
+        timeSeconds: elapsedTime,
+        grid,
+        reveal,
+        letters,
+        solutionDisplay: currentBoard.solution,
+        // E1: the gold POINTS window shows the same total the score card does.
+        points: state.status === GameStatus.WON
+          ? computeScoreBreakdown(mode, true, currentBoard.guesses.length, elapsedTime, 1, 1, hintsUsed).total
+          : computeScoreBreakdown(mode, false, currentBoard.guesses.length, elapsedTime, 0, 1, hintsUsed, undefined, evaluations.reduce((best, e, i) => currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)).total,
+      }),
     });
-    if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
-  }, [evaluations, state.status, currentBoard, elapsedTime, mode, hintsUsed]);
+    if (copied) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [evaluations, state.status, currentBoard, elapsedTime, mode, hintsUsed, isDaily, shareSheetOn]);
 
   const guessesUsed = currentBoard.guesses.length;
   const maxGuesses = currentBoard.maxGuesses;
@@ -501,7 +506,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
                 bestCorrectLetters={bestCorrectLetters}
                 day={isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined}
               />
-              <PostGameSummary solution={currentBoard.solution} />
+              <PostGameSummary solution={currentBoard.solution} isDaily={!!isDaily} />
             </>
           }
         />

@@ -13,7 +13,7 @@ import { FR, doingLine } from '@/lib/friends-play';
 import { FR_LOOK, raceChipColor } from '@/lib/friends-look';
 import { ART_SIZE, artSrc, poseArt } from '@/lib/art';
 import { PAGE_HOSTS } from '@/lib/mascots';
-import { softMix } from '@/lib/soft-surface';
+import { softMix, softMixCss } from '@/lib/soft-surface';
 import { FlameCount, FrCard, FriendAvatar } from './friends-ui';
 
 // The Friends banner (Friends overhaul §2.2; finishing build C4, mockup
@@ -129,7 +129,7 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
                     className="min-w-0 inline-flex items-center gap-1.5"
                     style={{
                       height: 28, padding: '0 10px 0 4px', borderRadius: 999,
-                      background: softMix(medal, 0.14),
+                      background: softMixCss(medal, 0.14),
                       border: `1.5px solid ${softMix(medal, 0.36)}`,
                       boxShadow: c.me ? `0 0 0 2px ${FR_LOOK.lavender}` : '0 2px 5px rgba(122,31,85,0.08)',
                     }}

@@ -57,7 +57,9 @@ class FriendCardsFixtureTest {
             val kind = FriendlyKind.from(o["kind"].strOrNull())!!
             val state = decodeFriendlyState(o["state"])!!
             val me = Side.from(o["me"].strOrNull())!!
-            assertEquals("tile $o", o["word"].strOrNull(), FriendCards.tileWord(kind, state, me, o["yourTurn"]!!.jsonPrimitive.boolean))
+            val yourTurn = o["yourTurn"]!!.jsonPrimitive.boolean
+            assertEquals("tile $o", o["word"].strOrNull(), FriendCards.tileWord(kind, state, me, yourTurn))
+            assertEquals("row label $o", o["rowLabel"].strOrNull(), FriendCards.gameRowLabel(kind, o["word"].strOrNull()!!, yourTurn))
         }
     }
 

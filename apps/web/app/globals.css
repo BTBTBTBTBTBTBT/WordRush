@@ -185,6 +185,30 @@
   .season-wall { background-image: var(--season-wall-light-wide); }
   [data-theme="dark"] [data-page-scheme="auto"] > .page-bg > .season-wall { background-image: var(--season-wall-dark-wide); }
 }
+/* Time of day (10-16): a new wall fades in over the old one (SeasonWallLayer keeps both for 600 ms); the window colors ease over
+   the same curve - the surface custom properties are REGISTERED colors (so they interpolate) and html[data-tod-fade] (set by
+   SeasonDocument for 700 ms when only the slot changed) turns the transition on. Only vars that always have a value are registered
+   (the ones with `var(--x, fallback)` readers stay unregistered and swap with the fade). Reduced motion = instant. */
+.season-wall-fade { animation: season-wall-in 600ms ease-in-out both; }
+@keyframes season-wall-in { from { opacity: 0; } to { opacity: 1; } }
+@property --color-card-base { syntax: '<color>'; inherits: true; initial-value: #ffffff; }
+@property --color-surface { syntax: '<color>'; inherits: true; initial-value: #f5eeff; }
+@property --color-surface-alt { syntax: '<color>'; inherits: true; initial-value: #f1eafc; }
+@property --color-surface-hover { syntax: '<color>'; inherits: true; initial-value: #eee4fd; }
+@property --color-text { syntax: '<color>'; inherits: true; initial-value: #1a1a2e; }
+@property --color-text-muted { syntax: '<color>'; inherits: true; initial-value: #9ca3af; }
+@property --color-text-secondary { syntax: '<color>'; inherits: true; initial-value: #6b7280; }
+@property --season-hero-fill { syntax: '<color>'; inherits: true; initial-value: transparent; }
+html[data-tod-fade] {
+  transition: --color-card-base 600ms ease-in-out, --color-surface 600ms ease-in-out, --color-surface-alt 600ms ease-in-out,
+    --color-surface-hover 600ms ease-in-out, --color-text 600ms ease-in-out, --color-text-muted 600ms ease-in-out,
+    --color-text-secondary 600ms ease-in-out, --season-hero-fill 600ms ease-in-out;
+}
+html[data-reduced-motion="true"][data-tod-fade] { transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-tod-fade] { transition: none !important; }
+  .season-wall-fade { animation: none; }
+}
 /* Cold-start intro, in season (components/providers/cold-start-intro.tsx): the Home night wall as the backdrop,
    cover + center like .season-wall, so it hands off seamlessly to the Halloween Home underneath. */
 .intro-season-wall {
@@ -264,13 +288,33 @@
   73.333% { transform: translate3d(var(--me-x, 124vw), var(--me-y, 20vh), 0); opacity: 0.95; }
   73.36%, 100% { transform: translate3d(var(--me-x, 124vw), var(--me-y, 20vh), 0); opacity: 0; }
 }
+/* The V of geese (Thanksgiving, 10-16): the flock is one span crossing the top band in a slow linear pass with a gentle
+   rise and fall; each goose inside beats its wings with the bats' squash (slower, about the body at the bottom).
+   The rare second flock passes once per cycle (--dur = 3 x one crossing) and is hidden the rest of the time. */
+.amb-flock { position: absolute; left: 0; width: 0; height: 0; animation: amb-flock var(--dur) linear var(--delay) infinite; }
+.amb-flock-rare { animation-name: amb-flock-rare; opacity: 0; }
+@keyframes amb-flock {
+  0% { transform: translate3d(var(--x0), 0, 0); } 25% { transform: translate3d(calc(var(--x0) * 0.75 + var(--x1) * 0.25), -1.2vh, 0); }
+  50% { transform: translate3d(calc(var(--x0) * 0.5 + var(--x1) * 0.5), 0, 0); } 75% { transform: translate3d(calc(var(--x0) * 0.25 + var(--x1) * 0.75), 1.2vh, 0); }
+  100% { transform: translate3d(var(--x1), 0, 0); }
+}
+@keyframes amb-flock-rare {
+  0% { transform: translate3d(var(--x0), 0, 0); opacity: 1; } 16.667% { transform: translate3d(calc(var(--x0) * 0.5 + var(--x1) * 0.5), -1.2vh, 0); opacity: 1; }
+  33.333% { transform: translate3d(var(--x1), 0, 0); opacity: 1; } 33.4%, 100% { transform: translate3d(var(--x1), 0, 0); opacity: 0; }
+}
+.amb-goose { position: absolute; transform-origin: 50% 85%; animation: amb-goose-flap 1.1s ease-in-out var(--flap-delay, 0s) infinite alternate; }
+@keyframes amb-goose-flap { from { scale: var(--dx, 1) 1; } to { scale: var(--dx, 1) 0.6; } }
 .ambient[data-still="true"] .amb-item { animation: none; top: var(--y); }
+.ambient[data-still="true"] .amb-flock { animation: none; transform: translate3d(var(--xmid), 0, 0); }
+.ambient[data-still="true"] .amb-flock-rare { opacity: 0; }
+.ambient[data-still="true"] .amb-goose { animation: none; scale: var(--dx, 1) 1; }
 .ambient[data-still="true"] .amb-bat { animation: none; transform: translate3d(70vw, 0, 0); }
 .ambient[data-still="true"] .amb-witch { animation: none; opacity: 0; }
 .ambient[data-still="true"] .amb-fog,
 .ambient[data-still="true"] .amb-star { animation: none; }
 [data-reduced-motion="true"] .ambient .amb-item, [data-reduced-motion="true"] .ambient .amb-bat,
-[data-reduced-motion="true"] .ambient .amb-witch, [data-reduced-motion="true"] .ambient .amb-fog { animation: none; }
+[data-reduced-motion="true"] .ambient .amb-witch, [data-reduced-motion="true"] .ambient .amb-fog,
+[data-reduced-motion="true"] .ambient .amb-flock, [data-reduced-motion="true"] .ambient .amb-goose { animation: none; }
 
 /* Tile/keyboard state utilities — the only sanctioned way to color game
    tiles and keys. Backgrounds + borders flow from the vars above. */
@@ -956,7 +1000,7 @@ html[data-season-tone="dark"] .tab-dock {
   --tab-pill-ring: var(--color-surface, #1c0f30);
   border-top-color: rgba(249, 115, 22, 0.22);
   --tab-ink-on: #fdba74;
-  --tab-ink-off: #c8b6e2;
+  --tab-ink-off: var(--color-text-muted, #c8b6e2);   /* 10-16: the idle ink follows the time-of-day palette */
   --tab-pill: #f97316;
 }
 /* Season surfaces, dark tone, on the light-only VS pages: the page root pins the light theme
@@ -1033,6 +1077,13 @@ html[data-season-tone="dark"] [data-page-tint="friends"] {
   --fr-chip-wait: rgba(255, 255, 255, 0.08);
   --fr-turn-ink: #ffd45a;
 }
+/* 10-16 time of day: while the shown time's sky is LIGHT (registry tod.<t>.tone = "light": morning, day) the chrome that sits
+   straight on the wall (header streak / shield digits, the Friends section labels, any `.wall-ink` line) takes the dark
+   on-wall ink; html[data-wall-ink] is only "dark" in a season with a light-tone time, so night / evening / no season are
+   exactly as before. Twins: iOS SeasonSurface.wallInk, Android WTheme.wallInk. */
+html[data-wall-ink="dark"] .hdr-row .soft-num { color: var(--season-wall-ink); text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3); }
+html[data-wall-ink="dark"] [data-page-tint="friends"] { --fr-play-label: var(--season-wall-ink); }
+html[data-wall-ink="dark"] .wall-ink { color: var(--season-wall-ink); }
 /* Quiet Friends actions (founder 10-10: "the buttons are loud and obnoxious"): a row's one action is a quiet round
    icon, Add / Nudge all / Rematch quiet text on a soft capsule. Inks: gold / pink / violet, deep on the light page,
    lifted in a dark season (the Halloween Friends page). components/friends/friends-ui.tsx QuietAction / QuietText. */
@@ -1356,6 +1407,8 @@ html[data-season-tone="dark"] {
 }
 .kkey > * { position: relative; z-index: 2; }
 [data-theme="dark"] .kkey { --k-face: #3d355f; --k-ink: #efe9ff; --k-del: #d8c8ff; }
+/* 10-16 time of day: under a dark season the idle key face is the season's raised surface (follows the sky), not a fixed plum. */
+html[data-season-tone="dark"] .kkey:not([data-s]):not([data-dead]) { --k-face: var(--color-surface-alt, #3d355f); --k-ink: var(--color-text, #efe9ff); --k-del: var(--color-text-secondary, #d8c8ff); }
 .kkey[data-s="correct"] { --k-face: var(--gt-c-base); --k-ink: #ffffff; }
 .kkey[data-s="present"] { --k-face: var(--gt-p-base); --k-ink: #ffffff; }
 /* Founder 10-10 ("hard to tell which letters were used and wrong" — Six, Seven, every keyboard): a ruled-out letter is the dark,
@@ -1771,6 +1824,9 @@ html[data-reduced-motion="true"] .castrow[data-musical] .cm > .cm-note { animati
   .podium-sparkle { display: none !important; }
   .podium-crown { animation: none !important; opacity: 1 !important; }
 }
+[data-reduced-motion="true"] .podium-glow { animation: none !important; opacity: var(--rest) !important; }
+[data-reduced-motion="true"] .podium-sparkle { display: none !important; }
+[data-reduced-motion="true"] .podium-crown { animation: none !important; opacity: 1 !important; }
 
 /* 2.8 item 7 · the celebration kit (docs/design/brand/2.8/celebrate): one-shot, transform + opacity only. */
 .celebrate-burst { animation: celebrate-burst 900ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }

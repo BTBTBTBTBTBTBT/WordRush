@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyFriendlyMove, newFriendlyState } from './friendly-games';
-import { allFriendsLabel, cardPresence, friendsLayout, raceBadge, raceBadgeLines, theirTurnLine, tileWord, waitingHeadline, type CardFriend, type CardGame } from './friend-cards';
+import { allFriendsLabel, cardPresence, friendsLayout, gameRowLabel, raceBadge, raceBadgeLines, theirTurnLine, tileWord, waitingHeadline, type CardFriend, type CardGame } from './friend-cards';
 
 const f = (id: string, username: string, online = false, activity: string | null = null): CardFriend => ({ id, username, online, activity });
 const rps = newFriendlyState('rps');
@@ -33,6 +33,11 @@ describe('friend cards', () => {
     expect(tileWord('ghost', newFriendlyState('ghost'), 'a', true)).toBe('Start the word: add a letter');
     expect(tileWord('chain', newFriendlyState('chain'), 'a', false)).toBe('Waiting for their word');
     expect(tileWord('chain', newFriendlyState('chain'), 'a', true)).toBe('Start the chain with any word');
+  });
+
+  it('row labels always say whose turn it is', () => {
+    expect(gameRowLabel('rps', 'Pick rock, paper or scissors', true)).toBe('Rock Paper Scissors, Pick rock, paper or scissors, your turn');
+    expect(gameRowLabel('coin', 'Waiting for their call', false)).toBe('Call It, Waiting for their call, waiting on them');
   });
 
   it('race badges: flawless / sweep for all 8, plus the day streak past 1', () => {

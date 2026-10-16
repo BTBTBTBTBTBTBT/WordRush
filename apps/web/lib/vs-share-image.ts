@@ -21,7 +21,7 @@ import {
   canvasToPng, drawCastWordmark, drawGlossTile, drawImageContain, drawInfoLine, drawStatWindow,
   drawNightBackground, loadCastImages, loadShareImage, resolveCanvasFontStack, roundRectPath, shareFont,
 } from './share-canvas';
-import { activeSeason } from './season';
+import { activeSeason, type Season } from './season';
 import { seasonalTitle } from './season-kit';
 import { drawShareAvatar, loadShareAvatar, type ShareAvatar } from './share-avatar';
 
@@ -136,7 +136,7 @@ export function planVsShareCard(
   return { plan, titleH, momentH, shownN, hasMore, sharedRows, sharedCols };
 }
 
-export async function generateVsShareImage(input: VsShareInput): Promise<Blob | null> {
+export async function generateVsShareImage(input: VsShareInput, opts: { season?: Season | null } = {}): Promise<Blob | null> {
   if (typeof document === 'undefined') return null;
   resolveCanvasFontStack();
   try { await (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready; } catch { /* best effort */ }
@@ -145,12 +145,12 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   const now = new Date();
   const outcome = input.isDraw ? 'draw' : input.isWin ? 'win' : 'loss';
   const momentName = `art-moment-${resultMoment(outcome)}` as ArtName;
-  const vsSeasonal = seasonalTitle('art-title-vs', activeSeason());
+  const vsSeasonal = seasonalTitle('art-title-vs', opts.season === undefined ? activeSeason() : opts.season);
   const [wall, title, moment, castImgs, crownImg, meAvatar, oppAvatar] = await Promise.all([
     Promise.resolve(null as HTMLImageElement | null),
     loadShareImage(vsSeasonal ? [vsSeasonal.src, artSrc('art-title-vs')] : [artSrc('art-title-vs')]),
     loadShareImage([artSrc(momentName)]),
-    loadCastImages(),
+    loadCastImages(opts.season),
     // The winner's crown is our 3D crown art, never a phone emoji (FINISH_SPEC AM3).
     loadShareImage([artSrc('art-badge-crown')]),
     loadShareAvatar(input.me.avatar, VS_AVATAR_PX * 2),

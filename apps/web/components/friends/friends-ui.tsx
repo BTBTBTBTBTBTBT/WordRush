@@ -15,7 +15,7 @@ import { SeasonWallLayer } from '@/components/ui/season-preview';
 import type { FriendlyKind } from '@wordle-duel/core';
 import { FR, KIND_COLOR } from '@/lib/friends-play';
 import { FR_LOOK, frBar, frSurface } from '@/lib/friends-look';
-import { softMix } from '@/lib/soft-surface';
+import { softMix, softMixCss } from '@/lib/soft-surface';
 
 // Shared pieces of the Friends tab and the pocket-game screens (Friends
 // overhaul §0; finishing build C4, docs/FINISH_SPEC.md): tinted cards with a
@@ -104,7 +104,7 @@ export function GameIconSquare({ kind, size = 34 }: { kind: FriendlyKind; size?:
   return (
     <span
       className="flex items-center justify-center shrink-0"
-      style={{ width: size, height: size, borderRadius: Math.round(size * 0.28), background: softMix(color, 0.14), border: `1.5px solid ${softMix(color, 0.32)}` }}
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.28), background: softMixCss(color, 0.14), border: `1.5px solid ${softMixCss(color, 0.32)}` }}
     >
       <GameGlyph kind={kind} size={Math.round(size * 0.5)} color={color} />
     </span>
@@ -341,12 +341,12 @@ export function Sheet({ onClose, children, label, tint, wall = false }: {
         aria-label={label}
         className={`relative w-full max-w-md overflow-y-auto ${closing ? 'soft-pop-out' : 'soft-pop'}`}
         data-page-tint={wall ? 'friends' : undefined}
-        style={{ background: tint ?? softMix(FR_LOOK.pink, 0.08), transition: 'background-color 220ms ease-out', borderTop: `1.5px solid ${softMix(FR_LOOK.pink, 0.32)}`, borderRadius: '20px 20px 0 0', maxHeight: '88vh', padding: '8px 16px max(20px, env(safe-area-inset-bottom))', boxShadow: '0 -8px 30px rgba(60,30,110,0.18)' }}
+        style={{ background: tint ?? softMixCss(FR_LOOK.pink, 0.08), transition: 'background-color 220ms ease-out', borderTop: `1.5px solid ${softMixCss(FR_LOOK.pink, 0.32)}`, borderRadius: '20px 20px 0 0', maxHeight: '88vh', padding: '8px 16px max(20px, env(safe-area-inset-bottom))', boxShadow: '0 -8px 30px rgba(60,30,110,0.18)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {wall && <div aria-hidden="true" className="absolute inset-0 pointer-events-none"><SeasonWallLayer wall={pageWall('friends')} /></div>}
         <div className="relative">
-          <div className="mx-auto mb-3" style={{ width: 38, height: 5, borderRadius: 999, background: softMix(FR_LOOK.pink, 0.4) }} />
+          <div className="mx-auto mb-3" style={{ width: 38, height: 5, borderRadius: 999, background: softMixCss(FR_LOOK.pink, 0.4) }} />
           {children}
         </div>
       </div>

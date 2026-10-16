@@ -86,6 +86,12 @@ export interface MusicalMelody {
   name: string;
   /** The secret achievement it unlocks. */
   achievement: string;
+  /** The season (registry id) it only counts in; omitted = every day of the year. Data for the admin Sound Library. */
+  season?: string;
+  /** Where the public-domain tune comes from (composer / origin, year): shown in the admin Sound Library. */
+  source: string;
+  /** The discovery hint: a short, spoiler-light nudge (the rare idle hum, the Sound Library). Never the title. */
+  hint: string;
   /** The tune as MIDI notes, in C (every note on the cast's keys). Matched by its intervals, so any key that fits counts. */
   notes: readonly number[];
   /**
@@ -102,25 +108,25 @@ const C4 = 60, D4 = 62, E4 = 64, F4 = 65, G4 = 67, A4 = 69, B4 = 71, C5 = 72, D5
 /** Public-domain tunes (their best-known opening, every note on a cast key). */
 export const MUSICAL_MELODIES: readonly MusicalMelody[] = [
   {
-    id: 'mary', name: 'Mary Had a Little Lamb', achievement: 'tune_little_lamb', notes: [E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4],
+    id: 'mary', name: 'Mary Had a Little Lamb', achievement: 'tune_little_lamb', source: 'Sarah Josepha Hale, 1830; traditional tune', hint: 'A lamb whose fleece was white as snow', notes: [E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4],
     song: [E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4, E4, D4, C4, D4, E4, E4, E4, E4, D4, D4, E4, D4, C4],
     beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
   },
   {
-    id: 'twinkle', name: 'Twinkle, Twinkle, Little Star', achievement: 'tune_little_star', notes: [C4, C4, G4, G4, A4, A4, G4, F4, F4, E4, E4, D4, D4, C4],
+    id: 'twinkle', name: 'Twinkle, Twinkle, Little Star', achievement: 'tune_little_star', source: 'French folk tune, 1761; words Jane Taylor, 1806', hint: 'A little star, up above the world so high', notes: [C4, C4, G4, G4, A4, A4, G4, F4, F4, E4, E4, D4, D4, C4],
     beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2],
   },
   {
-    id: 'ode', name: 'Ode to Joy', achievement: 'tune_ode_to_joy', notes: [E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4],
+    id: 'ode', name: 'Ode to Joy', achievement: 'tune_ode_to_joy', source: 'Ludwig van Beethoven, Symphony No. 9, 1824', hint: "Beethoven's big finale, four notes up the scale", notes: [E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4],
     song: [E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4, E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, D4, C4, C4],
     beats: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 0.5, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 0.5, 2],
   },
   {
-    id: 'birthday', name: 'Happy Birthday', achievement: 'tune_happy_birthday', notes: [G4, G4, A4, G4, C5, B4, G4, G4, A4, G4, D5, C5],
+    id: 'birthday', name: 'Happy Birthday', achievement: 'tune_happy_birthday', source: 'Patty and Mildred Hill, 1893 (public domain since 2016)', hint: 'The song with the candles, once a year', notes: [G4, G4, A4, G4, C5, B4, G4, G4, A4, G4, D5, C5],
     beats: [0.75, 0.25, 1, 1, 1, 2, 0.75, 0.25, 1, 1, 1, 2],
   },
   {
-    id: 'buns', name: 'Hot Cross Buns', achievement: 'tune_hot_cross_buns', notes: [E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4],
+    id: 'buns', name: 'Hot Cross Buns', achievement: 'tune_hot_cross_buns', source: 'English street cry, 1798', hint: 'One a penny, two a penny', notes: [E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4],
     beats: [1, 1, 2, 1, 1, 2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 2],
   },
 ];
@@ -151,27 +157,96 @@ const A4h = 69, B4h = 71, C5h = 72, D5h = 74, E5h = 76, G4h = 67, F4h = 65, E4h 
  * B3/A3 are below the cast). The other four keep their opening (no checked continuation yet).
  */
 export const HALLOWEEN_MELODIES: readonly MusicalMelody[] = [
-  { id: 'mountain_king', name: 'In the Hall of the Mountain King', achievement: 'tune_mountain_king', notes: [A4h, B4h, C5h, D5h, E5h, C5h, E5h, D5h, B4h, D5h],
+  { id: 'mountain_king', name: 'In the Hall of the Mountain King', achievement: 'tune_mountain_king', season: 'halloween', source: 'Edvard Grieg, Peer Gynt, 1875', hint: "Tiptoe up the steps of the mountain king's hall", notes: [A4h, B4h, C5h, D5h, E5h, C5h, E5h, D5h, B4h, D5h],
     song: [D4h, E4h, F4h, G4h, A4h, F4h, A4h, G4h, E4h, G4h, G4h, E4h, G4h, D4h, E4h, F4h, G4h, A4h, F4h, A4h, D5h, C5h, A4h, F4h, A4h, C5h],
     beats: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3] },
-  { id: 'toccata', name: 'Toccata and Fugue in D minor', achievement: 'tune_toccata', notes: [A4h, G4h, A4h, G4h, F4h, E4h, D4h, C4h, D4h],
+  { id: 'toccata', name: 'Toccata and Fugue in D minor', achievement: 'tune_toccata', season: 'halloween', source: 'Johann Sebastian Bach, BWV 565, c. 1704', hint: 'The spookiest organ opening ever written', notes: [A4h, G4h, A4h, G4h, F4h, E4h, D4h, C4h, D4h],
     song: [A4h, G4h, A4h, G4h, F4h, E4h, D4h, C4h, D4h, A4h, G4h, A4h, E4h, F4h, C4h, D4h],
     beats: [0.25, 0.25, 2, 0.25, 0.25, 0.25, 0.25, 0.5, 2.5, 0.25, 0.25, 2, 0.25, 0.25, 0.5, 3] },
-  { id: 'funeral_march', name: 'Funeral March', achievement: 'tune_funeral_march', notes: [A4h, A4h, A4h, A4h, C5h, B4h, B4h, A4h, A4h, G4h, A4h] },
-  { id: 'marionette', name: 'Funeral March of a Marionette', achievement: 'tune_marionette', notes: [A4h, A4h, G4h, F4h, G4h, A4h, B4h] },
-  { id: 'danse_macabre', name: 'Danse Macabre', achievement: 'tune_danse_macabre', notes: [A4h, A4h, C5h, A4h, B4h, C5h, A4h, C5h, A4h, C5h, B4h, C5h, B4h, A4h] },
-  { id: 'bald_mountain', name: 'Night on Bald Mountain', achievement: 'tune_bald_mountain', notes: [B4h, C5h, B4h, A4h, B4h, C5h, C5h, E5h, B4h],
+  { id: 'funeral_march', name: 'Funeral March', achievement: 'tune_funeral_march', season: 'halloween', source: 'Frederic Chopin, Piano Sonata No. 2, 1839', hint: 'A slow march on one low note', notes: [A4h, A4h, A4h, A4h, C5h, B4h, B4h, A4h, A4h, G4h, A4h] },
+  { id: 'marionette', name: 'Funeral March of a Marionette', achievement: 'tune_marionette', season: 'halloween', source: 'Charles Gounod, 1872', hint: "A puppet's march (a certain TV host liked it too)", notes: [A4h, A4h, G4h, F4h, G4h, A4h, B4h] },
+  { id: 'danse_macabre', name: 'Danse Macabre', achievement: 'tune_danse_macabre', season: 'halloween', source: 'Camille Saint-Saens, 1874', hint: 'Skeletons waltzing at midnight', notes: [A4h, A4h, C5h, A4h, B4h, C5h, A4h, C5h, A4h, C5h, B4h, C5h, B4h, A4h] },
+  { id: 'bald_mountain', name: 'Night on Bald Mountain', achievement: 'tune_bald_mountain', season: 'halloween', source: 'Modest Mussorgsky, 1867', hint: 'A wild night on a bare mountain', notes: [B4h, C5h, B4h, A4h, B4h, C5h, C5h, E5h, B4h],
     song: [B4h, C5h, B4h, A4h, B4h, C5h, C5h, E5h, B4h, B4h, C5h, D5h, E5h, E5h, D5h, C5h, B4h, A4h],
     beats: [1, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 0.5, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 1] },
-  { id: 'sorcerers_apprentice', name: "The Sorcerer's Apprentice", achievement: 'tune_sorcerers_apprentice', notes: [A4h, E5h, A4h, C5h, A4h, C5h, B4h, C5h, A4h, C5h] },
+  { id: 'sorcerers_apprentice', name: "The Sorcerer's Apprentice", achievement: 'tune_sorcerers_apprentice', season: 'halloween', source: 'Paul Dukas, 1897', hint: 'Brooms that will not stop marching', notes: [A4h, E5h, A4h, C5h, A4h, C5h, B4h, C5h, A4h, C5h] },
 ];
 
 /** Halloween tunes still waiting for checked notation: none (all five from the plan are wired above). */
 export const HALLOWEEN_TUNES_TODO: readonly string[] = [];
 
-/** The tunes that count right now: the everyday five, plus the season's own (halloween). */
+/**
+ * The Thanksgiving tunes (founder 10-16: "a new batch in the same style"): public-domain compositions on the cast's
+ * own white keys, matched by interval shape, active only in the Thanksgiving window (Nov 14 – 29) and only once the
+ * season is READY (currentSeason gates it; the admin Season preview passes the id directly). Each is a secret
+ * achievement. Normal voices (no seasonal note prefix): a harvest voicing is optional, see
+ * docs/design/brand/seasons/thanksgiving/NEEDS-BADGES.md.
+ *   - Simple Gifts (Joseph Brackett, 1848, Shaker; public domain — Copland's 1944 arrangement is NOT, we use the
+ *     original tune): in G, D D | G G A B A B C D | D C B A G | A A A A | A B A F# D D. Realized a fifth up on the cast
+ *     (D4 pickup, G4 tonic): the first phrase ("'Tis the gift to be simple, 'tis the gift to be free, 'tis the") is the
+ *     match; the sung continuation ("gift to come down where we ought to be") ends on D4 with F natural standing in
+ *     for F# (the cast has no black keys, same rule as the Halloween G-for-G#). Checked against a lettered flatpick
+ *     transcription (raccoonbend.com) 10-16.
+ *   - We Gather Together (Dutch folk tune in Valerius, 1626; Kremser's 1877 arrangement; words Theodore Baker, 1894), in
+ *     D: A | A B A | F# G A | G F# E | F# D = the first line ("We gather together to ask the Lord's blessing"), realized
+ *     in C (G | G A G | E F G | F E D | E C) with the whole four-line melody as the sung-back song (every note diatonic,
+ *     all on the cast keys). Checked against the Open Hymnal's score from the 1940 Episcopal Hymnal, no. 315
+ *     (https://github.com/mzealey/openhymnal/blob/HEAD/Complete/We_Gather_Together/We_Gather_Together-Kremser.abc, 2006)
+ *     and hymnary.org's incipit for KREMSER (55653 45432 31556, https://hymnary.org/tune/kremser): they agree.
+ *   - Come, Ye Thankful People, Come (George J. Elvey, St. George's Windsor, first published 1858; Henry Alford's words,
+ *     1844): the first two lines are the same seven notes twice, in G: B B | D B G A B, here E E G E C D E x2 in C.
+ *     Checked against the Open Hymnal's "Songs of Thankfulness and Praise" setting (Anglican Hymn Book, 1871,
+ *     https://github.com/mzealey/openhymnal/blob/HEAD/Complete/Songs_Of_Thankfulness_And_Praise/Songs_Of_Thankfulness_And_Praise-St_Georges_Windsor.abc),
+ *     the Wikipedia LilyPond score of "Come, Ye Thankful People, Come" (in F), and hymnary.org's incipit
+ *     (33531 23335 31233, https://hymnary.org/tune/st_georges_windsor_elvey): three agree. The third line goes chromatic
+ *     (a sharp), so there is no sung-back song beyond the hook.
+ *   - Now Thank We All Our God (Johann Cruger, Nun danket, Praxis pietatis melica, 1647; Winkworth's words, 1856), in F:
+ *     c | c c d d c | A Bb A G, here G | G G A A G | E F E D in C: the opening shared by the Evangelical Lutheran
+ *     Hymn-Book 1931 setting (Open Hymnal, https://github.com/mzealey/openhymnal/blob/HEAD/Complete/Now_Thank_We_All_Our_God/Now_Thank_We_All_Our_God-Nun_Danket.abc,
+ *     2006) and Bach's chorale prelude BWV 657 (Mutopia, https://www.mutopiaproject.org/ftp/BachJS/BWV657/bwv657/bwv657.ly,
+ *     Bach-Album, Peters). Printings disagree after the tenth note (and the tune drops to the leading tone, B3, below the
+ *     cast), so the hook stops there and there is no sung-back song.
+ * The other candidates stay in THANKSGIVING_TUNES_TODO until their notation is checked against a score (the test
+ * pins the list): never wire a tune from memory.
+ */
+export const THANKSGIVING_MELODIES: readonly MusicalMelody[] = [
+  { id: 'simple_gifts', name: 'Simple Gifts', achievement: 'tune_simple_gifts', season: 'thanksgiving', source: 'Joseph Brackett, Shaker, 1848', hint: "'Tis the gift to be simple", notes: [D4h, D4h, G4h, G4h, A4h, B4h, A4h, B4h, C5h, D5h, D5h, C5h, B4h, A4h, G4h],
+    song: [D4h, D4h, G4h, G4h, A4h, B4h, A4h, B4h, C5h, D5h, D5h, C5h, B4h, A4h, G4h, A4h, A4h, A4h, A4h, A4h, B4h, A4h, F4h, D4h],
+    beats: [0.5, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 0.5, 0.5, 1, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 2] },
+  { id: 'we_gather', name: 'We Gather Together', achievement: 'tune_we_gather', season: 'thanksgiving', source: 'Dutch folk tune, 1626; arr. Eduard Kremser, 1877', hint: 'A Dutch melody for the whole table, asking a blessing', notes: [G4h, G4h, A4h, G4h, E4h, F4h, G4h, F4h, E4h, D4h, E4h, C4h],
+    song: [G4h, G4h, A4h, G4h, E4h, F4h, G4h, F4h, E4h, D4h, E4h, C4h, G4h, G4h, A4h, B4h, C5h, D5h, B4h, A4h, G4h, A4h, G4h, G4h, G4h, A4h, B4h, C5h, G4h, G4h, G4h, A4h, F4h, G4h, E4h, C4h, C4h, F4h, G4h, A4h, F4h, G4h, F4h, E4h, E4h, F4h, D4h, C4h, C4h],
+    beats: [1, 1.5, 0.5, 1, 1, 1, 1, 1.5, 0.5, 1, 1, 1, 1, 1.5, 0.5, 1, 1.5, 0.5, 1, 1.5, 0.5, 1, 2, 1, 1.5, 0.5, 1, 1, 1, 1, 1.5, 0.5, 0.5, 0.5, 1, 1, 1, 1.5, 0.5, 0.5, 0.5, 1.5, 0.5, 0.5, 0.5, 1, 1.5, 0.5, 2] },
+  { id: 'thankful_people', name: 'Come, Ye Thankful People, Come', achievement: 'tune_thankful_people', season: 'thanksgiving', source: "George J. Elvey, St. George's Windsor, 1858", hint: 'The last wagon of the harvest rolls home', notes: [E4h, E4h, G4h, E4h, C4h, D4h, E4h, E4h, E4h, G4h, E4h, C4h, D4h, E4h],
+    beats: [1.5, 0.5, 1, 1, 1, 1, 2, 1.5, 0.5, 1, 1, 1, 1, 2] },
+  { id: 'now_thank', name: 'Now Thank We All Our God', achievement: 'tune_now_thank', season: 'thanksgiving', source: 'Johann Cruger, Nun danket, 1647', hint: 'A grand old chorale: thanks with heart, hands and voices', notes: [G4h, G4h, G4h, A4h, A4h, G4h, E4h, F4h, E4h, D4h],
+    beats: [2, 1.5, 0.5, 1, 1, 3, 1, 1, 1, 2] },
+];
+
+/**
+ * Thanksgiving tunes still waiting for checked notation (all public domain, verified 10-16): the words of "Over the
+ * River and Through the Wood" are Lydia Maria Child's (1844) and its tune is traditional (no public-domain score could
+ * be found to check against: only modern arrangements); "Bringing in the Sheaves" is George Minor's tune (1880; hymnary's
+ * incipit 55565 31112 16555 gives no octaves, and no second score to settle whether the "6" is above or below the
+ * tonic); "For the Beauty of the Earth" is Kocher's Dix (1838), checked (Open Hymnal / Wikipedia LilyPond agree) but it
+ * spans E4 to D5 in G major with F# and C natural: realized in C it needs A3 or F5, outside the cast's C4-E5 keys.
+ * "Turkey in the Straw" (19th-century folk) is public domain too but is left out on purpose: its minstrel-show history and
+ * lyric variants make it a poor fit (founder 10-16: prefer the others if there's any doubt). Wire each once it can be
+ * checked against a score and fits the keys, then move it into THANKSGIVING_MELODIES with its own secret achievement.
+ */
+export const THANKSGIVING_TUNES_TODO: readonly string[] = [
+  'Over the River and Through the Wood', 'Bringing in the Sheaves', 'For the Beauty of the Earth',
+];
+
+/** Each season's own tunes (only count in that season; the achievements stay forever). Seasons without a batch: none. */
+export const SEASON_MELODIES: Readonly<Record<string, readonly MusicalMelody[]>> = {
+  halloween: HALLOWEEN_MELODIES,
+  thanksgiving: THANKSGIVING_MELODIES,
+};
+
+/** The tunes that count right now: the everyday five, plus the season's own (SEASON_MELODIES). */
 export function activeMelodies(season: string | null = null): readonly MusicalMelody[] {
-  return season === 'halloween' ? [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES] : MUSICAL_MELODIES;
+  const own = season ? SEASON_MELODIES[season] : undefined;
+  return own ? [...MUSICAL_MELODIES, ...own] : MUSICAL_MELODIES;
 }
 
 /** The steps between consecutive notes (the shape of a tune, key-free). */
@@ -254,4 +329,7 @@ export function melodyReplayDuration(m: MusicalMelody): number {
 }
 
 /** The secret achievement keys (achievement-rules NEW_ACHIEVEMENTS, `secret`: shown only once unlocked). */
-export const MUSICAL_ACHIEVEMENT_KEYS: readonly string[] = [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES].map((m) => m.achievement);
+/** Every tune in catalog order: the everyday five, then each season's batch (Halloween, Thanksgiving). */
+export const ALL_MELODIES: readonly MusicalMelody[] = [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES, ...THANKSGIVING_MELODIES];
+
+export const MUSICAL_ACHIEVEMENT_KEYS: readonly string[] = ALL_MELODIES.map((m) => m.achievement);

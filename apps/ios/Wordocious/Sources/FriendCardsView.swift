@@ -19,6 +19,48 @@ struct FamClayIcon: View {
     }
 }
 
+/// The game row's title and word (a11y review 10-16 #7): the only text that says what game it is and
+/// whose move, so it follows Dynamic Type — capped at .accessibility1 so the 50-pt row only grows a
+/// little. At the default size this is exactly `Brand.fixedFont(size, weight)` (@ScaledMetric is 1x
+/// there). The chips, Keep / Resign and "+N more" stay fixed (file header).
+private struct GameRowText: View {
+    let text: String
+    let size: CGFloat
+    let weight: Font.Weight
+    let tracking: CGFloat
+
+    init(_ text: String, size: CGFloat, weight: Font.Weight, tracking: CGFloat = 0) {
+        self.text = text
+        self.size = size
+        self.weight = weight
+        self.tracking = tracking
+    }
+
+    var body: some View {
+        // The cap is applied OUTSIDE the view that owns the @ScaledMetric, so the metric reads it.
+        Scaled(text: text, base: size, weight: weight, tracking: tracking)
+            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+    }
+
+    private struct Scaled: View {
+        let text: String
+        let weight: Font.Weight
+        let tracking: CGFloat
+        @ScaledMetric private var size: CGFloat
+
+        init(text: String, base: CGFloat, weight: Font.Weight, tracking: CGFloat) {
+            self.text = text
+            self.weight = weight
+            self.tracking = tracking
+            _size = ScaledMetric(wrappedValue: base)
+        }
+
+        var body: some View {
+            Text(text).font(Brand.fixedFont(size, weight)).tracking(tracking)
+        }
+    }
+}
+
 /// The Friends tab, one card per friend (FRIDAY-QUEUE 9 + 9e; the layout and every word come
 /// from FriendCards in WordociousCore, pinned to the web by friend-cards-fixtures.json).
 /// Their living mascot, name, "playing Classic" under it with the green dot, "N games waiting on
@@ -42,6 +84,8 @@ struct FriendCardView: View {
     var onResign: ((FriendlyGameView) -> Void)? = nil
     /// The tile whose flag was tapped (it shows "Resign?" with Keep / Resign in place).
     @State private var confirming: String?
+    /// a11y review 10-16 #5: VoiceOver lands on Keep when a row flips to Resign?, and back on the flag when it flips back.
+    @AccessibilityFocusState private var a11yFocus: String?
 
     /// Every game going with them: yours to play first, then theirs.
     private var allTiles: [GameTile] { card.tiles + card.theirTurn }
@@ -145,9 +189,9 @@ struct FriendCardView: View {
                         HStack(spacing: 10) {
                             GameCoin(kind: t.kind, size: 34)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(t.kind.title.uppercased()).font(Brand.fixedFont(12.5, .black)).tracking(0.3)
+                                GameRowText(t.kind.title.uppercased(), size: 12.5, weight: .black, tracking: 0.3)
                                     .foregroundStyle(FriendsInk.heading).lineLimit(1).minimumScaleFactor(0.75)
-                                Text(t.word).font(Brand.fixedFont(11, .bold))
+                                GameRowText(t.word, size: 11, weight: .bold)
                                     .foregroundStyle(t.yourTurn ? Color(hex: 0xFFD45A) : FriendsInk.muted)
                                     .lineLimit(1).minimumScaleFactor(0.8)
                             }
@@ -157,7 +201,7 @@ struct FriendCardView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.squishCard)
-                    .accessibilityLabel("\(t.kind.title), \(t.word)")
+                    .accessibilityLabel(FriendCards.gameRowLabel(kind: t.kind, word: t.word, yourTurn: t.yourTurn))
                     if onResign != nil, games[t.gameId] != nil { resignFlag(t).offset(x: -3, y: 3) }
                 }
             }
@@ -170,6 +214,9 @@ struct FriendCardView: View {
                 .shadow(color: t.yourTurn ? Self.turnGold.opacity(0.40) : .clear, radius: 8)
         }
         .animation(Theme.reduceMotion ? nil : .easeInOut(duration: 0.16), value: confirming)
+        .onChange(of: confirming) { now in
+            if now == t.gameId { a11yFocus = "keep-\(t.gameId)" } else if a11yFocus == "keep-\(t.gameId)" { a11yFocus = "flag-\(t.gameId)" }
+        }
     }
 
     /// The gold glossy capsule on a game that waits on you.
@@ -208,12 +255,15 @@ struct FriendCardView: View {
                 Text("They win this one").font(Brand.fixedFont(10, .bold)).foregroundStyle(FriendsInk.rowSub).lineLimit(1)
             }
             Spacer(minLength: 4)
+            // the 26 pt pills sit in 44 pt hit areas (a11y review 10-16 #6; the row stays 50)
             Button { confirming = nil } label: {
                 Text("Keep").font(Brand.fixedFont(11, .black)).foregroundStyle(FriendsInk.lavender)
                     .padding(.horizontal, 12).frame(height: 26)
                     .background(Capsule().fill(FriendsInk.lavender.opacity(0.18)))
+                    .frame(height: 44).contentShape(Rectangle())
             }
             .buttonStyle(.squishCard)
+            .accessibilityFocused($a11yFocus, equals: "keep-\(t.gameId)")
             Button {
                 confirming = nil
                 if let g = games[t.gameId] { onResign?(g) }
@@ -222,6 +272,7 @@ struct FriendCardView: View {
                     .padding(.horizontal, 12).frame(height: 26)
                     .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF472B6), Color(hex: 0xDB2777)],
                                                                startPoint: .top, endPoint: .bottom)))
+                    .frame(height: 44).contentShape(Rectangle())
             }
             .buttonStyle(.squishCard)
         }
@@ -237,7 +288,8 @@ struct FriendCardView: View {
                 Image(systemName: "chevron.down").font(.system(size: 9, weight: .black)).foregroundStyle(FriendsInk.lavender)
                     .rotationEffect(.degrees(expanded ? 180 : 0))
             }
-            .frame(maxWidth: .infinity).frame(height: 28)
+            // 28 pt on screen, 44 pt to the finger (a11y review 10-16 #6)
+            .frame(maxWidth: .infinity).frame(height: 44).padding(.vertical, -8)
             .contentShape(Rectangle())
         }
         .buttonStyle(.squishCard)
@@ -246,7 +298,7 @@ struct FriendCardView: View {
 
     // MARK: Pieces
 
-    /// The small flag in the tile's corner (a 30 pt hit area around a 22 pt coin).
+    /// The small flag in the tile's corner (a 22 pt coin in a 30 pt slot; the hit area is 44 x 50, a11y review 10-16 #6).
     private func resignFlag(_ t: GameTile) -> some View {
         Button {
             Haptics.tap()
@@ -258,12 +310,13 @@ struct FriendCardView: View {
                 FamClayIcon(name: "flag", size: 12, ink: FriendsInk.pink)
             }
             .frame(width: 22, height: 22)
-            .frame(width: 30, height: 30)
+            .frame(width: 44, height: 50).padding(.horizontal, -7).padding(.vertical, -10)
             .contentShape(Rectangle())
         }
         .buttonStyle(.squishCard)
         .offset(x: 3, y: -3)
         .accessibilityLabel("Resign \(t.kind.title) against \(card.name)")
+        .accessibilityFocused($a11yFocus, equals: "flag-\(t.gameId)")
     }
 
     /// A friend with nothing going yet: the six games as small tiles, tap one to start it with them.

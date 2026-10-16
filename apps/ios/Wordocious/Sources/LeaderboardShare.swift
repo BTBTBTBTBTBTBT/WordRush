@@ -815,6 +815,8 @@ extension ShareService {
     @MainActor
     static func shareLeaderboard(_ input: LbShareInput) {
         #if canImport(UIKit)
+        // `share_sheet_v2`: the custom sheet (carousel preview, season / Normal look, the channels row) instead of the system sheet.
+        if ShareSheetFlag.on { ShareSheetPresenter.present(.leaderboard(input)); return }
         let card = LeaderboardShareCardView(input: input)
         guard let image = renderCard(card, size: card.size) else { return }
         ShareEvents.log(kind: "image", gameMode: input.gameModeRaw, surface: "leaderboard")

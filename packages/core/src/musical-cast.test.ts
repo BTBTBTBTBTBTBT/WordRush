@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO, activeMelodies, melodyIntervals, MELODY_GAP_MS, MELODY_START, MUSICAL_ACHIEVEMENT_KEYS, MUSICAL_CAST_FLAG, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_SCALE, matchMelody, melodyTap,
+  ALL_MELODIES, HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO, SEASON_MELODIES, THANKSGIVING_MELODIES, THANKSGIVING_TUNES_TODO, activeMelodies, melodyIntervals, MELODY_GAP_MS, MELODY_START, MUSICAL_ACHIEVEMENT_KEYS, MUSICAL_CAST_FLAG, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_SCALE, matchMelody, melodyTap,
   midiNoteName, musicalCastEnabled, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState,
   MELODY_REPLAY, melodyReplay, melodyReplayDuration, melodySong,
 } from './musical-cast';
@@ -136,7 +136,7 @@ describe('the Halloween tunes (item 49)', () => {
     expect(byId('sorcerers_apprentice')).toEqual([7, -7, 3, -3, 3, -1, 1, -3, 3]);
   });
   it('no active tune is a copy of, prefix of, or contained in another (a tap run can only finish one)', () => {
-    const all = [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES].map((m) => ({ id: m.id, iv: `,${melodyIntervals(m.notes).join(',')},` }));
+    const all = ALL_MELODIES.map((m) => ({ id: m.id, iv: `,${melodyIntervals(m.notes).join(',')},` }));
     for (const a of all) for (const b of all) if (a.id !== b.id) expect(a.iv.includes(b.iv), `${b.id} inside ${a.id}`).toBe(false);
   });
   it('unlocks only in season; the everyday tunes still work in season', () => {
@@ -160,9 +160,87 @@ describe('the Halloween tunes (item 49)', () => {
   });
 });
 
+describe('the Thanksgiving tunes (founder 10-16)', () => {
+  const idForNote = (midi: number) => MUSICAL_CAST_IDS[MUSICAL_SCALE.indexOf(midi as (typeof MUSICAL_SCALE)[number])];
+  const playSeason = (notes: readonly number[], season: string | null) => {
+    let st: MelodyState = MELODY_START;
+    return notes.map((n, i) => { const r = melodyTap(st, idForNote(n), 1000 + i * 300, season); st = r.state; return r.matched?.id ?? null; });
+  };
+  it('every Thanksgiving tune sits on the cast keys and has its own secret achievement', () => {
+    expect(THANKSGIVING_MELODIES.map((m) => m.id)).toEqual(['simple_gifts', 'we_gather', 'thankful_people', 'now_thank']);
+    for (const m of THANKSGIVING_MELODIES) {
+      for (const n of m.notes) expect(MUSICAL_SCALE).toContain(n);
+      expect(MUSICAL_ACHIEVEMENT_KEYS).toContain(m.achievement);
+      expect(SECRET_ACHIEVEMENT_KEYS).toContain(m.achievement);
+      expect(NEW_ACHIEVEMENTS.find((a) => a.key === m.achievement)?.secret).toBe(true);
+    }
+  });
+  it('Simple Gifts is the checked shape (D D G G A B A B C D D C B A G, a fifth up) and sings home to D with F for F#', () => {
+    const m = THANKSGIVING_MELODIES[0];
+    expect(melodyIntervals(m.notes)).toEqual([0, 5, 0, 2, 2, -2, 2, 1, 2, 0, -2, -1, -2, -2]);
+    expect(m.notes[0]).toBe(62);
+    expect(melodySong(m).notes.at(-1)).toBe(62);
+    expect(melodySong(m).notes.slice(m.notes.length)).toEqual([69, 69, 69, 69, 69, 71, 69, 65, 62]);
+  });
+  it('We Gather Together (Kremser, D major line 1 in C), Come Ye Thankful People (St. George\'s Windsor) and Now Thank We All Our God (Nun danket) match their checked scores', () => {
+    const by = (id: string) => THANKSGIVING_MELODIES.find((m) => m.id === id)!;
+    // hymnary.org KREMSER incipit 55653 45432 31 (scale degrees), tonic C4
+    const deg = (m: { notes: readonly number[] }) => m.notes.map((n) => [1, 0, 2, 0, 3, 4, 0, 5, 0, 6, 0, 7][((n - 60) % 12 + 12) % 12] + (n >= 72 ? 7 : 0));
+    expect(deg(by('we_gather'))).toEqual([5, 5, 6, 5, 3, 4, 5, 4, 3, 2, 3, 1]);
+    expect(by('we_gather').song).toHaveLength(49);
+    expect(melodySong(by('we_gather')).beats.reduce((a, b) => a + b, 0)).toBe(48);
+    expect(by('we_gather').song!.slice(0, 12)).toEqual(by('we_gather').notes);
+    // hymnary.org ST. GEORGE'S WINDSOR incipit 33531 23335 31 2 3 3: lines 1 and 2 are the same seven notes
+    expect(deg(by('thankful_people'))).toEqual([3, 3, 5, 3, 1, 2, 3, 3, 3, 5, 3, 1, 2, 3]);
+    // Open Hymnal (ELHB 1931) / BWV 657 shared opening: 5 5 5 6 6 5 3 4 3 2
+    expect(deg(by('now_thank'))).toEqual([5, 5, 5, 6, 6, 5, 3, 4, 3, 2]);
+    for (const id of ['we_gather', 'thankful_people', 'now_thank']) {
+      const m = by(id);
+      expect(melodySong(m).beats).toHaveLength(melodySong(m).notes.length);
+      expect(m.source).not.toMatch(/https?:/);
+    }
+  });
+  it('the rest of the batch waits for checked notation (public domain, never from memory); no Turkey in the Straw', () => {
+    expect(THANKSGIVING_TUNES_TODO).toEqual([
+      'Over the River and Through the Wood', 'Bringing in the Sheaves', 'For the Beauty of the Earth',
+    ]);
+    const text = JSON.stringify([THANKSGIVING_MELODIES, THANKSGIVING_TUNES_TODO]).toLowerCase();
+    for (const bad of ['turkey in the straw', 'appalachian spring', 'thanksgiving song', 'alice']) expect(text).not.toContain(bad);
+  });
+  it('unlocks only in the Thanksgiving window; Halloween tunes stay out of it; the everyday five still work', () => {
+    for (const m of THANKSGIVING_MELODIES) {
+      expect(playSeason(m.notes, 'thanksgiving').pop()).toBe(m.id);
+      expect(playSeason(m.notes, null).pop()).not.toBe(m.id);
+      expect(playSeason(m.notes, 'halloween').pop()).not.toBe(m.id);
+    }
+    expect(playSeason(HALLOWEEN_MELODIES[0].notes, 'thanksgiving').pop()).not.toBe('mountain_king');
+    expect(playSeason(MUSICAL_MELODIES[0].notes, 'thanksgiving').pop()).toBe('mary');
+    expect(activeMelodies('thanksgiving').map((m) => m.id)).toEqual([...MUSICAL_MELODIES, ...THANKSGIVING_MELODIES].map((m) => m.id));
+    expect(Object.keys(SEASON_MELODIES)).toEqual(['halloween', 'thanksgiving']);
+    expect(ALL_MELODIES.map((m) => m.id)).toEqual([...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES, ...THANKSGIVING_MELODIES].map((m) => m.id));
+  });
+  it('keeps the normal voices (no harvest voicing until its samples ship)', () => {
+    expect(musicalNote('w', 'thanksgiving')!.sound).toBe('note-w');
+  });
+});
+
+describe('song data for the admin Sound Library (lead 10-16: season / source / hint, the trigger sequence is `notes`)', () => {
+  it('every tune names its public-domain source and a spoiler-light hint, and its season matches its batch', () => {
+    for (const m of ALL_MELODIES) {
+      expect(m.source.length, m.id).toBeGreaterThan(8);
+      expect(/\d{4}/.test(m.source), `${m.id} source has a year`).toBe(true);
+      expect(m.hint.length, m.id).toBeGreaterThan(8);
+      expect(m.hint.toLowerCase(), `${m.id} hint must not give away the title`).not.toContain(m.name.toLowerCase());
+      expect(m.notes.length, m.id).toBeGreaterThan(4);
+    }
+    for (const m of MUSICAL_MELODIES) expect(m.season, m.id).toBeUndefined();
+    for (const [season, list] of Object.entries(SEASON_MELODIES)) for (const m of list) expect(m.season, m.id).toBe(season);
+  });
+});
+
 describe('melody playback (founder 10-12)', () => {
   it('maps every sung note of every tune to a cast figure, spaced by its beats after the lead-in', () => {
-    for (const m of [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES]) {
+    for (const m of ALL_MELODIES) {
       const { notes, beats } = melodySong(m);
       expect(beats).toHaveLength(notes.length);
       // The song starts with the matched tune (it finishes the jingle, never replaces it).

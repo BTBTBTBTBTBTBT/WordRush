@@ -59,7 +59,7 @@ struct LeaderboardBannerView: View {
                 // FINISH_SPEC BB4: no ALL-TIME button — all-time lives in Stats only.
                 Text("\(date) · RESETS IN \(Self.resetClock())")
                     .font(Brand.font(12, .black)).tracking(0.7).monospacedDigit()
-                    .foregroundStyle(Theme.isDark ? Theme.textSecondary : Self.ink)
+                    .foregroundStyle(SeasonSurface.wallInk() ?? (Theme.isDark ? Theme.textSecondary : Self.ink))
                     .lineLimit(1).minimumScaleFactor(0.7)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
@@ -232,7 +232,7 @@ enum LeaderboardArt {
         let today = Calendar.current.component(.weekday, from: Date()) - 1   // Sunday = 0
         let names = [days[today % 7], days[(today + 1) % 7], ArtTitleName.leaderboard.assetName]
         DispatchQueue.global(qos: .utility).async { for n in names { _ = decoded(n) } }
-        var items: [(String, CGFloat)] = CastSkin.halloweenPropAssets.map { ($0, propSize) }
+        var items: [(String, CGFloat)] = CastSkin.prewarmPropAssets.map { ($0, propSize) }
         for m in homeModes + moreModes {
             if let gm = m.mode ?? m.dbKey.flatMap({ GameMode(rawValue: $0) }), let t = GameTitleArt.forMode(gm) {
                 items.append((t.asset, cardTitlePoints))
@@ -296,7 +296,7 @@ struct RecordsBannerView: View {
                 }
             }
             .font(Brand.font(11, .black)).tracking(0.6).monospacedDigit()
-            .foregroundStyle(Theme.isDark ? Theme.textSecondary : Self.ink)
+            .foregroundStyle(SeasonSurface.wallInk() ?? (Theme.isDark ? Theme.textSecondary : Self.ink))
             .lineLimit(2).minimumScaleFactor(0.8)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)

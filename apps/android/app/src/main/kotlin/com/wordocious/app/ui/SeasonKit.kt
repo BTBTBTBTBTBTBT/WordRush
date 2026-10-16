@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.wordocious.core.TimeOfDay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -48,6 +49,12 @@ object SeasonKit {
         val extras: Map<String, String> = emptyMap(),
         /** 2.8 item 49: the season's own sound slots (intro jingle, musical-cast note voicing); null = the normal sounds. */
         val sounds: Sounds? = null,
+        /** Time of day (10-16): wall slot key -> time id (morning / day / evening) -> art name; [walls] is the night (base) art. */
+        val wallsTod: Map<String, Map<String, String>> = emptyMap(),
+        /** Time of day: time id (morning / day / evening) -> the Home stage art name; [stage] is the night art. */
+        val stageTod: Map<String, String> = emptyMap(),
+        /** Time of day: time id (morning / day / evening) -> the base [surfaces] with that time's partial override merged in (night = base). */
+        val surfacesTod: Map<String, com.wordocious.app.ui.theme.SeasonSurfaces> = emptyMap(),
     )
 
     /** `slots.sounds`: [intro] = the cold-start jingle's sample name, [note] = the cast note's name pattern (`{id}` = the cast id). */
@@ -71,7 +78,12 @@ object SeasonKit {
             fun str(o: JsonObject, k: String) = o[k]?.jsonPrimitive?.contentOrNull
             fun color(v: String) = Color(0xFF000000 or v.removePrefix("#").toLong(16))
             fun colors(k: String) = p[k]!!.jsonArray.map { color(it.jsonPrimitive.content) }
-            fun map(k: String): Map<String, String> = (slots[k] as? JsonObject)?.mapValues { it.value.jsonPrimitive.content } ?: emptyMap()
+            // A slot value is a string, or a time-of-day object {night, morning, day, evening} (night = the base art and every fallback).
+            fun night(v: kotlinx.serialization.json.JsonElement): String =
+                (v as? JsonObject)?.get("night")?.jsonPrimitive?.contentOrNull ?: v.jsonPrimitive.content
+            fun map(k: String): Map<String, String> = (slots[k] as? JsonObject)?.mapValues { night(it.value) } ?: emptyMap()
+            val stageEl = slots["stage"]
+            val baseSurfaces = s["surfaces"] as? JsonObject
             Entry(
                 id = str(s, "id")!!,
                 title = str(s, "title")!!,
@@ -83,12 +95,30 @@ object SeasonKit {
                 walls = map("walls"),
                 props = (slots["props"] as? JsonArray)?.map { it.jsonPrimitive.content } ?: emptyList(),
                 banner = str(slots, "banner"),
-                stage = str(slots, "stage"),
-                surfaces = (s["surfaces"] as? JsonObject)?.let(::parseSurfaces),
+                stage = stageEl?.let { runCatching { night(it) }.getOrNull() },
+                surfaces = baseSurfaces?.let(::parseSurfaces),
                 extras = map("extras"),
                 sounds = (slots["sounds"] as? JsonObject)?.let { Sounds(str(it, "intro"), str(it, "note")) },
+                wallsTod = (slots["walls"] as? JsonObject)?.mapNotNull { (k, v) ->
+                    (v as? JsonObject)?.let { o -> k to o.filterKeys { it != "night" }.mapValues { it.value.jsonPrimitive.content } }
+                }?.toMap() ?: emptyMap(),
+                stageTod = (stageEl as? JsonObject)?.filterKeys { it != "night" }?.mapValues { it.value.jsonPrimitive.content } ?: emptyMap(),
+                surfacesTod = parseSurfacesTod(baseSurfaces),
             )
         }
+    }
+
+    /**
+     * `surfaces.tod.<t>`: a PARTIAL override of the base surfaces (night = base). Any key present replaces the base value for that
+     * time; `tone: "light"` does NOT change the card tone (the windows stay dark glass) — it only flags [SeasonSurfaces.wallInkDark].
+     */
+    fun parseSurfacesTod(base: JsonObject?): Map<String, com.wordocious.app.ui.theme.SeasonSurfaces> {
+        val tod = base?.get("tod") as? JsonObject ?: return emptyMap()
+        return tod.mapNotNull { (id, el) ->
+            val o = el as? JsonObject ?: return@mapNotNull null
+            val merged = JsonObject(base.filterKeys { it != "tod" } + o.filterKeys { it != "tone" && it != "tod" })
+            id to parseSurfaces(merged).copy(wallInkDark = o["tone"]?.jsonPrimitive?.contentOrNull == "light")
+        }.toMap()
     }
 
     /** A registry `surfaces` block (every slot optional). */
@@ -102,7 +132,7 @@ object SeasonKit {
             hero = c("hero"), heroOpacity = f("heroOpacity") ?: 1f,
             raised = c("raised"), cap = cs("cap")?.takeIf { it.size == 3 }, capTint = f("capTint") ?: 0f,
             glow = c("glow"), text = c("text"), textMuted = c("textMuted"), textSecondary = c("textSecondary"),
-            headline = cs("headline")?.takeIf { it.size == 5 }, bannerGlow = c("bannerGlow"), cobweb = c("cobweb"),
+            headline = cs("headline")?.takeIf { it.size == 5 }, bannerGlow = c("bannerGlow"), cobweb = c("cobweb"), accentText = c("accentText"),
         )
     }
 
@@ -110,21 +140,37 @@ object SeasonKit {
     const val SURFACES_KEY = "debug-season-surfaces"
 
     /** The season's windows for [season] and a preview [choice] (pure). */
-    fun surfacesFor(context: Context, season: String?, choice: String?): com.wordocious.app.ui.theme.SeasonSurfaces? {
+    fun surfacesFor(context: Context, season: String?, choice: String?, tod: TimeOfDay = TimeOfDay.Night): com.wordocious.app.ui.theme.SeasonSurfaces? {
         val e = entry(context, season) ?: return null
         if (choice == "off") return null
-        return e.surfaces
+        return surfacesAt(e, tod)
     }
 
-    /** Hands the active season's windows to the theme (WTheme.season + its palette). */
-    fun applySurfaces(context: Context) {
-        val choice = runCatching { com.wordocious.app.data.SettingsPref.get(SURFACES_KEY, "") }.getOrDefault("")
-        val look = surfacesFor(context, SeasonSkins.current(), choice)
-        val base = com.wordocious.app.ui.theme.Palettes.byKey(com.wordocious.app.data.ThemePref.current())
+    /** The season's windows at a time of day: the base merged with `tod[slot]` (night = base; a time with no override = base). Pure. */
+    fun surfacesAt(e: Entry, tod: TimeOfDay): com.wordocious.app.ui.theme.SeasonSurfaces? =
+        if (tod == TimeOfDay.Night) e.surfaces else e.surfacesTod[tod.id] ?: e.surfaces
+
+    /** Hands a resolved look to the theme (WTheme.season + its palette). */
+    fun applyLook(
+        look: com.wordocious.app.ui.theme.SeasonSurfaces?,
+        base: com.wordocious.app.ui.theme.Palette = com.wordocious.app.ui.theme.Palettes.byKey(com.wordocious.app.data.ThemePref.current()),
+    ) {
         com.wordocious.app.ui.theme.WTheme.season = look
         com.wordocious.app.ui.theme.WTheme.palette = look?.palette(
             if (look.dark) com.wordocious.app.ui.theme.Palettes.Dark else com.wordocious.app.ui.theme.Palettes.Light,
         ) ?: base
+    }
+
+    /** The look the theme should show right now (season + current time-of-day slot), null = the normal look. */
+    fun currentLook(context: Context): com.wordocious.app.ui.theme.SeasonSurfaces? {
+        val choice = runCatching { com.wordocious.app.data.SettingsPref.get(SURFACES_KEY, "") }.getOrDefault("")
+        return surfacesFor(context, SeasonSkins.current(), choice, TimeOfDayState.slot)
+    }
+
+    /** Hands the active season's windows to the theme (WTheme.season + its palette). */
+    fun applySurfaces(context: Context) {
+        TimeOfDayState.refresh()
+        applyLook(currentLook(context))
     }
 
     /**
@@ -176,10 +222,17 @@ object SeasonKit {
 
     /** The season's wallpaper for [res] (light mode prefers the `-light` twin); null = keep the normal one. */
     @DrawableRes
-    fun wall(context: Context, @DrawableRes res: Int, season: String?, dark: Boolean): Int? {
+    fun wall(context: Context, @DrawableRes res: Int, season: String?, dark: Boolean, tod: TimeOfDay = TimeOfDay.Night): Int? {
         val e = entry(context, season) ?: return null
-        val swap = nameOf(context, res)?.let { lookup(e.walls, it) } ?: return null
+        val name = nameOf(context, res) ?: return null
+        val swap = lookup(e.walls, name) ?: return null
         if (!dark) drawable(context, "$swap-light").takeIf { it != 0 }?.let { return it }
+        // Time of day: that time's art when it ships, else the night (base) art — a time whose files are not in the build falls back silently.
+        if (tod != TimeOfDay.Night) {
+            val key = if (e.wallsTod.containsKey(name)) name
+                else e.wallsTod.keys.filter { it.endsWith("*") && name.startsWith(it.dropLast(1)) }.maxByOrNull { it.length }
+            key?.let { e.wallsTod[it]?.get(tod.id) }?.let { drawable(context, it) }?.takeIf { it != 0 }?.let { return it }
+        }
         return drawable(context, swap).takeIf { it != 0 }
     }
 
@@ -192,7 +245,11 @@ object SeasonKit {
 
     /** The season's Home curtain-stage drawable (registry `stage`), 0 = none / not shipped (the plain card). */
     @DrawableRes
-    fun stage(context: Context, season: String?): Int = entry(context, season)?.stage?.let { drawable(context, it) } ?: 0
+    fun stage(context: Context, season: String?, tod: TimeOfDay = TimeOfDay.Night): Int {
+        val e = entry(context, season) ?: return 0
+        if (tod != TimeOfDay.Night) e.stageTod[tod.id]?.let { drawable(context, it) }?.takeIf { it != 0 }?.let { return it }
+        return e.stage?.let { drawable(context, it) } ?: 0
+    }
 }
 
 /** The season's title drawable for [res] (recomposes when the admin preview flips). */

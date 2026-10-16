@@ -657,18 +657,12 @@ private fun HubBoard(session: HubSession) {
                     icon = com.wordocious.app.ui.FamIcon.FLAG, contentDescription = "End puzzle and see answers", scale = k,
                 )
                 if (confirmEnd) {
-                    androidx.compose.material3.AlertDialog(
-                        modifier = com.wordocious.app.ui.PopupWidth,
-                        onDismissRequest = { confirmEnd = false },
-                        containerColor = WTheme.surface,
-                        title = { Text("End the puzzle?", fontWeight = FontWeight.Black, fontFamily = Nunito, color = WTheme.text) },
-                        text = { Text("You will see every word, and today’s Hubbub is over.", fontFamily = Nunito, fontWeight = FontWeight.Bold, color = WTheme.textMuted) },
-                        confirmButton = {
-                            com.wordocious.app.ui.CastButton("End puzzle", onClick = { confirmEnd = false; session.end() }, color = com.wordocious.app.ui.CastColor.PINK, size = com.wordocious.app.ui.CastSize.M)
-                        },
-                        dismissButton = {
-                            com.wordocious.app.ui.CastButton("Keep playing", onClick = { confirmEnd = false }, color = com.wordocious.app.ui.CastColor.PURPLE, size = com.wordocious.app.ui.CastSize.M)
-                        },
+                    // Parity audit 10-16: the family confirm sheet, same copy and actions.
+                    com.wordocious.app.ui.FamilyConfirm(
+                        title = "End the puzzle?", message = "You will see every word, and today’s Hubbub is over.",
+                        confirm = "End puzzle", cancel = "Keep playing", danger = true,
+                        onDismiss = { confirmEnd = false },
+                        onConfirm = { confirmEnd = false; session.end() },
                     )
                 }
             }

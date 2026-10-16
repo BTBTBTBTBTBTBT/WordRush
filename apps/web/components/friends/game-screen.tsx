@@ -36,7 +36,7 @@ import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { PageBackground } from '@/components/ui/page-background';
 import { frBar } from '@/lib/friends-look';
-import { softMix } from '@/lib/soft-surface';
+import { softMix, softMixCss } from '@/lib/soft-surface';
 
 // A Friends pocket game (Friends overhaul §4, canvas board AE; also the push
 // deep link /friends/games/<id>). The server runs the rules; this screen polls
@@ -417,7 +417,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
         className="pk-sc-chip text-[9.5px] font-black px-2 rounded-full"
         style={{
           height: 18, display: 'flex', alignItems: 'center', letterSpacing: 0.6,
-          background: presenceChip ? softMix(tone, 0.12) : toPlay ? softMix('#ec4899', 0.14) : 'transparent',
+          background: presenceChip ? softMixCss(tone, 0.12) : toPlay ? softMixCss('#ec4899', 0.14) : 'transparent',
           border: `1.5px solid ${presenceChip ? softMix(tone, 0.3) : toPlay ? softMix('#ec4899', 0.36) : 'transparent'}`,
           color: presenceChip ? tone : toPlay ? FR.solid : 'transparent',
         }}

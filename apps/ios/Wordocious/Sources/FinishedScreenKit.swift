@@ -187,19 +187,20 @@ struct FinishedShareCTA: View {
     var hasSpoilers: Bool = true
     /// The game's name for the countdown line (dailies only); nil = no line.
     var nextGame: String? = nil
+    /// The game's db key ("REGIONS"), for the share sheet's per-game "No spoilers" wording and the share log; "" = unknown.
+    var modeDbKey: String = ""
     /// Bool = "Full results" (letters revealed); false = spoiler-free card.
     let onShare: (Bool) -> Void
 
     @State private var showShareOptions = false
-    /// The chooser's pick, consumed by the sheet's onDismiss (see ShareVariantSheet).
-    @State private var shareReveal: Bool?
 
     var body: some View {
         // BJ15 round 2: the countdown is a small muted caption UNDER the button (never squeezed
         // into the skin with the label art); the button keeps the normal cap height.
         VStack(spacing: 3) {
             Button {
-                if hasSpoilers { showShareOptions = true } else { onShare(false) }
+                // `share_sheet_v2`: the custom sheet opens for every share (its toggle only when there are spoilers).
+                if hasSpoilers || ShareSheetFlag.on { showShareOptions = true } else { onShare(false) }
             } label: {
                 // BJ18: the short SHARE art label, so Share + NEXT keep ONE row at phone width.
                 CandyLabel(title: "Share")   // the lettering alone, at the full cap height
@@ -214,10 +215,8 @@ struct FinishedShareCTA: View {
                 }
             }
         }
-        .softSheet(isPresented: $showShareOptions,
-               onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
-            ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(340)])
-        }
+        .shareChooser(isPresented: $showShareOptions, dbKey: modeDbKey, hasSpoilers: hasSpoilers,
+                      gameLabel: ModeGen.byDbKey(modeDbKey)?.shareLabel ?? nextGame ?? "", onShare: onShare)
     }
 
     /// The game's display name for the countdown line ("Classic", "Gauntlet").
@@ -236,7 +235,8 @@ struct FinishedResultStrip: View {
         HStack(spacing: 6) {
             ResultBadge(won: won, size: 24)
             ForEach(Array(items.enumerated()), id: \.offset) { i, it in
-                chip(it.value, it.label, i == 0 ? Color(hex: 0x7C3AED) : Color(hex: 0x2563EB))
+                // The first chip is purple; on a multi-board finish the guesses chip after "N/M solved" is purple too (like Android and web).
+                chip(it.value, it.label, i == 0 || (i == 1 && items[0].label == "solved") ? Color(hex: 0x7C3AED) : Color(hex: 0x2563EB))
             }
             if let points {
                 chip(points.formatted(.number.grouping(.automatic)), "pts", Color(hex: 0xF5A524))

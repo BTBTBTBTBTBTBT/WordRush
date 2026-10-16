@@ -30,7 +30,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -354,13 +353,11 @@ fun ArchetypeDialog(targetName: String, targetArchetype: String, onDismiss: () -
             runCatching { ProfileService.fetchPersona(id)?.archetype }.getOrNull()
         }
     }
-    AlertDialog(
-        modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
+    FamilyDialogSheet(  // parity audit 10-16: the family sheet, not a Material dialog
         onDismissRequest = onDismiss,
-        containerColor = accentWash(SOCIAL_PURPLE, 0.10f),
         confirmButton = { DialogDone("Done", onDismiss) },
-        title = { HeadingArt(Heading.ARCHETYPES, height = 36.dp, contentDescription = "Player archetypes") },   // BJ16
-        text = {
+        titleContent = { HeadingArt(Heading.ARCHETYPES, height = 36.dp, contentDescription = "Player archetypes") },   // BJ16
+        body = {
             Column(
                 Modifier.verticalScroll(rememberScrollState()).heightIn(max = 420.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -473,18 +470,16 @@ private fun VsStat(label: String, them: String, you: String, modifier: Modifier 
 /** H2H drill-down: every shared daily — date, mode, both scores, winner dot. */
 @Composable
 fun H2HDetailDialog(targetName: String, h2h: ProfileService.H2HSummary, onDismiss: () -> Unit) {
-    AlertDialog(
-        modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
+    FamilyDialogSheet(  // parity audit 10-16: the family sheet, not a Material dialog
         onDismissRequest = onDismiss,
-        containerColor = accentWash(SOCIAL_PURPLE, 0.10f),
         confirmButton = { DialogDone("Done", onDismiss) },
-        title = {   // BJ16: HEAD TO HEAD lettering, the rival under it
+        titleContent = {   // BJ16: HEAD TO HEAD lettering, the rival under it
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 HeadingArt(Heading.H2H, height = 34.dp, contentDescription = "You vs $targetName")
                 Text("vs @$targetName", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, modifier = Modifier.clearAndSetSemantics { })
             }
         },
-        text = {
+        body = {
             Column(
                 Modifier.verticalScroll(rememberScrollState()).heightIn(max = 440.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -538,13 +533,11 @@ fun GuardedBoardDialog(targetId: String, targetName: String, seed: String, onDis
             .getOrDefault(ProfileService.BoardFetch.Unavailable)
     }
     val modeName = seedModeName(seed)
-    AlertDialog(
-        modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
+    FamilyDialogSheet(  // parity audit 10-16: the family sheet, not a Material dialog
         onDismissRequest = onDismiss,
-        containerColor = accentWash(SOCIAL_PURPLE, 0.10f),
         confirmButton = { DialogDone("Close", onDismiss) },
-        title = { Text("$targetName · ${modeTitleFromDb(modeName)}", fontWeight = FontWeight.Black) },
-        text = {
+        title = "$targetName · ${modeTitleFromDb(modeName)}",
+        body = {
             when (val f = fetch) {
                 null -> CastLoader("LOADING BOARD", Modifier.fillMaxWidth().padding(vertical = 16.dp))
                 is ProfileService.BoardFetch.Locked -> Column(
@@ -749,13 +742,11 @@ fun PodiumDialog(
     val podium by produceState(initialValue = null as List<ProfileService.PodiumEntry>?, day, gameMode) {
         value = runCatching { ProfileService.fetchPodium(day, gameMode) }.getOrDefault(emptyList())
     }
-    AlertDialog(
-        modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
+    FamilyDialogSheet(  // parity audit 10-16: the family sheet, not a Material dialog
         onDismissRequest = onDismiss,
-        containerColor = accentWash(SOCIAL_PURPLE, 0.10f),
         confirmButton = { DialogDone("Close", onDismiss) },
-        title = { Text("${modeTitleFromDb(gameMode)} · ${shortDayLabel(day)}", fontWeight = FontWeight.Black) },
-        text = {
+        title = "${modeTitleFromDb(gameMode)} · ${shortDayLabel(day)}",
+        body = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 when {
                     podium == null -> CastLoader("LOADING PODIUM", Modifier.fillMaxWidth().padding(vertical = 16.dp))
@@ -842,13 +833,11 @@ fun StreakCalendarDialog(
     dayCounts: Map<String, Int>,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
-        modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
+    FamilyDialogSheet(  // parity audit 10-16: the family sheet, not a Material dialog
         onDismissRequest = onDismiss,
-        containerColor = accentWash(SOCIAL_PURPLE, 0.10f),
         confirmButton = { DialogDone("Done", onDismiss) },
-        title = { Text("$targetName · last 60 days", fontWeight = FontWeight.Black) },
-        text = {
+        title = "$targetName · last 60 days",
+        body = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 val days = remember60Days()
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {

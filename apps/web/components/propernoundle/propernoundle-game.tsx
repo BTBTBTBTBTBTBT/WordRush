@@ -21,8 +21,8 @@ import { useHints, type PersistedHintState } from './use-hints';
 import Image from 'next/image';
 import { fetchWikipediaImage, fetchWikipediaHint, prefetchWikipediaSummary } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { shareResult } from '@/lib/share-utils';
-import { chooseShareVariant } from '@/components/share/share-variant-modal';
+import { shareFinished } from '@/lib/share-finished-flow';
+import { useShareSheetFlag } from '@/hooks/use-share-sheet-flag';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
@@ -661,10 +661,9 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
     hints.resetHints();
   }, [puzzle, playedIds, hints]);
 
+  const shareSheetOn = useShareSheetFlag();
   const handleShare = useCallback(async () => {
     if (!puzzle) return;
-    const variant = await chooseShareVariant();
-    if (!variant) return;
     // ProperNoundle tile states are lowercase internally; normalize to the
     // uppercase form the share image expects. Pad to MAX_GUESSES with
     // empty rows sized to the puzzle's normalized answer length.
@@ -702,26 +701,30 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
     const categoryLabel = puzzle.themeCategory
       ? CATEGORY_LABELS[puzzle.themeCategory] || puzzle.themeCategory
       : undefined;
-    const out = await shareResult({
-      layout: 'single',
-      mode: 'ProperNoundle',
-      won: gameStatus === 'won',
-      guesses: guesses.length,
-      maxGuesses: MAX_GUESSES,
-      timeSeconds: elapsedTime,
-      grid,
-      category: categoryLabel,
-      wordGroups: wordGroups.length > 1 ? wordGroups : undefined,
-      reveal: variant === 'full',
-      letters,
-      solutionDisplay: puzzle.display,
-      // E1: the gold POINTS window shows the same total the score card does.
-      points: gameStatus === 'won'
-        ? computeScoreBreakdown('PROPERNOUNDLE', true, guesses.length, elapsedTime, 1, 1, hintsUsed).total
-        : computeScoreBreakdown('PROPERNOUNDLE', false, guesses.length, elapsedTime, 0, 1, hintsUsed, undefined, guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0)).total,
+    const copied = await shareFinished({
+      sheet: shareSheetOn, catalogMode: 'propernoundle', gameName: 'ProperNoundle', isDaily, won: gameStatus === 'won',
+      multi: false, guesses: guesses.length, timeSeconds: elapsedTime,
+      build: (reveal) => ({
+        layout: 'single',
+        mode: 'ProperNoundle',
+        won: gameStatus === 'won',
+        guesses: guesses.length,
+        maxGuesses: MAX_GUESSES,
+        timeSeconds: elapsedTime,
+        grid,
+        category: categoryLabel,
+        wordGroups: wordGroups.length > 1 ? wordGroups : undefined,
+        reveal,
+        letters,
+        solutionDisplay: puzzle.display,
+        // E1: the gold POINTS window shows the same total the score card does.
+        points: gameStatus === 'won'
+          ? computeScoreBreakdown('PROPERNOUNDLE', true, guesses.length, elapsedTime, 1, 1, hintsUsed).total
+          : computeScoreBreakdown('PROPERNOUNDLE', false, guesses.length, elapsedTime, 0, 1, hintsUsed, undefined, guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0)).total,
+      }),
     });
-    if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
-  }, [puzzle, guesses, gameStatus, elapsedTime, hintsUsed]);
+    if (copied) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [puzzle, guesses, gameStatus, elapsedTime, hintsUsed, isDaily, shareSheetOn]);
 
   const formatTime = (s: number) => {
     const mins = Math.floor(s / 60);

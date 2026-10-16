@@ -4,6 +4,7 @@ import com.wordocious.core.Season
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import androidx.compose.ui.graphics.toArgb
 import org.junit.Test
 import java.io.File
 
@@ -62,5 +63,51 @@ class SeasonKitTest {
             val names = listOfNotNull(SeasonKit.introSound(s)) + com.wordocious.core.MusicalCast.CAST_IDS.mapNotNull { SeasonKit.noteSound(s, it) }
             for (n in names) assertTrue("${s.id}: ${SeasonKit.rawName(n)}.m4a", File(raw, SeasonKit.rawName(n) + ".m4a").exists())
         }
+    }
+
+    /** Time of day (10-16): walls / stage are a string OR {night, morning, day, evening}; the REAL asset must parse with every season. */
+    @Test fun realRegistryParsesWithTimeOfDaySlots() {
+        val byId = seasons.associateBy { it.id }
+        val h = byId.getValue("halloween")
+        val t = byId.getValue("thanksgiving")
+        assertEquals("art-celebration-stage-halloween", h.stage)
+        assertEquals("art-celebration-stage-thanksgiving", t.stage)
+        assertEquals("art-celebration-stage-thanksgiving-morning", t.stageTod["morning"])
+        assertEquals("art-celebration-stage-thanksgiving-day", t.stageTod["day"])
+        assertEquals("art-celebration-stage-thanksgiving-evening", t.stageTod["evening"])
+        // night = the base art in `walls`; the other times ride in wallsTod.
+        assertEquals("art-wall-thanksgiving-home", t.walls["art-wall-home"])
+        assertEquals("art-wall-thanksgiving-home-morning", t.wallsTod.getValue("art-wall-home")["morning"])
+        assertEquals("art-wall-halloween-home", h.walls["art-wall-home"])
+        assertEquals("art-wall-halloween-home-evening", h.wallsTod.getValue("art-wall-home")["evening"])
+        assertEquals("art-wall-thanksgiving-home", SeasonKit.lookup(t.walls, "art-wall-home"))
+    }
+
+    @Test fun surfacesByTimeOfDayMergePartiallyAndKeepTheCardTone() {
+        val t = seasons.first { it.id == "thanksgiving" }
+        val night = SeasonKit.surfacesAt(t, com.wordocious.core.TimeOfDay.Night)!!
+        val morning = SeasonKit.surfacesAt(t, com.wordocious.core.TimeOfDay.Morning)!!
+        val day = SeasonKit.surfacesAt(t, com.wordocious.core.TimeOfDay.Day)!!
+        val evening = SeasonKit.surfacesAt(t, com.wordocious.core.TimeOfDay.Evening)!!
+        assertTrue(night === t.surfaces)
+        assertTrue(night.dark && morning.dark && day.dark && evening.dark) // tone "light" never flips the card tone
+        assertTrue(day.wallInkDark && morning.wallInkDark && !night.wallInkDark && !evening.wallInkDark) // registry: morning + day skies are light
+        assertEquals(0xFF4A3049.toInt(), morning.card!!.toArgb())
+        assertEquals(0.9f, morning.cardOpacity, 0.001f)
+        // evening overrides no cardOpacity: the base's is kept; its headline (not in tod) is the base's.
+        assertEquals(night.cardOpacity, evening.cardOpacity, 0.0001f)
+        assertEquals(night.headline, evening.headline)
+        assertEquals(0xFFE6C4B2.toInt(), evening.textMuted!!.toArgb())
+        assertEquals(night.text, evening.text)
+    }
+
+    @Test fun surfaceLerpEndsExactAndMidpointMixes() {
+        val t = seasons.first { it.id == "thanksgiving" }
+        val a = t.surfaces!!
+        val b = SeasonKit.surfacesAt(t, com.wordocious.core.TimeOfDay.Day)!!
+        assertEquals(a, com.wordocious.app.ui.theme.SeasonSurfaces.lerp(a, b, 0f))
+        assertEquals(b, com.wordocious.app.ui.theme.SeasonSurfaces.lerp(a, b, 1f))
+        val mid = com.wordocious.app.ui.theme.SeasonSurfaces.lerp(a, b, 0.5f)
+        assertTrue(mid.card != a.card && mid.card != b.card)
     }
 }

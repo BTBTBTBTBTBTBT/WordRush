@@ -143,12 +143,10 @@ struct FinishedShareButton: View {
     let onShare: (Bool) -> Void
 
     @State private var showShareOptions = false
-    /// The chooser's pick, consumed by the sheet's onDismiss (see ShareVariantSheet).
-    @State private var shareReveal: Bool?
 
     var body: some View {
         Button {
-            if hasSpoilers { showShareOptions = true } else { onShare(false) }
+            if hasSpoilers || ShareSheetFlag.on { showShareOptions = true } else { onShare(false) }
         } label: {
             Icon3D(.share, size: size)
                 .shadow(color: Color(hex: 0x4C1D95).opacity(0.2), radius: 2.5, x: 0, y: 3)
@@ -157,10 +155,7 @@ struct FinishedShareButton: View {
         }
         .buttonStyle(RoundIconButtonStyle())   // 2.8 item 23: the family round icon
         .accessibilityLabel("Share")
-        .softSheet(isPresented: $showShareOptions,
-               onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
-            ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(340)])
-        }
+        .shareChooser(isPresented: $showShareOptions, hasSpoilers: hasSpoilers, onShare: onShare)
     }
 }
 

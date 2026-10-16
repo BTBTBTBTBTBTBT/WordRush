@@ -5,6 +5,7 @@ import { flushSync } from 'react-dom';
 import { CAST } from '@/lib/mascots';
 import { activeSeason, cachedSwitchOn, castArt, type Season } from '@/lib/season';
 import { seasonalWall } from '@/lib/season-kit';
+import { currentTimeOfDay } from '@/lib/time-of-day';
 import { prefersReducedMotion } from '@/lib/motion';
 import { playIntroJingle, warmIntroSound } from '@/lib/sounds';
 import { CAST_FLOURISH_ATTR, INTRO, INTRO_DONE_EVENT, INTRO_PRELOAD_MAX_MS, INTRO_RUNNING_ATTR, SPLASH, SPLASH_NIGHT, flourishTotalMs, glideFrame, glideTransform, introShouldPlay } from '@/lib/intro';
@@ -63,7 +64,7 @@ function decodeImage(src: string): Promise<void> {
  * land on the same pixels as the Home underneath); null off season / when the season ships no Home wall.
  */
 function introWall(season: Season | null): { src: string; wide: string } | null {
-  const name = season ? seasonalWall('art-wall-home', season, 'dark') : null;
+  const name = season ? seasonalWall('art-wall-home', season, 'dark', currentTimeOfDay()) : null;
   return name ? { src: `/art/${name}.webp`, wide: `/art/${name}-wide.webp` } : null;
 }
 

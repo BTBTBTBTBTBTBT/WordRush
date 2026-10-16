@@ -16,6 +16,7 @@ import { useAuth } from '@/lib/auth-context';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkedSignIns } from '@/components/settings/linked-sign-ins';
 import { SeasonPreviewPicker } from '@/components/settings/season-preview-picker';
+import { TimeOfDayPicker } from '@/components/settings/time-of-day-picker';
 import { NotificationSettings } from '@/components/settings/notification-settings';
 import { KeyRowPreview, SETTINGS_ACCENT, SeasonalPreview, SettingsOption, SettingsSection, SettingsToggle, ThemeWallPreview, settingsRowStyle } from '@/components/settings/settings-kit';
 import { PoseArt } from '@/components/ui/soft-popup';
@@ -310,6 +311,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
           {/* Season preview (admins only): Off (by date) or any registry season (lib/season-kit.ts). */}
           {(profile as { is_admin?: boolean | null } | null)?.is_admin === true && <SeasonPreviewPicker />}
+          {(profile as { is_admin?: boolean | null } | null)?.is_admin === true && <TimeOfDayPicker />}
 
           <div className="flex justify-center pt-1">
             <PoseArt pose="art-pose-r-cocoa" size={68} />

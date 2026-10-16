@@ -35,7 +35,7 @@ class StreakSummaryTest {
         assertEquals("1,280 WINS · 74% WIN RATE · 6 STREAK", statsSummaryHeadline(1280, 1730, 6))
         assertEquals("1 WIN · 100% WIN RATE", statsSummaryHeadline(1, 1, 1))
         val items = listOf(com.wordocious.app.ui.game.stripCount("4", "guesses"))
-        assertEquals("SOLVED IN 4 GUESSES", com.wordocious.app.ui.game.stripHeadline(true, items))
+        assertEquals("SOLVED IN 4", com.wordocious.app.ui.game.stripHeadline(true, items))
         assertEquals("SO CLOSE", com.wordocious.app.ui.game.stripHeadline(false, items))
     }
 }

@@ -44,10 +44,15 @@ enum ThemeKit {
         struct Witch: Decodable { let sprite: String; let size: Double; let every: Double; let duration: Double }
         struct Fog: Decodable { let sprite: String; let opacity: Double; let duration: Double }
         struct Stars: Decodable { let count: Int; let color: String }
-        let bats: Bats
-        let witch: Witch
-        let fog: Fog
-        let stars: Stars
+        /// A V of geese crossing the top band slowly (10-16): size = one goose's width (pt), band = the lead's height
+        /// [min, max] % of the wall, direction 1 = left to right (-1 mirrored).
+        struct Flock: Decodable { let sprite: String; let count: Int; let size: [Double]; let duration: [Double]; let band: [Double]; let direction: Double }
+        // Every part is optional (Halloween: bats + witch + fog + stars; Thanksgiving: flock + stars).
+        let bats: Bats?
+        let witch: Witch?
+        let fog: Fog?
+        let stars: Stars?
+        let flock: Flock?
     }
 
     struct Seasonal: Decodable {
@@ -55,7 +60,7 @@ enum ThemeKit {
         let subtitle: String
         let previewWall: [String]
         let previewTiles: [Tile]
-        /// The season's living wallpaper; nil = the base theme's ambient keeps running (Thanksgiving ships none yet).
+        /// The season's living wallpaper; nil = the base theme's ambient keeps running.
         let ambient: SeasonalAmbient?
     }
 

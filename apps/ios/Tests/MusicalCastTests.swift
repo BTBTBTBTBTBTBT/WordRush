@@ -21,7 +21,7 @@ final class MusicalCastTests: XCTestCase {
         let unlocked: [String]
         let listed: Bool
     }
-    private struct MelodyRow: Decodable { let id: String; let name: String; let achievement: String; let notes: [Int]; let intervals: [Int] }
+    private struct MelodyRow: Decodable { let id: String; let name: String; let achievement: String; let notes: [Int]; let intervals: [Int]; let season: String?; let source: String; let hint: String }
     private struct Timing: Decodable { let longPressMs: Int; let moveSlop: Double; let staggerMs: Int; let popMs: Int }
     private struct PopKey: Decodable { let t: Double; let sx: Double; let sy: Double; let lift: Double }
     private struct HStep: Decodable { let id: String; let at: Double; let midi: Int?; let sound: String?; let matched: String? }
@@ -47,6 +47,7 @@ final class MusicalCastTests: XCTestCase {
     private struct F: Decodable {
         let replays: [ReplayRow]
         let halloween: Halloween
+        let thanksgiving: Halloween
         let scale: [Int]
         let timing: Timing
         let popKeys: [PopKey]
@@ -141,6 +142,10 @@ final class MusicalCastTests: XCTestCase {
             XCTAssertEqual(m.id, w.id)
             XCTAssertEqual(m.name, w.name)
             XCTAssertEqual(m.achievement, w.achievement)
+            XCTAssertEqual(m.season, w.season, m.id)
+            XCTAssertEqual(m.source, w.source, m.id)
+            XCTAssertEqual(m.hint, w.hint, m.id)
+            XCTAssertFalse(m.hint.lowercased().contains(m.name.lowercased()), m.id)
             XCTAssertEqual(m.notes, w.notes, m.id)
             XCTAssertEqual(MusicalCast.intervals(m.notes), w.intervals, m.id)
             // every note sits on a cast key
@@ -169,7 +174,7 @@ final class MusicalCastTests: XCTestCase {
     /// Founder 10-13: the playback finishes the jingle in its own rhythm — same song, steps and length as the TS core.
     func testReplaysFinishTheJingle() throws {
         let rows = try fixture().replays
-        let all = MusicalCast.melodies + MusicalCast.halloweenMelodies
+        let all = MusicalCast.allMelodies
         XCTAssertEqual(all.map(\.id), rows.map(\.id))
         for (m, w) in zip(all, rows) {
             let song = MusicalCast.song(m)
@@ -189,6 +194,10 @@ final class MusicalCastTests: XCTestCase {
             XCTAssertEqual(m.id, w.id)
             XCTAssertEqual(m.name, w.name)
             XCTAssertEqual(m.achievement, w.achievement)
+            XCTAssertEqual(m.season, w.season, m.id)
+            XCTAssertEqual(m.source, w.source, m.id)
+            XCTAssertEqual(m.hint, w.hint, m.id)
+            XCTAssertFalse(m.hint.lowercased().contains(m.name.lowercased()), m.id)
             XCTAssertEqual(m.notes, w.notes, m.id)
             XCTAssertEqual(MusicalCast.intervals(m.notes), w.intervals, m.id)
             for n in m.notes { XCTAssertTrue(MusicalCast.scale.contains(n), "\(m.id) \(n)") }
@@ -204,6 +213,48 @@ final class MusicalCastTests: XCTestCase {
         }
         XCTAssertFalse(h.taps.isEmpty)
         for seq in h.taps {
+            var s = MelodyState.start
+            for (i, step) in seq.steps.enumerated() {
+                let r = MusicalCast.tap(s, castId: step.id, atMs: step.at, season: seq.season)
+                s = r.state
+                let at = "\(seq.name) step \(i) (\(step.id) @\(step.at))"
+                XCTAssertEqual(r.note?.midi, step.midi, at)
+                XCTAssertEqual(r.note?.sound, step.sound, at)
+                XCTAssertEqual(r.matched?.id, step.matched, at)
+            }
+        }
+    }
+
+    /// Founder 10-16: the Thanksgiving batch — same shape as Halloween's section (tunes on the cast keys, the TODO list,
+    /// normal voices, the per-season active sets, season-aware taps: only in its window, Halloween tunes stay out).
+    func testThanksgivingSection() throws {
+        let t = try fixture().thanksgiving
+        XCTAssertEqual(MusicalCast.thanksgivingMelodies.count, t.melodies.count)
+        XCTAssertFalse(t.melodies.isEmpty)
+        for (m, w) in zip(MusicalCast.thanksgivingMelodies, t.melodies) {
+            XCTAssertEqual(m.id, w.id)
+            XCTAssertEqual(m.name, w.name)
+            XCTAssertEqual(m.achievement, w.achievement)
+            XCTAssertEqual(m.season, w.season, m.id)
+            XCTAssertEqual(m.source, w.source, m.id)
+            XCTAssertEqual(m.hint, w.hint, m.id)
+            XCTAssertFalse(m.hint.lowercased().contains(m.name.lowercased()), m.id)
+            XCTAssertEqual(m.notes, w.notes, m.id)
+            XCTAssertEqual(MusicalCast.intervals(m.notes), w.intervals, m.id)
+            for n in m.notes { XCTAssertTrue(MusicalCast.scale.contains(n), "\(m.id) \(n)") }
+            XCTAssertTrue(AchievementRules.secretKeys.contains(m.achievement), m.achievement)
+        }
+        XCTAssertEqual(MusicalCast.thanksgivingTunesTodo, t.todo)
+        XCTAssertNil(MusicalCast.seasonNotePrefix["thanksgiving"])
+        for row in t.sounds {
+            XCTAssertEqual(MusicalCast.note(row.id, season: row.season)?.sound, row.sound, "\(row.season ?? "none") \(row.id)")
+        }
+        for row in t.active {
+            XCTAssertEqual(MusicalCast.activeMelodies(season: row.season).map(\.id), row.ids, row.season ?? "none")
+        }
+        XCTAssertEqual(MusicalCast.seasonMelodies.keys.sorted(), ["halloween", "thanksgiving"])
+        XCTAssertFalse(t.taps.isEmpty)
+        for seq in t.taps {
             var s = MelodyState.start
             for (i, step) in seq.steps.enumerated() {
                 let r = MusicalCast.tap(s, castId: step.id, atMs: step.at, season: seq.season)

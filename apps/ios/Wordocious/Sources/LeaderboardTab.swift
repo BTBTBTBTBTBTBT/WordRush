@@ -249,7 +249,7 @@ struct LeaderboardTab: View {
                         Text("\(playerCount) today").font(Brand.font(11, .heavy))
                     }
                 }
-                .foregroundStyle(FinishInk.secondary)
+                .foregroundStyle(SeasonSurface.wallInk() ?? FinishInk.secondary)
                 .lineLimit(1).fixedSize().layoutPriority(1)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(playerCount) player\(playerCount == 1 ? "" : "s") today")
@@ -270,7 +270,7 @@ struct LeaderboardTab: View {
             HStack(spacing: 6) {
                 Text(modeRankLine)
                     .font(Brand.font(11.5, .black))
-                    .foregroundStyle(Theme.isDark ? Theme.textSecondary : LbStyle.goldInk)
+                    .foregroundStyle(SeasonSurface.wallInk() ?? (Theme.isDark ? Theme.textSecondary : LbStyle.goldInk))
                     .lineLimit(1).minimumScaleFactor(0.6)
                 if let r = userRank { rankDelta(r, friends: friendsOnly) }
                 Spacer(minLength: 4)
@@ -569,7 +569,13 @@ struct LeaderboardTab: View {
                     // The cast (MASCOT_SPEC §6, ART_SPEC §7): I's invite scene grows the circle; R asleep says it's quiet in here.
                     BrandEmptyState(title: friendsOnly ? "Your board is empty" : "No results yet",
                                     line: friendsOnly ? Mascots.addFriendLine : "Nobody has finished today. Be the first!",
-                                    scene: friendsOnly ? .invite : .asleep)
+                                    scene: friendsOnly ? .invite : .asleep,
+                                    // Parity with Android: an empty game board you haven't played yet offers the daily right there.
+                                    actionTitle: !friendsOnly && completions.byMode[mode.rawValue] == nil ? "Play now" : nil,
+                                    actionSymbol: "play.fill",
+                                    action: {
+                                        NotificationCenter.default.post(name: NextDailyCTA.playNextDaily, object: mode.rawValue)
+                                    })
                     // Tier 2 (Aug 11): the empty Friends board is the best recruiting surface in the app — use it.
                     if friendsOnly {
                         Button { showFriendsSheet = true } label: {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { renderSeedFixtures, renderPrefillFixtures, renderBankFixtures, renderSudokuFixtures, renderRegionsFixtures, renderLadderFixtures, renderWordsearchFixtures, renderHubFixtures, renderCryptogramFixtures, renderGroupsFixtures, renderCrosswordFixtures, renderScrambleFixtures, renderHomeBannerFixtures, renderVsLobbyFixtures, renderFriendlyFixtures, renderLeaderboardTitleFixtures, renderShareCaptionFixtures, renderLevelSeasonFixtures, renderPushCopyFixtures, renderAvatarConfigFixtures, renderHeadlineTokenFixtures, renderBubbleTextFixtures, renderAchievementRuleFixtures, renderAvatarResolveFixtures, renderPodiumLayoutFixtures, renderAvatarLayoutFixtures, renderAvatarPoseFixtures, renderAvatarAccessFixtures, renderMusicalCastFixtures, renderFriendCardFixtures, renderPocketHelpFixtures, renderWaitingRoomFixtures, renderAdCopyFixtures, renderPlayerTintFixtures, renderShareSpoilerFixtures } from '../scripts/gen-parity-fixtures';
+import { renderSeedFixtures, renderPrefillFixtures, renderBankFixtures, renderSudokuFixtures, renderRegionsFixtures, renderLadderFixtures, renderWordsearchFixtures, renderHubFixtures, renderCryptogramFixtures, renderGroupsFixtures, renderCrosswordFixtures, renderScrambleFixtures, renderHomeBannerFixtures, renderVsLobbyFixtures, renderFriendlyFixtures, renderLeaderboardTitleFixtures, renderShareCaptionFixtures, renderLevelSeasonFixtures, renderTimeOfDayFixtures, renderTimeOfDayFixtures, renderPushCopyFixtures, renderAvatarConfigFixtures, renderHeadlineTokenFixtures, renderBubbleTextFixtures, renderAchievementRuleFixtures, renderAvatarResolveFixtures, renderPodiumLayoutFixtures, renderAvatarLayoutFixtures, renderAvatarPoseFixtures, renderAvatarAccessFixtures, renderMusicalCastFixtures, renderFriendCardFixtures, renderPocketHelpFixtures, renderWaitingRoomFixtures, renderAdCopyFixtures, renderPlayerTintFixtures, renderShareSpoilerFixtures } from '../scripts/gen-parity-fixtures';
 
 // Freshness guard for the cross-platform engine-parity fixtures. The Swift and
 // Kotlin ports assert against the committed JSON; this test asserts the
@@ -36,6 +36,7 @@ describe('engine parity fixtures are fresh and synced', () => {
     ['leaderboard-title-fixtures.json', JSON.stringify(renderLeaderboardTitleFixtures(), null, 2) + '\n'],
     ['share-captions-fixtures.json', JSON.stringify(renderShareCaptionFixtures(), null, 2) + '\n'],
     ['level-season-fixtures.json', JSON.stringify(renderLevelSeasonFixtures(), null, 2) + '\n'],
+    ['time-of-day-fixtures.json', JSON.stringify(renderTimeOfDayFixtures(), null, 2) + '\n'],
     ['push-copy-fixtures.json', JSON.stringify(renderPushCopyFixtures(), null, 2) + '\n'],
     ['avatar-config-fixtures.json', JSON.stringify(renderAvatarConfigFixtures(), null, 2) + '\n'],
     ['headline-tokens-fixtures.json', JSON.stringify(renderHeadlineTokenFixtures(), null, 2) + '\n'],
