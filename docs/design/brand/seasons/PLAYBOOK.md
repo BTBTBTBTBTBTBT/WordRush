@@ -76,6 +76,10 @@ season AND in the standard look and archive them in the Art Library (§8).
 4. Vet every image: spelling letter by letter; palette; clean edges (no fringe); characters vs hero — shape, colors,
    face, eyes, mouth, brows (S determined angled brows; W always friendly); costume ON the body.
 5. Log every kept file + prompt (`<season>/NEW-<date>.md`).
+   Runner safety: NEVER click ChatGPT's Share button (it makes a public link) — find "Download" by its accessible name
+   and click by ref after a screenshot; clear the prompt box before each prompt (drafts carry over between tabs).
+   iOS art ships with lossy (HEVC) asset compression (`compression-type: lossy`) — visually identical, ~70% smaller;
+   only the few fully-opaque backdrops stay lossless (the check script lists them).
 6. Wallpapers are code (never upscale a ChatGPT image into a full-screen wall).
 
 ## 5. The quality bar (review before anyone sees it)
@@ -131,6 +135,11 @@ mascot items stay on players' mascots; the seasonal shelf disappears by itself.
   Flawless/Sweep overlays clashed with the mascots (hat on sunglasses, a second broom) → costumed scenes + floats beside
   the art; titles' brown rim vanished on dark walls → title band on the walls; pocket-game, VS and Unlimited titles had
   never been made for any season.
+
+- **Winter holidays 2026 (10-16, early start):** first drafts had ZERO Hanukkah/Kwanzaa elements and bolted-on hats —
+  the inclusivity rule must be in every prompt and checked in review; costumes now spread across the three holidays
+  (Christmas cast, a Hanukkah dreidel sweater + gelt, a Kwanzaa kente sash + kinara), props verified (9-branch menorah
+  with raised shamash, nun/gimel dreidel, 3-1-3 kinara).
 
 ## Next: Winter holidays (Dec 1–26) — kickoff checklist
 
