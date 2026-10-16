@@ -232,8 +232,36 @@ Verified: web `tsc --noEmit` clean + `vitest run` (the only 3 failures are `lib/
 - Bughunt 5 (LOW) Word Chain tile width floor ×3 → iOS `FriendlyGameScreen.swift` (`max(16, …)` on both the chain row and the entry row), AND `friends/FriendlyGameScreen.kt` entry tiles `maxOf(16.dp, …)`, web `lib/pocket-boards.ts` `chainInputTile` `Math.max(16, …)`.
 - Bughunt 7 / Friends 4 (LOW) "+N more" expanded label → "Show fewer" on Android (`FriendCardsView.kt`) and web (`friend-cards.tsx`), matching iOS and the shared a11y label.
 
+**Android follow-up (founder-approved 10-16; Top-10 #5 and #10, nothing committed)**
+- Top-10 #5 DONE: all 15 Material `AlertDialog(` call sites (the audit counted 14; `game/HubScreen.kt` "End the puzzle?" was a 15th) now present the family sheet. New in `AND/ui/FamilyActionMenu.kt`: `FamilyConfirm` (iOS `FamilyConfirm`: soft sheet, bubble-lettered question, line, quiet cancel + candy confirm, pink for danger, `cancel = null` = one-button notice) and `FamilyDialogSheet` (AlertDialog-shaped: title / bubble title, message, scrolling body, dismiss + confirm slots; optional container colour). `FamilyConfirm`: Purchase issue (`ProScreen.kt`, notice), Cancel invite (`InvitePanel.kt`), Unfriend (`FriendsPanel.kt`), Block this user (`PublicProfileScreen.kt`), End the puzzle (`HubScreen.kt`). `FamilyDialogSheet`: Report this user? reasons (`PublicProfileScreen.kt`), the `SettingsDialog` wrapper (all 5 Settings dialogs; Delete account and Unlink now `danger`), Your links / Private profile / Favorite game (`EditProfileScreen.kt`, same content), Archetypes / Head to head / Guarded board / Podium / Streak calendar (`PublicProfileSocial.kt`), "Your game waits for you" (`friends/FriendlyGameScreen.kt`, pocket night glass). Same copy, same actions, same behavior; no `AlertDialog(` left in `apps/android`. Not eyeballed on a device (compile + unit tests only).
+- Top-10 #10 DONE (F5 + F7): removed the Android-only loss chips (Sudocious "cells left", Starsweep "stars left", Muddle "n/m solved", Kindred "n/4 groups"), so every strip is mistakes/checks / time / pts like iOS and web (the spoken srText keeps the progress line, as web does). Removed the `FinishedAnswer` tiles under a lost single board in `PostGameScreen.kt` and the 54 dp reserve they used (the board takes the room; the answer stays in the More word card and the loss popup). `FinishedAnswer` itself is now unused (left in `FinishedScreen.kt`).
+- Button-family guard: no count dropped (no raw button sites touched), baseline unchanged; the guard passes. Verified `:app:compileDebugKotlin :app:testDebugUnitTest` green.
+
 **Left (why)**
-- Android 14 `AlertDialog`s → family confirm sheet: too big for this pass (14 call sites across `ProScreen.kt`, `PublicProfileSocial.kt` ×5, `FriendlyGameScreen.kt`, `InvitePanel.kt`, `SettingsScreen.kt`, `EditProfileScreen.kt`, `FriendsPanel.kt`, `PublicProfileScreen.kt`).
+- (Android AlertDialogs, F5 and F7 were done in the Android follow-up above.)
 - Items in files other agents are rebuilding: F2 (ProperNoundle rank badge — `ProperNoundleView.swift` is fine but the finish strip lives in `PostGameViews.swift`), F8 (word card label, `GameScreen.swift`), F10 (Sweep line punctuation — `PostGameViews.swift`), F11 (strip headline a11y labels — `PostGameViews.swift`), A11y 2 (`podium_burst` — `FinishPages.swift`), iOS multi-board guesses chip tint (`FinishedScreenKit.swift` is clear but the strip is `PostGameViews.swift`), V6 (challenge share text — share copy).
 - Every (c) item (founder call): F3–F7, F9, F12, V3–V5, Stats 1/2/6, Leaderboard 3/4/6, Friends 6/7, Settings 2, Onboarding 2.
 - Small (a) LOW items not reached in the time box: Android header 3 dp crown room (`AppHeader.kt:138`), Leaderboard 5 (web Records Friends "OF N FRIENDS"), Stats 3/4/5 (Sweep-streak tile, best-moment split, "NO GAMES YET"), V2 (forfeit result line), Friends 5 (nudge singular), Settings 1 (Linked sign-ins copy), Onboarding 3 (tour last button), the Friends-card collapsed a11y label ×3, iOS inline presence dot, Android presence line / Keep-Resign pill sizes, web friend-avatar CandyBadge.
+
+### Fixed 10-16 (second pass: parity + medium findings, founder-approved; nothing committed)
+
+Verified: web `tsc --noEmit` clean + `vitest run` 190 files / 1918 tests green; iOS Debug `xcodebuild` for the simulator succeeded; Android `:app:compileDebugKotlin` clean. No core change, so no `swift test`.
+
+- **F2** iOS ProperNoundle rank badge only after the daily (`ProperNoundleView.swift`, `if vm.isDaily`).
+- **A11y 2** iOS honors `podium_burst` (`FinishPages.swift`): the #1 glow, sparkles and crown drop run only when the flag is live; off = a still crown, no glow (Android / web). The static share-card glow is unchanged.
+- **Onboarding 3** tour replay last button is "Got it" on iOS (checkmark, just closes, no Classic launch; `OnboardingView.swift`, `SettingsView.swift`). Android "Got it!" became "Got it". First-run signed-out last card: Android "Make my profile" became "Next" (iOS + web majority) in `Onboarding.kt`.
+- **Stats 1** Today-card header (not finished) ×3: "Today · Oct 16" left, "3/8 PLAYED" right. iOS unchanged; Android `TodayCard.kt` ("Today · Oct 16", "3/8 PLAYED", still caps in its label style); web `today-card.tsx` (two bubble lines, was "Today · 3 of 8 done").
+- **Leaderboard 4** empty states ×3 (title / line; titles keep each platform's casing):
+  - Sweep today (Leaderboard + Records): "No sweeps yet" / "Nobody has swept today. Be the first!"
+  - Game board today (Leaderboard + Records): "No results yet" / "Nobody has finished today. Be the first!"
+  - Friends board, Leaderboard: "Your board is empty" / the shared add-friend mascot line
+  - Records friends board: "Friends are still asleep" / "None of your friends have played yet today."
+  - Records all-time Sweep: "No sweeps yet" / "Finish every daily in one day and you top this board. Be the first!"
+  - Records all-time records: "No records yet" / "Every daily you finish can set one. The board starts with you."
+  Changed on Android (`LeaderboardScreen.kt`, `RecordsScreen.kt`) and web (`daily/page.tsx`, `records/page.tsx`); iOS already had these.
+- **F4** web Spyglass strip stat is "N/M found" (`spyglass-game.tsx`).
+- **F10** web "All 8 dailies done. Sweep complete!" (`next-daily-cta.tsx`).
+- **F11** strip headline labels aligned to the iOS set: "SOLVED IN 4" / "ALL 4 SOLVED" / "3 OF 4 SOLVED" / "SO CLOSE". Web `stripHeadlineLabel` in `finished-kit.tsx` (puzzles read "Solved!"); Android `stripHeadline` in `FinishedScreen.kt` (puzzles read "SOLVED!", was "SOLVED IN 2 MISTAKES").
+- **F8** web word card reads "The word" after Unlimited, "Today's word" on the daily (`post-game-summary.tsx`, `practice-game.tsx`). iOS already right. **Android not done**: `PostGameScreen.kt:728` is off limits this pass; it still always says "TODAY'S WORD".
+- iOS multi-board guesses chip is purple after the "N/M solved" chip (`FinishedScreenKit.swift`).
+- **Leaderboard 3** "Play now" on an empty, unplayed game board: iOS (`LeaderboardTab.swift`, posts the Play-next-daily handoff) and web (`daily/page.tsx`, same gate/limit path as the strip's Play button), like Android.

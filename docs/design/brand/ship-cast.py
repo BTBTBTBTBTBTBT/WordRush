@@ -33,7 +33,7 @@ for k, cid in enumerate(IDS):
     out.alpha_composite(im, ((SIZE - im.width) // 2, SIZE - int(SIZE * 0.04) - im.height))
     out.save(os.path.join(APP, f'{cid}.png'), optimize=True)
     out.save(os.path.join(web, f'{cid}.png'), optimize=True)
-    out.save(os.path.join(android, f'mascot_{cid}.png'), optimize=True)
+    out.save(os.path.join(android, f'mascot_{cid}.webp'), 'WEBP', quality=92, method=6)   # WebP, never PNG (scripts/android-art-optimize.py)
     iset = os.path.join(ios, f'mascot-{cid}.imageset')
     os.makedirs(iset, exist_ok=True)
     out.save(os.path.join(iset, f'mascot-{cid}.png'), optimize=True)
@@ -43,3 +43,7 @@ for k, cid in enumerate(IDS):
     sheet.alpha_composite(out.resize((SIZE // 2, SIZE // 2), Image.LANCZOS), (c * SIZE // 2, r * SIZE // 2))
 sheet.convert('RGB').save(os.path.join(HERE, 'cast', 'contact-sheet.png'))
 print('shipped', len(IDS))
+
+# App-size policy (docs/review/app-size/REPORT.md): every imageset this script (re)wrote gets its compression-type back.
+import subprocess as _sp
+_sp.run(['python3', os.path.join(REPO, 'scripts', 'ios-asset-compression.py')], check=True)

@@ -94,6 +94,8 @@ order, so each season is ready ≥ 3 weeks before its window opens.
 - [ ] Settings → Theme has the "Seasonal — <season>" row (preset on in the window; picking Default/Dark/Ocean/
       Forest opts out for this season only; season end returns everyone to their previous theme)
 - [ ] Mascot-maker seasonal items (step 8), voices/moods if any seasonal voice
+- [ ] Songs + achievements (step 9): the season's public-domain tune batch for the musical cast + one secret achievement
+      per tune + the season's moment badge, wired ×3 with fixtures; PD verified, notation checked against a score
 - [ ] Smoothness gate ON vs OFF on every listed screen
 - [ ] Seasonal app icon (same icon, season palette) in the season's build; normal icon restored in the next build
 - [ ] Seasonal store listing: screenshots + captions of the current pages/widgets, store text; reverted to normal
@@ -138,6 +140,22 @@ One registry drives all three apps; a new season is ART + DATA, no code. Hallowe
      (`AVATAR_HEADS` / `AVATAR_NECKS` / `AVATAR_WRAPS` / `AVATAR_HELD` / `AVATAR_PETS`; ids are global across `acc:`
      parts) and the Swift (`AvatarConfig.swift`) + Kotlin (`AvatarConfig.kt`) twins, plus web labels (`avatar-render.ts`
      LABELS).
+9. **Songs + achievements (founder 10-16).** Every season gets a batch of public-domain tunes for the musical cast
+   (long-press a cast puppet) that only count in its window, plus achievements, in Halloween's style (item 49):
+   - Tunes: verify PD (melody and words), check the letter notation against a score (never from memory), realize it on
+     the cast's white keys C4–E5 by interval shape, then add `{ id, name, achievement, notes, song?, beats? }` to
+     `<SEASON>_MELODIES` in `packages/core/src/musical-cast.ts` and register it in `SEASON_MELODIES[<id>]`; unchecked
+     tunes wait in `<SEASON>_TUNES_TODO`. Same rows in Swift (`MusicalCast.swift` `<season>Melodies` /
+     `seasonMelodies`) and Kotlin (`MusicalCast.kt`), then regenerate the parity fixtures (the generator's
+     `renderMusicalCastFixtures` gets a `<season>` section like `halloween` / `thanksgiving`).
+   - Achievements: one `secret(...)` entry per tune (listed only once unlocked; add the key to Swift
+     `AchievementRules.secretKeys`) and one seasonal moment badge `e('<x>', …, 'seasonal', 'calendar')` awarded by
+     `momentAchievements` on `season === '<id>'` (web server + iOS `AchievementService`; Android gets it from the
+     server). `currentSeason` is the gate, so `ready: false` keeps the public from earning it early; the admin preview
+     passes the id. Then `WRITE_CATALOG_SNAPSHOT=1 npx vitest run lib/achievements-catalog-snapshot.test.ts` in
+     apps/web so the native bundles carry the new catalog.
+   - Art: `art-ach-<key>` badges (ChatGPT prompts in the season's `NEEDS-BADGES.md`); missing art falls back to the
+     category icon. Optional voicing + intro jingle via the registry `sounds` slot (samples must ship).
    - Ship: `python3 docs/design/brand/avatar/integration/ship-seasonal.py` bakes every non-hat item PER BODY through the
      integration rig (front/back split, contact shadow, hand-over, face + letter guards, fit check: a body that fails
      gets no pieces), writes `season: "<id>"` on each item in the three avatar-parts.json copies, the tile icons, the

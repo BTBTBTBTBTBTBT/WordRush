@@ -1,0 +1,135 @@
+{
+  "_doc": "Thanksgiving preview ship list (same format as halloween/ship.json; seasons/README.md 'How to add a season'). ship-art.py --seasons ships it: titles -> art-title-thanksgiving-<key> (width 1080), walls -> art-wall-thanksgiving-<page>[-wide] (v2 set, opaque, JPEG on iOS), cast -> art-thanksgiving-<id> (320 square; o2 = cast/o2.png, never o2-v2; the nine -alt1 duplicates are NOT shipped), props -> art-thanksgiving-prop-<name> (256 square; all ten ship, the registry props slot lists them and the day-title pair rotates through them), extras -> the name given (scene fit = the base scene size, stage = full-bleed original, art-dress-tag-thanksgiving = the Dressing Room season tag at 444 wide, art-btn-thanksgiving-<name> = six blank candy button skins at 640 wide, no consumer slot yet). The achievement badges art-ach-harvest_feast / art-ach-tune_simple_gifts ship from badges/ach (ACH_DIR) like art-ach-spooky_season. The registry stays ready:false until the founder approves. Not shipped (no app slot yet, same as Halloween's): dailies-alt1, happy-thanksgiving(-alt1), label-give-thanks, label-gobble-gobble, thanksgiving, page-unlimited titles; badge-gobble, badge-harvest-streak, streak-flame-leaf, streak-shield-pie, tile-theme-pie, podium-thanksgiving, home-host-o1/w (docs/review/thanksgiving-extras-1016.md). Home banner = scenes/compose-thanksgiving-banner.py (cast + props composite; the Home stage card only draws with a season banner). The dress tab icon is the pumpkin-pie prop (the drawn extras/dress-tab-thanksgiving.png is an empty banner plaque, not an icon). 10-16 TIME OF DAY: walls ship per time as art-wall-<id>-<page>-<morning|day|evening>[-wide] from walls/wall-<page>-<tod>[-wide].webp (make-thanksgiving-walls-tod.py; night = the base wall); the stage ships per time from ../time-of-day/stage/chatgpt/ (night = art-celebration-stage-thanksgiving).",
+  "titles": {
+    "dailies": "titles/dailies.png",
+    "puzzles": "titles/puzzles.png",
+    "friends": "titles/page-friends.png",
+    "leaderboard": "titles/page-leaderboard.png",
+    "stats": "titles/page-stats.png",
+    "wotd": "titles/page-wordoftheday.png",
+    "practice": "titles/game-classic.png",
+    "six": "titles/game-classicsix.png",
+    "seven": "titles/game-classicseven.png",
+    "quordle": "titles/game-quadword.png",
+    "octordle": "titles/game-octoword.png",
+    "sequence": "titles/game-succession.png",
+    "rescue": "titles/game-deliverance.png",
+    "gauntlet": "titles/game-gauntlet.png",
+    "propernoundle": "titles/game-propernoundle.png",
+    "sudoku": "titles/game-sudocious.png",
+    "scramble": "titles/game-muddle.png",
+    "hub": "titles/game-hubbub.png",
+    "crossword": "titles/game-crosswordocious.png",
+    "groups": "titles/game-kindred.png",
+    "ladder": "titles/game-letterladder.png",
+    "cryptogram": "titles/game-codebreaker.png",
+    "wordsearch": "titles/game-spyglass.png",
+    "regions": "titles/game-starsweep.png",
+    "vs": "titles/game-vs.png",
+    "pocket-rps": "titles/game-rockpaperscissors.png",
+    "pocket-ttt": "titles/game-tictactile.png",
+    "pocket-coin": "titles/game-callit.png",
+    "pocket-pass": "titles/game-passthepuzzle.png",
+    "pocket-ghost": "titles/game-ghost.png",
+    "pocket-chain": "titles/game-wordchain.png"
+  },
+  "walls": {
+    "home": "walls/wall-home",
+    "leaderboard": "walls/wall-leaderboard",
+    "stats": "walls/wall-stats",
+    "friends": "walls/wall-friends",
+    "games": "walls/wall-games"
+  },
+  "cast": {
+    "w": "cast/w.png",
+    "o1": "cast/o1.png",
+    "r": "cast/r.png",
+    "d": "cast/d.png",
+    "o2": "cast/o2.png",
+    "c": "cast/c.png",
+    "i": "cast/i.png",
+    "o3": "cast/o3.png",
+    "u": "cast/u.png",
+    "s": "cast/s.png"
+  },
+  "props": {
+    "turkey-platter": "props/turkey-platter.png",
+    "pumpkin-pie": "props/pumpkin-pie.png",
+    "leaf-maple": "props/leaf-maple.png",
+    "acorn": "props/acorn.png",
+    "apple": "props/apple.png",
+    "corn": "props/corn.png",
+    "cornucopia": "props/cornucopia.png",
+    "leaf-oak": "props/leaf-oak.png",
+    "pie-slice": "props/pie-slice.png",
+    "wheat": "props/wheat.png"
+  },
+  "extras": {
+    "celebrate-t-scene-flawless-star": {
+      "src": "extras/scene-flawless-star.png",
+      "fit": [
+        796,
+        914
+      ]
+    },
+    "celebrate-t-scene-sweep-broom": {
+      "src": "extras/scene-sweep-broom.png",
+      "fit": [
+        900,
+        807
+      ]
+    },
+    "art-celebration-stage-thanksgiving": {
+      "src": "../time-of-day/stage/chatgpt/celebration-stage-thanksgiving-night.png",
+      "full": true
+    },
+    "art-dress-tab-thanksgiving": {
+      "src": "props/pumpkin-pie.png",
+      "fit": [
+        144,
+        148
+      ]
+    },
+    "art-dress-tag-thanksgiving": {
+      "src": "extras/dress-tag-thanksgiving.png",
+      "width": 444
+    },
+    "art-btn-thanksgiving-cranberry": {
+      "src": "extras/btn-cranberry.png",
+      "width": 640
+    },
+    "art-btn-thanksgiving-maple": {
+      "src": "extras/btn-maple.png",
+      "width": 640
+    },
+    "art-btn-thanksgiving-pumpkinpie": {
+      "src": "extras/btn-pumpkinpie.png",
+      "width": 640
+    },
+    "art-btn-thanksgiving-apple-cider": {
+      "src": "extras/btn-apple-cider.png",
+      "width": 640
+    },
+    "art-btn-thanksgiving-acorn": {
+      "src": "extras/btn-acorn.png",
+      "width": 640
+    },
+    "art-btn-thanksgiving-harvest-gold": {
+      "src": "extras/btn-harvest-gold.png",
+      "width": 640
+    },
+    "art-celebration-stage-thanksgiving-morning": {
+      "src": "../time-of-day/stage/chatgpt/celebration-stage-thanksgiving-morning.png",
+      "full": true
+    },
+    "art-celebration-stage-thanksgiving-day": {
+      "src": "../time-of-day/stage/chatgpt/celebration-stage-thanksgiving-day.png",
+      "full": true
+    },
+    "art-celebration-stage-thanksgiving-evening": {
+      "src": "../time-of-day/stage/chatgpt/celebration-stage-thanksgiving-evening.png",
+      "full": true
+    }
+  },
+  "banner": "../../scenes/banner-thanksgiving.png"
+}

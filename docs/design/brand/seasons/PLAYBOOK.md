@@ -16,7 +16,7 @@ season ends with a "Lessons" entry (bottom).
 | When | What |
 |---|---|
 | D − 6 weeks | Founder picks the window (one source of truth: core `SEASON_WINDOWS`; social plan + README must match). Inventory diff vs the last season (§3). Kick off art (§4). |
-| D − 5 weeks | Art round 1 done → quality review vs the last season (§5) → redo round. Walls drawn in code. |
+| D − 5 weeks | Art round 1 done → quality review vs the last season (§5) → redo round. Walls drawn in code. **Songs + achievements** (§3 System): pick the season's public-domain tunes, verify each one's PD status, check its notation against a score, wire the batch ×3 with its secret achievements + the season's moment badge; badge art prompts queued. |
 | D − 4 weeks | Code: registry entry (`ready: false`), palette + readability gate, any new slot generalized (§6). Art shipped into the bundles for the ADMIN preview only. |
 | D − 3½ weeks | Founder + JP review in Settings → admin Season preview on iPhone, iPad, Android, web; feedback → fixes. |
 | D − 3 weeks | Approve in the Art Library. Season build cut: TestFlight + Android internal → founder test. |
@@ -54,7 +54,10 @@ looks from the same scene — MORNING (sunrise), DAY (blue sky), EVENING (golden
 from the player's local clock (proposed: morning 5–10, day 10–16, evening 16–19, night 19–5) with a slow crossfade;
 a static image swap only (no per-frame cost). Daytime skies are bright, so the readability gate must pass for each
 time (light cards or a soft scrim in daytime — decided from the mockup in `seasons/time-of-day/`). The code-drawn
-wall engine takes a time-of-day parameter; never fork the script per time.
+wall engine takes a time-of-day parameter; never fork the script per time. The Home STAGE card (and any full-bleed art window that sits on the wall) gets four CUSTOM time-of-day designs made in ChatGPT from the night original (same camera + layout, re-lit and re-designed for sunrise / daylight / golden hour — a code color-grade was rejected as 'faded copies', founder 10-16), then ALIGNED with `seasons/time-of-day/stage/align-stage.py` so the three spotlight pools land on the night version's pixels (≤ 6 px) and the animated cast still stands in them. Flyers (bats, geese …) are never painted into a wall: they are the living-wallpaper ambient layer, animated like the Halloween bats. **Every page, every window, every button:**
+tinted per time of day from the same sky (the registry `surfaces` palette gets a per-time override, crossfading with
+the wall); readability gate per time; no surface or button color that clashes with its wall. The pages must read as
+one finished product at every hour (founder 10-16: "the windows on all the pages are clashing").
 **Walls (code-drawn, full resolution):** home, leaderboard, stats, friends, games — each phone + `-wide`. Same scene
 quality as Halloween (sky, moon/sun + glow, flying silhouettes, horizon silhouette with a per-screen focal), calm
 center/bottom, a lighter band where page titles sit.
@@ -68,6 +71,21 @@ tab + shelf tag, props for day titles, mascot-maker pieces (optional, README ste
 **System:** registry entry + window, surfaces palette (readability gate), theme row "Seasonal — <season>", ambient
 animation (optional), widgets (iOS + Android, every size), season icon, splash color, store screenshots + text,
 sounds (optional).
+**Songs + achievements (founder 10-16: "a natural part of the seasonality roadmap"):** a batch of public-domain tunes for
+the musical cast that only count in the window (core `musical-cast.ts` SEASON_MELODIES[<season>], Swift
+`MusicalCast.seasonMelodies`, Kotlin `MusicalCast.SEASON_MELODIES`, parity fixtures), one SECRET achievement per tune
+(`secret(...)` in `achievement-rules.ts`, listed only once unlocked) and one seasonal moment badge ("Finish a daily
+during the <season> season", `momentAchievements`, gated by `currentSeason` so `ready` is respected; the admin preview
+passes the season id). Halloween = 7 tunes + Spooky Season; Thanksgiving = Simple Gifts wired + 6 in
+THANKSGIVING_TUNES_TODO + Harvest Feast (`thanksgiving/NEEDS-BADGES.md`); winter = `winter-holidays/SONGS-ACHIEVEMENTS.md`.
+Quality bar: (1) PD verified for the melody AND any words shown (composer/lyricist dates; 1927-era songs like "I Have a
+Little Dreidel" are NOT safe), never a recording or a copyrighted arrangement; (2) every note on the cast's white keys
+C4–E5 (realize by interval shape; a natural may stand in for a sharp as in Halloween's G-for-G#), notation checked
+against a score, never from memory (unchecked tunes wait in the season's TUNES_TODO list, which the test pins); (3) no
+tune's shape is a prefix of or contained in another's (musical-cast.test.ts); (4) each achievement is reachable inside
+the window and its badge art (`art-ach-<key>`) falls back to the category icon until it ships; (5) the copyrighted
+no-go list for the season is named in the test. Optional: a seasonal voicing (`note-<x>-<id>` samples + registry
+`sounds.note` + SEASON_NOTE_PREFIX ×3; iOS checks every sample ships) and an intro jingle the founder hears first.
 **Share cards:** automatic — the night share style uses the season's title art + cast; render every card kind in the
 season AND in the standard look and archive them in the Art Library (§8).
 **Social:** posts in the season's palette, holiday greeting posts (7 AM, mascot image), reveal post tied to the ship date.
@@ -87,6 +105,13 @@ season AND in the standard look and archive them in the Art Library (§8).
    iOS art ships with lossy (HEVC) asset compression (`compression-type: lossy`) — visually identical, ~70% smaller;
    only the few fully-opaque backdrops stay lossless (the check script lists them).
 6. Wallpapers are code (never upscale a ChatGPT image into a full-screen wall).
+7. **Every new image, from day one (founder 10-16):** (a) anything that sits on a wall — walls, the Home stage card, any
+   full-bleed window art — is made in all FOUR times of day (morning / day / evening / night) in the same round, never
+   added later; full-bleed art = custom ChatGPT designs per time from the night original, aligned with
+   `time-of-day/stage/align-stage.py` (never a code recolor); (b) every image ships through the repo ship scripts
+   (`ship-art.py`, `ship-cast.py`, `ship-seasonal.py`), which re-apply the app-size compression policy
+   (`scripts/ios-asset-compression.py`; the asset-size guard test fails CI if an imageset is missing it); (c) flyers and
+   anything that moves are ambient layers, never painted into a wall.
 
 ## 5. The quality bar (review before anyone sees it)
 
@@ -98,7 +123,9 @@ season AND in the standard look and archive them in the Art Library (§8).
 - **Titles:** Halloween proportions (~830×200 for long titles, stacked lines when long — never thin wide strips that ship
   30% smaller), seasonal garnish on every title, one consistent rim color that stays readable on the season's walls
   (composite them on the walls to check).
-- **Readability gate** for the palette (WCAG AA vs the real wall pixels).
+- **Readability gate** for the palette (WCAG AA vs the real wall pixels), **per time of day**: every page, every
+  window, every button is tinted from that time's sky; no surface or button color that clashes with its wall; the
+  gate is measured on the composited card-over-wall pixels for morning, day, evening and night.
 - **Smoothness:** the perf gate on/off for the season (no new per-frame work; prewarm new art).
 
 ## 6. Code steps (see README "How to add a season")

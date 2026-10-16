@@ -33,5 +33,33 @@
     "friends": "walls/wall-friends",
     "games": "walls/wall-games"
   },
-  "banner": "../../scenes/banner-halloween.png"
+  "banner": "../../scenes/banner-halloween.png",
+  "extras": {
+    "celebrate-h-scene-flawless-star": {
+      "src": "extras/scene-flawless-star.png",
+      "fit": [
+        796,
+        914
+      ]
+    },
+    "celebrate-h-scene-sweep-broom": {
+      "src": "extras/scene-sweep-broom.png",
+      "fit": [
+        900,
+        807
+      ]
+    },
+    "art-celebration-stage-halloween-morning": {
+      "src": "../time-of-day/stage/chatgpt-halloween/celebration-stage-halloween-morning.png",
+      "full": true
+    },
+    "art-celebration-stage-halloween-day": {
+      "src": "../time-of-day/stage/chatgpt-halloween/celebration-stage-halloween-day.png",
+      "full": true
+    },
+    "art-celebration-stage-halloween-evening": {
+      "src": "../time-of-day/stage/chatgpt-halloween/celebration-stage-halloween-evening.png",
+      "full": true
+    }
+  }
 }

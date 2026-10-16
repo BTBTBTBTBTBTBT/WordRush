@@ -43,6 +43,33 @@ ACCENT = {
 }
 HERO = {'home': 'barn', 'games': 'bales', 'stats': 'tree', 'friends': 'picnic', 'leaderboard': 'scarecrow'}
 
+# time of day (founder 10-16: "can we do different wallpapers to match the time of day?"). 'night' is the shipped
+# v2 look and stays byte-identical; the others keep the SAME scene and swap only sky, light source, clouds, haze,
+# silhouette ink, field color and whether the windows glow. See ../../time-of-day/NOTES.md for the schedule.
+TOD = {
+    'morning': dict(
+        sky=[(0, (96, 126, 178)), (0.38, (158, 176, 210)), (0.62, (226, 194, 192)), (0.80, (250, 210, 172)), (1, (252, 200, 150))],
+        horizon=((255, 220, 176), 0.72), horizon2=((255, 244, 220), 0.5),
+        sun=dict(pos=(0.30, -0.055), r=84, col=(255, 232, 168), core=(255, 250, 214), halo1=((255, 178, 92), 0.62, 4.8), halo2=((255, 214, 140), 0.72, 2.1), haze=0.55),
+        clouds='wisps', stars=0, geese=5,
+        ink=(66, 44, 60), hill_far=(188, 160, 142), hill_near=(156, 122, 96),
+        windows=0.0, mist=((244, 230, 222), 1.6), mist2=((246, 232, 224), 0.22), vignette=0.10),
+    'day': dict(
+        sky=[(0, (56, 122, 214)), (0.45, (118, 176, 236)), (0.75, (184, 216, 244)), (1, (214, 230, 242))],
+        horizon=((236, 236, 224), 0.5), horizon2=((255, 250, 232), 0.35),
+        sun=dict(pos=(0.74, 0.072), r=82, col=(255, 252, 236), halo1=((255, 246, 200), 0.5, 4.0), halo2=((255, 255, 240), 0.7, 1.8), haze=0.0),
+        clouds='cumulus', stars=0, geese=7,
+        ink=(58, 40, 36), hill_far=(190, 160, 84), hill_near=(160, 130, 58),
+        windows=0.0, mist=((240, 236, 220), 0.5), mist2=((238, 230, 210), 0.08), vignette=0.10),
+    'evening': dict(
+        sky=[(0, (50, 26, 66)), (0.36, (122, 56, 82)), (0.66, (214, 112, 70)), (0.86, (248, 164, 84)), (1, (252, 196, 116))],
+        horizon=((255, 176, 72), 0.85), horizon2=((255, 226, 150), 0.6),
+        sun=dict(pos=(0.74, 0.072), r=104, col=(255, 206, 128), halo1=((255, 138, 56), 0.5, 4.4), halo2=((255, 196, 116), 0.6, 1.9), haze=0.0),
+        clouds='streaks', stars=0.35, geese=7,
+        ink=(30, 12, 20), hill_far=(126, 66, 50), hill_near=(92, 44, 40),
+        windows=0.75, mist=((240, 190, 140), 1.0), mist2=((224, 166, 124), 0.10), vignette=0.16),
+}
+
 
 # ---------- helpers (same engine as the Halloween v2 script) ----------
 def seed_of(*parts):
@@ -148,6 +175,66 @@ def moon_disc(base, cx, cy, r, col, shade, rnd):
         ca = (np.clip(1 - cd / cr, 0, 1) ** 0.6 * 0.22).astype(np.float32)[..., None]
         disc = disc * (1 - ca) + np.array(shade, np.float32) * ca
     return over(base, disc, a)
+
+
+def sun_disc(base, cx, cy, r, col, core=None):
+    """a plain sun disc with a soft limb (no craters); 'core' = a brighter center so a low hazy sun reads as a
+    solid ball instead of a ring (10-16 morning fix)"""
+    h, w = base.shape[:2]
+    yy, xx = np.ogrid[0:h, 0:w]
+    dist = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
+    a = np.clip((r + 1.5 - dist) / 3, 0, 1).astype(np.float32)
+    if core is None:
+        return over(base, col, a)
+    t = np.clip(dist / r, 0, 1).astype(np.float32)[..., None] ** 1.6
+    disc = np.array(core, np.float32) * (1 - t) + np.array(col, np.float32) * t
+    return base * (1 - a[..., None]) + disc * a[..., None]
+
+
+def clouds(base, w, h, s, kind, rnd, portrait):
+    """soft daytime clouds in the top ~55%: 'cumulus' (puffy, white), 'wisps' (thin, pink-lit), 'streaks' (amber)"""
+    lay = Image.new('L', (w, h), 0)
+    ld = ImageDraw.Draw(lay)
+    shade = Image.new('L', (w, h), 0)
+    sd = ImageDraw.Draw(shade)
+    if kind == 'cumulus':
+        spots = [(0.18, 0.15, 1.0), (0.82, 0.24, 0.8), (0.40, 0.33, 0.7), (0.70, 0.47, 0.6), (0.12, 0.52, 0.5)] if portrait else \
+                [(0.14, 0.16, 1.0), (0.44, 0.10, 0.8), (0.30, 0.40, 0.6), (0.72, 0.46, 0.6)]
+        for fx, fy, k in spots:
+            cx, cy, cw = fx * w, fy * h, 260 * s * k
+            for i in range(7):
+                ox = rnd.uniform(-0.55, 0.55) * cw
+                rx = cw * rnd.uniform(0.22, 0.36)
+                ry = rx * rnd.uniform(0.55, 0.8)
+                oy = -ry * rnd.uniform(0.1, 0.6) + abs(ox) * 0.2
+                ld.ellipse([cx + ox - rx, cy + oy - ry, cx + ox + rx, cy + oy + ry * 0.9], fill=255)
+                sd.ellipse([cx + ox - rx, cy + oy + ry * 0.2, cx + ox + rx, cy + oy + ry * 1.05], fill=255)
+        soft = np.asarray(lay.filter(ImageFilter.GaussianBlur(5 * s))).astype(np.float32) / 255
+        under = np.asarray(shade.filter(ImageFilter.GaussianBlur(12 * s))).astype(np.float32) / 255
+        base = over(base, (206, 216, 232), np.clip(under, 0, 1) * 0.55)
+        base = over(base, (255, 255, 255), soft * 0.92)
+    elif kind == 'wisps':
+        for fx, fy, ln in ((0.22, 0.30, 0.9), (0.62, 0.40, 0.7), (0.38, 0.52, 0.6), (0.78, 0.58, 0.5)):
+            cx, cy, cw = fx * w, fy * h, 520 * s * ln
+            for i in range(5):
+                ox = (i - 2) * cw * 0.22 + rnd.uniform(-20, 20) * s
+                rx, ry = cw * rnd.uniform(0.18, 0.3), (10 + 6 * rnd.random()) * s
+                ld.ellipse([cx + ox - rx, cy - ry + i * 2 * s, cx + ox + rx, cy + ry + i * 2 * s], fill=255)
+        soft = np.asarray(lay.filter(ImageFilter.GaussianBlur(14 * s))).astype(np.float32) / 255
+        base = over(base, (255, 226, 214), np.clip(soft * 1.3, 0, 1) * 0.7)
+    else:  # streaks
+        for fx, fy, ln in ((0.30, 0.44, 1.0), (0.66, 0.54, 0.8), (0.22, 0.62, 0.7)):
+            cx, cy, cw = fx * w, fy * h, 640 * s * ln
+            for i in range(4):
+                ox = (i - 1.5) * cw * 0.24
+                rx, ry = cw * rnd.uniform(0.2, 0.32), (8 + 7 * rnd.random()) * s
+                ld.ellipse([cx + ox - rx, cy - ry, cx + ox + rx, cy + ry], fill=255)
+                sd.ellipse([cx + ox - rx * 0.9, cy + ry * 0.3, cx + ox + rx * 0.9, cy + ry * 1.3], fill=255)
+        soft = np.asarray(lay.filter(ImageFilter.GaussianBlur(10 * s))).astype(np.float32) / 255
+        under = np.asarray(shade.filter(ImageFilter.GaussianBlur(14 * s))).astype(np.float32) / 255
+        base = over(base, (120, 50, 70), np.clip(under, 0, 1) * 0.35)
+        base = over(base, (255, 196, 140), np.clip(soft * 1.2, 0, 1) * 0.75)
+    return base
 
 
 def hill_y(w, h, base, amp, seed, phase=0.0):
@@ -366,44 +453,83 @@ def picnic_table(d, gd, x, y, s):
 
 
 # ---------- the wall ----------
-def harvest(size, page):
+def harvest(size, page, tod='night', flyers=False):
+    """flyers: bake the V of geese into the sky. Founder 10-16: the geese FLY now (the living wallpaper's `flock`,
+    sprite ambient-goose from make-goose-sprite.py, same goose() drawing), so the shipped walls leave the sky empty;
+    True only for the static mockups. Off or on, every other pixel is byte-identical (the geese are the last thing
+    drawn from the random stream)."""
     w, h = size
     seed = seed_of('harvest', page, w)
     rnd = random.Random(seed)
     portrait = h > w
     s = min(w, h) / 1290 * (1.0 if portrait else 1.25)
     acc = ACCENT[page]
-    # dusk sky: deep plum up top, wine in the middle, burnt orange at the horizon (Halloween: violet -> plum)
-    base = vgrad(h, w, [(0, (14, 7, 26)), (0.45, (38, 14, 44)), (0.75, (78, 28, 44)), (1, (112, 42, 34))])
+    T = TOD.get(tod)      # None = night (the shipped v2 look)
     horizon = h * (0.815 if portrait else 0.80)
-    base = glow(base, w * 0.5, horizon, w * 0.9, h * (0.16 if portrait else 0.30), acc, 0.85)
-    base = glow(base, w * 0.5, horizon + h * 0.01, w * 0.5, h * (0.06 if portrait else 0.12), (255, 206, 120), 0.55)
-    # title zone (top ~18-28%): a soft dusk-amber band so the brown-rimmed Thanksgiving lettering keeps its edge
-    # against the plum sky (art review 10-16). Wide, soft, no visible edge; the center stays calm.
-    if portrait:
-        base = glow(base, w * 0.5, h * 0.21, w * 0.80, h * 0.105, (184, 96, 70), 0.38, 1.3)
+    if T is None:
+        # dusk sky: deep plum up top, wine in the middle, burnt orange at the horizon (Halloween: violet -> plum)
+        base = vgrad(h, w, [(0, (14, 7, 26)), (0.45, (38, 14, 44)), (0.75, (78, 28, 44)), (1, (112, 42, 34))])
+        base = glow(base, w * 0.5, horizon, w * 0.9, h * (0.16 if portrait else 0.30), acc, 0.85)
+        base = glow(base, w * 0.5, horizon + h * 0.01, w * 0.5, h * (0.06 if portrait else 0.12), (255, 206, 120), 0.55)
+        # title zone (top ~18-28%): a soft dusk-amber band so the brown-rimmed Thanksgiving lettering keeps its edge
+        # against the plum sky (art review 10-16). Wide, soft, no visible edge; the center stays calm.
+        if portrait:
+            base = glow(base, w * 0.5, h * 0.21, w * 0.80, h * 0.105, (184, 96, 70), 0.38, 1.3)
+        else:
+            base = glow(base, w * 0.5, h * 0.16, w * 0.85, h * 0.14, (184, 96, 70), 0.33, 1.3)
     else:
-        base = glow(base, w * 0.5, h * 0.16, w * 0.85, h * 0.14, (184, 96, 70), 0.33, 1.3)
-    # soft stars, top half only, fewer than Halloween's
+        base = vgrad(h, w, T['sky'])
+        base = glow(base, w * 0.5, horizon, w * 0.9, h * (0.16 if portrait else 0.30), *T['horizon'])
+        base = glow(base, w * 0.5, horizon + h * 0.01, w * 0.5, h * (0.06 if portrait else 0.12), *T['horizon2'])
+    # soft stars, top half only, fewer than Halloween's (daytime: none; evening: a few faint ones up top)
+    star_k = 1.0 if T is None else T['stars']
     st = Image.new('L', (w, h), 0)
     sd = ImageDraw.Draw(st)
     for _ in range(int(w * h / 14000)):
         x, y = rnd.uniform(0, w), h * rnd.uniform(0, 0.60) ** 1.5
         r = rnd.choice([1.3, 1.6, 2.0, 2.4])
-        sd.ellipse([x - r, y - r, x + r, y + r], fill=int(rnd.uniform(50, 190) * (1 - y / (h * 0.66))))
-    base = over(base, (255, 240, 215), np.asarray(st.filter(ImageFilter.GaussianBlur(0.9))).astype(np.float32) / 255)
-    # big warm harvest moon, top right, with a wide amber halo
-    mx, my, mr = (w * 0.74, h * 0.072, 122 * s) if portrait else (w * 0.85, h * 0.17, 124 * s)
-    base = glow(base, mx, my, mr * 4.4, mr * 4.4, (255, 128, 50), 0.46, 1.2)
-    base = glow(base, mx, my, mr * 1.9, mr * 1.9, (255, 190, 110), 0.58, 1.4)
-    base = moon_disc(base, mx, my, mr, (255, 200, 118), (228, 136, 70), rnd)
-    # skyline silhouette: two field hills
+        sd.ellipse([x - r, y - r, x + r, y + r], fill=int(rnd.uniform(50, 190) * (1 - y / (h * 0.66)) * star_k * (1 if star_k == 1 else max(0, 1 - y / (h * 0.25)))))
+    if star_k:
+        base = over(base, (255, 240, 215), np.asarray(st.filter(ImageFilter.GaussianBlur(0.9))).astype(np.float32) / 255)
+    if T is None:
+        # big warm harvest moon, top right, with a wide amber halo
+        mx, my, mr = (w * 0.74, h * 0.072, 122 * s) if portrait else (w * 0.85, h * 0.17, 124 * s)
+        base = glow(base, mx, my, mr * 4.4, mr * 4.4, (255, 128, 50), 0.46, 1.2)
+        base = glow(base, mx, my, mr * 1.9, mr * 1.9, (255, 190, 110), 0.58, 1.4)
+        base = moon_disc(base, mx, my, mr, (255, 200, 118), (228, 136, 70), rnd)
+    else:
+        # the sun: morning low over the left field (hazy), day high where the moon sits, evening low at the right
+        sun = T['sun']
+        fx, fy = sun['pos']
+        if not portrait and fy < 0:
+            fx = 0.22
+        mx, my, mr = w * fx, (horizon + fy * h if fy < 0 else h * fy), sun['r'] * s
+        if fy >= 0 and not portrait:
+            mx, my = w * 0.85, h * 0.17
+        c1, k1, p1 = sun['halo1']
+        c2, k2, p2 = sun['halo2']
+        if sun['haze']:   # low sun: a milky haze band across the horizon, laid down BEFORE the sun so the disc stays
+            base = glow(base, w * 0.5, horizon - h * 0.015, w * 0.9, h * 0.05, (250, 236, 226), sun['haze'], 1.0)   # a solid ball
+        base = glow(base, mx, my, mr * p1, mr * p1, c1, k1, 1.2)
+        base = glow(base, mx, my, mr * p2, mr * p2, c2, k2, 1.4)
+        base = sun_disc(base, mx, my, mr, sun['col'], sun.get('core'))
+        base = clouds(base, w, h, s, T['clouds'], random.Random(seed + 7), portrait)
+        for _ in range(7):   # keep the rnd stream in step with moon_disc so the scene below is the SAME scene
+            rnd.uniform(0, 6.28), rnd.uniform(0.1, 0.7), rnd.uniform(0.07, 0.18)
+    # skyline silhouette: two field hills (night: one ink mask; day: far hill, objects, near hill as three layers)
     m, d = mask_layer(w, h)
     g, gd = mask_layer(w, h)
     ys = hill_y(w, h, horizon + 40 * s, 34 * s, seed)
-    fill_below(d, ys)
     ys2 = hill_y(w, h, horizon + 110 * s, 22 * s, seed + 1, 1.3)
-    fill_below(d, ys2)
+    if T is None:
+        fill_below(d, ys)
+        fill_below(d, ys2)
+        far_m = near_m = None
+    else:
+        far_m, fd = mask_layer(w, h)
+        fill_below(fd, ys)
+        near_m, nd = mask_layer(w, h)
+        fill_below(nd, ys2)
     gy = lambda fx: float(ys[min(w - 1, max(0, int(fx * w)))])
     # corn stalks at the outer edges (they reach up the side margins), a wheat cluster at their feet
     corn_stalk(d, w * 0.055, gy(0.055) + 10 * s, 520 * s, rnd, lean=0.10)
@@ -452,13 +578,17 @@ def harvest(size, page):
         rail_fence(d, w * 0.72, w * 0.86, gy(0.78) + 14 * s, s)
     sil = down(m, w, h)
     lit = down(g, w, h)
-    # geese V in the top band (kept off the stats row and the cast header lettering center)
-    bm, bd = mask_layer(w, h)
-    if portrait:   # lower arm stays right of the stats row box (x < 0.30, y 0.08-0.125), upper arm below the header
-        geese_v(bd, w, h, (0.46, 0.066), 72 * s, 7, rnd, heading=1, spread=0.30)
-    else:   # below the page-title zone, left of the moon, heading for it
-        geese_v(bd, w, h, (0.60, 0.29), 72 * s, 9, rnd, heading=1, spread=0.30)
-    geesem = down(bm, w, h)
+    # geese V in the top band (kept off the stats row and the cast header lettering center); mockups only (flyers=True),
+    # the app flies them (ambient `flock`, same lead spot: portrait x 0.46 / y 0.066, L = 72 px of 1290)
+    geesem = None
+    if flyers:
+        bm, bd = mask_layer(w, h)
+        n_geese = 7 if T is None else T['geese']
+        if portrait:   # lower arm stays right of the stats row box (x < 0.30, y 0.08-0.125), upper arm below the header
+            geese_v(bd, w, h, (0.46, 0.066), 72 * s, n_geese, rnd, heading=1, spread=0.30)
+        else:   # below the page-title zone, left of the moon, heading for it
+            geese_v(bd, w, h, (0.60, 0.29), 72 * s, n_geese + 2, rnd, heading=1, spread=0.30)
+        geesem = down(bm, w, h)
     # mist: soft warm band hugging the hills (behind the near silhouette)
     mist = np.zeros((h, w), np.float32)
     yy = np.arange(h, dtype=np.float32)[:, None]
@@ -467,28 +597,46 @@ def harvest(size, page):
         cy0 = horizon + (k * 36 - 20) * s
         wav = np.sin(xx / w * math.pi * (2 + k) + k) * 14 * s
         mist += np.exp(-((yy - cy0 - wav) / (26 * s)) ** 2) * (0.20 - k * 0.04)
-    base = over(base, (236, 182, 130), np.clip(mist, 0, 0.4))
-    ink = (16, 7, 16)
-    base = over(base, ink, sil)
-    base = over(base, ink, geesem * 0.92)
+    if T is None:
+        base = over(base, (236, 182, 130), np.clip(mist, 0, 0.4))
+        ink = (16, 7, 16)
+        base = over(base, ink, sil)
+        obj = sil
+    else:
+        mc, mk = T['mist']
+        base = over(base, mc, np.clip(mist * mk, 0, 0.6))
+        far = down(far_m, w, h)
+        near = down(near_m, w, h)
+        ink = T['ink']
+        base = over(base, T['hill_far'], far)
+        base = over(base, ink, sil)
+        base = over(base, T['hill_near'], near)          # the near rise sits in front of the scene
+        obj = sil * (1 - near)
+    if geesem is not None:
+        base = over(base, ink, geesem * 0.92)
     if leaf_m is not None:
-        base = over(base, (40, 14, 20), down(leaf_m, w, h) * 0.9)
-    # lit windows / lantern glow
-    halo = np.asarray(Image.fromarray((lit * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(10 * s))).astype(np.float32) / 255
-    base = over(base, (255, 150, 40), np.clip(halo * 1.4, 0, 0.6) * sil)
-    base = over(base, (255, 200, 96), lit)
+        base = over(base, (40, 14, 20) if T is None else ink, down(leaf_m, w, h) * 0.9)
+    # lit windows / lantern glow (off by day, warming up at dusk)
+    wk = 1.0 if T is None else T['windows']
+    if wk:
+        halo = np.asarray(Image.fromarray((lit * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(10 * s))).astype(np.float32) / 255
+        base = over(base, (255, 150, 40), np.clip(halo * 1.4, 0, 0.6) * obj * wk)
+        base = over(base, (255, 200, 96), lit * wk)
     # front mist over the hill foot
-    mist2 = np.exp(-((yy - (horizon + 40 * s)) / (40 * s)) ** 2) * 0.10
-    base = over(base, (220, 160, 120), mist2 * np.ones((1, w), np.float32))
+    m2c, m2k = ((220, 160, 120), 0.10) if T is None else T['mist2']
+    mist2 = np.exp(-((yy - (horizon + 40 * s)) / (40 * s)) ** 2) * m2k
+    base = over(base, m2c, mist2 * np.ones((1, w), np.float32))
     xx1 = np.linspace(-1, 1, w, dtype=np.float32)[None, :, None]
-    base *= 1 - 0.16 * xx1 ** 4
+    base *= 1 - (0.16 if T is None else T['vignette']) * xx1 ** 4
     return finish(base, seed)
 
 
 if __name__ == '__main__':
-    out = sys.argv[1] if len(sys.argv) > 1 else HERE
+    flyers = '--flyers' in sys.argv   # bake the geese (static mockups only; the shipped walls leave them to the app)
+    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    out = args[0] if args else HERE
     os.makedirs(out, exist_ok=True)
     for page in PAGES:
         for size, suf in ((PORTRAIT, ''), (WIDE, '-wide')):
-            harvest(size, page).save(os.path.join(out, f'wall-{page}{suf}.webp'), 'WEBP', quality=92, method=6)
+            harvest(size, page, flyers=flyers).save(os.path.join(out, f'wall-{page}{suf}.webp'), 'WEBP', quality=92, method=6)
             print(page, suf or 'portrait')

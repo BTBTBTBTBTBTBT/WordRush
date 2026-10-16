@@ -13,6 +13,9 @@ the side margins and the gaps between cards.
   3 candy     candy-corn gift wrap: soft orange ground, a sparse muted tile of bats, pumpkins, candy corn
               and stars, a darker vignette.                                               wallTone: light
 
+  Time of day (10-16): midnight(size, page, tod='night'|'morning'|'day'|'evening'); night is the shipped wall, byte-identical.
+  ../../time-of-day/render-walls.py halloween [page] [tod ...] renders the four.
+
   python3 make-halloween-walls-v2.py [outdir] [direction ...]
   -> <outdir>/<direction>/wall-<page>[-light][-wide].webp  (1290 x 2796 portrait, 2400 x 1500 wide)
 Default outdir: ./v2. SHIPPED (10-05, founder pick): midnight -> ../walls/wall-<page>[-wide].webp, no -light twins:
@@ -103,8 +106,9 @@ def stamp(mask, im, cx, cy, width, rot=0.0, flip=False, alpha=1.0):
 
 
 # ---------- silhouettes ----------
-def tree(d, x, y, height, rnd, lean=0.0):
-    """crooked bare tree, drawn at SS scale into an L draw"""
+def tree(d, x, y, height, rnd, lean=0.0, tips=None):
+    """crooked bare tree, drawn at SS scale into an L draw. tips = optional list that collects (x, y, depth, length)
+    of every branch end (the day walls hang orange leaf clumps there); it never touches the random stream."""
     def branch(x0, y0, ang, length, width, depth):
         x1 = x0 + math.cos(ang) * length
         y1 = y0 - math.sin(ang) * length
@@ -114,6 +118,8 @@ def tree(d, x, y, height, rnd, lean=0.0):
             d.line([(ax * SS, ay * SS), (bx * SS, by * SS)], fill=255, width=max(1, round(width * SS)))
             r = width * SS / 2
             d.ellipse([bx * SS - r, by * SS - r, bx * SS + r, by * SS + r], fill=255)
+        if tips is not None:
+            tips.append((x1, y1, depth, length))
         if depth == 0 or length < 10:
             return
         n = rnd.choice([2, 2, 3])
@@ -241,45 +247,223 @@ def moon_disc(base, cx, cy, r, col, shade, rnd):
     return over(base, disc, a)
 
 
+# ---------- time of day (founder 10-16: "more distinction ... matching to the wallpapers coordinating with the time of day") ----------
+# 'night' is the shipped midnight wall and stays BYTE-IDENTICAL (bats painted in, as shipped). The other three keep the
+# SAME scene (same random stream: trees, house, fence, graves never move) and swap sky, sun, light, haze, silhouette ink,
+# hill colors, windows and a little seasonal dressing, exactly like ../../thanksgiving/walls/make-thanksgiving-walls-v2.py.
+# The time walls paint NO bats (the flyers are an ambient layer in the app); the orange leaf clumps (day) and the small
+# pumpkin patch (all three) come from their own random streams, after everything else.
+#   MORNING  misty lavender-peach dawn: low pale sun at the left, a faded ghost-moon still up, thick fog through the
+#            graveyard and hills, dusty-plum silhouettes, every window dark.
+#   DAY      crisp autumn blue sky, bright sun, cumulus, VIVID ORANGE leaf clumps on the crooked trees, straw + lime hills,
+#            bright orange pumpkins. No stars, no moon, no glow.
+#   EVENING  a huge sun sinking behind the haunted house, indigo -> magenta -> hot orange sky, near-black silhouettes,
+#            windows lit, jack-o'-lanterns just lit, a few early stars.
+TOD = {
+    'morning': dict(
+        sky=[(0, (118, 108, 176)), (0.30, (158, 138, 196)), (0.55, (210, 174, 206)), (0.74, (246, 200, 192)), (0.88, (252, 216, 172)), (1, (244, 206, 164))],
+        horizon=((255, 214, 176), 0.78), horizon2=((255, 240, 208), 0.5),
+        sun=dict(pos_p=(0.27, 0.768), pos_w=(0.22, 0.75), r=92, col=(255, 236, 184), core=(255, 250, 224),
+                 halo1=((255, 190, 120), 0.62, 4.6), halo2=((255, 224, 170), 0.72, 2.0), haze=0.6),
+        ghost_moon=((238, 228, 244), 0.42),
+        clouds='wisps', stars=0,
+        ink=(86, 62, 100), hill_far=(184, 156, 188), hill_near=(128, 100, 136),
+        windows=0.0, mist=((236, 224, 240), 1.9), mist2=((238, 226, 238), 0.30), fog_front=((238, 228, 242), 0.55),
+        veil=None, vignette=0.10, patch='morning'),
+    'day': dict(
+        sky=[(0, (36, 108, 212)), (0.45, (100, 170, 238)), (0.75, (176, 214, 246)), (1, (214, 232, 246))],
+        horizon=((236, 240, 226), 0.5), horizon2=((255, 250, 232), 0.35),
+        sun=dict(pos_p=(0.74, 0.072), pos_w=(0.85, 0.17), r=88, col=(255, 252, 236), core=None,
+                 halo1=((255, 246, 200), 0.5, 4.0), halo2=((255, 255, 240), 0.7, 1.8), haze=0.0),
+        ghost_moon=None,
+        clouds='cumulus', stars=0,
+        ink=(64, 36, 70), hill_far=(212, 168, 70), hill_near=(116, 162, 54),
+        windows=0.0, mist=((240, 238, 224), 0.35), mist2=((240, 234, 214), 0.06), fog_front=None,
+        veil=None, vignette=0.08, patch='day'),
+    'evening': dict(
+        sky=[(0, (34, 20, 84)), (0.28, (88, 34, 122)), (0.50, (176, 44, 120)), (0.68, (238, 84, 86)), (0.82, (255, 140, 50)), (1, (255, 192, 86))],
+        horizon=((255, 160, 40), 0.9), horizon2=((255, 224, 130), 0.65),
+        sun=dict(pos_p=(0.60, 0.788), pos_w=(0.64, 0.79), r=132, col=(255, 214, 122), core=(255, 242, 176),
+                 halo1=((255, 104, 52), 0.62, 4.6), halo2=((255, 180, 90), 0.72, 2.0), haze=0.0),
+        ghost_moon=None,
+        clouds='streaks', stars=0.5,
+        ink=(22, 8, 30), hill_far=(96, 28, 72), hill_near=(44, 16, 48),
+        windows=1.0, mist=((255, 168, 128), 0.9), mist2=((255, 150, 110), 0.14), fog_front=((255, 150, 110), 0.16),
+        veil=((255, 140, 60), 0.30), vignette=0.18, patch='evening'),
+}
+
+
+def S2(px, py):
+    return (px * SS, py * SS)
+
+
+def sun_disc(base, cx, cy, r, col, core=None):
+    """a plain sun disc with a soft limb; 'core' = brighter center so a low hazy sun reads as a solid ball"""
+    h, w = base.shape[:2]
+    yy, xx = np.ogrid[0:h, 0:w]
+    dist = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
+    a = np.clip((r + 1.5 - dist) / 3, 0, 1).astype(np.float32)
+    if core is None:
+        return over(base, col, a)
+    t = np.clip(dist / r, 0, 1).astype(np.float32)[..., None] ** 1.6
+    disc = np.array(core, np.float32) * (1 - t) + np.array(col, np.float32) * t
+    return base * (1 - a[..., None]) + disc * a[..., None]
+
+
+def clouds(base, w, h, s, kind, rnd, portrait):
+    """soft clouds in the top ~55%: 'cumulus' (puffy, white), 'wisps' (thin, pink-lit), 'streaks' (sunset-lit)"""
+    lay = Image.new('L', (w, h), 0)
+    ld = ImageDraw.Draw(lay)
+    shade = Image.new('L', (w, h), 0)
+    sd = ImageDraw.Draw(shade)
+    if kind == 'cumulus':
+        spots = [(0.18, 0.15, 1.0), (0.82, 0.24, 0.8), (0.40, 0.33, 0.7), (0.70, 0.47, 0.6), (0.12, 0.52, 0.5)] if portrait else \
+                [(0.14, 0.16, 1.0), (0.44, 0.10, 0.8), (0.30, 0.40, 0.6), (0.72, 0.46, 0.6)]
+        for fx, fy, k in spots:
+            cx, cy, cw = fx * w, fy * h, 260 * s * k
+            for i in range(7):
+                ox = rnd.uniform(-0.55, 0.55) * cw
+                rx = cw * rnd.uniform(0.22, 0.36)
+                ry = rx * rnd.uniform(0.55, 0.8)
+                oy = -ry * rnd.uniform(0.1, 0.6) + abs(ox) * 0.2
+                ld.ellipse([cx + ox - rx, cy + oy - ry, cx + ox + rx, cy + oy + ry * 0.9], fill=255)
+                sd.ellipse([cx + ox - rx, cy + oy + ry * 0.2, cx + ox + rx, cy + oy + ry * 1.05], fill=255)
+        soft = np.asarray(lay.filter(ImageFilter.GaussianBlur(5 * s))).astype(np.float32) / 255
+        under = np.asarray(shade.filter(ImageFilter.GaussianBlur(12 * s))).astype(np.float32) / 255
+        base = over(base, (200, 214, 236), np.clip(under, 0, 1) * 0.55)
+        base = over(base, (255, 255, 255), soft * 0.94)
+    elif kind == 'wisps':
+        for fx, fy, ln in ((0.22, 0.30, 0.9), (0.62, 0.40, 0.7), (0.38, 0.52, 0.6), (0.78, 0.58, 0.5)):
+            cx, cy, cw = fx * w, fy * h, 520 * s * ln
+            for i in range(5):
+                ox = (i - 2) * cw * 0.22 + rnd.uniform(-20, 20) * s
+                rx, ry = cw * rnd.uniform(0.18, 0.3), (10 + 6 * rnd.random()) * s
+                ld.ellipse([cx + ox - rx, cy - ry + i * 2 * s, cx + ox + rx, cy + ry + i * 2 * s], fill=255)
+        soft = np.asarray(lay.filter(ImageFilter.GaussianBlur(14 * s))).astype(np.float32) / 255
+        base = over(base, (255, 226, 222), np.clip(soft * 1.3, 0, 1) * 0.7)
+    else:  # streaks: long sunset bars, dark underside, hot-pink + amber lit tops
+        for fx, fy, ln in ((0.30, 0.40, 1.0), (0.70, 0.50, 0.85), (0.22, 0.60, 0.7), (0.62, 0.66, 0.6)):
+            cx, cy, cw = fx * w, fy * h, 640 * s * ln
+            for i in range(4):
+                ox = (i - 1.5) * cw * 0.24
+                rx, ry = cw * rnd.uniform(0.2, 0.32), (9 + 7 * rnd.random()) * s
+                ld.ellipse([cx + ox - rx, cy - ry, cx + ox + rx, cy + ry], fill=255)
+                sd.ellipse([cx + ox - rx * 0.9, cy + ry * 0.3, cx + ox + rx * 0.9, cy + ry * 1.3], fill=255)
+        soft = np.asarray(lay.filter(ImageFilter.GaussianBlur(10 * s))).astype(np.float32) / 255
+        under = np.asarray(shade.filter(ImageFilter.GaussianBlur(14 * s))).astype(np.float32) / 255
+        base = over(base, (80, 24, 76), np.clip(under, 0, 1) * 0.45)
+        base = over(base, (255, 168, 128), np.clip(soft * 1.2, 0, 1) * 0.78)
+    return base
+
+
+def pumpkin_parts(masks, x, y, r):
+    """round pumpkin resting on ground y into 5 SS masks: left lobe, right lobe, center lobe, stem, carved face"""
+    dl, dr, dc, ds, df = masks
+    S2 = lambda px, py: (px * SS, py * SS)
+    cy = y - r * 0.82
+    for d, dx, rx in ((dl, -0.42, 0.62), (dr, 0.42, 0.62), (dc, 0, 0.66)):
+        d.ellipse([*S2(x + dx * r - rx * r, cy - 0.82 * r), *S2(x + dx * r + rx * r, cy + 0.82 * r)], fill=255)
+    ds.polygon([S2(x - 0.08 * r, cy - 0.7 * r), S2(x + 0.1 * r, cy - 0.7 * r), S2(x + 0.2 * r, cy - 1.05 * r), S2(x + 0.06 * r, cy - 1.08 * r)], fill=255)
+    e = 0.2 * r
+    for sx in (-1, 1):
+        ex = x + sx * 0.32 * r
+        df.polygon([S2(ex - e, cy - 0.05 * r), S2(ex + e, cy - 0.05 * r), S2(ex, cy - 0.38 * r)], fill=255)
+    mouth = [S2(x - 0.5 * r, cy + 0.18 * r)]
+    for i in range(6):
+        mouth.append(S2(x - 0.5 * r + i * (r / 5), cy + (0.18 if i % 2 == 0 else 0.3) * r))
+    mouth += [S2(x + 0.5 * r, cy + 0.18 * r), S2(x + 0.32 * r, cy + 0.48 * r), S2(x - 0.32 * r, cy + 0.48 * r)]
+    df.polygon(mouth, fill=255)
+
+
+# the small coloured pumpkin patch the time walls add beside the house (home page positions; other pages get the same
+# row under their hero). (fraction of width, radius in 1290-px units)
+PATCH = [(0.44, 40), (0.50, 28), (0.745, 46), (0.80, 32), (0.70, 22), (0.34, 24)]
+PATCH_COL = {   # lobe L / lobe R / lobe C / stem / face(unlit) / face(lit) per time
+    'morning': ((176, 128, 140), (190, 140, 148), (208, 158, 160), (110, 96, 100), (96, 70, 96), None),
+    'day':     ((236, 104, 14), (244, 118, 24), (255, 146, 40), (86, 130, 40), (74, 36, 66), None),
+    'evening': ((150, 56, 30), (170, 64, 30), (196, 78, 34), (60, 36, 34), None, (255, 196, 90)),
+}
+
+
 # ---------- direction 1: midnight everywhere ----------
-def midnight(size, page, dark=True):
+def midnight(size, page, dark=True, tod='night'):
+    """tod: 'night' = the shipped wall (byte-identical); 'morning' | 'day' | 'evening' = same scene, that time's light."""
     w, h = size
     seed = seed_of('midnight', page, w)
     rnd = random.Random(seed)
     portrait = h > w
     s = min(w, h) / 1290 * (1.0 if portrait else 1.25)
     acc = ACCENT[page]
-    base = vgrad(h, w, [(0, (12, 7, 28)), (0.45, (30, 13, 50)), (0.75, (52, 20, 52)), (1, (70, 26, 40))])
+    T = TOD.get(tod)      # None = night (the shipped look)
     horizon = h * (0.815 if portrait else 0.80)
-    base = glow(base, w * 0.5, horizon, w * 0.9, h * (0.16 if portrait else 0.30), acc, 0.85)
-    base = glow(base, w * 0.5, horizon + h * 0.01, w * 0.5, h * (0.06 if portrait else 0.12), (255, 196, 110), 0.55)
-    # stars, top half only
+    if T is None:
+        base = vgrad(h, w, [(0, (12, 7, 28)), (0.45, (30, 13, 50)), (0.75, (52, 20, 52)), (1, (70, 26, 40))])
+        base = glow(base, w * 0.5, horizon, w * 0.9, h * (0.16 if portrait else 0.30), acc, 0.85)
+        base = glow(base, w * 0.5, horizon + h * 0.01, w * 0.5, h * (0.06 if portrait else 0.12), (255, 196, 110), 0.55)
+    else:
+        base = vgrad(h, w, T['sky'])
+        base = glow(base, w * 0.5, horizon, w * 0.9, h * (0.16 if portrait else 0.30), *T['horizon'])
+        base = glow(base, w * 0.5, horizon + h * 0.01, w * 0.5, h * (0.06 if portrait else 0.12), *T['horizon2'])
+    # stars, top half only (night: as shipped; evening: a few faint ones up top; morning / day: none). The random
+    # stream is consumed identically either way so the scene below never moves.
+    star_k = 1.0 if T is None else T['stars']
     st = Image.new('L', (w, h), 0)
     sd = ImageDraw.Draw(st)
     for _ in range(int(w * h / 9000)):
         x, y = rnd.uniform(0, w), h * rnd.uniform(0, 0.62) ** 1.5
         r = rnd.choice([1.3, 1.6, 2.0, 2.6])
-        sd.ellipse([x - r, y - r, x + r, y + r], fill=int(rnd.uniform(60, 210) * (1 - y / (h * 0.66))))
-    base = over(base, (255, 244, 225), np.asarray(st.filter(ImageFilter.GaussianBlur(0.7))).astype(np.float32) / 255)
-    # big harvest moon, top right, with a wide warm halo
-    mx, my, mr = (w * 0.74, h * 0.072, 118 * s) if portrait else (w * 0.85, h * 0.17, 120 * s)
-    base = glow(base, mx, my, mr * 4.2, mr * 4.2, (255, 150, 60), 0.42, 1.2)
-    base = glow(base, mx, my, mr * 1.9, mr * 1.9, (255, 205, 130), 0.55, 1.4)
-    base = moon_disc(base, mx, my, mr, (255, 214, 140), (226, 150, 80), rnd)
-    # skyline silhouette
+        f = rnd.uniform(60, 210)
+        if T is None:
+            sd.ellipse([x - r, y - r, x + r, y + r], fill=int(f * (1 - y / (h * 0.66))))
+        else:
+            sd.ellipse([x - r, y - r, x + r, y + r], fill=int(f * (1 - y / (h * 0.66)) * star_k * max(0, 1 - y / (h * 0.30))))
+    if star_k:
+        base = over(base, (255, 244, 225), np.asarray(st.filter(ImageFilter.GaussianBlur(0.7))).astype(np.float32) / 255)
+    if T is None:
+        # big harvest moon, top right, with a wide warm halo
+        mx, my, mr = (w * 0.74, h * 0.072, 118 * s) if portrait else (w * 0.85, h * 0.17, 120 * s)
+        base = glow(base, mx, my, mr * 4.2, mr * 4.2, (255, 150, 60), 0.42, 1.2)
+        base = glow(base, mx, my, mr * 1.9, mr * 1.9, (255, 205, 130), 0.55, 1.4)
+        base = moon_disc(base, mx, my, mr, (255, 214, 140), (226, 150, 80), rnd)
+    else:
+        sun = T['sun']
+        fx, fy = sun['pos_p'] if portrait else sun['pos_w']
+        sx, sy, sr = w * fx, h * fy, sun['r'] * s
+        # the moon's random draws (21) are spent either way: the morning keeps a faded ghost-moon at the night moon's spot
+        mxx, myy, mrr = (w * 0.74, h * 0.072, 118 * s) if portrait else (w * 0.85, h * 0.17, 120 * s)
+        gm = T['ghost_moon']
+        moon_layer = moon_disc(base, mxx, myy, mrr, (255, 214, 140) if gm is None else gm[0], (226, 150, 80) if gm is None else (210, 196, 226), rnd)
+        if gm is not None:
+            base = base * (1 - gm[1]) + moon_layer * gm[1]
+        c1, k1, p1 = sun['halo1']
+        c2, k2, p2 = sun['halo2']
+        if sun['haze']:   # a low sun: a milky haze band across the horizon, laid down BEFORE the disc
+            base = glow(base, w * 0.5, horizon - h * 0.015, w * 0.9, h * 0.05, (250, 236, 236), sun['haze'], 1.0)
+        base = glow(base, sx, sy, sr * p1, sr * p1, c1, k1, 1.2)
+        base = glow(base, sx, sy, sr * p2, sr * p2, c2, k2, 1.4)
+        base = sun_disc(base, sx, sy, sr, sun['col'], sun['core'])
+        base = clouds(base, w, h, s, T['clouds'], random.Random(seed + 7), portrait)
+    # skyline silhouette (night: one ink mask; the time walls: far hill, objects, near hill as three layers)
     m, d = mask_layer(w, h)
     g, gd = mask_layer(w, h)
     ys = hill_y(w, h, horizon + 40 * s, 34 * s, seed)
-    fill_below(d, ys)
     ys2 = hill_y(w, h, horizon + 110 * s, 22 * s, seed + 1, 1.3)
-    fill_below(d, ys2)
+    if T is None:
+        fill_below(d, ys)
+        fill_below(d, ys2)
+    else:
+        far_m, fd = mask_layer(w, h)
+        fill_below(fd, ys)
+        near_m, nd = mask_layer(w, h)
+        fill_below(nd, ys2)
     gy = lambda fx: float(ys[min(w - 1, max(0, int(fx * w)))])
     # crooked trees at the outer edges (they reach up the side margins), mirrored for symmetry
-    tree(d, w * 0.06, gy(0.06) + 10 * s, 600 * s, rnd, lean=0.18)
-    tree(d, w * 0.94, gy(0.94) + 10 * s, 560 * s, rnd, lean=-0.18)
+    tips = [] if tod == 'day' else None
+    tree(d, w * 0.06, gy(0.06) + 10 * s, 600 * s, rnd, lean=0.18, tips=tips)
+    tree(d, w * 0.94, gy(0.94) + 10 * s, 560 * s, rnd, lean=-0.18, tips=tips)
     if not portrait:
-        tree(d, w * 0.20, gy(0.20) + 10 * s, 300 * s, rnd, lean=0.1)
-        tree(d, w * 0.80, gy(0.80) + 10 * s, 320 * s, rnd, lean=-0.1)
+        tree(d, w * 0.20, gy(0.20) + 10 * s, 300 * s, rnd, lean=0.1, tips=tips)
+        tree(d, w * 0.80, gy(0.80) + 10 * s, 320 * s, rnd, lean=-0.1, tips=tips)
     hero = HERO[page]
     hx = 0.62 if portrait else 0.64
     if hero == 'house':
@@ -303,12 +487,15 @@ def midnight(size, page, dark=True):
             grave(d, w * fx, gy(fx) + 10 * s, s * 0.9, i % 3)
     sil = down(m, w, h)
     lit = down(g, w, h)
-    # bats in the top band (kept off the stats row and the cast header lettering center)
-    bm, _ = mask_layer(w, h)
-    band = (0.035, 0.125) if portrait else (0.05, 0.30)
-    bats(bm, w, h, rnd, portrait, 7 if portrait else 9, band, 120 * s,
-         avoid=[(0.0, 0.08, 0.30, 0.125), (0.78, 0.08, 1.0, 0.125), (0.30, 0.0, 0.70, 0.045)] if portrait else None)
-    batm = down(bm, w, h)
+    # bats in the top band (kept off the stats row and the cast header lettering center). NIGHT ONLY: it is the shipped
+    # wall; the time walls leave the sky to the app's ambient flyers.
+    batm = None
+    if T is None:
+        bm, _ = mask_layer(w, h)
+        band = (0.035, 0.125) if portrait else (0.05, 0.30)
+        bats(bm, w, h, rnd, portrait, 7 if portrait else 9, band, 120 * s,
+             avoid=[(0.0, 0.08, 0.30, 0.125), (0.78, 0.08, 1.0, 0.125), (0.30, 0.0, 0.70, 0.045)] if portrait else None)
+        batm = down(bm, w, h)
     # mist: soft horizontal band hugging the hills (behind the near silhouette)
     mist = np.zeros((h, w), np.float32)
     yy = np.arange(h, dtype=np.float32)[:, None]
@@ -317,19 +504,74 @@ def midnight(size, page, dark=True):
         cy0 = horizon + (k * 36 - 20) * s
         wav = np.sin(xx / w * math.pi * (2 + k) + k) * 14 * s
         mist += np.exp(-((yy - cy0 - wav) / (26 * s)) ** 2) * (0.20 - k * 0.04)
-    base = over(base, (210, 170, 220), np.clip(mist, 0, 0.4))
-    ink = (13, 6, 20)
-    base = over(base, ink, sil)
-    base = over(base, ink, batm * 0.92)
-    # lit windows / carved faces glow
-    halo = np.asarray(Image.fromarray((lit * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(10 * s))).astype(np.float32) / 255
-    base = over(base, (255, 150, 40), np.clip(halo * 1.4, 0, 0.6) * sil)
-    base = over(base, (255, 196, 90), lit)
+    if T is None:
+        base = over(base, (210, 170, 220), np.clip(mist, 0, 0.4))
+        ink = (13, 6, 20)
+        base = over(base, ink, sil)
+        base = over(base, ink, batm * 0.92)
+        obj = sil
+    else:
+        mc, mk = T['mist']
+        base = over(base, mc, np.clip(mist * mk, 0, 0.6))
+        ink = T['ink']
+        base = over(base, T['hill_far'], down(far_m, w, h))
+        base = over(base, ink, sil)
+        # day: vivid orange leaf clumps on the crooked trees (own random stream; ink trunks stay underneath)
+        if tips:
+            lrnd = random.Random(seed + 11)
+            lm = [mask_layer(w, h) for _ in range(3)]
+            for (tx, ty, dep, ln) in tips:
+                if dep > 3:
+                    continue
+                for _ in range(2):
+                    rr = (24 + 15 * (3 - dep) + lrnd.uniform(0, 10)) * s
+                    ox, oy = lrnd.uniform(-0.6, 0.6) * rr, lrnd.uniform(-0.5, 0.5) * rr
+                    lm[0][1].ellipse([*S2(tx + ox - rr, ty + oy - rr * 0.82), *S2(tx + ox + rr, ty + oy + rr * 0.82)], fill=255)
+                    lm[1][1].ellipse([*S2(tx + ox - rr * 0.85, ty + oy - rr * 0.82), *S2(tx + ox + rr * 0.6, ty + oy + rr * 0.5)], fill=255)
+                    lm[2][1].ellipse([*S2(tx + ox - rr * 0.55, ty + oy - rr * 0.7), *S2(tx + ox + rr * 0.1, ty + oy - rr * 0.1)], fill=255)
+            for (lmask, _), col in zip(lm, ((214, 78, 10), (250, 120, 18), (255, 172, 40))):
+                base = over(base, col, down(lmask, w, h))
+        # the small pumpkin patch beside the house (coloured; day bright, evening just lit, morning dusty)
+        pm = [mask_layer(w, h) for _ in range(5)]
+        for fxp, rp in PATCH:
+            pumpkin_parts([p[1] for p in pm], w * fxp, gy(fxp) + 8 * s, rp * s)
+        cl, cr_, cc, cs, cf_un, cf_lit = PATCH_COL[T['patch']]
+        pl, pr_, pc, ps, pf = (down(p[0], w, h) for p in pm)
+        base = over(base, cl, pl)
+        base = over(base, cr_, pr_ * (1 - pl * 0))
+        base = over(base, cc, pc)
+        base = over(base, cs, ps)
+        if cf_lit is None:
+            base = over(base, cf_un, pf * pc.clip(0, 1))
+        else:
+            halo2 = np.asarray(Image.fromarray((pf * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(9 * s))).astype(np.float32) / 255
+            base = over(base, (255, 140, 40), np.clip(halo2 * 1.3, 0, 0.55))
+            base = over(base, cf_lit, pf)
+        base = over(base, T['hill_near'], down(near_m, w, h))   # the near rise sits in front of the scene
+        obj = sil * (1 - down(near_m, w, h))
+    # lit windows / carved faces glow (night: as shipped; morning / day dark; evening lit)
+    wk = 1.0 if T is None else T['windows']
+    if wk:
+        halo = np.asarray(Image.fromarray((lit * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(10 * s))).astype(np.float32) / 255
+        base = over(base, (255, 150, 40), np.clip(halo * 1.4, 0, 0.6) * obj * wk)
+        base = over(base, (255, 196, 90), lit * wk)
     # front mist over the hill foot
-    mist2 = np.exp(-((yy - (horizon + 40 * s)) / (40 * s)) ** 2) * 0.10
-    base = over(base, (190, 150, 210), mist2 * np.ones((1, w), np.float32))
+    m2c, m2k = ((190, 150, 210), 0.10) if T is None else T['mist2']
+    mist2 = np.exp(-((yy - (horizon + 40 * s)) / (40 * s)) ** 2) * m2k
+    base = over(base, m2c, mist2 * np.ones((1, w), np.float32))
+    if T is not None and T['fog_front']:
+        # morning's thick ground fog (evening: a thin amber haze) drifting IN FRONT of the graveyard, the house and the
+        # trees' feet, so the silhouettes dissolve into it
+        fc, fk = T['fog_front']
+        fwav = np.sin(xx / w * math.pi * 3.0 + 0.6) * 22 * s
+        fog = np.exp(-((yy - (horizon + 6 * s) - fwav) / (92 * s)) ** 2) * fk
+        fog += np.exp(-((yy - (horizon - 96 * s) - fwav * 0.6) / (46 * s)) ** 2) * fk * 0.55
+        base = over(base, fc, np.clip(fog, 0, 0.8) * np.ones((1, w), np.float32))
+    if T is not None and T['veil']:
+        vc, vk = T['veil']   # the low sun's light spilling across the scene around it
+        base = glow(base, sx, horizon + 10 * s, w * 0.55, h * 0.05, vc, vk, 1.3)
     xx1 = np.linspace(-1, 1, w, dtype=np.float32)[None, :, None]
-    base *= 1 - 0.16 * xx1 ** 4
+    base *= 1 - (0.16 if T is None else T['vignette']) * xx1 ** 4
     return finish(base, seed)
 
 

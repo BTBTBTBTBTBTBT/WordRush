@@ -1,0 +1,405 @@
+{
+ "queue": [
+  {
+   "id": "2026-10-16-carousel-1",
+   "due": "2026-10-16",
+   "fmt": "portrait",
+   "season": "standard",
+   "headline": "18 DAILY GAMES. ONE SCORE.",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "w",
+    "d",
+    "s",
+    "c",
+    "o1"
+   ],
+   "scene": "the cast posing together as a happy lineup",
+   "layout": "",
+   "status": "done",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-10-16-carousel-2",
+   "due": "2026-10-16",
+   "fmt": "portrait",
+   "season": "standard",
+   "headline": "PLAY EVERY DAILY",
+   "sub": null,
+   "cast": [
+    "c",
+    "i"
+   ],
+   "scene": "two mascots excitedly choosing among a few glossy puzzle tiles",
+   "layout": "",
+   "status": "done",
+   "tab": "1547828052"
+  },
+  {
+   "id": "2026-10-16-carousel-3",
+   "due": "2026-10-16",
+   "fmt": "portrait",
+   "season": "standard",
+   "headline": "RACE YOUR FRIENDS",
+   "sub": null,
+   "cast": [
+    "s",
+    "u"
+   ],
+   "scene": "two mascots in a playful head-to-head race, speed lines, a finish ribbon",
+   "layout": "",
+   "status": "done",
+   "tab": "1547828051"
+  },
+  {
+   "id": "2026-10-16-carousel-4",
+   "due": "2026-10-16",
+   "fmt": "portrait",
+   "season": "standard",
+   "headline": "A CAST WITH OPINIONS",
+   "sub": null,
+   "cast": [
+    "d",
+    "o2",
+    "r"
+   ],
+   "scene": "three mascots each making a different opinionated expression (confident, dramatic, sleepy)",
+   "layout": "",
+   "status": "done",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-10-16-carousel-5",
+   "due": "2026-10-16",
+   "fmt": "portrait",
+   "season": "standard",
+   "headline": "FREE ON WEB, IOS AND ANDROID",
+   "sub": null,
+   "cast": [
+    "w"
+   ],
+   "scene": "the W mascot waving next to a simple generic phone and a simple generic laptop (no logos)",
+   "layout": "",
+   "status": "done",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-10-16-highlights-1",
+   "due": "2026-10-16",
+   "fmt": "square",
+   "season": "key-cyan",
+   "headline": "(icons only, no text)",
+   "sub": null,
+   "cast": [
+    "w"
+   ],
+   "scene": "4 icons",
+   "layout": "sheet",
+   "status": "done",
+   "tab": "1547828052"
+  },
+  {
+   "id": "2026-10-16-highlights-2",
+   "due": "2026-10-16",
+   "fmt": "square",
+   "season": "key-cyan",
+   "headline": "(icons only, no text)",
+   "sub": null,
+   "cast": [],
+   "scene": "4 icons",
+   "layout": "sheet",
+   "status": "done",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-10-17-story-dressed",
+   "due": "2026-10-17",
+   "fmt": "portrait",
+   "season": "halloween",
+   "headline": "THE APP GOT DRESSED.",
+   "sub": null,
+   "cast": [
+    "w",
+    "i"
+   ],
+   "scene": "story background: mascots small at the bottom corners, EMPTY CENTER (about 50 percent of the height) for the day's board",
+   "layout": "story",
+   "status": "done",
+   "tab": "1547828051"
+  },
+  {
+   "id": "2026-10-18-story-sweep",
+   "due": "2026-10-18",
+   "fmt": "portrait",
+   "season": "halloween",
+   "headline": "SWEEP SUNDAY",
+   "sub": null,
+   "cast": [
+    "u",
+    "s"
+   ],
+   "scene": "story background: mascots small at the bottom corners, EMPTY CENTER (about 50 percent of the height) for the day's board",
+   "layout": "story",
+   "status": "done",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-10-19-story-monday",
+   "due": "2026-10-19",
+   "fmt": "portrait",
+   "season": "halloween",
+   "headline": "MONDAY MASTERS",
+   "sub": null,
+   "cast": [
+    "c",
+    "d"
+   ],
+   "scene": "story background: mascots small at the bottom corners, EMPTY CENTER (about 50 percent of the height) for the day's board",
+   "layout": "story",
+   "status": "done",
+   "tab": "1547828052"
+  },
+  {
+   "id": "2026-10-25-story-sweep",
+   "due": "2026-10-25",
+   "fmt": "portrait",
+   "season": "halloween",
+   "headline": "SWEEP SUNDAY",
+   "sub": null,
+   "cast": [
+    "o3",
+    "r"
+   ],
+   "scene": "story background: mascots small at the bottom corners, EMPTY CENTER (about 50 percent of the height) for the day's board",
+   "layout": "story",
+   "status": "done",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-10-26-story-monday",
+   "due": "2026-10-26",
+   "fmt": "portrait",
+   "season": "halloween",
+   "headline": "MONDAY MASTERS",
+   "sub": null,
+   "cast": [
+    "i",
+    "w"
+   ],
+   "scene": "story background: mascots small at the bottom corners, EMPTY CENTER (about 50 percent of the height) for the day's board",
+   "layout": "story",
+   "status": "done",
+   "tab": "1547828051"
+  },
+  {
+   "id": "2026-10-27-ph-1",
+   "due": "2026-10-27",
+   "fmt": "landscape",
+   "season": "standard",
+   "headline": "18 DAILY GAMES. ONE SCORE.",
+   "sub": "BRING YOUR FAMILY.",
+   "cast": [
+    "w",
+    "d",
+    "s",
+    "c",
+    "o1"
+   ],
+   "scene": "hero lineup of the cast",
+   "layout": "ph",
+   "status": "done",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-10-27-ph-2",
+   "due": "2026-10-27",
+   "fmt": "landscape",
+   "season": "standard",
+   "headline": "18 GAMES. ONE APP.",
+   "sub": null,
+   "cast": [
+    "d",
+    "c"
+   ],
+   "scene": "two mascots standing beside a neat grid of 18 glossy letter tiles in purple, gold and grey",
+   "layout": "ph",
+   "status": "done",
+   "tab": "1547828052"
+  },
+  {
+   "id": "2026-10-27-ph-3",
+   "due": "2026-10-27",
+   "fmt": "landscape",
+   "season": "standard",
+   "headline": "RACE YOUR FRIENDS",
+   "sub": null,
+   "cast": [
+    "s",
+    "o3"
+   ],
+   "scene": "two mascots racing neck and neck with speed lines and a finish ribbon",
+   "layout": "ph",
+   "status": "done",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-10-27-ph-4",
+   "due": "2026-10-27",
+   "fmt": "landscape",
+   "season": "halloween",
+   "headline": "DRESS UP THE CAST",
+   "sub": "HALLOWEEN COSTUMES",
+   "cast": [
+    "i",
+    "w",
+    "r"
+   ],
+   "scene": "three mascots in Halloween costumes",
+   "layout": "ph",
+   "status": "done",
+   "tab": "1547828051"
+  },
+  {
+   "id": "2026-10-27-ph-5",
+   "due": "2026-10-27",
+   "fmt": "landscape",
+   "season": "standard",
+   "headline": "FREE EVERYWHERE",
+   "sub": "WEB. IOS. ANDROID.",
+   "cast": [
+    "w",
+    "u"
+   ],
+   "scene": "two mascots next to a simple generic phone and laptop (no logos)",
+   "layout": "ph",
+   "status": "done",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-10-27-ph-thumb",
+   "due": "2026-10-27",
+   "fmt": "square",
+   "season": "standard",
+   "headline": null,
+   "sub": null,
+   "cast": [
+    "w"
+   ],
+   "scene": "square thumbnail: the W mascot friendly, waving, large and centered on a soft lilac-pink background, NO text",
+   "layout": "thumb",
+   "status": "done",
+   "tab": "1547828052"
+  },
+  {
+   "id": "2026-10-28-contest-howto",
+   "due": "2026-10-28",
+   "fmt": "portrait",
+   "season": "halloween",
+   "headline": "ENTER THE COSTUME CONTEST",
+   "sub": null,
+   "cast": [
+    "s",
+    "c",
+    "o2"
+   ],
+   "scene": "how-to card with three numbered glossy steps: 1 DRESS YOUR MASCOT, 2 SHARE THE CARD, 3 TAG US",
+   "layout": "howto",
+   "status": "done",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-10-30-contest-winners",
+   "due": "2026-10-30",
+   "fmt": "portrait",
+   "season": "halloween",
+   "headline": "WINNERS",
+   "sub": null,
+   "cast": [],
+   "scene": "a three-step winners podium with three EMPTY round frames above it for player mascots (no characters), Halloween decor",
+   "layout": "winners",
+   "status": "done",
+   "tab": "1547828051"
+  },
+  {
+   "id": "2026-11-01-story-sweep",
+   "due": "2026-11-01",
+   "fmt": "portrait",
+   "season": "standard",
+   "headline": "SWEEP SUNDAY",
+   "sub": null,
+   "cast": [
+    "s",
+    "c"
+   ],
+   "scene": "story background: mascots small at the bottom corners, EMPTY CENTER (about 50 percent of the height) for the day's board",
+   "layout": "story",
+   "status": "done",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-11-02-story-monday",
+   "due": "2026-11-02",
+   "fmt": "portrait",
+   "season": "standard",
+   "headline": "MONDAY MASTERS",
+   "sub": null,
+   "cast": [
+    "d",
+    "o1"
+   ],
+   "scene": "story background: mascots small at the bottom corners, EMPTY CENTER (about 50 percent of the height) for the day's board",
+   "layout": "story",
+   "status": "done",
+   "tab": "1547828052"
+  },
+  {
+   "id": "2026-11-13-ugc-frame",
+   "due": "2026-11-13",
+   "fmt": "portrait",
+   "season": "standard",
+   "headline": "PLAYER OF THE WEEK",
+   "sub": null,
+   "cast": [
+    "u",
+    "s",
+    "c"
+   ],
+   "scene": "frame for a repost: mascots cheering along the bottom and sides, EMPTY CENTER (about 55 percent of the height and 80 percent of the width) for a player's share card",
+   "layout": "ugc",
+   "status": "done",
+   "tab": "1547828034"
+  },
+  {
+   "id": "2026-11-22-story-sweep",
+   "due": "2026-11-22",
+   "fmt": "portrait",
+   "season": "harvest",
+   "headline": "SWEEP SUNDAY",
+   "sub": null,
+   "cast": [
+    "w",
+    "r"
+   ],
+   "scene": "story background: mascots small at the bottom corners, EMPTY CENTER (about 50 percent of the height) for the day's board",
+   "layout": "story",
+   "status": "done",
+   "tab": "1547828050"
+  },
+  {
+   "id": "2026-11-23-story-monday",
+   "due": "2026-11-23",
+   "fmt": "portrait",
+   "season": "harvest",
+   "headline": "MONDAY MASTERS",
+   "sub": null,
+   "cast": [
+    "i",
+    "o1"
+   ],
+   "scene": "story background: mascots small at the bottom corners, EMPTY CENTER (about 50 percent of the height) for the day's board",
+   "layout": "story",
+   "status": "done",
+   "tab": "1547828052"
+  }
+ ]
+}

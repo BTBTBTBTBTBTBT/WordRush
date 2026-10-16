@@ -126,13 +126,41 @@ def ship_seasons():
             im = wide(os.path.join(sdir, rel), 1080)
             ship(name, im); sizes[name] = list(im.size); count += 1
         for page, rel in spec.get('walls', {}).items():
-            for variant in ['', '-light']:
+            # variant '' / '-light' = the night (base) wall; '-morning' / '-day' / '-evening' = the time-of-day walls (10-16,
+            # seasons/time-of-day/NOTES.md; registry walls.<page>.<time>)
+            for variant in ['', '-light', '-morning', '-day', '-evening']:
                 for suffix in ['', '-wide']:
                     src = os.path.join(sdir, f'{rel}{variant}{suffix}.webp')
                     if os.path.exists(src):
                         name = f'art-wall-{sid}-{page}{variant}{suffix}'
                         im = Image.open(src)
                         ship(name, im); sizes[name] = list(im.size); count += 1
+        # cast skins (id -> file): the on-model season costume, 320 px square, same framing as the Halloween skins; also
+        # prints each alpha box -> paste as `castTrim` in the registry (x3 copies) when the skin first ships
+        for cid, rel in spec.get('cast', {}).items():
+            name = f'art-{sid}-{cid}'
+            im = square(os.path.join(sdir, rel), 320, 0.02)
+            ship(name, im); sizes[name] = list(im.size); count += 1
+            box = im.getchannel('A').point(lambda v: 255 if v > 24 else 0).getbbox()
+            print('castTrim', sid, cid, list(box))
+        for pr, rel in spec.get('props', {}).items():
+            name = f'art-{sid}-prop-{pr}'
+            im = square(os.path.join(sdir, rel), 256, 0.03)
+            ship(name, im); sizes[name] = list(im.size); count += 1
+        # extras: {name: {src, fit: [w, h]}} (trim, then contain into w x h: the base scene / icon framing) or
+        # {src, full: true} (a full-bleed original such as the stage, saved as is) or {src, width: n}
+        for name, ex in spec.get('extras', {}).items():
+            path = os.path.join(sdir, ex['src'])
+            if ex.get('full'):
+                im = Image.open(path).convert('RGB')
+            elif ex.get('fit'):
+                im = trim(despeck(Image.open(path).convert('RGBA')))
+                fw, fh = ex['fit']
+                sc = min(fw / im.width, fh / im.height)
+                im = im.resize((max(1, round(im.width * sc)), max(1, round(im.height * sc))), Image.LANCZOS)
+            else:
+                im = wide(path, ex.get('width', 900))
+            ship(name, im); sizes[name] = list(im.size); count += 1
         if spec.get('banner'):
             name = f'art-scene-banner-{sid}'
             im = wide(os.path.normpath(os.path.join(sdir, spec['banner'])), 1200)
@@ -152,8 +180,10 @@ if SEASONS_ONLY:
 n = 0
 for d in DAYS:
     ship(f'art-day-{d}', wide(os.path.join(HERE, 'titles', f'{d}-keyed.png'))); n += 1
-for p in PAGES:
+for p in ['vs']:
     # Founder 10-02: the living cast row is the one cast per screen → page titles are lettering only.
+    # 10-16: only art-title-vs is still live; the other plain page titles (PAGES) were retired in 9f05e4d21 (the app
+    # uses art-titlecast-* and the ChatGPT titles) — re-shipping them recreated unreferenced files that fail art.test.ts.
     ship(f'art-title-{p}', wide(os.path.join(HERE, 'titles', f'{p}-lettering-keyed.png'))); n += 1
 for g in GAMES:
     ship(f'game-{g}', square(os.path.join(HERE, 'games', f'{g}.png'))); n += 1
@@ -185,6 +215,7 @@ for f in sorted(os.listdir(BADGES_DIR)) if os.path.isdir(BADGES_DIR) else []:
 # Seasonal cast skins (founder 10-02). 10-05: the on-model LAYERED header figures (seasons/halloween/header/
 # build-header.py: the canonical hero + the costume, face/letter untouched) replace the off-model 10-02 ChatGPT
 # redraws (cast/halloween/<id>.png, kept for reference). Same 320² square framing (trim, 2% margin, centered).
+# Other seasons ship their cast skins + props from seasons/<id>/ship.json ("cast", "props"; ship_seasons).
 HALLOWEEN_DIR = os.path.join(HERE, 'seasons', 'halloween', 'header')
 for cid in ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's']:
     if os.path.exists(os.path.join(HALLOWEEN_DIR, f'{cid}.png')):
@@ -257,6 +288,17 @@ for k in ['1', '2', '3']:
             ship(f'art-podium-{k}{suf}', wide(f, 300)); n += 1
 if os.path.exists(os.path.join(PODIUM_DIR, 'floor.png')):
     ship('art-podium-floor', wide(os.path.join(PODIUM_DIR, 'floor.png'), 1080)); n += 1
+# Time-of-day podium stadiums (10-16, seasons/time-of-day/podium/PROMPTS.md): the aligned ChatGPT finals are opaque RGB, so
+# they take the night stadium's alpha (the soft top/side fades) to ship like art-podium-stage. night = art-podium-stage itself.
+_POD_TOD = os.path.join(HERE, 'seasons', 'time-of-day', 'podium')
+if os.path.exists(os.path.join(_POD_TOD, 'podium-stage-night.png')):
+    _night = Image.open(os.path.join(_POD_TOD, 'podium-stage-night.png')).convert('RGBA')
+    for _t in ['morning', 'day', 'evening']:
+        _f = os.path.join(_POD_TOD, f'podium-stage-{_t}.png')
+        if os.path.exists(_f):
+            _im = Image.open(_f).convert('RGBA')
+            _im.putalpha(_night.getchannel('A'))
+            ship(f'art-podium-stage-{_t}', _im); n += 1
 CAST_TITLES = os.path.join(HERE, 'titles', 'cast-colors')   # cast-color titles (founder 10-03; not wired until the mapping is confirmed)
 # The menu/page set + the pocket-game titles + every TITLE-INVENTORY.md slug (founder 10-03: ship them all;
 # call-site wiring is separate).
@@ -274,3 +316,7 @@ for f in sorted(os.listdir(BTN_DIR)) if os.path.isdir(BTN_DIR) else []:
         ship('art-btn-' + f[:-4], Image.open(os.path.join(BTN_DIR, f)).convert('RGBA')); n += 1
 n += ship_seasons()
 print('shipped', n)
+
+# App-size policy (docs/review/app-size/REPORT.md): every imageset this script (re)wrote gets its compression-type back.
+import subprocess as _sp
+_sp.run(['python3', os.path.join(REPO, 'scripts', 'ios-asset-compression.py')], check=True)

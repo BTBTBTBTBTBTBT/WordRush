@@ -313,3 +313,6 @@ def main(only):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
+    # App-size policy: restore every imageset's compression-type (docs/review/app-size/REPORT.md).
+    import subprocess
+    subprocess.run(['python3', os.path.join(HERE, '..', '..', '..', '..', '..', 'scripts', 'ios-asset-compression.py')], check=True)
