@@ -29,7 +29,9 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 RES = os.path.join(ROOT, 'apps', 'android', 'app', 'src', 'main', 'res')
 DRAW = os.path.join(RES, 'drawable-nodpi')
 ALIASES = os.path.join(RES, 'values', 'art_aliases.xml')
-KEEP_PNG_PREFIX = ('bubble_',)
+# 10-16 (2.9 rollback): the 30 PNGs converted to lossy WebP that day are restored to their exact 2.8.4 originals until
+# a per-image visual gate exists (iOS lossy broke faint-alpha art); bubble_* is the tint-map atlas (always lossless).
+KEEP_PNG_PREFIX = ('bubble_', 'bot_', 'friends_', 'icon3d_', 'mascot_')
 DEDUPE_PREFIX = 'art_av_'
 WEBP_QUALITY = 92
 

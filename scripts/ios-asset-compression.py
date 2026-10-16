@@ -54,13 +54,12 @@ def wanted(name, iset_dir, images):
     files = [i.get('filename') for i in images]
     if len(images) != 1 or not files[0] or not files[0].lower().endswith('.png'):
         return None, 'not a single PNG'
+    # 10-16 (2.9 rollback): lossy (HEVC) broke images with large faint-alpha areas — the button light maps
+    # (art-fam-lm-*) drew as an opaque white haze over every key ("unreadable, unplayable"), and 600+ mascot pieces carry
+    # the same soft shading. Everything ships LOSSLESS again until a per-image visual gate exists (see REPORT.md).
     if name.startswith(DATA_PREFIXES):
         return 'lossless', 'data atlas'
-    if Image is None:
-        return 'lossy', None
-    if is_opaque(os.path.join(iset_dir, files[0])):
-        return 'lossless', 'fully opaque (RGB555 under lossy)'
-    return 'lossy', None
+    return 'lossless', None
 
 
 def imagesets(catalog):

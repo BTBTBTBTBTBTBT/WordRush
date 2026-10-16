@@ -28,7 +28,7 @@ android {
         // on a real device.
         targetSdk = 36
 
-        versionCode = 230
+        versionCode = 231
         versionName = "2.9"
         vectorDrawables { useSupportLibrary = true }
         // Perf/playthrough demo harness (data/PocketDemo.kt): compiled in ONLY for debug and the debug-signed
