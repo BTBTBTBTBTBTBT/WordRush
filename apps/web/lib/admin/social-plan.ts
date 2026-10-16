@@ -295,6 +295,7 @@ export interface AccountChange { date: string; channel: string; change: string }
 
 /** Live changes made on the real accounts, newest first. Append at the top whenever an account is touched. */
 export const PLAN_ACCOUNT_LOG: readonly AccountChange[] = [
+  { date: '2026-10-16', channel: 'X', change: 'Decision: fully automated X posting with the tracked links in the posts (about $0.20 per post with a link, roughly $10-12 for the 45-day plan). Instagram, Facebook, Threads, Pinterest and TikTok post through free APIs. Next: load about $15 of X API credits in the X developer console, then Connect X in Accounts.' },
   { date: '2026-10-15', channel: 'Social Studio', change: 'Pause all posting turned ON; Oct 15-16 posts and the four old test drafts held.' },
   { date: '2026-10-15', channel: 'Pinterest', change: 'Developer app "Wordocious Social Studio" (1624551) submitted; trial access pending; redirect URL added.' },
   { date: '2026-10-15', channel: 'X', change: 'Developer account and app created (read and write, OAuth 2.0 web app, callback wordocious.com/api/admin/studio/callback/x); client ID and secret saved in Vercel.' },
