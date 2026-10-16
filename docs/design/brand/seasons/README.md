@@ -1,5 +1,8 @@
 # Seasonal cast library (founder 10-03)
 
+> **Start with [PLAYBOOK.md](PLAYBOOK.md)** — the end-to-end season process (timeline, full-kit checklist, art pipeline,
+> quality bar, code, review, release, share cards, end of season, lessons). This README is the technical how-to.
+
 Founder: "I want to make a database with all the characters for all holidays that we can always reuse and add to
 before all major upcoming holidays. Continue this exercise whenever ChatGPT lets you."
 
@@ -29,8 +32,8 @@ Status per asset in manifest.json: `draft` → `approved` (founder) → `shipped
 ## Seasons (in order of upcoming dates) and windows
 | season | window (local date) | costume ideas |
 |---|---|---|
-| halloween | Oct 17 – Nov 1 (live in the registry) | vampire, pumpkin, ghost, wizard, witch, alien, scarecrow, mummy, fairy, skeleton |
-| thanksgiving | Nov 16 – 27 (US, 4th Thu) | pilgrim hats, turkey, pie chef, harvest scarf, corn |
+| halloween | Oct 9 – Oct 31 (live in the registry) | vampire, pumpkin, ghost, wizard, witch, alien, scarecrow, mummy, fairy, skeleton |
+| thanksgiving | Nov 14 – 29 (founder 10-16; in the registry, `ready: false` until the art ships) | pilgrim hats, turkey, pie chef, harvest scarf, corn |
 | winter-holidays | Dec 1 – 26 | Christmas + Hanukkah + a sprinkle of Kwanzaa (founder 10-05, see below): Santa hat, elf, reindeer, snowman, gingerbread, ugly sweater, Hanukkah sweater, dreidel, gelt, latkes, menorah glow, kinara glow |
 | new-year | Dec 27 – Jan 2 | party hats, confetti, noisemakers, disco ball, countdown |
 | valentines | Feb 7 – 14 | hearts, cupid, love letters, roses |
