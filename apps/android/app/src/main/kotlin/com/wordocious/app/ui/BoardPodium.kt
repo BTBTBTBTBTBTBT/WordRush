@@ -289,9 +289,12 @@ fun BoardPodium(
                                     )
                                 },
                             ) {}
+                            // The column is as wide as the figure when the figure is wider than the name slot (#1: 0.36w vs 0.33w), so the
+                            // mascot is never coerced small (its feet rode high); the name keeps the NAME_WIDTH slot below.
+                            val colBoxW = maxOf(colW, figure.toPx().roundToInt())
                             Column(
-                                Modifier.anchoredBottomCenter(cx, feetY + (if (place == 1 && stands) figure.toPx() * CHEER_FEET_DROP else 0f), colW)
-                                    .width(colW.toDp())
+                                Modifier.anchoredBottomCenter(cx, feetY + (if (place == 1 && stands) figure.toPx() * CHEER_FEET_DROP else 0f), colBoxW)
+                                    .width(colBoxW.toDp())
                                     .then(
                                         when {
                                             opensCard || s.onClick != null -> Modifier.squishClickable(
@@ -308,6 +311,7 @@ fun BoardPodium(
                                     s.name, s.userId, s.username ?: s.name,
                                     size = nameSizeOf(place),
                                     pull = 0.dp,
+                                    modifier = Modifier.width(colW.toDp()),
                                     avatarUrl = s.avatarUrl, config = s.config, castId = s.castId, frame = s.frame, accentHex = s.accentHex,
                                 )
                                 // Founder 10-15: the name floats ABOVE the drawn head (never tucked into the box). The crowned winner's name

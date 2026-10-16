@@ -227,6 +227,8 @@ struct EquatableYesterdayBlock: View, Equatable {
                 } else {
                     // Full daily rows (founder ask, Aug 11): profile links, guesses + time detail, W/L badge.
                     VStack(spacing: 0) {
+                        // Android / web parity: the top three already stand on the ledge above.
+                        if yesterday.count <= yLayout.filled { YesterdayAllShown() }
                         ForEach(Array(yesterday.enumerated().dropFirst(yLayout.filled)), id: \.element.id) { idx, entry in
                             maker.row(rank: yRanks[idx], entry: entry, labels: labels)
                                 .stripedRow(idx - yLayout.filled, accent: LbStyle.gold)
@@ -260,5 +262,16 @@ struct LbRankStack<Content: View>: View {
         #else
         VStack(spacing: 0) { content() }
         #endif
+    }
+}
+
+/// "That was everyone yesterday" — the Yesterday card when the ledge's podium already shows every finisher
+/// (Android `YesterdayAllShown`, web daily/page.tsx).
+struct YesterdayAllShown: View {
+    var body: some View {
+        Text("That was everyone yesterday")
+            .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity).padding(16)
     }
 }

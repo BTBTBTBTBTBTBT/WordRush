@@ -80,7 +80,9 @@ object ThemeKit {
 
     @Serializable data class Seasonal(
         val title: String, val subtitle: String, val previewWall: List<String>,
-        val previewTiles: List<Tile>, val ambient: SeasonalAmbient,
+        val previewTiles: List<Tile>,
+        /** The season's living wallpaper; null = the base theme's ambient keeps running (Thanksgiving ships none yet). */
+        val ambient: SeasonalAmbient? = null,
     )
 
     @Serializable private data class File(val themes: List<Entry>, val seasonal: Map<String, Seasonal>)
@@ -261,8 +263,9 @@ object ThemeKit {
         val tr = trim(context)
         val seasonal = seasonal(season)
         val w = root.width; val h = root.height
-        if (seasonal != null) {
-            val a = seasonal.ambient
+        val seasonalAmbient = seasonal?.ambient
+        if (seasonalAmbient != null) {
+            val a = seasonalAmbient
             val starColor = color(a.stars.color)
             for (i in 0 until (a.stars.count * tr).roundToInt()) {
                 val dur = lerp(3.0, 7.0, unit(i, 13.0))

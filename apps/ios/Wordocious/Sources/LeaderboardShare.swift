@@ -25,6 +25,13 @@ struct LbShareRow {
     /// §249: the mode-dot strip, that day's sweep order — nil element =
     /// unplayed (hollow), -1 = loss (red), else 0..1 win intensity t.
     var dots: [Double?]? = nil
+    /// Night frame (founder 10-16): who this row is, so the podium draws their real mascot — the same avatar the board
+    /// shows (AvatarDirectory look) — and name colors. Nil on the brag cards (streak days, records).
+    var userId: String? = nil
+    var username: String? = nil
+    var avatarUrl: String? = nil
+    var accentHex: String? = nil
+    var emoji: String? = nil
 }
 
 struct LbShareDelta {
@@ -182,7 +189,9 @@ enum LeaderboardShareBuilder {
                    name: r.entry.username,
                    scoreDisplay: scoreLabels[r.entry.compositeScore] ?? formatScore(r.entry.compositeScore),
                    subline: subline.map { $0(r.entry) },
-                   isYou: userId != nil && r.entry.userId == userId)
+                   isYou: userId != nil && r.entry.userId == userId,
+                   userId: r.entry.userId, username: r.entry.username, avatarUrl: r.entry.profiles.avatarUrl,
+                   accentHex: r.entry.profiles.accentColor, emoji: r.entry.profiles.avatarEmoji)
     }
 
     /// Today's-board card. Top 5 rows with full stats; a sharer below the top 5
@@ -221,7 +230,7 @@ enum LeaderboardShareBuilder {
             modeChip: variant == .vs ? "\(modeLabel) VS" : modeLabel,
             dateChip: dateChip,
             // Sharer below the top 5 → compress top rows to name+score only.
-            rows: top.map { row($0, userId: userId, subline: belowTop ? nil : subline, scoreLabels: cardLabels) },
+            rows: top.map { row($0, userId: userId, subline: subline, scoreLabels: cardLabels) },
             footer: variant == .friends
                 ? "Add your friends — play free at wordocious.com"
                 : variant == .vs
@@ -235,7 +244,9 @@ enum LeaderboardShareBuilder {
         if belowTop, let r = userRank, let e = userEntry {
             input.you = LbShareRow(rank: r.rank, name: e.username,
                                    scoreDisplay: cardLabels[e.compositeScore] ?? formatScore(e.compositeScore),
-                                   subline: subline(e), isYou: true)
+                                   subline: subline(e), isYou: true,
+                                   userId: e.userId, username: e.username, avatarUrl: e.profiles.avatarUrl,
+                                   accentHex: e.profiles.accentColor, emoji: e.profiles.avatarEmoji)
             input.youRankLine = "#\(r.rank) of \(r.total)"
         }
         return input
@@ -266,7 +277,7 @@ enum LeaderboardShareBuilder {
             modeAccent: modeAccent,
             modeChip: playType == .vs ? "\(modeLabel) VS" : modeLabel,
             dateChip: "\(formatBoardDate(day)) · Final",
-            rows: top.map { row($0, userId: userId, subline: belowTop ? nil : subline, scoreLabels: cardLabels) },
+            rows: top.map { row($0, userId: userId, subline: subline, scoreLabels: cardLabels) },
             footer: "Today’s board is open — wordocious.com",
             day: day)
         input.shareRank = userRank?.rank
@@ -274,7 +285,9 @@ enum LeaderboardShareBuilder {
         if belowTop, let r = userRank, let e = userEntry {
             input.you = LbShareRow(rank: r.rank, name: e.username,
                                    scoreDisplay: cardLabels[e.compositeScore] ?? formatScore(e.compositeScore),
-                                   subline: subline(e), isYou: true)
+                                   subline: subline(e), isYou: true,
+                                   userId: e.userId, username: e.username, avatarUrl: e.profiles.avatarUrl,
+                                   accentHex: e.profiles.accentColor, emoji: e.profiles.avatarEmoji)
             input.youRankLine = "#\(r.rank) of \(r.total)"
         }
         return input
@@ -322,7 +335,7 @@ enum LeaderboardShareBuilder {
                    scoreDisplay: scoreLabels[e.totalScore] ?? formatScore(e.totalScore),
                    subline: sweepSubline(e, day: day),
                    isYou: userId != nil && e.userId == userId,
-                   dots: dots)
+                   dots: dots, userId: e.userId, username: e.username, avatarUrl: e.avatarUrl)
     }
 
     /// Sweep board / sweep podium card from the page's SweepEntry rows. Ranks
@@ -544,86 +557,85 @@ enum LeaderboardShareBuilder {
     }
 }
 
-// MARK: - Card renderer (web drawLeaderboardCard parity, 1080×1080)
+// MARK: - Card renderer: the night frame (founder 10-16, option B)
 //
-// FINISH_SPEC §E1 (leaderboard family): the page wallpaper, the board day's title
-// art (art-day-*; the Friends / Records titles for the race + trophy cards), a
-// tinted rows card with a top bar and soft striped rows, the medal art
-// (art-medal-gold / -silver / -bronze) for the top three, scores and ranks as soft
-// numbers, and a footer cast pose that is neither the day's nor the page's host.
-// Drawn in a Canvas, static, always light; every image falls back to the old drawing.
+// docs/design/review/share-cards-1016/SPEC.md: the night gradient, the board day's title art (art-day-*) over the game's
+// season-aware title art, an info pill, then the app's own stadium PODIUM drawn static (core PodiumArt: the stage art, the
+// real mascots on the steps, bubble names above their heads, the crown hat on #1, the stats in the step panels, the open
+// spot's sleeping R), rows for 4th and below plus the sharer's gold-tinted row, and the lit cast footer. The canvas is
+// 4:5 … 3:4 (the iMessage fit): more rows grow the card, then the podium scales down — never the text.
 
 #if canImport(UIKit)
 struct LeaderboardShareCardView: View {
     let input: LbShareInput
 
-    // §S2: the canvas is sized to its rows (4:5 … 3:4; iMessage crops taller images, founder 10-12).
-    private static let rowBand: CGFloat = 110
-    private static let castW = CGFloat(ShareCardPlan.castW)
-    private var castH: CGFloat { ShareCastWordmark.height(Self.castW) }
+    private static let rowH: CGFloat = 68
+    private static let rowGap: CGFloat = 4
+    private static let sidePad: CGFloat = 30
+    /// Rows below the podium tighten the whole header (and the podium's headroom) so the podium stays big.
+    private var compact: Bool { listCount > 0 }
+    private var headroom: CGFloat { compact ? 0.11 : 0.14 }
+    private var castW: CGFloat { CGFloat(ShareCardPlan.castW) }
+    private var castH: CGFloat { ShareCastWordmark.height(castW) }
 
-    /// The title art's drawn size: ~70% of the width, height capped (the day
-    /// titles are nearly square, so they cap at 280).
-    private func titleRect(_ ui: UIImage) -> CGSize {
-        let cap: CGFloat = ui.size.width / max(1, ui.size.height) < 2 ? 280 : 200
-        var w: CGFloat = 756
-        var h = w * ui.size.height / max(1, ui.size.width)
-        if h > cap { h = cap; w = h * ui.size.width / max(1, ui.size.height) }
-        return CGSize(width: w, height: h)
-    }
+    // ── What the card shows ──────────────────────────────────────────────
 
-    private var titleImage: UIImage? { titleArt.flatMap { UIImage(named: $0) } }
-
-    var size: CGSize {
-        let titleH = titleImage.map { titleRect($0).height } ?? 90
-        let n = CGFloat(input.rows.count + (input.you != nil ? 1 : 0))
-        let panel = 14 + 32 + Self.rowBand * n + (input.you != nil ? 46 : 0)
-        let h = 30 + titleH + 46 + 26 + 56 + 30 + panel + 40 + castH + 40
-        return CGSize(width: 1080, height: min(CGFloat(ShareCardPlan.maxHeight), max(CGFloat(ShareCardPlan.minHeight), h)).rounded())
-    }
-
-    // Per-variant identity: lavender for the daily board + podium, mint/teal
-    // for the VS battle board (web LB_THEME).
-    private struct LbTheme {
-        let bg: Color; let label: Color; let panelBorder: Color; let footer: Color
-    }
-    private var theme: LbTheme {
+    private var layout: (filled: Int, open: [Int]) { PodiumLayout.layout(input.rows.map(\.rank)) }
+    /// The brag cards (streak days, records) are plain lists; every board wears the podium.
+    private var usePodium: Bool {
         switch input.variant {
-        case .solo:
-            return LbTheme(bg: Color(hex: 0xF5F3FF), label: Color(hex: 0x7C3AED),
-                           panelBorder: Color(hex: 0xA78BFA, alpha: 1.0 / 3), footer: Color(hex: 0x7C3AED))
-        case .vs:
-            return LbTheme(bg: Color(hex: 0xF0FDFA), label: Color(hex: 0x0D9488),
-                           panelBorder: Color(hex: 0x0D9488, alpha: 1.0 / 3), footer: Color(hex: 0x0D9488))
-        case .podium:
-            return LbTheme(bg: Color(hex: 0xF5F3FF), label: Color(hex: 0xD97706),
-                           panelBorder: Color(hex: 0xF59E0B, alpha: 1.0 / 3), footer: Color(hex: 0x7C3AED))
-        // Friends (§207): indigo — the leaderboard tab's own accent family.
-        case .friends:
-            return LbTheme(bg: Color(hex: 0xEEF2FF), label: Color(hex: 0x4F46E5),
-                           panelBorder: Color(hex: 0x6366F1, alpha: 1.0 / 3), footer: Color(hex: 0x4F46E5))
-        case .friendsPodium:
-            return LbTheme(bg: Color(hex: 0xEEF2FF), label: Color(hex: 0xD97706),
-                           panelBorder: Color(hex: 0xF59E0B, alpha: 1.0 / 3), footer: Color(hex: 0x4F46E5))
-        // Sweep (§231): the Daily Sweep card's violet→pink family on a blush
-        // ground, so a sweep board reads as the sweep's own surface.
-        case .sweep:
-            return LbTheme(bg: Color(hex: 0xFDF2F8), label: Color(hex: 0x7C3AED),
-                           panelBorder: Color(hex: 0xEC4899, alpha: 0x55 / 255.0), footer: Color(hex: 0x7C3AED))
-        case .sweepPodium:
-            return LbTheme(bg: Color(hex: 0xFDF2F8), label: Color(hex: 0xD97706),
-                           panelBorder: Color(hex: 0xF59E0B, alpha: 0x55 / 255.0), footer: Color(hex: 0x7C3AED))
-        // Weekly race (§234): the friends board's indigo — the race lives in
-        // the same social family as the FRIENDS variants.
-        case .weeklyRace:
-            return LbTheme(bg: Color(hex: 0xEEF2FF), label: Color(hex: 0x4F46E5),
-                           panelBorder: Color(hex: 0x6366F1, alpha: 0x55 / 255.0), footer: Color(hex: 0x4F46E5))
-        // §244/§245: the gold family — pure brags wear the medal identity.
-        case .flawlessStreak, .trophyCase:
-            return LbTheme(bg: Color(hex: 0xFFFBEB), label: Color(hex: 0xD97706),
-                           panelBorder: Color(hex: 0xF59E0B, alpha: 0x55 / 255.0), footer: Color(hex: 0xD97706))
+        case .flawlessStreak, .trophyCase: return false
+        default: return layout.filled > 0
         }
     }
+    private var podiumRows: [LbShareRow] { usePodium ? Array(input.rows.prefix(layout.filled)) : [] }
+    private var listRows: [LbShareRow] { usePodium ? Array(input.rows.dropFirst(layout.filled)) : input.rows }
+    /// The sharer's row below the shown rows (after a "• • •" gap).
+    private var youRow: LbShareRow? { input.you }
+    private var listCount: Int { listRows.count + (youRow != nil ? 1 : 0) }
+    private var listH: CGFloat {
+        guard listCount > 0 else { return 0 }
+        return CGFloat(listCount) * Self.rowH + CGFloat(listCount - 1) * Self.rowGap + (youRow != nil ? 22 : 0)
+    }
+
+    private static let dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+
+    /// The board day's weekday index (0 = Sunday), from the yyyy-MM-dd day.
+    private var weekday: Int? {
+        let parts = input.day.split(separator: "-")
+        guard parts.count == 3, let y = Int(parts[0]), let m = Int(parts[1]), let d = Int(parts[2]) else { return nil }
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC") ?? .current
+        guard let date = cal.date(from: DateComponents(year: y, month: m, day: d)) else { return nil }
+        return cal.component(.weekday, from: date) - 1
+    }
+
+    /// The board day's title (FRIDAY'S FINEST …) over the game's title, for the per-game and Sweep boards.
+    private var dayArt: String? {
+        switch input.variant {
+        case .weeklyRace, .trophyCase, .flawlessStreak: return nil
+        default:
+            guard let w = weekday, w >= 0, w < Self.dayNames.count else { return nil }
+            let name = "art-day-\(Self.dayNames[w])"
+            return ArtAsset.exists(name) ? name : nil
+        }
+    }
+
+    /// The game's title art in its season variant, or the page's title for the Sweep / race / brag cards.
+    private var gameArt: String? {
+        let name: String?
+        switch input.variant {
+        case .sweep, .sweepPodium: name = "art-titlecast-sweep"
+        case .weeklyRace: name = "art-titlecast-friends"
+        case .trophyCase: name = "art-titlecast-trophycase"
+        case .flawlessStreak: name = "art-titlecast-onastreak"
+        default: name = ModeGen.byDbKey(input.gameModeRaw).map { "art-game-\($0.id)" }
+        }
+        guard let n = name else { return nil }
+        let shown = SeasonKit.title(n)
+        return ArtAsset.exists(shown) ? shown : (ArtAsset.exists(n) ? n : nil)
+    }
+
     private var labelText: String {
         switch input.variant {
         case .solo: return "DAILY LEADERBOARD"
@@ -639,473 +651,158 @@ struct LeaderboardShareCardView: View {
         }
     }
 
-    private let textDark = ShareInk.heading
-    private let textMuted = ShareInk.muted
+    private func artBox(_ name: String?, maxH: CGFloat, maxW: CGFloat) -> CGSize {
+        guard let name, let a = ArtAsset.aspect(name), a > 0 else { return .zero }
+        let w = min(maxW, maxH * a)
+        return CGSize(width: w, height: w / a)
+    }
+    private var dayBox: CGSize { artBox(dayArt, maxH: compact ? 130 : 190, maxW: 620) }
+    private var gameBox: CGSize { artBox(gameArt, maxH: dayArt != nil ? (compact ? 100 : 140) : (compact ? 120 : 170), maxW: 800) }
+    private static let pillH: CGFloat = 54
 
-    // ── §E1 art choices ──────────────────────────────────────────────────
+    private var topPad: CGFloat { compact ? 14 : 20 }
+    private var pillGap: CGFloat { compact ? 8 : 12 }
 
-    /// The page wallpaper behind the card.
-    private var wallpaper: String {
-        switch input.variant {
-        case .solo, .podium, .flawlessStreak, .trophyCase: return "art-wall-leaderboard"
-        case .vs: return "art-wall-vs"
-        case .friends, .friendsPodium, .weeklyRace: return "art-wall-friends"
-        case .sweep, .sweepPodium: return "art-wall-home"
+    /// Everything above the podium / list.
+    private var topH: CGFloat {
+        topPad + dayBox.height + (dayBox.height > 0 ? 2 : 0) + (gameBox.height > 0 ? gameBox.height : 90) + pillGap + 6 + Self.pillH + pillGap
+    }
+    private var bottomH: CGFloat { 10 + castH + CGFloat(ShareCardPlan.bottomPad) }
+
+    /// The plan: the canvas height (4:5 … 3:4) and the podium's drawn width (scaled down, never the text, when the card
+    /// would pass 3:4).
+    private var plan: (height: CGFloat, podiumW: CGFloat) {
+        let maxH = CGFloat(ShareCardPlan.maxHeight), minH = CGFloat(ShareCardPlan.minHeight)
+        // 2–3 players with no rows below: a 4:5 card (podium scaled to fit); rows grow it to 3:4.
+        let cap = listCount == 0 ? minH : maxH
+        let others = topH + (listH > 0 ? listH + 8 : 0) + bottomH
+        var w: CGFloat = 1080 - Self.sidePad * 2
+        if usePodium {
+            let unit = headroom + 1 / CGFloat(PodiumArt.aspect)
+            if others + w * unit > cap { w = max(480, (cap - others) / unit) }
+            // The 4:5 floor: with few rows the podium may not need the full 3:4.
+            return (min(cap, max(minH, others + w * unit)).rounded(), w.rounded(.down))
         }
+        return (min(maxH, max(minH, others)).rounded(), 0)
     }
 
-    /// The board day's weekday index (0 = Sunday), from the yyyy-MM-dd day.
-    private var weekday: Int? {
-        let parts = input.day.split(separator: "-")
-        guard parts.count == 3, let y = Int(parts[0]), let m = Int(parts[1]), let d = Int(parts[2]) else { return nil }
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC") ?? .current
-        guard let date = cal.date(from: DateComponents(year: y, month: m, day: d)) else { return nil }
-        return cal.component(.weekday, from: date) - 1
-    }
+    var size: CGSize { CGSize(width: 1080, height: plan.height) }
 
-    private static let dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
-    /// The character on each day title (Sun O3, Mon D, Tue I, Wed U, Thu S, Fri O2, Sat O1).
-    private static let dayHosts: [MascotID] = [.o3, .d, .i, .u, .s, .o2, .o1]
-
-    /// The title art: the board day's title, or the race / records page title.
-    private var titleArt: String? {
-        let name: String
-        switch input.variant {
-        case .weeklyRace: name = "art-titlecast-friends"
-        case .trophyCase: name = "art-titlecast-records"
-        default:
-            guard let w = weekday, w >= 0, w < Self.dayNames.count else { return nil }
-            name = "art-day-\(Self.dayNames[w])"
-        }
-        return ArtAsset.exists(name) ? name : nil
-    }
-
-    /// The panel's accent (the variant's identity color).
-    private var panelAccent: Color { theme.label }
-
-    /// An image asset aspect-filled into `rect`.
-    private func drawFill(_ ctx: GraphicsContext, _ ui: UIImage, in rect: CGRect) {
-        let s = max(rect.width / max(1, ui.size.width), rect.height / max(1, ui.size.height))
-        let w = ui.size.width * s, h = ui.size.height * s
-        ctx.draw(ctx.resolve(Image(uiImage: ui)),
-                 in: CGRect(x: rect.midX - w / 2, y: rect.midY - h / 2, width: w, height: h))
-    }
-
-    /// Text with the soft white under-shadow that keeps it crisp on the wallpaper.
-    private func drawLifted(_ ctx: GraphicsContext, _ s: String, _ size: CGFloat, _ weight: Font.Weight,
-                            _ color: Color, at p: CGPoint, anchor: UnitPoint, tracking: CGFloat = 0) {
-        let under = resolved(ctx, s, size, weight, Color.white.opacity(0.85), tracking: tracking)
-        ctx.draw(under, at: CGPoint(x: p.x, y: p.y + max(2, size * 0.06)), anchor: anchor)
-        ctx.draw(resolved(ctx, s, size, weight, color, tracking: tracking), at: p, anchor: anchor)
-    }
+    // ── The card ─────────────────────────────────────────────────────────
 
     var body: some View {
-        Canvas(rendersAsynchronously: false) { ctx, _ in
-            draw(ctx)
-        }
-        .frame(width: size.width, height: size.height)
-    }
-
-    // ── Text helpers ─────────────────────────────────────────────────────
-
-    private func resolved(_ ctx: GraphicsContext, _ s: String, _ size: CGFloat,
-                          _ weight: Font.Weight, _ color: Color,
-                          tracking: CGFloat = 0) -> GraphicsContext.ResolvedText {
-        var t = Text(s).font(Brand.fixedFont(size, weight))
-        if tracking > 0 { t = t.tracking(tracking) }
-        return ctx.resolve(t.foregroundColor(color))
-    }
-
-    private func width(of t: GraphicsContext.ResolvedText) -> CGFloat {
-        t.measure(in: CGSize(width: 10_000, height: 1_000)).width
-    }
-
-    /// Truncate with an ellipsis to fit maxWidth (web clampText).
-    private func clamp(_ ctx: GraphicsContext, _ text: String, _ size: CGFloat,
-                       _ weight: Font.Weight, maxWidth: CGFloat) -> String {
-        if width(of: resolved(ctx, text, size, weight, .black)) <= maxWidth { return text }
-        var t = text
-        while t.count > 1,
-              width(of: resolved(ctx, t + "…", size, weight, .black)) > maxWidth {
-            t = String(t.dropLast())
-        }
-        return t + "…"
-    }
-
-    /// Canvas-parity: draw at an alphabetic BASELINE y (web textBaseline
-    /// 'alphabetic') — approximated by centering on the cap-height midpoint.
-    private func drawAtBaseline(_ ctx: GraphicsContext, _ t: GraphicsContext.ResolvedText,
-                                x: CGFloat, baseline: CGFloat, fontSize: CGFloat) {
-        ctx.draw(t, at: CGPoint(x: x, y: baseline - fontSize * 0.36), anchor: .center)
-    }
-
-    private func tintedImage(_ ctx: GraphicsContext, asset: String, color: Color) -> GraphicsContext.ResolvedImage? {
-        // §247 (founder: "why does the crown next to my name appear white?"):
-        // ResolvedImage.shading proved unreliable for vector ASSETS on device —
-        // the SF-symbol medals tinted, but the lucide crown rasterized its raw
-        // currentColor (white in the render context). Third strike for the
-        // template machinery on this card (Aug 10 withTintColor, Aug 18 ink
-        // artwork), so tint with no template step at all: rasterize big,
-        // flood-fill the tint, and mask by the artwork's alpha (destinationIn).
-        guard let base = UIImage(named: asset) else { return nil }
-        let target = CGSize(width: 120, height: 120)
-        let ui = UIGraphicsImageRenderer(size: target).image { c in
-            UIColor(color).setFill()
-            c.fill(CGRect(origin: .zero, size: target))
-            base.draw(in: CGRect(origin: .zero, size: target), blendMode: .destinationIn, alpha: 1)
-        }
-        return ctx.resolve(Image(uiImage: ui))
-    }
-
-    private func tintedSymbol(_ ctx: GraphicsContext, _ name: String, pointSize: CGFloat,
-                              color: Color) -> GraphicsContext.ResolvedImage? {
-        // Same shading approach as tintedImage — SF symbols are template by
-        // nature; the old UIImage withTintColor was equally ignored. pointSize
-        // now only informs the caller's draw rect (see drawRankGlyph).
-        _ = pointSize
-        var img = ctx.resolve(Image(systemName: name).renderingMode(.template))
-        img.shading = .color(color)
-        return img
-    }
-
-    // ── Rank iconography (web drawLbRankGlyph: crown gold, medal silver,
-    //    medal bronze — crown from the shared lucide asset). ───────────────
-
-    private func drawRankGlyph(_ ctx: GraphicsContext, rank: Int, cx: CGFloat, cy: CGFloat) {
-        let gold = Color(hex: 0xD97706), silver = Color(hex: 0x9CA3AF), bronze = Color(hex: 0xB45309)
-        // §248: flawlessStreak rows are DAYS, not competitors — crown/medals
-        // read as ranking, so that card numbers every row instead.
-        if input.variant == .flawlessStreak {
-            drawLifted(ctx, "\(rank)", 34, .black, ShareInk.number, at: CGPoint(x: cx, y: cy + 1), anchor: .center)
-            return
-        }
-        // §E1: the medal art for the top three.
-        let medal = rank == 1 ? "art-medal-gold" : rank == 2 ? "art-medal-silver" : rank == 3 ? "art-medal-bronze" : nil
-        if let medal, let ui = UIImage(named: medal) {
-            let side: CGFloat = 60
-            ctx.draw(ctx.resolve(Image(uiImage: ui)), in: CGRect(x: cx - side / 2, y: cy - side / 2, width: side, height: side))
-            return
-        }
-        switch rank {
-        case 1:
-            if let img = tintedImage(ctx, asset: "crown", color: gold) {
-                ctx.draw(img, in: CGRect(x: cx - 20, y: cy - 20, width: 40, height: 40))
-            }
-        case 2, 3:
-            if let img = tintedSymbol(ctx, "medal.fill", pointSize: 32,
-                                      color: rank == 2 ? silver : bronze) {
-                // Fit the symbol's aspect into a 36pt box (the resolved size
-                // is the default body-text glyph, no longer the 32pt config).
-                let target: CGFloat = 36
-                let s = img.size
-                let scale = target / max(s.width, s.height, 1)
-                let w = s.width * scale, h = s.height * scale
-                ctx.draw(img, in: CGRect(x: cx - w / 2, y: cy - h / 2, width: w, height: h))
-            }
-        default:
-            drawLifted(ctx, "\(rank)", 34, .black, ShareInk.number, at: CGPoint(x: cx, y: cy + 1), anchor: .center)
-        }
-    }
-
-    // ── One leaderboard row (web drawLbRow parity). ──────────────────────
-
-    private struct RowOpts {
-        var rankLine: String? = nil
-        var delta: LbShareDelta? = nil
-        var separator = false
-        /// You-row at the panel's first/last slot — bleed the highlight to the
-        /// panel edge and match its corner radius there.
-        var edgeTop = false
-        var edgeBottom = false
-        /// Panel inner padding to consume when bleeding.
-        var bleed: CGFloat = 16
-        /// §E1 soft striped rows: this row takes the stripe.
-        var stripe = false
-    }
-
-    private func drawRow(_ ctx: GraphicsContext, _ row: LbShareRow,
-                         x: CGFloat, y: CGFloat, w: CGFloat, h: CGFloat, opts: RowOpts) {
-        if opts.stripe, !row.isYou {
-            let band = Path(roundedRect: CGRect(x: x + 8, y: y + 3, width: w - 16, height: h - 6), cornerRadius: 16)
-            ctx.fill(band, with: .color(panelAccent.wash(0.10).opacity(0.75)))
-        }
-
-        // Gold "you" highlight — full-bleed across the panel with a soft amber
-        // glow instead of a hard border, flush to the panel edge at the
-        // first/last slot (web founder polish, Aug 7).
-        if row.isYou {
-            let hy = opts.edgeTop ? y - opts.bleed + 2 : y + 4
-            let hb = opts.edgeBottom ? y + h + opts.bleed - 2 : y + h - 4
-            let rTop: CGFloat = opts.edgeTop ? 26 : 16
-            let rBot: CGFloat = opts.edgeBottom ? 26 : 16
-            let gx = x + 2, gw = w - 4
-            var gold = Path()
-            gold.move(to: CGPoint(x: gx + rTop, y: hy))
-            gold.addLine(to: CGPoint(x: gx + gw - rTop, y: hy))
-            gold.addArc(tangent1End: CGPoint(x: gx + gw, y: hy),
-                        tangent2End: CGPoint(x: gx + gw, y: hy + rTop), radius: rTop)
-            gold.addLine(to: CGPoint(x: gx + gw, y: hb - rBot))
-            gold.addArc(tangent1End: CGPoint(x: gx + gw, y: hb),
-                        tangent2End: CGPoint(x: gx + gw - rBot, y: hb), radius: rBot)
-            gold.addLine(to: CGPoint(x: gx + rBot, y: hb))
-            gold.addArc(tangent1End: CGPoint(x: gx, y: hb),
-                        tangent2End: CGPoint(x: gx, y: hb - rBot), radius: rBot)
-            gold.addLine(to: CGPoint(x: gx, y: hy + rTop))
-            gold.addArc(tangent1End: CGPoint(x: gx, y: hy),
-                        tangent2End: CGPoint(x: gx + rTop, y: hy), radius: rTop)
-            gold.closeSubpath()
-
-            // Canvas shadowBlur 26 ≈ Gaussian radius 13.
-            ctx.drawLayer { layer in
-                layer.addFilter(.shadow(color: Color(hex: 0xF59E0B, alpha: 0.5),
-                                        radius: 13, x: 0, y: 0))
-                layer.fill(gold, with: .color(Color(hex: 0xFEF3C7)))
-            }
-            ctx.stroke(gold, with: .linearGradient(
-                Gradient(colors: [Color(hex: 0xFCD34D, alpha: 0.55),
-                                  Color(hex: 0xF59E0B, alpha: 0.25)]),
-                startPoint: CGPoint(x: x, y: hy), endPoint: CGPoint(x: x, y: hb)),
-                lineWidth: 2)
-        }
-
-        let midY = y + h / 2
-        drawRankGlyph(ctx, rank: row.rank, cx: x + 56, cy: midY)
-
-        // Right block: bold score, optional subline underneath.
-        let rightX = x + w - 30
-        let score = resolved(ctx, row.scoreDisplay, 34, .black, ShareInk.number)
-        drawLifted(ctx, row.scoreDisplay, 34, .black, ShareInk.number,
-                   at: CGPoint(x: rightX, y: row.subline != nil ? midY - 13 : midY), anchor: .trailing)
-        var rightBlockW = width(of: score)
-        if let sub = row.subline {
-            let s = resolved(ctx, sub, 21, .bold, textMuted)
-            ctx.draw(s, at: CGPoint(x: rightX, y: midY + 16), anchor: .trailing)
-            rightBlockW = max(rightBlockW, width(of: s))
-        }
-
-        // Left block: name (+ YOU label + delta pill), optional "#R of TOTAL".
-        let nameX = x + 96
-        let nameMaxW = w - 96 - 30 - rightBlockW - 24
-        // §249: a dot strip claims the second line — name rides high.
-        let hasDots = !(row.dots?.isEmpty ?? true)
-        let nameY = (opts.rankLine != nil || hasDots) ? midY - 14 : midY
-        var reserved: CGFloat = 0
-        if row.isYou {
-            reserved = width(of: resolved(ctx, " · YOU", 24, .black, textDark))
-        }
-        let name = clamp(ctx, row.name, 30, .black, maxWidth: max(60, nameMaxW - reserved))
-        let nameT = resolved(ctx, name, 30, .black, textDark)
-        ctx.draw(nameT, at: CGPoint(x: nameX, y: nameY), anchor: .leading)
-        var cursorX = nameX + width(of: nameT)
-        if row.isYou {
-            let youT = resolved(ctx, " · YOU", 24, .black, Color(hex: 0xD97706))
-            ctx.draw(youT, at: CGPoint(x: cursorX, y: nameY + 1), anchor: .leading)
-            cursorX += width(of: youT)
-        }
-
-        // §249: the mode-dot strip beneath the name — in-app
-        // SweepModeDots rules verbatim (violet win intensity, red loss,
-        // hollow unplayed).
-        var dotsEndX = nameX
-        if hasDots, let dots = row.dots {
-            let cy = midY + 18
-            let r: CGFloat = 7
-            for (i, d) in dots.enumerated() {
-                let cx = nameX + r + CGFloat(i) * 20
-                let rect = CGRect(x: cx - r, y: cy - r, width: r * 2, height: r * 2)
-                if let d {
-                    if d < 0 {
-                        ctx.fill(Path(ellipseIn: rect), with: .color(Color(hex: 0xEF4444)))
-                    } else {
-                        ctx.fill(Path(ellipseIn: rect),
-                                 with: .color(Color(hex: 0x7C3AED, alpha: 0.18 + 0.82 * d)))
-                    }
+        let p = plan
+        ZStack(alignment: .top) {
+            ShareNightBackground()
+            VStack(spacing: 0) {
+                header
+                if usePodium {
+                    Spacer(minLength: 0)
+                    podium(width: p.podiumW)
+                    Spacer(minLength: 0)
                 } else {
-                    ctx.stroke(Path(ellipseIn: rect), with: .color(panelAccent.wash(0.35)), lineWidth: 2)
+                    Spacer(minLength: 0)
+                }
+                if listCount > 0 {
+                    rows.padding(.horizontal, Self.sidePad).padding(.top, usePodium ? 8 : 0)
+                }
+                Spacer(minLength: 0)
+                ShareCastWordmark(width: castW)
+                    .padding(.top, 10).padding(.bottom, CGFloat(ShareCardPlan.bottomPad))
+            }
+            .frame(width: 1080, height: p.height, alignment: .top)
+        }
+        .environment(\.shareNight, true)
+        .frame(width: 1080, height: p.height, alignment: .top)
+        .clipped()
+    }
+
+    private var header: some View {
+        VStack(spacing: 0) {
+            if let d = dayArt, dayBox.height > 0 {
+                Image(d).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: dayBox.width, height: dayBox.height)
+                    .padding(.top, topPad).padding(.bottom, 2)
+            } else {
+                Color.clear.frame(height: topPad)
+            }
+            if let g = gameArt, gameBox.height > 0 {
+                Image(g).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: gameBox.width, height: gameBox.height)
+            } else {
+                Text(input.modeChip.uppercased()).font(Brand.fixedFont(72, .black)).foregroundStyle(ShareNight.gold)
+                    .lineLimit(1).minimumScaleFactor(0.5).frame(height: 90).padding(.horizontal, 60)
+            }
+            ShareNightInfoLine(text: "\(labelText) · \(input.dateChip)", size: 26, pill: true)
+                .frame(height: Self.pillH)
+                .padding(.top, pillGap + 6).padding(.horizontal, 30)
+            Color.clear.frame(height: pillGap)
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// The app's stadium podium, static: core PodiumArt geometry through the live PodiumView's own scene.
+    private func podium(width w: CGFloat) -> some View {
+        let entries = podiumRows.map { r in
+            PodiumEntry(id: r.userId ?? r.name, name: r.isYou ? "You" : r.name, username: r.username ?? r.name,
+                        accentHex: r.accentHex, emoji: r.emoji, value: r.scoreDisplay, avatarUrl: r.avatarUrl,
+                        rank: r.rank, detail: r.subline)
+        }
+        var v = PodiumView(entries: entries, open: layout.open)
+        v.shareWidth = w
+        v.shareHeadroom = headroom
+        return v.frame(width: w, height: PodiumView.shareHeight(width: w, headroom: headroom))
+    }
+
+    // ── Rows: 4th and below, then the sharer's own ───────────────────────
+
+    private var rows: some View {
+        VStack(spacing: Self.rowGap) {
+            ForEach(0..<listRows.count, id: \.self) { i in row(listRows[i]) }
+            if let you = youRow {
+                Text("• • •").font(Brand.fixedFont(26, .black)).foregroundStyle(ShareNight.muted).frame(height: 22)
+                row(you, rankLine: input.youRankLine)
+            }
+        }
+    }
+
+    private func ordinal(_ n: Int) -> String {
+        let v = n % 100
+        if v >= 11 && v <= 13 { return "\(n)TH" }
+        switch n % 10 { case 1: return "\(n)ST"; case 2: return "\(n)ND"; case 3: return "\(n)RD"; default: return "\(n)TH" }
+    }
+
+    private func row(_ r: LbShareRow, rankLine: String? = nil) -> some View {
+        let streak = input.variant == .flawlessStreak
+        let shape = RoundedRectangle(cornerRadius: 28, style: .continuous)
+        return HStack(spacing: 0) {
+            Text(streak ? "\(r.rank)" : ordinal(r.rank))
+                .font(Brand.fixedFont(32, .black)).foregroundStyle(ShareNight.gold)
+                .frame(width: 104, alignment: .leading)
+            HStack(spacing: 10) {
+                Text(r.name).font(Brand.fixedFont(36, .black)).foregroundStyle(ShareNight.text)
+                    .lineLimit(1).minimumScaleFactor(0.55)
+                if r.isYou && !streak {
+                    Text("· YOU").font(Brand.fixedFont(28, .black)).foregroundStyle(ShareNight.gold).fixedSize()
+                    if let d = input.delta {
+                        Text(d.text).font(Brand.fixedFont(20, .heavy)).fixedSize()
+                            .foregroundStyle(d.improved ? Color(hex: 0x6EE7A0) : Color(hex: 0xFF8A98))
+                    }
                 }
             }
-            dotsEndX = nameX + r + CGFloat(dots.count - 1) * 20 + r + 14
-        }
-
-        // Rank-delta pill ("▲3 vs yesterday" green / "▼2 vs yesterday" red) —
-        // under the name when the "#R of TOTAL" line isn't there, sharing the
-        // second line with it otherwise (after the dots, §249).
-        if row.isYou, opts.delta != nil || opts.rankLine != nil {
-            let lineY = midY + 17
-            var lx = hasDots ? dotsEndX : nameX
-            if let rankLine = opts.rankLine {
-                let t = resolved(ctx, rankLine, 21, .heavy, Color(hex: 0xB45309))
-                ctx.draw(t, at: CGPoint(x: lx, y: lineY), anchor: .leading)
-                lx += width(of: t) + 12
-            }
-            if let delta = opts.delta {
-                let fg = delta.improved ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626)
-                let bg = delta.improved ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)
-                let t = resolved(ctx, delta.text, 18, .heavy, fg)
-                let pillW = width(of: t) + 20
-                let pillH: CGFloat = 28
-                // No rank line → pill rides the name line instead.
-                let pillY = opts.rankLine != nil ? lineY - pillH / 2 : nameY - pillH / 2
-                let pillX = opts.rankLine != nil ? lx : cursorX + 12
-                let pill = Path(roundedRect: CGRect(x: pillX, y: pillY, width: pillW, height: pillH),
-                                cornerRadius: 14)
-                ctx.fill(pill, with: .color(bg))
-                ctx.draw(t, at: CGPoint(x: pillX + 10, y: pillY + pillH / 2 + 1), anchor: .leading)
+            Spacer(minLength: 12)
+            VStack(alignment: .trailing, spacing: -2) {
+                Text(r.scoreDisplay).font(Brand.fixedFont(38, .black)).monospacedDigit().foregroundStyle(.white)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                if let sub = rankLine.map({ "\($0)\(r.subline.map { " · \($0)" } ?? "")" }) ?? r.subline {
+                    Text(sub).font(Brand.fixedFont(23, .bold)).foregroundStyle(ShareNight.muted)
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                }
             }
         }
-
-        if opts.separator, !row.isYou {
-            var sep = Path()
-            sep.move(to: CGPoint(x: x + 26, y: y + h))
-            sep.addLine(to: CGPoint(x: x + w - 26, y: y + h))
-            ctx.stroke(sep, with: .color(panelAccent.opacity(0.12)), lineWidth: 1.5)
-        }
-    }
-
-    // ── The card. ────────────────────────────────────────────────────────
-
-    private func draw(_ ctx: GraphicsContext) {
-        let cw = size.width, ch = size.height
-
-        // §E1: the page wallpaper (the variant's tint when it doesn't ship).
-        ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(theme.bg))
-        if let wall = UIImage(named: wallpaper) {
-            drawFill(ctx, wall, in: CGRect(origin: .zero, size: size))
-            ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color.white.opacity(0.12)))
-        }
-
-        // The title: the day's title art (fallback: the two-tone wordmark).
-        var titleBottom: CGFloat
-        if let ui = titleImage, ui.size.height > 0 {
-            let t = titleRect(ui)
-            ctx.draw(ctx.resolve(Image(uiImage: ui)), in: CGRect(x: (cw - t.width) / 2, y: 30, width: t.width, height: t.height))
-            titleBottom = 30 + t.height
-        } else {
-            let wordmarkY: CGFloat = 96
-            var wm = ctx.resolve(Text("WORDOCIOUS").font(Brand.fixedFont(60, .black)))
-            wm.shading = .linearGradient(
-                Gradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)]),
-                startPoint: CGPoint(x: cw / 2 - 220, y: wordmarkY - 52),
-                endPoint: CGPoint(x: cw / 2 + 220, y: wordmarkY + 8))
-            drawAtBaseline(ctx, wm, x: cw / 2, baseline: wordmarkY, fontSize: 60)
-            titleBottom = wordmarkY + 10
-        }
-
-        // Letterspaced variant label.
-        let labelY = titleBottom + 46
-        drawLifted(ctx, labelText, 34, .black, theme.label, at: CGPoint(x: cw / 2, y: labelY - 34 * 0.36),
-                   anchor: .center, tracking: 9)
-
-        // Chips: mode (glossy accent; swords glyph on the VS variant) + date chip (tinted).
-        let chipH: CGFloat = 56
-        let chipY = labelY + 26
-        let swordsSize: CGFloat = input.variant == .vs ? 30 : 0
-        let swordsGap: CGFloat = input.variant == .vs ? 10 : 0
-        let modeText = resolved(ctx, input.modeChip, 27, .heavy, .white)
-        let modeChipW = width(of: modeText) + swordsSize + swordsGap + 48
-        let dateText = resolved(ctx, input.dateChip, 27, .heavy, ShareInk.date)
-        let dateChipW = width(of: dateText) + 44
-        let chipGap: CGFloat = 16
-        var chipX = (cw - modeChipW - chipGap - dateChipW) / 2
-
-        let modeRect = CGRect(x: chipX, y: chipY, width: modeChipW, height: chipH)
-        let modePath = Path(roundedRect: modeRect, cornerRadius: chipH / 2)
-        // Candy chip: a darker lip, the accent face and a top gloss.
-        ctx.fill(Path(roundedRect: modeRect.offsetBy(dx: 0, dy: 4), cornerRadius: chipH / 2),
-                 with: .color(input.modeAccent.mixed(over: .black, 0.65)))
-        ctx.fill(modePath, with: .color(input.modeAccent))
-        ctx.fill(Path(roundedRect: CGRect(x: chipX + 10, y: chipY + 4, width: modeChipW - 20, height: chipH * 0.42),
-                      cornerRadius: chipH * 0.21),
-                 with: .linearGradient(Gradient(colors: [Color.white.opacity(0.42), Color.white.opacity(0)]),
-                                       startPoint: CGPoint(x: 0, y: chipY + 4), endPoint: CGPoint(x: 0, y: chipY + 4 + chipH * 0.42)))
-        var modeTextX = chipX + 24
-        if input.variant == .vs, let swords = tintedImage(ctx, asset: "swords", color: .white) {
-            ctx.draw(swords, in: CGRect(x: modeTextX, y: chipY + chipH / 2 - swordsSize / 2,
-                                        width: swordsSize, height: swordsSize))
-            modeTextX += swordsSize + swordsGap
-        }
-        ctx.draw(modeText, at: CGPoint(x: modeTextX, y: chipY + chipH / 2 + 1), anchor: .leading)
-
-        chipX += modeChipW + chipGap
-        let dateRect = CGRect(x: chipX, y: chipY, width: dateChipW, height: chipH)
-        let datePath = Path(roundedRect: dateRect, cornerRadius: chipH / 2)
-        ctx.fill(datePath, with: .color(panelAccent.wash(0.12)))
-        ctx.stroke(datePath, with: .color(panelAccent.wash(0.34)), lineWidth: 3)
-        ctx.draw(dateText, at: CGPoint(x: chipX + 22, y: chipY + chipH / 2 + 1), anchor: .leading)
-
-        // Rows panel — sized to its content, centered between chips and footer,
-        // so short boards don't strand dead padding (web founder note, Aug 7).
-        let panelX: CGFloat = 56
-        let panelW = cw - panelX * 2
-        let areaTop = chipY + chipH + 26
-        let castTop = ch - 40 - castH
-        let areaBottom = castTop - 40
-        let pad: CGFloat = 16
-        let barH: CGFloat = 14
-        let dividerH: CGFloat = input.you != nil ? 46 : 0
-        let nRows = CGFloat(input.rows.count + (input.you != nil ? 1 : 0))
-        guard nRows > 0 else { return }
-        // Max row height — roomier for the 3-row podium than a 6-slot board.
-        // Podium carries the same top 5 (+ you-row) as the daily card now.
-        let band: CGFloat = Self.rowBand
-        let rowH = min(band, (areaBottom - areaTop - pad * 2 - barH - dividerH) / nRows)
-        let contentH = rowH * nRows + dividerH + pad * 2 + barH
-        let panelTop = areaTop + (areaBottom - areaTop - contentH) / 2
-        let panelRect = CGRect(x: panelX, y: panelTop, width: panelW, height: contentH)
-        let panel = Path(roundedRect: panelRect, cornerRadius: 34)
-        // §A1 tinted card: the accent wash + border, a top bar, a soft shadow.
-        ctx.drawLayer { layer in
-            layer.addFilter(.shadow(color: Color(hex: 0x3C1E6E).opacity(0.14), radius: 16, x: 0, y: 10))
-            layer.fill(panel, with: .color(panelAccent.wash(0.08)))
-        }
-        ctx.drawLayer { layer in
-            layer.clip(to: panel)
-            layer.fill(Path(CGRect(x: panelX, y: panelTop, width: panelW, height: barH)),
-                       with: .linearGradient(Gradient(colors: [panelAccent, panelAccent.wash(0.55)]),
-                                             startPoint: CGPoint(x: panelX, y: 0), endPoint: CGPoint(x: panelX + panelW, y: 0)))
-        }
-        ctx.stroke(panel, with: .color(panelAccent.wash(0.26)), lineWidth: 3.5)
-        var y = panelTop + barH + pad
-
-        for (i, row) in input.rows.enumerated() {
-            drawRow(ctx, row, x: panelX, y: y, w: panelW, h: rowH, opts: RowOpts(
-                delta: row.isYou ? input.delta : nil,
-                separator: i < input.rows.count - 1 || input.you != nil,
-                edgeTop: i == 0,
-                edgeBottom: i == input.rows.count - 1 && input.you == nil,
-                bleed: pad, stripe: i % 2 == 0))
-            y += rowH
-        }
-
-        if let you = input.you {
-            // "• • •" divider between the compressed top rows and the sharer's.
-            let dots = resolved(ctx, "• • •", 26, .black, textMuted)
-            ctx.draw(dots, at: CGPoint(x: cw / 2, y: y + dividerH / 2 + 1), anchor: .center)
-            y += dividerH
-            drawRow(ctx, you, x: panelX, y: y, w: panelW, h: rowH, opts: RowOpts(
-                rankLine: input.youRankLine,
-                delta: input.delta,
-                edgeBottom: true,
-                bleed: pad))
-        }
-
-        // §S3: the cast IS the wordmark — the ten heroes standing together
-        // (6% overlap) across ~80% of the width on a soft ground shadow, then the
-        // one tiny "wordocious.com" line.
-        let side = ShareCastWordmark.heroSide(Self.castW)
-        let rowX = (cw - Self.castW) / 2
-        let shadowRect = CGRect(x: rowX, y: castTop + side * 0.82, width: Self.castW, height: side * 0.30)
-        ctx.fill(Path(ellipseIn: shadowRect), with: .radialGradient(
-            Gradient(colors: [Color(hex: 0x3C1E6E).opacity(0.28), Color(hex: 0x3C1E6E).opacity(0)]),
-            center: CGPoint(x: shadowRect.midX, y: shadowRect.midY), startRadius: 0, endRadius: Self.castW * 0.5))
-        for (i, m) in Mascots.cast.enumerated() {
-            guard let ui = UIImage(named: m.assetName) else { continue }
-            let x = rowX + CGFloat(i) * side * 0.94
-            ctx.draw(ctx.resolve(Image(uiImage: ui)), in: CGRect(x: x, y: castTop, width: side, height: side))
-        }
-        drawLifted(ctx, "wordocious.com", 26, .black, ShareInk.link,
-                   at: CGPoint(x: cw / 2, y: castTop + side + 10 + 17), anchor: .center, tracking: 1)
+        .padding(.horizontal, 28)
+        .frame(height: Self.rowH)
+        .background(shape.fill(r.isYou && !streak ? ShareNight.gold.opacity(0.17) : Color.white.opacity(0.07)))
     }
 }
 #endif

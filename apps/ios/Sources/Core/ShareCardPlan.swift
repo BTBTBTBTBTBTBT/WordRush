@@ -21,7 +21,7 @@ public enum ShareCardPlan {
     /// The title art: centered, inside these side margins, never taller than `titleMaxH`.
     public static let titleMargin: Double = 90
     public static let titleMaxW: Double = width - titleMargin * 2
-    public static let titleMaxH: Double = 210
+    public static let titleMaxH: Double = 150
     /// The lettered title's height when the art doesn't ship.
     public static let titleFallbackH: Double = 96
     /// Card top → title.
@@ -39,14 +39,16 @@ public enum ShareCardPlan {
     public static let windowH: Double = 124
     /// Stat windows → cast wordmark.
     public static let castGap: Double = 24
-    /// The cast row's width (80% of the card) and the pad under its link line.
-    public static let castW: Double = 864
-    public static let bottomPad: Double = 24
+    /// The cast row's width and the pad under its link line. Founder 10-16 (night frame): the cast is drawn ~15% larger
+    /// than before (864 → 994) with a bigger, bright wordocious.com link line (34 px).
+    public static let castW: Double = 994
+    public static let castLinkSize: Double = 34
+    public static let bottomPad: Double = 30
 
     /// The cast wordmark block's height at `width` (heroes with the 6% overlap + shadow gap + link line);
     /// equals ShareCastWordmark.height.
-    public static func castBlockHeight(_ width: Double, linkSize: Double = 26) -> Double {
-        width / (10 - 9 * 0.06) + 10 + linkSize * 1.3
+    public static func castBlockHeight(_ width: Double, linkSize: Double = castLinkSize) -> Double {
+        width / (10 - 9 * 0.06) + 16 + linkSize * 1.3
     }
 
     /// Everything a standard game card stacks below the title except the board: info line, gaps, stat

@@ -55,6 +55,7 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalDensity
@@ -190,8 +191,12 @@ fun HomeBannerView(
     // Z: the band's slot exists in both modes (Unlimited shows U's loop art in it).
     val bandTier = slots.sceneBand
     val artAccent = if (bandTier == BannerTier.FLAWLESS) MomentInk.flawless else MomentInk.sweep
-    // 2.8 (founder 10-15): the Halloween season's curtain-stage art behind the headline card (null season = the card as ever).
-    val stageArt = rememberSeason() == com.wordocious.core.Season.HALLOWEEN
+    // 2.8 (founder 10-15; 10-16 every season): the season's curtain-stage art (registry `stage` slot) behind the headline card
+    // when it ships; 0 = the card as ever.
+    val stageSeason = rememberSeason()
+    val stageCtx = LocalContext.current
+    val stageRes = remember(stageSeason) { SeasonKit.stage(stageCtx, stageSeason) }
+    val stageArt = stageRes != 0
 
     // Fixed card chrome: capped fontScale (the HomeScreen rule) so huge system text
     // can't balloon the strip or push the tile rows out of the card.
@@ -318,7 +323,7 @@ fun HomeBannerView(
                     // A wide card (tablet) reserves a taller trio slot so the bigger figures stay under the clock line.
                     val trioSlot = maxOf(HOME_STAGE_TRIO_SLOT, maxWidth * 0.30f)
                     Image(
-                        artPainter(com.wordocious.app.R.drawable.art_celebration_stage_halloween, 400.dp), contentDescription = null,
+                        artPainter(stageRes, 400.dp), contentDescription = null,
                         contentScale = ContentScale.Crop, alignment = Alignment.BottomCenter, modifier = Modifier.matchParentSize().clearAndSetSemantics { },
                     )
                     Column(Modifier.fillMaxWidth()) {

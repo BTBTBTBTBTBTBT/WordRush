@@ -187,5 +187,6 @@ export function chainLayout(lens: number[], width: number, height: number): Chai
  */
 export function chainInputTile(rowWidth: number, slots: number, cap = 40): number {
   const n = Math.max(1, slots);
-  return Math.floor(Math.min(cap, rowWidth / (n + 0.12 * (n - 1))));
+  // Floor 16 (×3 parity): a zero-width measure pass never yields a 0 / negative tile.
+  return Math.max(16, Math.floor(Math.min(cap, rowWidth / (n + 0.12 * (n - 1)))));
 }

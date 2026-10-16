@@ -785,7 +785,7 @@ private fun CodebreakerFinished(
         val num = if (session.isDaily) session.dailyNumber else null
         val meta = "${num?.let { "#$it · " } ?: ""}${session.checksLabel} · ${timeText(secs)}"
         val text = "Wordocious Codebreaker${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${timeText(secs)} · ${session.checksLabel} · wordocious.com/codebreaker"
-        val bmp = ShareImage.renderCryptogram(context, s.cipher, s.checks, won, meta)
+        val bmp = ShareImage.renderCryptogram(context, s.cipher, s.checks, won, meta, score = com.wordocious.app.data.ShareBreakdown.Input(GameMode.CRYPTOGRAM, won, gc, secs, if (won) 1 else 0, 1, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null))
         ShareImage.shareBitmap(context, bmp, text)
     }
     FinishedScreen(

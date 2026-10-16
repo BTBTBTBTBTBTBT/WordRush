@@ -287,6 +287,8 @@ fun FriendsScreen(
             onPlayWith = { quickPlay = QuickPlayRequest(it.id) },
             onMenu = { menuFriend = it },
             onResign = { id -> scope.launch { FriendlyGamesService.resign(id); FriendlyGamesService.load() } },
+            onOpenProfile = onOpenProfile,
+            onStartGame = { f, k -> quickPlay = QuickPlayRequest(f.id, k, kindChosen = true) },
         )
 
         // 5. PLAY WITH FRIENDS

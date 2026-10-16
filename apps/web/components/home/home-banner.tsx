@@ -8,7 +8,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 're
 import { headlineLabel } from '@wordle-duel/core';
 import { BubbleLine } from '@/components/ui/bubble-text';
 import { readSurfacesChoice, useSeason } from '@/lib/season';
-import { seasonBanner, seasonHeadlineSpec, seasonSurfaces } from '@/lib/season-kit';
+import { SEASON_ART_SIZE, seasonBanner, seasonHeadlineSpec, seasonStage, seasonSurfaces } from '@/lib/season-kit';
 import { SeasonArt } from '@/components/ui/season-art';
 import Image from 'next/image';
 import { alphaHex, softBorder, softIconTile } from '@/lib/soft-surface';
@@ -274,7 +274,9 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   // 2.8 (founder 10-15, Halloween only): the stage card. The curtain-stage art is drawn behind the strip + trio row (it carries its own
   // valance + curtains, so the card's drawn cap / cobweb step aside) and the animated trio's feet land in its three spotlight pools
   // (core CELEBRATION_STAGE). Outside Halloween (or on the standard look) the card is exactly as before.
-  const stage = season === 'halloween' && !!look;
+  // 10-16: season-driven (registry `stage` slot; Halloween's art lives in lib/art.ts, later seasons' in season-art.generated.json).
+  const stageArt = seasonStage(season, (n) => n in ART_SIZE);
+  const stage = !!stageArt && !!look;
   const stageTrio = tierArt && content.art === 'tier' ? (tierArt.art === 'art-scene-banner-flawless' ? FLAWLESS_TRIO : SWEEP_TRIO) : HALLOWEEN_TRIO;
 
 
@@ -377,7 +379,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           progress rows + Play next on the right. On phones these wrappers are display: contents (nothing moves). */}
       <div className="hb-body">
       <div className="hb-left">
-      <StageFrame on={stage} topBar={slots.topBar} trio={stageTrio} celebrating={!!tierArt && content.art === 'tier'}>
+      <StageFrame on={stage} art={stageArt} topBar={slots.topBar} trio={stageTrio} celebrating={!!tierArt && content.art === 'tier'}>
       <div className={`${look ? '' : 'banner-frost '}relative flex flex-col`} style={{ gap: BANNER_SLOT.stripGap, padding: `${slots.stripTop}px 12px ${BANNER_SLOT.stripBottom}px` }}>
       <div className="flex items-center gap-1">
       <div className="flex-1 min-w-0">
@@ -596,15 +598,16 @@ const CAP_TRIM = { viewW: 360, drip: 4, bumps: 16 } as const;
  * image, decoded once; no per-frame work), the trio over it with its feet in the spotlight pools, the content on top. Off: a
  * fragment, so the card is exactly as before.
  */
-function StageFrame({ on, topBar, trio, celebrating, children }: { on: boolean; topBar: number; trio: readonly string[]; celebrating: boolean; children: React.ReactNode }) {
+function StageFrame({ on, art, topBar, trio, celebrating, children }: { on: boolean; art: string | null; topBar: number; trio: readonly string[]; celebrating: boolean; children: React.ReactNode }) {
   // The box is the card (its height comes from the fixed slots, never from the image); the art is an absolute cover-fit layer that
   // FADES in when decoded, so nothing resizes or pops on load.
   const [artReady, setArtReady] = useState(false);
-  if (!on) return <>{children}</>;
+  if (!on || !art) return <>{children}</>;
+  const [artW, artH] = (ART_SIZE as Record<string, readonly [number, number]>)[art] ?? SEASON_ART_SIZE[art] ?? [1586, 992];
   return (
     <div className="relative" style={{ paddingTop: topBar }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img ref={(el) => { if (el?.complete && el.naturalWidth > 0 && !artReady) setArtReady(true); }} src={artSrc('art-celebration-stage-halloween')} alt="" aria-hidden="true" width={1586} height={992} decoding="async" draggable={false}
+      <img ref={(el) => { if (el?.complete && el.naturalWidth > 0 && !artReady) setArtReady(true); }} src={`/art/${art}.webp`} alt="" aria-hidden="true" width={artW} height={artH} decoding="async" draggable={false}
         onLoad={() => setArtReady(true)}
         className="absolute inset-0 w-full h-full select-none pointer-events-none" style={{ objectFit: 'cover', zIndex: 0, opacity: artReady ? 1 : 0, transition: 'opacity 220ms ease-out' }} />
       <CelebrationTrio className="pointer-events-none" style={{ position: 'absolute', inset: 0, zIndex: 1 }} images={trio} bunting={false} sparkles={celebrating} tempo={celebrating ? 0.42 : 0.7} swayDegrees={celebrating ? 4 : 3} stage />

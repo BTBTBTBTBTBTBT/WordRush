@@ -1695,7 +1695,7 @@ private fun ChainBoard(
                 // locked first letter stays in its soft purple tile; the tiles shrink smoothly as the word grows so it always fits one row.
                 val slots = typed.length + if (typed.length < CHAIN_WORD_MAX) 1 else 0
                 val fit = maxWidth / (slots + 0.12f * (slots - 1))
-                val target = min(40.dp * pk, fit)
+                val target = maxOf(16.dp, min(40.dp * pk, fit))   // floor (×3 parity): a 0-width pass never yields a 0 tile
                 val tile by androidx.compose.animation.core.animateDpAsState(target, tween(if (WTheme.reducedMotion) 0 else 120), label = "chainEntry")
                 val gap = tile * 0.12f
                 val shape = RoundedCornerShape(tile * 0.2f)

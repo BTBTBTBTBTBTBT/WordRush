@@ -46,20 +46,42 @@ internal object ShareFinish {
     /** The 1080 px card is the 360 px mockup at 3×. */
     const val U = 3f
 
-    const val INK_LABEL = 0xFF5B3C96.toInt()
-    const val INK_HEADING = 0xFF2A1650.toInt()
-    const val INK_SOFT = 0xFF3B1A78.toInt()
-    const val INK_PURPLE = 0xFF6D28D9.toInt()
-    const val INK_MUTED = 0xFF6F5F8F.toInt()
-    const val LOSS_RED = 0xFFDC2626.toInt()
+    // The night frame (SPEC share-cards-1016, founder 10-16 option B): every ink reads on the night gradient.
+    const val NIGHT_TOP = 0xFF1A0E2E.toInt()
+    const val NIGHT_BOTTOM = 0xFF2E1440.toInt()
+    /** Info line + soft lavender text. */
+    const val INK_INFO = 0xFFE2D6FF.toInt()
+    const val INK_LABEL = 0xFFCDBBF5.toInt()
+    const val INK_HEADING = 0xFFF6F0FF.toInt()
+    const val INK_SOFT = 0xFFFFFFFF.toInt()
+    const val INK_PURPLE = 0xFFC4B5FD.toInt()
+    const val INK_MUTED = 0xFFA99BC9.toInt()
+    const val INK_GOLD = 0xFFFFD166.toInt()
+    const val LOSS_RED = 0xFFFB7185.toInt()
+    /** A card surface on night: a fill lighter than the page, never a bordered box. */
+    const val NIGHT_SURFACE = 0xFF2C1A4C.toInt()
 
     // ── fonts ────────────────────────────────────────────────────────────
 
-    /** The bundled Nunito at [weight] (variable font: the weighted create drives the real `wght` axis). */
-    fun nunito(context: Context, weight: Int): Typeface {
-        val base = ResourcesCompat.getFont(context, R.font.nunito) ?: Typeface.DEFAULT
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Typeface.create(base, weight, false)
-        else Typeface.create(base, if (weight >= 800) Typeface.BOLD else Typeface.NORMAL)
+    private val faces = HashMap<Int, Typeface>()
+
+    /**
+     * The bundled Nunito at [weight] (a variable font). The weighted `Typeface.create` only picks the nearest static face on some
+     * devices (headless renders came out in Regular), so the real `wght` axis is driven through a Typeface.Builder on the font file.
+     */
+    fun nunito(context: Context, weight: Int): Typeface = synchronized(faces) {
+        faces.getOrPut(weight) {
+            runCatching {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) error("no variable fonts")
+                val f = java.io.File(context.cacheDir, "nunito-share.ttf")
+                if (!f.exists() || f.length() == 0L) context.resources.openRawResource(R.font.nunito).use { i -> f.outputStream().use { o -> i.copyTo(o) } }
+                Typeface.Builder(f).setFontVariationSettings("'wght' $weight").setWeight(weight).build() ?: error("builder")
+            }.getOrElse {
+                val base = ResourcesCompat.getFont(context, R.font.nunito) ?: Typeface.DEFAULT
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Typeface.create(base, weight, false)
+                else Typeface.create(base, if (weight >= 800) Typeface.BOLD else Typeface.NORMAL)
+            }
+        }
     }
 
     class Fonts(context: Context) {
@@ -122,8 +144,8 @@ internal object ShareFinish {
         if (w > maxW && w > 0f) p.textSize *= maxW / w
     }
 
-    /** The soft white highlight under light-background text (text-shadow 0 1px 0 rgba(255,255,255,.8)). */
-    fun softShadow(p: Paint, dy: Float = U) = p.setShadowLayer(0.01f, 0f, dy, 0xCCFFFFFF.toInt())
+    /** The soft dark drop under text on the night frame (a gentle lift, no outline). */
+    fun softShadow(p: Paint, dy: Float = U) = p.setShadowLayer(U * 1.5f, 0f, dy, 0x66000000)
 
     /** A2 soft number on the card: Nunito Black #3b1a78, tabular figures, the soft white highlight. */
     fun softPaint(fonts: Fonts, size: Float, align: Paint.Align = Paint.Align.CENTER, color: Int = INK_SOFT): Paint =
@@ -229,9 +251,10 @@ internal object ShareFinish {
         c: Canvas, r: RectF, radius: Float, tint: Int, line: Int,
         bar: IntArray? = null, barH: Float = 0f, shadow: Int = 0x1F3C1E6E, shadowDy: Float = 6f * U, shadowBlur: Float = 14f * U,
     ) {
+        // Night: a surface lighter than the page with a whisper of the tint's hue, a dark lift, the accent bar. No outline.
         val p = Paint(Paint.ANTI_ALIAS_FLAG)
-        p.color = tint
-        if (shadow != 0) p.setShadowLayer(shadowBlur / 2f, 0f, shadowDy, shadow)
+        p.color = TintMath.over(tint or (0xFF shl 24), 0.16f, NIGHT_SURFACE)
+        if (shadow != 0) p.setShadowLayer(shadowBlur / 2f, 0f, shadowDy / 2f, 0x55000000)
         c.drawRoundRect(r, radius, radius, p)
         p.clearShadowLayer()
         if (bar != null && barH > 0f) {
@@ -243,15 +266,23 @@ internal object ShareFinish {
             p.shader = null
             c.restore()
         }
-        p.style = Paint.Style.STROKE; p.strokeWidth = 1.5f * U; p.color = line
-        val i = p.strokeWidth / 2f
-        c.drawRoundRect(RectF(r.left + i, r.top + i, r.right - i, r.bottom - i), radius - i, radius - i, p)
     }
 
     /** A1 an accent card: wash 13%, line 32%, the accent bar. */
-    fun drawAccentCard(c: Canvas, r: RectF, accent: Int, radius: Float, barH: Float = 0f, washAmount: Float = Wash.CARD) =
-        drawTintedCard(c, r, radius, wash(accent, washAmount), wash(accent, Wash.LINE), if (barH > 0f) intArrayOf(accent or (0xFF shl 24)) else null, barH,
-            shadow = ((0x33 shl 24) or (accent and 0x00FFFFFF)), shadowDy = 3f * U, shadowBlur = 8f * U)
+    fun drawAccentCard(c: Canvas, r: RectF, accent: Int, radius: Float, barH: Float = 0f, washAmount: Float = Wash.CARD) {
+        val p = Paint(Paint.ANTI_ALIAS_FLAG)
+        p.color = TintMath.over(accent or (0xFF shl 24), 0.20f, NIGHT_SURFACE)
+        p.setShadowLayer(4f * U, 0f, 2f * U, 0x55000000)
+        c.drawRoundRect(r, radius, radius, p)
+        p.clearShadowLayer()
+        if (barH > 0f) {
+            c.save()
+            c.clipPath(Path().apply { addRoundRect(r, radius, radius, Path.Direction.CW) })
+            p.color = accent or (0xFF shl 24)
+            c.drawRect(r.left, r.top, r.right, r.top + barH, p)
+            c.restore()
+        }
+    }
 
     /**
      * A1 icon tile as a mini game card (`.gi` / `.wt`): wash 13%, 1.5 border at 34%, a
@@ -261,8 +292,8 @@ internal object ShareFinish {
         val a = accent or (0xFF shl 24)
         val radius = r.width() * 0.26f
         val p = Paint(Paint.ANTI_ALIAS_FLAG)
-        p.color = Wash.mixArgb(a, Wash.CARD)
-        p.setShadowLayer(4f * unit, 0f, 2f * unit, (0x33 shl 24) or (a and 0x00FFFFFF))
+        p.color = TintMath.over(a, 0.20f, NIGHT_SURFACE)
+        p.setShadowLayer(4f * unit, 0f, 2f * unit, 0x55000000)
         c.drawRoundRect(r, radius, radius, p)
         p.clearShadowLayer()
         c.save()
@@ -270,9 +301,6 @@ internal object ShareFinish {
         p.color = a
         c.drawRect(r.left, r.top, r.right, r.top + 4f * unit, p)
         c.restore()
-        p.style = Paint.Style.STROKE; p.strokeWidth = 1.5f * unit; p.color = Wash.mixArgb(a, 0.34f)
-        val i = p.strokeWidth / 2f
-        c.drawRoundRect(RectF(r.left + i, r.top + i, r.right - i, r.bottom - i), radius - i, radius - i, p)
         if (icon != null) {
             val s = r.width() * iconFrac
             val cy = r.centerY() + 2f * unit
@@ -293,39 +321,67 @@ internal object ShareFinish {
 
     /** The three `.sc-stats` palettes: purple guesses, blue time, gold points. */
     enum class Window(val tint: Int, val line: Int, val bar: IntArray, val label: Int) {
-        PURPLE(0xFFF5EEFF.toInt(), 0xFFE2D3FF.toInt(), intArrayOf(0xFF7C3AED.toInt(), 0xFFA855F7.toInt()), 0xFF6D28D9.toInt()),
-        BLUE(0xFFEAF2FF.toInt(), 0xFFCFE0FF.toInt(), intArrayOf(0xFF0A6CFF.toInt(), 0xFF60A5FA.toInt()), 0xFF2456A8.toInt()),
-        GOLD(0xFFFFF5DF.toInt(), 0xFFF8E2B4.toInt(), intArrayOf(0xFFF5A524.toInt(), 0xFFFFD166.toInt()), 0xFFA2560C.toInt()),
-        PINK(0xFFFFEEF7.toInt(), 0xFFFBCFE8.toInt(), intArrayOf(0xFFEC4899.toInt(), 0xFFF9A8D4.toInt()), 0xFFBE185D.toInt()),
-        TEAL(0xFFE6FAF6.toInt(), 0xFFB5EDE2.toInt(), intArrayOf(0xFF0D9488.toInt(), 0xFF5EEAD4.toInt()), 0xFF0F766E.toInt()),
-        ROSE(0xFFFFF1F2.toInt(), 0xFFFECDD3.toInt(), intArrayOf(0xFFE11D48.toInt(), 0xFFFB7185.toInt()), 0xFFBE123C.toInt()),
+        PURPLE(0xFFF5EEFF.toInt(), 0xFFE2D3FF.toInt(), intArrayOf(0xFF7C3AED.toInt(), 0xFFA855F7.toInt()), 0xFFC4B5FD.toInt()),
+        BLUE(0xFFEAF2FF.toInt(), 0xFFCFE0FF.toInt(), intArrayOf(0xFF0A6CFF.toInt(), 0xFF60A5FA.toInt()), 0xFF93C5FD.toInt()),
+        GOLD(0xFFFFF5DF.toInt(), 0xFFF8E2B4.toInt(), intArrayOf(0xFFF5A524.toInt(), 0xFFFFD166.toInt()), 0xFFFCD34D.toInt()),
+        PINK(0xFFFFEEF7.toInt(), 0xFFFBCFE8.toInt(), intArrayOf(0xFFEC4899.toInt(), 0xFFF9A8D4.toInt()), 0xFFF9A8D4.toInt()),
+        TEAL(0xFFE6FAF6.toInt(), 0xFFB5EDE2.toInt(), intArrayOf(0xFF0D9488.toInt(), 0xFF5EEAD4.toInt()), 0xFF5EEAD4.toInt()),
+        ROSE(0xFFFFF1F2.toInt(), 0xFFFECDD3.toInt(), intArrayOf(0xFFE11D48.toInt(), 0xFFFB7185.toInt()), 0xFFFDA4AF.toInt()),
     }
 
     data class Stat(val value: String, val label: String, val window: Window)
 
-    /** The `.sc-stats` card height (founder 10-12: tightened from 150 so a 3:4 card keeps a big board; web 120, iOS 124). */
-    const val STATS_H = 126f
+    /** The finished-screen stat chip's height (SPEC: dark pills with the colored top bar). */
+    const val STATS_H = 78f
 
-    /** A row of tinted stat windows across [left]..[right], [top] down, [h] tall (soft-number values). */
+    /**
+     * A row of stat chips across [left]..[right], [top] down, [h] tall. A short [h] draws the finished screen's pill (a dark
+     * pill, the colored bar centered on its top edge, "value label" on one line); a tall [h] (profile / moment tiles) stacks the
+     * soft number over its caps label.
+     */
     fun drawStats(c: Canvas, fonts: Fonts, stats: List<Stat>, left: Float, right: Float, top: Float, h: Float = STATS_H, gap: Float = 6f * U, valueSize: Float = 20f * U) {
         if (stats.isEmpty()) return
         val n = stats.size
         val w = (right - left - gap * (n - 1)) / n
+        val inline = h < 100f
+        val chipGap = if (inline) 14f else gap
+        val cw = (right - left - chipGap * (n - 1)) / n
         stats.forEachIndexed { i, s ->
-            val x = left + i * (w + gap)
-            val r = RectF(x, top, x + w, top + h)
-            drawTintedCard(c, r, 14f * U, s.window.tint, s.window.line, s.window.bar, 6f * U)
-            val label = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                textAlign = Paint.Align.CENTER; typeface = fonts.black; textSize = 9f * U; color = s.window.label; letterSpacing = 0.12f
+            val x = left + i * (cw + chipGap)
+            val r = RectF(x, top, x + cw, top + h)
+            if (inline) {
+                val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = TintMath.over(0xFFFFFFFF.toInt(), 0.07f, NIGHT_SURFACE) }
+                c.drawRoundRect(r, h / 2f, h / 2f, fill)
+                val bw = cw * 0.46f
+                val bar = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    shader = LinearGradient(r.centerX() - bw / 2f, 0f, r.centerX() + bw / 2f, 0f, s.window.bar, null, Shader.TileMode.CLAMP)
+                }
+                c.drawRoundRect(RectF(r.centerX() - bw / 2f, r.top - 1f, r.centerX() + bw / 2f, r.top + 7f), 4f, 4f, bar)
+                val label = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = fonts.heavy; textSize = 27f; color = INK_LABEL }
+                val value = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = fonts.black; textSize = 46f; color = 0xFFFFFFFF.toInt(); fontFeatureSettings = "tnum" }
+                // "1 mistakes" reads "1 mistake"
+                val lab = s.label.lowercase(Locale.US).let { l -> if (s.value == "1" && (l.endsWith("guesses") || l.endsWith("misses"))) l.dropLast(2) else if (s.value == "1" && l.endsWith("s") && l != "pts") l.dropLast(1) else l }
+                val gapT = 12f
+                var tw = value.measureText(s.value) + gapT + label.measureText(lab)
+                val maxW = cw - 36f
+                if (tw > maxW) { val k = maxW / tw; value.textSize *= k; label.textSize *= k; tw = maxW }
+                val x0 = r.centerX() - tw / 2f
+                val base = r.centerY() + 6f - (value.ascent() + value.descent()) / 2f
+                c.drawText(s.value, x0, base, value)
+                c.drawText(lab, x0 + value.measureText(s.value) + gapT, base, label)
+            } else {
+                drawTintedCard(c, r, 14f * U, s.window.tint, s.window.line, s.window.bar, 6f * U)
+                val label = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    textAlign = Paint.Align.CENTER; typeface = fonts.black; textSize = 9f * U; color = s.window.label; letterSpacing = 0.12f
+                }
+                fitText(label, s.label, cw - 8f * U)
+                val v = softPaint(fonts, valueSize)
+                fitText(v, s.value, cw - 10f * U)
+                val labelBase = r.bottom - 9f * U
+                val valueCy = (r.top + 6f * U + (labelBase - label.textSize)) / 2f + 2f * U
+                c.textMid(s.value, r.centerX(), valueCy, v)
+                c.drawText(s.label, r.centerX(), labelBase, label)
             }
-            fitText(label, s.label, w - 8f * U)
-            val v = softPaint(fonts, valueSize)
-            fitText(v, s.value, w - 10f * U)
-            // value centered in the space under the bar and above the label
-            val labelBase = r.bottom - 9f * U
-            val valueCy = (r.top + 6f * U + (labelBase - label.textSize)) / 2f + 2f * U
-            c.textMid(s.value, r.centerX(), valueCy, v)
-            c.drawText(s.label, r.centerX(), labelBase, label)
         }
     }
 

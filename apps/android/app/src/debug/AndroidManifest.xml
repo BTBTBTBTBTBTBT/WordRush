@@ -13,5 +13,9 @@
             android:name="io.sentry.auto-init"
             android:value="false"
             tools:replace="android:value" />
+        <!-- Debug-only: renders sample share cards to PNGs for visual review. -->
+        <receiver android:name="com.wordocious.app.debug.ShareRenderReceiver" android:exported="true">
+            <intent-filter><action android:name="com.wordocious.app.RENDER_SHARES" /></intent-filter>
+        </receiver>
     </application>
 </manifest>

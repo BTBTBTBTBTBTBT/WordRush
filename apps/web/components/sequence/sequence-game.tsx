@@ -355,7 +355,8 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
             strip={
               <ResultStrip
                 won={state.status === 'WON'}
-                guesses={guessesUsed}
+                boards={{ solved: solvedCount, total: 4 }}
+                guesses={state.status === 'WON' ? guessesUsed : `${guessesUsed}/${maxGuesses}`}
                 time={formatTime(elapsedTime)}
                 points={finishedPoints}
                 srText={state.status === 'WON' ? `All 4 solved in ${guessesUsed} guesses · ${formatTime(elapsedTime)}` : `Boards Completed ${solvedCount}/4`}

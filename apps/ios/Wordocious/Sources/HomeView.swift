@@ -1166,7 +1166,7 @@ struct ModeLimitModal: View {
                 // §A2: the countdown is a soft number on a tinted pill.
                 TimelineView(.periodic(from: .now, by: 1)) { _ in
                     HStack(spacing: 6) {
-                        BubbleLabel("Play again in", color: Color(hex: 0x7C3AED), size: 13)
+                        BubbleLabel("Play again tomorrow in", color: Color(hex: 0x7C3AED), size: 13)
                         Text(countdown()).softNumber(16)
                     }
                     .accessibilityElement(children: .ignore)
@@ -1179,7 +1179,7 @@ struct ModeLimitModal: View {
                 // §G5 / §A8: amber "Go Pro" candy (the money CTA), then the solved
                 // review, then the quiet peach "Not now".
                 Button(action: onUpgrade) {
-                    CandyLabel(title: "Go Pro")   // the GO PRO lettering says it: no small crown
+                    CandyLabel(title: "Upgrade to Pro")   // Android / web copy; no small crown
                 }
                 .buttonStyle(CastButtonStyle(color: .gold, size: .large))
                 .accessibilityLabel("Upgrade to Pro")
@@ -1196,9 +1196,8 @@ struct ModeLimitModal: View {
                     .buttonStyle(CastButtonStyle(size: .medium))
                     .padding(.bottom, 6)
                 }
-                Button(action: onClose) { CandyLabel(title: "Not now") }
+                Button(action: onClose) { CandyLabel(title: "Come back tomorrow") }
                     .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
-                    .accessibilityHint(showViewSolved ? "" : "Come back tomorrow")
             }
             .padding(24)
             .frame(maxWidth: 360)

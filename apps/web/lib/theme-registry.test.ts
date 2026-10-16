@@ -43,7 +43,11 @@ describe('theme registry (item 25)', () => {
       for (const s of t.ambient.sprites) read(`apps/web/public${ambientSrc(s)}`);
     }
     const h = seasonalEntry('halloween')!;
-    for (const s of [h.ambient.bats.sprite, h.ambient.witch.sprite, h.ambient.fog.sprite]) read(`apps/web/public${ambientSrc(s)}`);
+    const ha = h.ambient!;
+    for (const s of [ha.bats.sprite, ha.witch.sprite, ha.fog.sprite]) read(`apps/web/public${ambientSrc(s)}`);
+    // 10-16: a seasonal entry may ship without an ambient (Thanksgiving); the base theme's keeps running.
+    expect(seasonalEntry('thanksgiving')?.ambient).toBeUndefined();
+    expect(seasonalEntry('thanksgiving')?.title).toBe('Seasonal — Thanksgiving');
   });
 
   it('wall vars cover both schemes; Seasonal has its row data', () => {

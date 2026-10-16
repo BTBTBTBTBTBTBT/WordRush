@@ -1233,6 +1233,7 @@ private fun MuddleFinished(
         val text = "Wordocious Muddle${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${clockText(secs)} · $solvedCount/$SCRAMBLE_TOTAL_BOARDS solved · ${session.checksLabel} · wordocious.com/muddle"
         val bmp = ShareImage.renderScramble(
             context, s.words.map { it.answer.length }, s.words.map { it.circled }, s.final.pattern, s.checks, solvedCount, won, meta,
+            score = com.wordocious.app.data.ShareBreakdown.Input(GameMode.SCRAMBLE, won, gc, secs, solvedCount, SCRAMBLE_TOTAL_BOARDS, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null),
         )
         ShareImage.shareBitmap(context, bmp, text)
     }

@@ -707,7 +707,7 @@ private fun HubFinished(
         val num = if (session.isDaily) session.dailyNumber else null
         val meta = "${num?.let { "#$it · " } ?: ""}${s.rankName} · ${session.pct}% · ${s.found.size} word${if (s.found.size == 1) "" else "s"} · ${session.pangramsFound} pangram${if (session.pangramsFound == 1) "" else "s"}"
         val text = "Wordocious Hubbub${num?.let { " #$it" } ?: ""} — Rank ${s.rankName} · ${session.pct}% of the maximum · ${s.found.size}/${s.words.size} words · Score ${session.points} pts · wordocious.com/hubbub"
-        ShareImage.shareBitmap(context, ShareImage.renderHub(context, s.rankName, session.pct, won, meta), text)
+        ShareImage.shareBitmap(context, ShareImage.renderHub(context, s.rankName, session.pct, won, meta, score = com.wordocious.app.data.ShareBreakdown.Input(GameMode.HUB, won, s.guessCount, secs, s.boardsSolved, HUB_TOTAL_BOARDS, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null)), text)
     }
     val words = @Composable {
         Text(if (s.ended) "ALL WORDS" else "FOUND SO FAR · ${s.words.size - s.found.size} MORE TO FIND", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)

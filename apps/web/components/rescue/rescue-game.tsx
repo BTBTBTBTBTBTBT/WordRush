@@ -248,7 +248,8 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
           strip={
             <ResultStrip
               won={state.status === 'WON'}
-              guesses={guessesUsed}
+              boards={{ solved: completedBoards, total: 4 }}
+              guesses={state.status === 'WON' ? guessesUsed : `${guessesUsed}/${maxGuesses}`}
               time={formatTime(elapsedTime)}
               points={finishedPoints}
               srText={state.status === 'WON' ? `Deliverance complete in ${guessesUsed} guesses · ${formatTime(elapsedTime)}` : `Boards Completed ${completedBoards}/4`}

@@ -55,7 +55,8 @@ enum ThemeKit {
         let subtitle: String
         let previewWall: [String]
         let previewTiles: [Tile]
-        let ambient: SeasonalAmbient
+        /// The season's living wallpaper; nil = the base theme's ambient keeps running (Thanksgiving ships none yet).
+        let ambient: SeasonalAmbient?
     }
 
     private struct File: Decodable { let themes: [Entry]; let seasonal: [String: Seasonal] }

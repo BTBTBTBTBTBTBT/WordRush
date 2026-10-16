@@ -140,8 +140,8 @@ final class WallpaperView: UIView {
         holder.sublayers?.forEach { $0.removeFromSuperlayer() }
         holder.frame = bounds
         let b = Builder(holder: holder, size: bounds.size, still: c.still, trim: c.trim, scale: window?.screen.scale ?? UIScreen.main.scale)
-        if let s = ThemeKit.seasonal(c.season) {
-            b.seasonal(s.ambient)
+        if let a = ThemeKit.seasonal(c.season)?.ambient {
+            b.seasonal(a)
         } else if let e = ThemeKit.entry(c.theme) {
             b.theme(e.ambient)
         }

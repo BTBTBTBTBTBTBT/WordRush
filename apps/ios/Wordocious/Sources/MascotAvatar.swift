@@ -81,8 +81,27 @@ enum MascotArtCache {
     /// The transparent rows above an art's ink, as a fraction of its height (0 when unknown). The podium hangs a name 4 pt
     /// above the DRAWN head (founder 10-15): a layer's rect starts at its padded canvas, so the name floated ~10 pt too high.
     /// Measured once per art on a 128-row alpha thumbnail (cached; prewarm fills it off main).
-    static func inkTop(_ name: String) -> Double {
-        inkLock.lock(); if let hit = inkTops[name] { inkLock.unlock(); return hit }; inkLock.unlock()
+    ///
+    /// Render path (default): NEVER decodes — returns the cached value, or 0 while the art isn't measured yet and kicks an
+    /// async measure that fills the cache (a layout body must not decode a part PNG on main). `exact: true` measures here
+    /// and now (share images render once, off the frame budget, and need the true head line).
+    static func inkTop(_ name: String, exact: Bool = false) -> Double {
+        inkLock.lock(); if let hit = inkTops[name] { inkLock.unlock(); return hit }
+        if !exact {
+            let first = inkPending.insert(name).inserted
+            inkLock.unlock()
+            if first {
+                DispatchQueue.global(qos: .utility).async { _ = measureInk(name); inkLock.lock(); inkPending.remove(name); inkLock.unlock() }
+            }
+            return 0
+        }
+        inkLock.unlock()
+        return measureInk(name)
+    }
+
+    private static var inkPending: Set<String> = []
+
+    private static func measureInk(_ name: String) -> Double {
         var top = 0.0
         if let cg = uiImage(name)?.cgImage, cg.height > 0 {
             let h = 128, w = max(8, Int(Double(cg.width) / Double(cg.height) * 128))
@@ -116,7 +135,7 @@ enum MascotArtCache {
         }
         DispatchQueue.global(qos: .utility).async {
             for n in names { _ = uiImage(n) }
-            for n in names where n.hasPrefix("art-av-acc-") || n.hasPrefix("art-av-body-") { _ = inkTop(n) }
+            for n in names where n.hasPrefix("art-av-acc-") || n.hasPrefix("art-av-body-") { _ = measureInk(n) }
         }
     }
 

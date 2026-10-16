@@ -13,6 +13,7 @@ import {
 import { GAME_HOSTS, PAGE_HOSTS, type MascotId } from './mascots';
 import { MODES } from './modes.generated';
 import { computeScoreBreakdown, formatScore } from './composite-scoring';
+import { MODE_BY_DBKEY } from './modes.generated';
 import { darken, softMix } from './soft-surface';
 import type { ShareDailySweepInput, ShareImageInput, ShareLeaderboardInput, ShareMode, TileStateString } from './share-image';
 
@@ -35,10 +36,10 @@ export const TILE_GLOSS: Record<Exclude<TileStateString, 'EMPTY'>, GlossPalette>
 
 /** The frosted empty tile (never white): translucent face, lilac lip, faint violet ring. */
 export const FROSTED_TILE = {
-  edge: 'rgba(216, 200, 243, 0.55)',
-  face: 'rgba(255, 255, 255, 0.62)',
-  ring: 'rgba(124, 58, 237, 0.14)',
-  gloss: 0.35,
+  edge: 'rgba(255, 255, 255, 0.10)',
+  face: 'rgba(255, 255, 255, 0.20)',
+  ring: 'rgba(255, 255, 255, 0.0)',
+  gloss: 0.18,
 } as const;
 
 /** Any accent as a glossy palette (lighter top, darker bottom, deep lip), e.g. a Ladder rung or a region tint. */
@@ -55,11 +56,11 @@ export function glossFrom(hex: string): GlossPalette {
 
 export type StatTone = 'purple' | 'blue' | 'gold';
 
-/** The mockup's `.sc-stats` windows: tint, border, 2-stop top bar, label color. */
+/** The night chips (founder 10-16, option B): a dark pill with a colored top bar and a light-lavender label. */
 export const STAT_TONES: Record<StatTone, { tint: string; line: string; bar: readonly [string, string]; label: string }> = {
-  purple: { tint: '#f5eeff', line: '#e2d3ff', bar: ['#7c3aed', '#a855f7'], label: '#6d28d9' },
-  blue: { tint: '#eaf2ff', line: '#cfe0ff', bar: ['#0a6cff', '#60a5fa'], label: '#2456a8' },
-  gold: { tint: '#fff5df', line: '#f8e2b4', bar: ['#f5a524', '#ffd166'], label: '#a2560c' },
+  purple: { tint: '#2C1B50', line: '#3b2766', bar: ['#7c3aed', '#a855f7'], label: '#D4C8FA' },
+  blue: { tint: '#2C1B50', line: '#3b2766', bar: ['#0a6cff', '#60a5fa'], label: '#D4C8FA' },
+  gold: { tint: '#2C1B50', line: '#3b2766', bar: ['#f5a524', '#ffd166'], label: '#D4C8FA' },
 };
 
 /** Soft numbers (A2): Nunito Black in this dark purple. */
@@ -318,3 +319,107 @@ export const LEADERBOARD_SHARE_ART: Record<ShareLeaderboardInput['variant'], { w
 
 /** The one tiny line under the cast wordmark: where to play (the share carries no link). */
 export const SHARE_SITE = 'wordocious.com';
+
+// ── The finished-game card: status line + score breakdown (night style) ─────
+
+/** The lavender status line under the info line: the game's own finished words. */
+export function shareStatusLine(input: ShareImageInput): string {
+  const won = 'won' in input ? input.won : true;
+  switch (input.layout) {
+    case 'single': return won ? `Solved in ${input.guesses}` : 'Out of guesses';
+    case 'multi': return won ? 'All boards solved' : `${input.boardsSolved} of ${input.totalBoards} solved`;
+    case 'gauntlet': return won ? 'Gauntlet cleared' : `${input.stagesCompleted} of ${input.totalStages} stages`;
+    case 'sudoku': return won ? 'Grid complete' : 'Not finished';
+    case 'regions': return won ? 'Board cleared' : 'Not cleared';
+    case 'ladder': return won ? `Climbed in ${input.moves}` : 'Fell off the ladder';
+    case 'wordsearch': return won ? 'Every word found' : `${input.found.length} of ${input.words.length} found`;
+    case 'hub': return input.rankName;
+    case 'cryptogram': return won ? 'Code cracked' : 'Code not cracked';
+    case 'groups': return won ? 'All groups found' : `${input.solvedTiers.length} of 4 groups`;
+    case 'crossword': return won ? 'Grid complete' : 'Not finished';
+    case 'scramble': return `${input.solvedCount} of 5 solved`;
+    default: return '';
+  }
+}
+
+/** The finished-game info line (night): "FRIDAY, OCT 16 · #24 · 8 × 8". */
+export function shareNightInfoLine(input: ShareImageInput, d: Date): string {
+  return shareDateLine(d, shareDetailBits(input));
+}
+
+export interface ShareBreakdownRow {
+  label: string;
+  detail: string;
+  value: number;
+  /** The hint-penalty row is drawn in the accent when no hints were used. */
+  accent?: boolean;
+}
+
+export interface ShareBreakdown {
+  total: number;
+  rows: ShareBreakdownRow[];
+}
+
+function clockWords(s: number): string {
+  if (s <= 0) return '0s';
+  const m = Math.floor(s / 60);
+  return m > 0 ? `${m}m ${Math.floor(s % 60)}s` : `${Math.floor(s)}s`;
+}
+
+/**
+ * The score breakdown rows of the finished screen (components/game/score-breakdown.tsx, same labels, same math) for a
+ * share card, or null when the card has none. `scoreArgs` overrides what the share input can't know (hints used,
+ * the game's guess count); points the caller passed win when they disagree with the recomputation by more than a point
+ * (then only the total is shown, never a wrong line).
+ */
+export function shareBreakdown(input: ShareImageInput, dateKey?: string): ShareBreakdown | null {
+  if (input.layout === 'daily-sweep' || input.layout === 'profile' || input.layout === 'moment' || input.layout === 'leaderboard') return null;
+  const meta = shareModeMeta(input.mode);
+  if (!meta) return null;
+  const won = 'won' in input ? input.won : true;
+  const hintsOf = (mask?: string) => (mask ? [...mask].filter((c) => c === '1').length : 0);
+  let guessCount = 0, solved = won ? 1 : 0, boards = 1, hints = 0, stages: number | undefined, greens: number | undefined;
+  switch (input.layout) {
+    case 'single':
+      guessCount = input.guesses;
+      greens = Math.max(0, ...input.grid.map((row) => row.filter((x) => x === 'CORRECT').length));
+      break;
+    case 'multi': guessCount = input.guesses; solved = input.boardsSolved; boards = input.totalBoards; break;
+    case 'gauntlet': guessCount = input.guesses; solved = input.stages.reduce((a, g) => a + g.boardsSolved, 0); boards = 22; stages = input.stagesCompleted; break;
+    case 'sudoku': case 'regions': guessCount = input.mistakes + 1; hints = hintsOf(input.hintMask); break;
+    case 'ladder': guessCount = input.moves; hints = hintsOf(input.hintMask); break;
+    case 'wordsearch': guessCount = input.misses + 1; solved = input.found.length; boards = input.words.length; break;
+    case 'groups': guessCount = input.mistakes + 1; solved = input.solvedTiers.length; boards = 4; break;
+    case 'crossword': case 'cryptogram': guessCount = input.checks + 1; break;
+    case 'scramble': guessCount = input.checks + 1; solved = input.solvedCount; boards = 5; break;
+    case 'hub': guessCount = 1; solved = Math.round(input.pct / 100 * 10); boards = 10; break;
+    default: return null;
+  }
+  const a = input.scoreArgs;
+  if (a) {
+    guessCount = a.guessCount ?? guessCount; solved = a.boardsSolved ?? solved; boards = a.totalBoards ?? boards;
+    hints = a.hintsUsed ?? hints; stages = a.stagesCompleted ?? stages; greens = a.bestCorrect ?? greens;
+  }
+  const b = computeScoreBreakdown(meta.dbKey, won, guessCount, input.timeSeconds, solved, boards, hints, stages, greens, dateKey);
+  if (b.total <= 0 && !b.basePoints) return null;
+  const total = typeof input.points === 'number' ? input.points : b.total;
+  if (Math.abs(total - b.total) > 1) return { total, rows: [] };
+  const guessWord = MODE_BY_DBKEY[meta.dbKey]?.guessSemantics;
+  const guessLabel = guessWord === 'mistakes' ? 'Mistake bonus' : guessWord === 'checks' ? 'Check bonus' : guessWord === 'misses' ? 'Miss bonus' : guessWord === 'overPar' ? 'Par bonus' : guessWord === 'rank' ? 'Rank bonus' : 'Guess bonus';
+  const rows: ShareBreakdownRow[] = [];
+  rows.push({ label: won ? 'Win bonus' : 'Did not finish', detail: won ? '' : 'no win bonus', value: b.basePoints });
+  if (won && b.guessBonusApplies) rows.push({ label: guessLabel, detail: `${Math.max(0, b.maxGuesses - guessCount)} unused × ${b.guessWeight}`, value: b.guessBonus });
+  if (won) {
+    const under = Math.max(0, b.timeCap - input.timeSeconds);
+    rows.push({ label: 'Speed bonus', detail: input.timeSeconds > b.timeCap ? `${clockWords(input.timeSeconds - b.timeCap)} over ${clockWords(b.timeCap)}` : `${clockWords(under)} under ${clockWords(b.timeCap)}`, value: b.timeBonus });
+  }
+  if (b.completionBonus > 0) {
+    rows.push({
+      label: won ? 'Completion bonus' : meta.dbKey === 'GAUNTLET' ? 'Stage progress' : boards > 1 ? 'Completion bonus' : 'Near miss',
+      detail: won ? (boards > 1 ? `${solved}/${boards} boards` : 'puzzle solved') : meta.dbKey === 'GAUNTLET' ? `${stages ?? 0}/5 stages cleared` : boards > 1 ? `${solved}/${boards} boards` : `${greens ?? 0} correct letter${greens === 1 ? '' : 's'}`,
+      value: Math.round(b.completionBonus * 100) / 100,
+    });
+  }
+  if (b.hasHints) rows.push({ label: 'Hint penalty', detail: hints === 0 ? 'no hints — full credit' : `${hints} hint${hints === 1 ? '' : 's'} × ${b.hintCost}`, value: -b.hintPenalty, accent: hints === 0 && won });
+  return { total, rows };
+}

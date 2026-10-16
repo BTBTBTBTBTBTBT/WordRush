@@ -66,7 +66,8 @@ export async function richPushSwitches(sb: SupabaseClient): Promise<{ rich: bool
     const { data, error } = await sb.from('app_flags').select('key, enabled, audience').in('key', ['rich_push', 'season_halloween']);
     if (!error && data) flags = Object.fromEntries((data as Array<{ key: string; enabled: boolean; audience: string }>).map((r) => [r.key, { enabled: r.enabled, audience: r.audience }]));
   } catch { /* fail open */ }
-  const season = currentSeason(new Date()) != null;
+  // Halloween only: the orange accent + witch-hat small icon are Halloween art (10-16: Thanksgiving in the window must NOT trip them).
+  const season = currentSeason(new Date()) === 'halloween';
   return {
     // A staged ('testers') re-enable doesn't apply to a push going to real players: only 'all' counts as live here.
     rich: isFeatureLive('rich_push', flags, false),

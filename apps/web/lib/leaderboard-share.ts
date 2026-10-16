@@ -11,10 +11,21 @@ import type {
   ShareLeaderboardInput,
   ShareLeaderboardRowInput,
   ShareMode,
+  ShareRowAvatarFields,
 } from './share-image';
 import { formatScore, tieAwareScoreLabels, modeScoreCeiling } from './composite-scoring';
 import { formatShortTime } from './format';
 import { sweepModesFor, requiredSweepCount } from './daily-modes';
+
+/** The raw avatar columns a board row carries, passed through so the share card draws the player's real mascot. */
+function avatarOf(e: object): ShareRowAvatarFields | undefined {
+  const r = e as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const k of ['avatar_url', 'avatar_config', 'avatar_cast_id', 'avatar_frame', 'accent_color']) {
+    if (r[k] !== undefined && r[k] !== null) out[k] = r[k];
+  }
+  return Object.keys(out).length ? (out as ShareRowAvatarFields) : undefined;
+}
 
 /** A leaderboard entry with its display rank. Ranks come from the page (index
  *  + 1 with holes where blocked rows were) so the card can never disagree with
@@ -95,6 +106,7 @@ function toRow(
     scoreDisplay: scoreLabels?.get(r.entry.composite_score) ?? formatScore(r.entry.composite_score),
     subline: subline ? subline(r.entry) : undefined,
     isYou: !!userId && r.entry.user_id === userId,
+    avatarRow: avatarOf(r.entry),
   };
 }
 
@@ -188,6 +200,7 @@ export function buildDailyLeaderboardShareInput(
       scoreDisplay: cardLabels.get(opts.userEntry!.composite_score) ?? formatScore(opts.userEntry!.composite_score),
       subline: subline(opts.userEntry!),
       isYou: true,
+      avatarRow: avatarOf(opts.userEntry!),
     };
     input.youRankLine = `#${opts.userRank!.rank} of ${opts.userRank!.totalPlayers}`;
   }
@@ -253,6 +266,7 @@ export function buildYesterdayPodiumShareInput(
       scoreDisplay: cardLabels.get(opts.userEntry!.composite_score) ?? formatScore(opts.userEntry!.composite_score),
       subline: subline(opts.userEntry!),
       isYou: true,
+      avatarRow: avatarOf(opts.userEntry!),
     };
     input.youRankLine = `#${opts.userRank!.rank} of ${opts.userRank!.totalPlayers}`;
   }
@@ -304,6 +318,7 @@ function sweepRow(
     scoreDisplay: formatScore(e.total_score),
     subline: sweepSubline(e, day),
     isYou: !!userId && e.user_id === userId,
+    avatarRow: avatarOf(e),
     dots,
   };
 }
@@ -441,12 +456,14 @@ export function buildWeeklyRaceShareInput(opts: WeeklyRaceShareOpts): ShareLeade
       username: opts.me.username,
       weekPoints: opts.me.weekPoints,
       todayPoints: opts.me.todayPoints ?? 0,
+      avatarRow: undefined as ShareRowAvatarFields | undefined,
     }] : []),
     ...opts.friends.map((f) => ({
       id: f.id,
       username: f.username,
       weekPoints: f.weekPoints ?? 0,
       todayPoints: f.todayPoints ?? 0,
+      avatarRow: avatarOf(f) as ShareRowAvatarFields | undefined,
     })),
   ];
   if (!entries.some((e) => e.weekPoints > 0)) return null;
@@ -462,6 +479,7 @@ export function buildWeeklyRaceShareInput(opts: WeeklyRaceShareOpts): ShareLeade
     // Today's contribution keeps the weekly total feeling live.
     subline: e.todayPoints > 0 ? `${e.todayPoints.toLocaleString()} today` : undefined,
     isYou: !!opts.me && e.id === opts.me.id,
+    avatarRow: e.avatarRow,
   });
 
   const now = opts.now ?? new Date();

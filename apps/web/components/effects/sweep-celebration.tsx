@@ -23,7 +23,7 @@ import { useDecodedEntrance } from '@/hooks/use-decoded-entrance';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { useHomeHost } from '@/components/avatar/player-avatar';
 import { emitMascotMoment } from '@/lib/living-mascot';
-import { seasonEntry } from '@/lib/season-kit';
+import { seasonArtShips, seasonEntry } from '@/lib/season-kit';
 import { useFlags } from '@/hooks/use-flags';
 import { flawlessSealLabel } from '@wordle-duel/core';
 import { useSeason } from '@/lib/season';
@@ -120,7 +120,12 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
     return `/art/${swap ?? `celebrate-${name}`}.webp`;
   };
   const float1 = seasonEntry(season)?.slots.extras?.['celebrate-float-1'];
-  const float2 = seasonEntry(season)?.slots.extras?.['celebrate-float-2'];
+  // Sweep skips float-2 (Halloween's broom: the scene already has one; founder 10-16).
+  const float2 = flawless ? seasonEntry(season)?.slots.extras?.['celebrate-float-2'] : undefined;
+  // The season's costumed SCENE (registry extras `art-scene-*`, when it ships) replaces the base scene; then no crown
+  // overlay (the scene carries its own headwear; founder 10-16: no loose hats over cast art).
+  const sceneSwap = seasonEntry(season)?.slots.extras?.[look.art];
+  const seasonScene = sceneSwap && seasonArtShips(sceneSwap) ? sceneSwap : null;
   // the stats count up (Reduce Motion: final values at once)
   const prog = useProgress(900);
   useEffect(() => {
@@ -135,6 +140,8 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
   };
 
   const [aw, ah] = ART_SIZE[look.art];
+
+  const artW = (ART_H * aw) / ah; // the scene's drawn width at ART_H
   // AZ: the scene + lettering are decoded before the spring-in starts.
   const { ref: entranceRef, waiting } = useDecodedEntrance<HTMLDivElement>();
   const stats: { value: string; label: string }[] = [
@@ -189,13 +196,14 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
           <div className="relative flex justify-center mt-1" style={{ height: ART_H }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img aria-hidden="true" alt="" src={prop(flawless ? 'burst-gold' : 'burst-party')} className="absolute celebrate-burst pointer-events-none" style={{ width: ART_H * 1.7, left: '50%', top: '50%', marginLeft: -ART_H * 0.85, marginTop: -ART_H * 0.85 }} draggable={false} />
+            {/* Season floats sit BESIDE the scene, outside its drawn width (founder 10-16: never over the mascot or its props). */}
             {float1 && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img aria-hidden="true" alt="" src={`/art/${float1}.webp`} width={78} className="absolute celebrate-float pointer-events-none" style={{ left: -14, top: -8 }} draggable={false} />
+              <img aria-hidden="true" alt="" src={`/art/${float1}.webp`} width={78} className="absolute celebrate-float pointer-events-none" style={{ left: '50%', marginLeft: -(artW / 2 + 74), top: -8 }} draggable={false} />
             )}
             {float2 && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img aria-hidden="true" alt="" src={`/art/${float2}.webp`} width={64} className="absolute celebrate-float pointer-events-none" style={{ right: -10, top: 4 }} draggable={false} />
+              <img aria-hidden="true" alt="" src={`/art/${float2}.webp`} width={64} className="absolute celebrate-float pointer-events-none" style={{ left: '50%', marginLeft: artW / 2 - 4, top: 4 }} draggable={false} />
             )}
             <div
               aria-hidden="true"
@@ -203,7 +211,7 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
               style={{ width: ART_H * 1.35, height: ART_H * 1.35, top: '50%', left: '50%', marginTop: -ART_H * 0.675, marginLeft: -ART_H * 0.675, borderRadius: '50%', background: look.glow }}
             />
             <Image
-              src={artSrc(look.art)}
+              src={seasonScene ? `/art/${seasonScene}.webp` : artSrc(look.art)}
               alt=""
               aria-hidden="true"
               width={aw}
@@ -214,8 +222,8 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
               className="relative select-none pointer-events-none celebrate-spring"
               style={{ height: ART_H, width: 'auto', maxWidth: '86vw', objectFit: 'contain', filter: 'drop-shadow(0 10px 16px rgba(40, 10, 80, 0.35))' }}
             />
-            {flawless && (
-              // the crown drops onto the star (Halloween: the witch hat)
+            {flawless && !seasonScene && (
+              // the gold crown drops onto the star (a season scene carries its own headwear instead)
               // eslint-disable-next-line @next/next/no-img-element
               <img aria-hidden="true" alt="" src={prop('crown-gold')} width={84} className="absolute celebrate-crown pointer-events-none" style={{ left: '50%', top: -22, marginLeft: -42 }} draggable={false} />
             )}

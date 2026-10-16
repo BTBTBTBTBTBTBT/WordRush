@@ -216,7 +216,7 @@ function StartStrip({ onStart }: { onStart: (kind: FriendlyKind) => void }) {
   );
 }
 
-/** The quiet 4th row: "+N more" (or "Show less") opens and closes the rest of the games. */
+/** The quiet 4th row: "+N more" (or "Show fewer") opens and closes the rest of the games. */
 function MoreRow({ hidden, expanded, onToggle }: { hidden: number; expanded: boolean; onToggle: () => void }) {
   return (
     <button
@@ -228,7 +228,7 @@ function MoreRow({ hidden, expanded, onToggle }: { hidden: number; expanded: boo
       className="w-full flex items-center justify-center text-[11.5px] font-black"
       style={{ gap: 4, height: 28, borderRadius: 999, border: 0, color: FR_LOOK.lavender, background: 'transparent' }}
     >
-      {expanded ? 'Show less' : `+${hidden} more`}
+      {expanded ? 'Show fewer' : `+${hidden} more`}
       <ChevronDown size={11} strokeWidth={3} aria-hidden="true" style={{ transform: expanded ? 'rotate(180deg)' : 'none' }} />
     </button>
   );

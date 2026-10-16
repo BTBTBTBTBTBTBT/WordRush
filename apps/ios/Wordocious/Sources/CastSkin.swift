@@ -37,6 +37,10 @@ enum CastSkin {
     }
 
     private static func resolve(_ now: Date) -> Season? {
+        #if DEBUG
+        // `-debug-season off` (DEBUG only): seasons OFF whatever the calendar says (share-card renders of the standard look).
+        if UserDefaults.standard.string(forKey: debugKey) == "off" { return nil }
+        #endif
         if let o = UserDefaults.standard.string(forKey: debugKey), let s = Season(rawValue: o) { return s }
         guard let s = calendarSeason(now) else { return nil }
         // Item 24: the player opted out of Seasonal for this season (Settings > Theme).

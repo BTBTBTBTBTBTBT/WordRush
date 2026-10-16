@@ -527,7 +527,9 @@ struct GameScreen: View {
                            reveal: reveal,
                            letters: single ? vm.shareLetters() : nil,
                            solutionDisplay: single ? vm.state.boards[0].solution : nil,
-                           points: scorePoints)
+                           points: scorePoints,
+                           puzzleNumber: vm.isDaily ? getDailySeedDate(vm.state.seed).flatMap { LeaderboardShareBuilder.puzzleNumber(forDay: $0) } : nil,
+                           hintsUsed: vm.hintsUsed)
     }
 
     // MARK: Gauntlet stage-clear

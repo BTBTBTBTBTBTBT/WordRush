@@ -635,16 +635,14 @@ struct LeaderboardTab: View {
                            detail: sweepStatsLine(e, details: details[e.userId], day: day))
     }
 
-    /// BJ4: a Sweep board (today / yesterday) with its leaders on the gold stage.
+    /// BJ4: the Yesterday Sweep board's ranks 4+ — the podium places already stand on the `StageYesterdayLedge`
+    /// above (Android / web parity: rows only, never a second podium; "That was everyone yesterday" when ≤ 3 finished).
     @ViewBuilder private func sweepPodiumBoard(_ rows: [SweepEntry], labels: [Double: String],
                                                details: [String: LeaderboardService.SweepDetails], day: String,
                                                row: @escaping (SweepEntry) -> some View) -> some View {
         let layout = PodiumLayout.layout(rows.map(\.rank))
         VStack(spacing: 0) {
-            if layout.filled > 0 {
-                PodiumView(entries: rows.prefix(layout.filled).map { sweepPodiumEntry($0, labels: labels, details: details, day: day) },
-                           open: layout.open, onTap: { path.append($0.id) })
-            }
+            if rows.count <= layout.filled { YesterdayAllShown() }
             ForEach(Array(rows.enumerated().dropFirst(layout.filled)), id: \.element.id) { idx, entry in
                 row(entry).stripedRow(idx - layout.filled, accent: LbStyle.gold)
             }

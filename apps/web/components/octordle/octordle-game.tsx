@@ -245,7 +245,8 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
             <ResultStrip
               headline={null}
               won={state.status === 'WON'}
-              guesses={totalGuesses}
+              boards={{ solved: state.boards.filter(b => b.status === 'WON').length, total: 8 }}
+              guesses={state.status === 'WON' ? totalGuesses : `${totalGuesses}/${state.boards[0]?.maxGuesses || 13}`}
               time={formatTime(elapsedTime)}
               points={finishedPoints}
               srText={state.status === 'WON' ? `All 8 solved in ${totalGuesses} guesses · ${formatTime(elapsedTime)}` : `Boards Completed ${completedBoards}/8`}

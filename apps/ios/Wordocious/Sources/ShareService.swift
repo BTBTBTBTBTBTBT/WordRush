@@ -19,7 +19,7 @@ enum ShareService {
         reveal: Bool = false, letters: [[String]]? = nil, solutionDisplay: String? = nil,
         /// The result's points (the gold POINTS window); the puzzle number rides
         /// the card's date line via the kind.
-        points: Int? = nil, puzzleNumber: Int? = nil,
+        points: Int? = nil, puzzleNumber: Int? = nil, hintsUsed: Int? = nil,
         /// Kept for the call sites; §S1 shares no text.
         caption: String? = nil
     ) {
@@ -31,7 +31,8 @@ enum ShareService {
             reveal: reveal, letters: letters, solutionDisplay: solutionDisplay,
             mode: mode, points: points
         )
-        card.heroEnabled = ShareHeroBand.available   // item 46: the sender's mascot celebrating
+        card.puzzleNumber = puzzleNumber
+        card.hintsUsed = hintsUsed
         // §S2: measure the board so the canvas fits the puzzle (no dead space).
         card.boardNatural = naturalSize(card.boardBody)
         guard let image = renderCard(card, size: card.size) else { return }

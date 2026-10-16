@@ -60,7 +60,11 @@ struct SweepCelebrationView: View {
     private var accentText: Color {
         flawless ? Color(hex: 0xA0336B) : (more ? Color(hex: 0x4338CA) : Color(hex: 0x8A4A12))
     }
-    private var artName: String { flawless ? "art-scene-flawless-star" : "art-scene-sweep-broom" }
+    private var baseArtName: String { flawless ? "art-scene-flawless-star" : "art-scene-sweep-broom" }
+    /// The scene art: the season's costumed scene (registry extras `art-scene-*` -> e.g. celebrate-h-scene-flawless-star)
+    /// when it ships, else the base scene. Founder 10-16: a season dresses the SCENE, never a loose hat over it.
+    private var artName: String { SeasonKit.extra(baseArtName) ?? baseArtName }
+    private var seasonScene: Bool { artName != baseArtName }
 
     var body: some View {
         let still = envReduce || Theme.reduceMotion
@@ -122,16 +126,21 @@ struct SweepCelebrationView: View {
                                     .opacity(kitIn || still ? 0.92 : 0)
                                     .allowsHitTesting(false)
                             }
-                            // Halloween: bats + a broom drift in at the corners (registry extras; nil out of season).
+                            // Season floats (registry extras; nil out of season) drift in BESIDE the scene, outside its drawn
+                            // bounds (founder 10-16: the broom landed on S's head, the bats on the tiles). The frame is 300 wide
+                            // and the scene (sweep 900x807, flawless 796x914) is narrower at this height, so a float pushed
+                            // past the frame's edge by most of its own width never touches the mascot or its props.
+                            // Sweep skips float-2 (Halloween's broom: the scene already has one).
                             .overlay(alignment: .topLeading) {
-                                if let f = SeasonKit.extra("celebrate-float-1") { kitImage(f, width: 70).offset(x: -16, y: -6).opacity(kitIn || still ? 1 : 0).offset(y: kitIn || still ? 0 : 12) }
+                                if let f = SeasonKit.extra("celebrate-float-1") { kitImage(f, width: 70).offset(x: -54, y: -10).opacity(kitIn || still ? 1 : 0).offset(y: kitIn || still ? 0 : 12) }
                             }
                             .overlay(alignment: .topTrailing) {
-                                if let f = SeasonKit.extra("celebrate-float-2") { kitImage(f, width: 58).offset(x: 12, y: 4).opacity(kitIn || still ? 1 : 0).offset(y: kitIn || still ? 0 : 12) }
+                                if flawless, let f = SeasonKit.extra("celebrate-float-2") { kitImage(f, width: 58).offset(x: 40, y: 0).opacity(kitIn || still ? 1 : 0).offset(y: kitIn || still ? 0 : 12) }
                             }
-                            // Flawless: the crown drops onto the star (Halloween: the witch hat).
+                            // Flawless: the gold crown drops onto the star — unless the season ships its own scene (its costume
+                            // carries the headwear; founder 10-16: no hat overlays on cast art).
                             .overlay(alignment: .top) {
-                                if flawless {
+                                if flawless, !seasonScene {
                                     kitImage("celebrate-crown-gold", width: 78).offset(y: -22)
                                         .scaleEffect(kitIn || still ? 1 : 0.7).offset(y: kitIn || still ? 0 : -42)
                                         .opacity(kitIn || still ? 1 : 0)

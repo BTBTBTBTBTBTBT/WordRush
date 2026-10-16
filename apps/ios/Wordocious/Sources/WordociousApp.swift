@@ -22,6 +22,9 @@ struct WordociousApp: App {
     @State private var lastActiveDay = LeaderboardService.todayLocal()
 
     init() {
+        #if DEBUG
+        ShareCardDemo.runIfRequested()
+        #endif
         LaunchWarm.start()   // Founder 10-10 (smoothness, launch): the first frame's decodes start on background threads now
         // Sized before any request so AsyncImage (avatars, Muddle cartoons, PN
         // photos) and Net's sessions share a real disk cache (founder, 2026-09-29).

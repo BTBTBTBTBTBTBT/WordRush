@@ -890,7 +890,7 @@ private fun CrosswordFinished(
         val meta = "${num?.let { "#$it · " } ?: ""}${session.checksLabel} · ${clockText(secs)}"
         val cleanLabel = if (s.checks == 0) "Clean" else session.checksLabel
         val text = "Wordocious Crosswordocious${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${clockText(secs)} · $cleanLabel · wordocious.com/crosswordocious"
-        val bmp = ShareImage.renderCrossword(context, s.w, s.h, s.solution, s.checks, won, meta)
+        val bmp = ShareImage.renderCrossword(context, s.w, s.h, s.solution, s.checks, won, meta, score = com.wordocious.app.data.ShareBreakdown.Input(GameMode.CROSSWORD, won, gc, secs, if (won) 1 else 0, CROSSWORD_TOTAL_BOARDS, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null))
         ShareImage.shareBitmap(context, bmp, text)
     }
     FinishedScreen(

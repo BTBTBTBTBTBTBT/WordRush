@@ -1511,7 +1511,7 @@ struct FriendlyGameScreen: View {
             GeometryReader { geo in
                 let n = max(letters.count, 1)
                 let gap: CGFloat = n > 9 ? 3 : 4
-                let t = min(30, (geo.size.width - gap * CGFloat(n - 1)) / CGFloat(n))
+                let t = max(16, min(30, (geo.size.width - gap * CGFloat(n - 1)) / CGFloat(n)))   // floor: a 0-width pass never yields a negative frame
                 HStack(spacing: gap) {
                     ForEach(letters.indices, id: \.self) { i in
                         let glow = newest && i == letters.count - 1
@@ -1551,7 +1551,7 @@ struct FriendlyGameScreen: View {
                 let slots = min(letters.count + 1, wordMax)
                 GeometryReader { geo in
                     let gap: CGFloat = slots > 9 ? 3 : 5
-                    let t = min(44, (geo.size.width - gap * CGFloat(slots - 1)) / CGFloat(slots))
+                    let t = max(16, min(44, (geo.size.width - gap * CGFloat(slots - 1)) / CGFloat(slots)))
                     HStack(spacing: gap) {
                         ForEach(0..<slots, id: \.self) { i in
                             chainInputTile(i < letters.count ? letters[i] : "", locked: i == 0 && locked != nil,

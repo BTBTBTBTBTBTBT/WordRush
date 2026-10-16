@@ -415,7 +415,7 @@ struct RegionsView: View {
                                                               guessCount: vm.mistakes + 1, timeSeconds: vm.elapsed,
                                                               boardsSolved: vm.state.status == .won ? 1 : 0, totalBoards: 1,
                                                               hintsUsed: vm.hintsUsed).total),
-                           puzzleNumber: vm.isDaily ? vm.dailyNumber : nil)
+                           puzzleNumber: nil, hintsUsed: vm.hintsUsed)
     }
 }
 

@@ -50,6 +50,8 @@ const KEY_FACE: Record<LetterState, string> = {
   absent: 'var(--gt-a-base)',
 };
 const EMPTY_STATES: Record<string, LetterState> = {};
+/** Spoken key state (iOS `TileState.a11yName` / Android `TileView` parity): never the raw state word. */
+const STATE_SPOKEN: Record<LetterState, string> = { correct: 'correct', present: 'wrong position', absent: 'not in word' };
 
 interface KeyboardProps {
   onKey: (key: string) => void;
@@ -204,7 +206,7 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterS
                   key={`${key}-${ki}`}
                   onClick={() => { if (isBlackedOut) return; if (key === 'ENTER') haptic('medium'); else haptic('light'); if (key === 'BACK') playDelete(); else playKeyTap(); onKey(key); }}
                   disabled={isBlackedOut}
-                  aria-label={key === 'BACK' ? 'Backspace' : 'Submit guess'}
+                  aria-label={key === 'BACK' ? 'Delete' : 'Submit guess'}
                   className={cn(
                     keyH, 'kkey px-3 sm:px-4 lg:px-3 select-none flex items-center justify-center',
                     key === 'BACK' ? 'min-w-[3.25rem] sm:min-w-[4rem]' : 'text-[12px] tracking-[0.04em]',
@@ -252,7 +254,7 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterS
               <button
                 key={key}
                 onClick={() => { haptic('light'); playKeyTap(); onKey(key); }}
-                aria-label={fill ? `${key}, used` : state ? `${key}, ${state}` : key}
+                aria-label={fill ? `${key}, used` : state ? `${key}, ${STATE_SPOKEN[state]}` : key}
                 data-s={fill ? undefined : state}
                 className={cn(keyH, 'kkey w-10 sm:w-12 text-base sm:text-lg select-none')}
                 style={fill ? {

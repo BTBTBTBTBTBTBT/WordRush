@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { SEASON_IDS, SEASON_WINDOWS } from '@wordle-duel/core';
-import { SEASON_ART_SIZE, SEASON_REGISTRY, seasonBanner, seasonSurfaces, seasonalTitle, seasonalWall, slotLookup } from './season-kit';
-import { HALLOWEEN_TRIM, castArt, parseSeasonParam, parseStoredSeason, seasonOfSrc } from './season';
+import { SEASON_IDS, SEASON_WINDOWS, seasonReady } from '@wordle-duel/core';
+import { SEASON_ART_SIZE, SEASON_REGISTRY, seasonBanner, seasonStage, seasonSurfaces, seasonalTitle, seasonalWall, slotLookup } from './season-kit';
+import { HALLOWEEN_TRIM, castArt, parseSeasonParam, parseStoredSeason, resolveSeason, seasonOfSrc } from './season';
 
 // The season registry (docs/design/brand/seasons/README.md "How to add a season"): one JSON shared
 // by the three apps, the same ids as core SEASON_WINDOWS, every slot pointing at real shipped art.
@@ -26,8 +26,12 @@ describe('season registry', () => {
     }
   });
 
+  // A season whose art hasn't shipped (core SEASON_WINDOWS ready: false) is listed for the admin preview only; its slots
+  // fall back to the normal art until the ship step. Flipping `ready` makes these checks bite.
+  const ready = SEASON_REGISTRY.filter((s) => seasonReady(s.id));
+
   it('points every title / wall / banner slot at art that ships on the web', () => {
-    for (const s of SEASON_REGISTRY) {
+    for (const s of ready) {
       for (const v of Object.values(s.slots.titles ?? {})) expect(SEASON_ART_SIZE[v], v).toBeDefined();
       for (const v of Object.values(s.slots.walls ?? {})) expect(SEASON_ART_SIZE[v], v).toBeDefined();
       if (s.slots.banner) expect(SEASON_ART_SIZE[s.slots.banner]).toBeDefined();
@@ -47,6 +51,19 @@ describe('season registry', () => {
     expect(seasonBanner('halloween')).toBe('art-scene-banner-halloween');
     expect(seasonBanner('not-a-season')).toBeNull();
     expect(slotLookup({ 'a-*': 'x', 'a-b-*': 'y' }, 'a-b-c')).toBe('y');
+  });
+
+  it('lists a not-ready season for the admin preview while the public never gets it', () => {
+    const t = SEASON_REGISTRY.find((s) => s.id === 'thanksgiving')!;
+    expect(seasonReady('thanksgiving')).toBe(false);
+    expect(parseSeasonParam('?season=thanksgiving')).toBe('thanksgiving');
+    expect(parseStoredSeason('thanksgiving')).toBe('thanksgiving');
+    expect(resolveSeason('2026-11-20', 'thanksgiving')).toBe('thanksgiving'); // the admin preview
+    expect(resolveSeason('2026-11-20', null)).toBeNull(); // the public, inside the window, art not ready
+    expect(seasonSurfaces('thanksgiving')?.tone).toBe('dark'); // the harvest surfaces render in the preview
+    expect(t.slots.stage).toBe('art-celebration-stage-thanksgiving');
+    expect(seasonStage('thanksgiving')).toBeNull(); // nothing shipped: the plain card
+    expect(seasonStage('halloween', (n) => n === 'art-celebration-stage-halloween')).toBe('art-celebration-stage-halloween');
   });
 
   it('accepts every registry id as a preview', () => {
@@ -90,7 +107,7 @@ describe('season registry', () => {
         return false;
       }
     };
-    for (const s of SEASON_REGISTRY) {
+    for (const s of ready) {
       for (const v of new Set(Object.values(s.slots.walls ?? {}))) {
         expect(exists(`apps/web/public/art/${v}.webp`), v).toBe(true);
         expect(exists(`apps/web/public/art/${v}-wide.webp`), `${v}-wide`).toBe(true);

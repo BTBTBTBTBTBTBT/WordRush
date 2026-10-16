@@ -10,7 +10,6 @@ import { MODES } from './modes.generated';
 import { gameShareArt } from './share-look';
 import { shareCardArt, shareCardPlan } from './share-image';
 import { planVsShareCard } from './vs-share-image';
-import { shareHookLine } from './leaderboard-share';
 import { SHARE_EXTRA_SAMPLES, SHARE_SAMPLES, VS_SHARE_SAMPLE } from './share-samples';
 import { SHARE_FRAMES, SHARE_HERO_GAP, SHARE_HERO_H } from '@wordle-duel/core';
 import { CAST } from './mascots';
@@ -176,9 +175,9 @@ describe('cast row spacing (S3: the cast IS the wordmark)', () => {
     expect(row.lift).toBeGreaterThan(0);
   });
 
-  it('spans ~80% of the card, big enough to read', () => {
+  it('spans ~92% of the card (night style: 15% larger than the cream cards), big enough to read', () => {
     const row = shareCastRow();
-    expect(row.rowW).toBe(Math.round(SHARE_W * 0.8));
+    expect(row.rowW).toBe(Math.round(SHARE_W * 0.92));
     expect(row.charH).toBeGreaterThan(100);
   });
 });
@@ -278,9 +277,7 @@ describe('message cards never pass 3:4 (iMessage crops taller images: the title 
   it('title, hero, board, stat windows and the cast wordmark all end inside the card, in order', () => {
     for (const { id, input } of all) {
       for (const heroH of heroBands) {
-        const { plan, titleH } = shareCardPlan(input, natOf(input), { heroH });
-        const footH = input.layout === 'profile' || input.layout === 'moment' ? 0
-          : input.layout === 'leaderboard' ? (shareHookLine(input.footer) ? 44 : 0) : SHARE_SPACE.stats;
+        const { plan, titleH, footH } = shareCardPlan(input, natOf(input), { heroH });
         const tag = `${id} hero ${heroH}`;
         expect(plan.titleTop + titleH, tag).toBeLessThanOrEqual(plan.heroTop + 0.5);
         expect(plan.heroTop + heroH, tag).toBeLessThanOrEqual(plan.headTop + 0.5);
@@ -294,10 +291,10 @@ describe('message cards never pass 3:4 (iMessage crops taller images: the title 
     }
   });
 
-  it('the board is not tiny even under the hero band (>= 400 px of the 1440)', () => {
+  it('the board is not tiny even under the hero band (>= 300 px of the 1440; the night card also carries its score breakdown)', () => {
     for (const { id, input } of SHARE_SAMPLES) {
       const { plan } = shareCardPlan(input, natOf(input), { heroH: SHARE_HERO_H + SHARE_HERO_GAP });
-      expect(plan.contentH, id).toBeGreaterThanOrEqual(400);
+      expect(plan.contentH, id).toBeGreaterThanOrEqual(300);
     }
   });
 

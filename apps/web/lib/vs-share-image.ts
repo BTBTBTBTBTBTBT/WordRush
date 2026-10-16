@@ -11,26 +11,28 @@
  */
 import { evaluateGuess } from '@wordle-duel/core';
 import type { OpponentGuessLogEntry } from '@/lib/adapters/match-service';
-import { ART_SIZE, PAGE_TINTS, artSrc, pageWall, resultMoment, type ArtName } from './art';
+import { ART_SIZE, artSrc, resultMoment, type ArtName } from './art';
 import { STAT_TONES, TILE_GLOSS, shareShortDate } from './share-look';
 import {
-  SHARE_SPACE, SHARE_W, TITLE_MAX_W, VS_AVATAR_BLOCK, VS_AVATAR_PX, VS_BOARD_GAP, VS_NAME_H, VS_WINDOW_H,
+  NIGHT_TITLE_H, SHARE_SPACE, SHARE_W, TITLE_MAX_W, VS_AVATAR_BLOCK, VS_AVATAR_PX, VS_BOARD_GAP, VS_NAME_H, VS_WINDOW_H,
   planShareCard, titleBoxHeight, vsBoardGeometry, vsBodyGeometry,
 } from './share-fit';
 import {
   canvasToPng, drawCastWordmark, drawGlossTile, drawImageContain, drawInfoLine, drawStatWindow,
-  drawWallpaper, loadCastImages, loadShareImage, resolveCanvasFontStack, roundRectPath, shareFont,
+  drawNightBackground, loadCastImages, loadShareImage, resolveCanvasFontStack, roundRectPath, shareFont,
 } from './share-canvas';
+import { activeSeason } from './season';
+import { seasonalTitle } from './season-kit';
 import { drawShareAvatar, loadShareAvatar, type ShareAvatar } from './share-avatar';
 
-const LOSS_FG = '#e11d48';
-const WIN_FG = '#7c3aed';
-const DRAW_FG = '#d97706';
-const ME_ACCENT = '#7c3aed';
-const OPP_ACCENT = '#db2777';
+const LOSS_FG = '#FF8FA8';
+const WIN_FG = '#C9B3FF';
+const DRAW_FG = '#FFC857';
+const ME_ACCENT = '#B79CFF';
+const OPP_ACCENT = '#FF7AC8';
 /** The opponent's window: the pink twin of the purple stat window. */
-const OPP_TONE = { tint: '#ffeef7', line: '#fbcfe8', bar: ['#ec4899', '#f9a8d4'] as const, label: '#be185d' };
-const VS_INK = '#0f766e';
+const OPP_TONE = { tint: '#2C1B50', line: '#3b2766', bar: ['#ec4899', '#f9a8d4'] as const, label: '#D4C8FA' };
+const VS_INK = '#5EEAD4';
 /** The YOU WIN! / YOU LOSE / DRAW lettering's slot (art) and the fallback pill's. */
 const MOMENT_MAX_W = 560;
 const MOMENT_MAX_H = 78;
@@ -87,18 +89,10 @@ function drawBoard(ctx: CanvasRenderingContext2D, grid: string[][], cx: number, 
   const { tile, gap, pad, cardW, cardH } = vsBoardGeometry(maxSide, rows, cols);
   const x = cx - cardW / 2;
 
-  ctx.save();
-  ctx.shadowColor = 'rgba(60, 30, 110, 0.14)';
-  ctx.shadowBlur = 22;
-  ctx.shadowOffsetY = 8;
+  // Night style: a violet (won) / rose (lost) wash behind the grid, no outline.
   roundRectPath(ctx, x, top, cardW, cardH, 18);
-  ctx.fillStyle = won ? 'rgba(245, 238, 255, 0.88)' : 'rgba(255, 236, 241, 0.88)';
+  ctx.fillStyle = won ? 'rgba(124, 58, 237, 0.22)' : 'rgba(244, 63, 94, 0.18)';
   ctx.fill();
-  ctx.restore();
-  roundRectPath(ctx, x, top, cardW, cardH, 18);
-  ctx.strokeStyle = won ? 'rgba(124, 58, 237, 0.55)' : 'rgba(225, 29, 72, 0.55)';
-  ctx.lineWidth = 3;
-  ctx.stroke();
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -125,7 +119,7 @@ export function planVsShareCard(
   momentNat: readonly [number, number] | null,
   headExtra = 0,
 ) {
-  const titleH = titleBoxHeight(titleNat);
+  const titleH = titleBoxHeight(titleNat, TITLE_MAX_W, NIGHT_TITLE_H);
   const momentH = momentNat
     ? Math.round(momentNat[1] * Math.min(MOMENT_MAX_W / momentNat[0], MOMENT_MAX_H / momentNat[1]))
     : MOMENT_PILL_H;
@@ -151,9 +145,10 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   const now = new Date();
   const outcome = input.isDraw ? 'draw' : input.isWin ? 'win' : 'loss';
   const momentName = `art-moment-${resultMoment(outcome)}` as ArtName;
+  const vsSeasonal = seasonalTitle('art-title-vs', activeSeason());
   const [wall, title, moment, castImgs, crownImg, meAvatar, oppAvatar] = await Promise.all([
-    loadShareImage([artSrc(pageWall('vs'))]),
-    loadShareImage([artSrc('art-title-vs')]),
+    Promise.resolve(null as HTMLImageElement | null),
+    loadShareImage(vsSeasonal ? [vsSeasonal.src, artSrc('art-title-vs')] : [artSrc('art-title-vs')]),
     loadShareImage([artSrc(momentName)]),
     loadCastImages(),
     // The winner's crown is our 3D crown art, never a phone emoji (FINISH_SPEC AM3).
@@ -184,7 +179,8 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   if (!ctx) return null;
   ctx.scale(dpr, dpr);
 
-  drawWallpaper(ctx, W, H, wall, PAGE_TINTS.vs.light);
+  void wall;
+  drawNightBackground(ctx, W, H);
 
   // VS BATTLE title art (or the words lettered in teal with a white edge).
   if (title && titleNat) {
@@ -196,7 +192,7 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
     ctx.textBaseline = 'alphabetic';
     ctx.lineJoin = 'round';
     ctx.lineWidth = 10;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.strokeStyle = 'rgba(26, 14, 46, 0.92)';
     const baseY = plan.titleTop + titleH / 2 + 27;
     ctx.strokeText('VS BATTLE', W / 2, baseY);
     ctx.fillStyle = VS_INK;
@@ -208,7 +204,7 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   drawInfoLine(
     ctx,
     { text: `${shareShortDate(now)} · ${input.modeLabel}`.toUpperCase(), badge: input.isDraw ? null : input.isWin ? 'W' : 'L' },
-    W / 2, plan.headTop + SHARE_SPACE.info / 2, 952, VS_INK,
+    W / 2, plan.headTop + SHARE_SPACE.info / 2, 952,
   );
 
   // YOU WIN! / YOU LOSE / DRAW lettering, or the old text pill.
@@ -221,7 +217,7 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
     ctx.font = shareFont(900, 30);
     const pw = ctx.measureText(label).width + 48;
     roundRectPath(ctx, W / 2 - pw / 2, momentTop + 10, pw, 52, 26);
-    ctx.fillStyle = input.isDraw ? '#fff5df' : input.isWin ? '#f5eeff' : '#ffe4ea';
+    ctx.fillStyle = input.isDraw ? 'rgba(255, 200, 87, 0.2)' : input.isWin ? 'rgba(124, 58, 237, 0.3)' : 'rgba(244, 63, 94, 0.25)';
     ctx.fill();
     ctx.fillStyle = input.isDraw ? DRAW_FG : input.isWin ? WIN_FG : LOSS_FG;
     ctx.textAlign = 'center';
@@ -243,7 +239,7 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
     ctx.font = shareFont(900, 30);
     ctx.lineJoin = 'round';
     ctx.lineWidth = 8;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.strokeStyle = 'rgba(26, 14, 46, 0.9)';
     const crowned = side.won && !input.isDraw && crownImg != null;
     const name = side.name.slice(0, crowned ? 19 : 22);
     const CROWN = 38;
@@ -275,7 +271,7 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
     if (side.grids.length > 2) {
       ctx.save();
       ctx.font = shareFont(800, 22);
-      ctx.fillStyle = '#6f5f8f';
+      ctx.fillStyle = '#BDAEE6';
       ctx.textAlign = 'center';
       ctx.fillText(`+${side.grids.length - 2} more`, cx, sy + 10);
       ctx.restore();
@@ -291,7 +287,7 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round';
   ctx.lineWidth = 10;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+  ctx.strokeStyle = 'rgba(26, 14, 46, 0.92)';
   const vsY = blockTop + headExtra + VS_NAME_H + 4 + VS_WINDOW_H / 2;
   ctx.strokeText('VS', W / 2, vsY);
   ctx.fillStyle = VS_INK;

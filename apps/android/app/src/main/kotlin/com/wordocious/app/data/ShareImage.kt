@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
 import com.wordocious.app.ModeGen
@@ -229,14 +230,19 @@ object ShareImage {
         val day = runCatching { getDailySeedDate(state.seed) }.getOrNull()
         val puzzle = day?.let { LeaderboardShare.puzzleNumberForDay(it) }?.let { "#$it" }
         val g = state.gauntlet
+        // The info line's mode detail (the chips carry guesses / time): size or board count, ProperNoundle's category.
         val extras = ArrayList<String>()
         when {
-            mode == GameMode.GAUNTLET -> extras += "${g?.stageResults?.count { it.status == GameStatus.WON } ?: 0}/${g?.totalStages ?: 5} stages"
-            state.boards.size > 1 -> extras += "${state.boards.count { it.status == GameStatus.WON }}/${state.boards.size} boards"
-            else -> extras += "${if (won) "${board0.guesses.size}" else "X"}/${board0.maxGuesses}"
+            mode == GameMode.GAUNTLET -> extras += "${g?.totalStages ?: 5} stages"
+            state.boards.size > 1 -> extras += "${state.boards.size} boards"
+            else -> extras += "${board0.solution.length} letters"
         }
-        extras += fmtTime(elapsedSeconds)
         category?.takeIf { it.isNotBlank() }?.let { extras += it }
+        val status = when {
+            mode == GameMode.GAUNTLET -> if (won) "Gauntlet cleared" else "Fell at stage ${(g?.stageResults?.count { it.status == GameStatus.WON } ?: 0) + 1}"
+            state.boards.size > 1 -> if (won) "All boards cleared" else "${state.boards.count { it.status == GameStatus.WON }}/${state.boards.size} boards cleared"
+            else -> if (won) "Solved in ${board0.guesses.size}" else "Out of guesses"
+        }
 
         val body = when {
             mode == GameMode.GAUNTLET -> gauntletBody(context, state, fonts)
@@ -269,8 +275,19 @@ object ShareImage {
             body = body,
             stats = stats,
             hero = ShareHero.result(won),
+            status = status,
+            panel = scoreInputFor(state, mode, elapsedSeconds, rs)?.let { ShareBreakdown.panel(it) },
         )).named(modeLabel)
     }
+
+    /** The finished screen's ScoreBreakdownCard inputs for this finish (the same numbers the recorded composite uses). */
+    private fun scoreInputFor(state: GameState, mode: GameMode, elapsed: Int, rs: GameResultsService.RunScore?): ShareBreakdown.Input? = runCatching {
+        val run = rs ?: GameResultsService.computeRunScore(state, mode)
+        val hints = if (mode == GameMode.PROPERNOUNDLE) {
+            GamePersistence.loadHints(state.seed, mode)?.let { h -> listOf(h.clue, h.vowelRevealed, h.consonantRevealed).count { it != null } } ?: 0
+        } else state.boards.firstOrNull()?.hintEvaluations?.size ?: 0
+        ShareBreakdown.Input(mode, run.won, run.guessCount, elapsed, run.boardsSolved, run.totalBoards, hints, run.stagesCompleted, run.bestCorrectLetters, getDailySeedDate(state.seed))
+    }.getOrNull()
 
     /**
      * The composite the record pipeline writes for this finish (GameResultsService
@@ -311,30 +328,39 @@ object ShareImage {
      */
     private fun moreCard(
         context: Context, dbKey: String, fallbackTitle: String, meta: String, won: Boolean, body: ShareCard.Body,
+        status: String? = null, score: ShareBreakdown.Input? = null,
         statsOverride: ((List<ShareFinish.Stat>) -> List<ShareFinish.Stat>)? = null,
     ): Bitmap {
         val m = SharePicks.parseMeta(meta)
         val windows = listOf(ShareFinish.Window.PURPLE, ShareFinish.Window.BLUE, ShareFinish.Window.GOLD)
         val ordered = ArrayList<Pair<String, String>>()
-        m.stats.getOrNull(0)?.let { ordered += it.value to it.label }
+        // A won Kindred is always 4/4: the groups chip only says something on a loss (the finished screen's rule).
+        val metaStats = m.stats.filterNot { won && it.label == "GROUPS" }
+        metaStats.getOrNull(0)?.let { ordered += it.value to it.label }
         m.time?.let { ordered += it to "TIME" }
-        m.stats.drop(1).forEach { ordered += it.value to it.label }
+        metaStats.drop(1).forEach { ordered += it.value to it.label }
         var stats = ordered.take(3).mapIndexed { i, (v, l) -> ShareFinish.Stat(v, l, windows[i]) }
         statsOverride?.let { stats = it(stats) }
+        // The third chip is the finished screen's points: the breakdown's total when the meta line didn't carry one.
+        if (score != null && stats.none { it.label == "POINTS" }) {
+            ShareBreakdown.rows(score).let { r -> stats = stats.take(2) + ShareFinish.Stat(grouped(r.total), "POINTS", ShareFinish.Window.GOLD) }
+        }
         return ShareCard.render(context, ShareCard.Spec(
             wallpaper = ShareFinish.gameWallpaperForKey(dbKey),
             title = gameTitleArtResForKey(dbKey),
             titleFallback = fallbackTitle,
-            info = infoText(null, m.puzzle, m.words + listOfNotNull(m.time)),
+            info = infoText(null, m.puzzle, m.words),
             badge = won,
             body = body,
             stats = stats,
             hero = ShareHero.result(won),
+            status = status,
+            panel = score?.let { ShareBreakdown.panel(it) },
         )).named(gameTitle(dbKey, fallbackTitle))
     }
 
     /** The soft headline under a More Games board (CODE CRACKED, FLAWLESS…): its block height. */
-    private const val HEADLINE_H = 96f
+    private const val HEADLINE_H = 0f
 
     private fun drawHeadline(c: Canvas, fonts: ShareFinish.Fonts, text: String, cx: Float, top: Float, maxW: Float) {
         val p = ShareFinish.softPaint(fonts, 60f)
@@ -358,7 +384,8 @@ object ShareImage {
 
     /** Sudoku: the 9 × 9 as glossy squares — givens slate, the player's cells purple,
      *  hint cells violet, the rest frosted. No digits, so the card spoils nothing. */
-    fun renderSudoku(context: Context, givens: String, board: String, hintMask: String, won: Boolean, meta: String): Bitmap {
+    fun renderSudoku(context: Context, givens: String, board: String, hintMask: String, won: Boolean, meta: String, score: ShareBreakdown.Input? = null,
+    ): Bitmap {
         val body = squareBody(0xFF1E40AF.toInt(), won) { c, card ->
             val pad = card.width() * 0.04f; val gap = card.width() * 0.006f; val boxGap = card.width() * 0.018f
             val cell = (card.width() - pad * 2 - gap * 6 - boxGap * 2) / 9f
@@ -374,38 +401,55 @@ object ShareImage {
                 ShareFinish.drawTile(c, RectF(x, y, x + cell, y + cell), look)
             }
         }
-        return moreCard(context, "SUDOKU", "SUDOCIOUS", meta, won, body)
+        return moreCard(context, "SUDOKU", "SUDOCIOUS", meta, won, body, if (won) "Puzzle solved" else "Puzzle revealed", score)
     }
 
-    /** Starsweep: the regions as soft glossy squares in their tints, the placed stars as
-     *  dark dots (hint stars violet) — no crosses, never the missing stars. */
-    fun renderRegions(context: Context, n: Int, regions: String, board: String, hintMask: String, won: Boolean, meta: String): Bitmap {
-        val body = squareBody(0xFFCA8A04.toInt(), won) { c, card ->
+    /** Starsweep (night): the regions as saturated glossy squares, a soft X on every cell and the placed stars in purple (hint stars
+     *  violet) — the finished board the screen shows. */
+    fun renderRegions(context: Context, n: Int, regions: String, board: String, hintMask: String, won: Boolean, meta: String, score: ShareBreakdown.Input? = null): Bitmap {
+        val body = squareBody(0xFF5B3FA8.toInt(), won) { c, card ->
             val count = maxOf(1, n)
             val pad = card.width() * 0.04f; val gap = card.width() * 0.007f
             val cell = (card.width() - pad * 2 - gap * (count - 1)) / count
-            val tints = intArrayOf(0xFFDDD6FE.toInt(), 0xFFA7F3D0.toInt(), 0xFFBAE6FD.toInt(), 0xFFFBCFE8.toInt(), 0xFFFEF08A.toInt(),
-                0xFF99F6E4.toInt(), 0xFFFED7AA.toInt(), 0xFFD9F99D.toInt(), 0xFFCBD5E1.toInt())
-            val dot = Paint(Paint.ANTI_ALIAS_FLAG)
+            val tints = intArrayOf(0xFF8B6CD9.toInt(), 0xFF5BBF6A.toInt(), 0xFFD8403C.toInt(), 0xFFE08A2C.toInt(), 0xFF38C6C6.toInt(),
+                0xFF3B82D6.toInt(), 0xFFE07AB0.toInt(), 0xFFD4C21A.toInt(), 0xFF94A3B8.toInt())
+            val cross = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; color = 0xD9F1F1F8.toInt() }
+            val star = Paint(Paint.ANTI_ALIAS_FLAG)
             for (i in 0 until count * count) {
                 val r = i / count; val col = i % count
                 val x = card.left + pad + col * (cell + gap)
                 val y = card.top + pad + 2f * U + r * (cell + gap)
                 val gIdx = ((regions.getOrNull(i) ?: '0') - '0').coerceAtLeast(0)
-                ShareFinish.drawTile(c, RectF(x, y, x + cell, y + cell), ShareFinish.family(tints[gIdx % tints.size], gloss = 0.5f))
+                ShareFinish.drawTile(c, RectF(x, y, x + cell, y + cell), ShareFinish.family(tints[gIdx % tints.size], gloss = 0.45f))
+                val cx = x + cell / 2f; val cy = y + cell * 0.465f
                 if (board.getOrNull(i) == '*') {
-                    dot.color = if (hintMask.getOrNull(i) == '1') HINT_VIOLET else ShareFinish.INK_HEADING
-                    c.drawCircle(x + cell / 2f, y + cell * 0.465f, cell * 0.22f, dot)
+                    star.color = if (hintMask.getOrNull(i) == '1') HINT_VIOLET else 0xFF7C3AED.toInt()
+                    val path = Path()
+                    for (k in 0 until 10) {
+                        val rad = cell * (if (k % 2 == 0) 0.30f else 0.125f)
+                        val ang = Math.toRadians(-90.0 + k * 36.0)
+                        val px = cx + (rad * Math.cos(ang)).toFloat(); val py = cy + (rad * Math.sin(ang)).toFloat()
+                        if (k == 0) path.moveTo(px, py) else path.lineTo(px, py)
+                    }
+                    path.close()
+                    star.style = Paint.Style.FILL
+                    c.drawPath(path, star)
+                } else {
+                    cross.strokeWidth = cell * 0.1f
+                    val d = cell * 0.17f
+                    c.drawLine(cx - d, cy - d, cx + d, cy + d, cross)
+                    c.drawLine(cx - d, cy + d, cx + d, cy - d, cross)
                 }
             }
         }
-        return moreCard(context, "REGIONS", "STARSWEEP", meta, won, body)
+        return moreCard(context, "REGIONS", "STARSWEEP", meta, won, body, if (won) "Board cleared" else "Out of mistakes", score)
     }
 
     /** Letter Ladder: START glossy purple with letters, END frosted with an accent ring and
      *  letters, every rung frosted with only the changed tile filled (accent; violet for a
      *  hint rung). No rung word is ever drawn. */
-    fun renderLadder(context: Context, start: String, end: String, words: List<String>, hintMask: String, won: Boolean, meta: String): Bitmap {
+    fun renderLadder(context: Context, start: String, end: String, words: List<String>, hintMask: String, won: Boolean, meta: String, score: ShareBreakdown.Input? = null,
+    ): Bitmap {
         val fonts = ShareFinish.Fonts(context)
         val accent = 0xFF0284C7.toInt()
         val list = if (words.isEmpty()) listOf(start) else words
@@ -433,11 +477,12 @@ object ShareImage {
                 }
             }
         }
-        return moreCard(context, "LADDER", "LETTER LADDER", meta, won, body)
+        return moreCard(context, "LADDER", "LETTER LADDER", meta, won, body, if (won) "Ladder climbed" else "Ladder revealed", score)
     }
 
     /** Spyglass: a dot grid with the found words as accent capsules along their lines — no letters. */
-    fun renderWordsearch(context: Context, n: Int, words: List<com.wordocious.core.WordsearchPlacement>, found: List<String>, won: Boolean, meta: String): Bitmap {
+    fun renderWordsearch(context: Context, n: Int, words: List<com.wordocious.core.WordsearchPlacement>, found: List<String>, won: Boolean, meta: String, score: ShareBreakdown.Input? = null,
+    ): Bitmap {
         val accent = 0xFF4D7C0F.toInt()
         val body = squareBody(accent, won) { c, card ->
             val count = maxOf(1, n)
@@ -453,17 +498,18 @@ object ShareImage {
             val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFB9A3F0.toInt() }
             for (r in 0 until count) for (col in 0 until count) { val (px, py) = center(r, col); c.drawCircle(px, py, cell * 0.12f, fill) }
         }
-        return moreCard(context, "WORDSEARCH", "SPYGLASS", meta, won, body)
+        return moreCard(context, "WORDSEARCH", "SPYGLASS", meta, won, body, if (won) "Every word found" else "Words revealed", score)
     }
 
     /** Hubbub: the 2-3-2 silhouette (center glossy in the accent, the rest frosted), the rank name in soft type. No letters. */
-    fun renderHub(context: Context, rankName: String, pct: Int, won: Boolean, meta: String): Bitmap {
+    fun renderHub(context: Context, rankName: String, pct: Int, won: Boolean, meta: String, score: ShareBreakdown.Input? = null,
+    ): Bitmap {
         val fonts = ShareFinish.Fonts(context)
         val accent = 0xFFC026D3.toInt()
         val tile = 150f
         val gap = tile * 0.12f
         val clusterH = tile * 3 + gap * 2
-        val rankH = 110f
+        val rankH = 0f
         val w = 720f
         val body = ShareCard.Body(w, clusterH + rankH, widthFrac = 0.66f) { c ->
             val center = ShareFinish.family(accent)
@@ -474,12 +520,9 @@ object ShareImage {
                     ShareFinish.drawTile(c, RectF(x, y, x + tile, y + tile), if (r == 1 && i == 1) center else ShareFinish.FROSTED)
                 }
             }
-            val p = ShareFinish.softPaint(fonts, 76f)
-            ShareFinish.fitText(p, rankName.uppercase(), w)
-            c.textMid(rankName.uppercase(), w / 2f, clusterH + rankH / 2f + 10f, p)
         }
         val windows = listOf(ShareFinish.Window.PURPLE, ShareFinish.Window.BLUE, ShareFinish.Window.GOLD)
-        return moreCard(context, "HUB", "HUBBUB", meta, won, body) { stats ->
+        return moreCard(context, "HUB", "HUBBUB", meta, won, body, rankName, score) { stats ->
             // The % of the maximum is a stat window when the meta line doesn't carry it.
             val withPct = if (stats.any { it.label == "OF MAX" }) stats
                 else (listOf(ShareFinish.Stat("$pct%", "OF MAX", ShareFinish.Window.PURPLE)) + stats).take(3)
@@ -489,7 +532,8 @@ object ShareImage {
 
     /** Codebreaker: the CIPHERTEXT only — frosted cells with the code letter beneath each,
      *  words wrapped whole, no plain letters (no spoilers). */
-    fun renderCryptogram(context: Context, cipher: String, checks: Int, won: Boolean, meta: String): Bitmap {
+    fun renderCryptogram(context: Context, cipher: String, checks: Int, won: Boolean, meta: String, score: ShareBreakdown.Input? = null,
+    ): Bitmap {
         val fonts = ShareFinish.Fonts(context)
         val words = cipher.split(" ").filter { it.isNotEmpty() }
         val maxRowW = REF_W
@@ -532,14 +576,14 @@ object ShareImage {
                 }
                 y += lineH
             }
-            drawHeadline(c, fonts, if (won) "CODE CRACKED" else "ANSWER REVEALED", REF_W / 2f, gridH, REF_W)
         }
-        return moreCard(context, "CRYPTOGRAM", "CODEBREAKER", meta, won, body)
+        return moreCard(context, "CRYPTOGRAM", "CODEBREAKER", meta, won, body, if (won) "Code cracked" else "Answer revealed", score)
     }
 
     /** Kindred: four glossy tier bars in solve order (one to four pips), the unsolved tiers
      *  dashed beneath on a loss, then the four mistake dots. No words (no spoilers). */
-    fun renderGroups(context: Context, solvedTiers: List<Int>, mistakes: Int, maxMistakes: Int, won: Boolean, meta: String): Bitmap {
+    fun renderGroups(context: Context, solvedTiers: List<Int>, mistakes: Int, maxMistakes: Int, won: Boolean, meta: String, score: ShareBreakdown.Input? = null,
+    ): Bitmap {
         val fonts = ShareFinish.Fonts(context)
         val accent = 0xFF9F1239.toInt()
         // Tier ramp — one hue, four lightnesses, plus pips (never color alone).
@@ -585,9 +629,8 @@ object ShareImage {
                     c.drawCircle(x, cy, r, pip); x += 2 * r + gap
                 }
             }
-            drawHeadline(c, fonts, if (won) (if (mistakes == 0) "FLAWLESS" else "ALL FOUR GROUPS") else "OUT OF MISTAKES", REF_W / 2f, blockH, REF_W)
         }
-        return moreCard(context, "GROUPS", "KINDRED", meta, won, body)
+        return moreCard(context, "GROUPS", "KINDRED", meta, won, body, if (won) (if (mistakes == 0) "Flawless" else "All four groups") else "Out of mistakes", score)
     }
 
     /** A glossy bar: the tile recipe with a bar's proportions (lip, gradient face, gloss). */
@@ -605,7 +648,8 @@ object ShareImage {
 
     /** Crosswordocious: the grid silhouette only — a glossy tile wherever a letter belongs
      *  (purple finished, slate revealed), nothing where a block is. No letters, no numbers. */
-    fun renderCrossword(context: Context, w: Int, h: Int, solution: String, checks: Int, won: Boolean, meta: String): Bitmap {
+    fun renderCrossword(context: Context, w: Int, h: Int, solution: String, checks: Int, won: Boolean, meta: String, score: ShareBreakdown.Input? = null,
+    ): Bitmap {
         val fonts = ShareFinish.Fonts(context)
         val cols = maxOf(1, w); val rows = maxOf(1, h)
         val gap = T * 0.08f
@@ -620,11 +664,8 @@ object ShareImage {
                 val x = col * (T + gap); val y = r * (T + gap)
                 ShareFinish.drawTile(c, RectF(x, y, x + T, y + T), look)
             }
-            c.save(); c.translate(0f, blockH); c.scale(blockW / REF_W, blockW / REF_W)
-            drawHeadline(c, fonts, if (won) "GRID FINISHED" else "PUZZLE REVEALED", REF_W / 2f, 0f, REF_W)
-            c.restore()
         }
-        return moreCard(context, "CROSSWORD", "CROSSWORDOCIOUS", meta, won, body)
+        return moreCard(context, "CROSSWORD", "CROSSWORDOCIOUS", meta, won, body, if (won) "Grid finished" else "Puzzle revealed", score)
     }
 
     /** Muddle: four rows of frosted tiles on one six-column grid with the circled positions
@@ -632,7 +673,7 @@ object ShareImage {
      *  tiles with purple rings — no letters, no cartoon (no spoilers). */
     fun renderScramble(
         context: Context, wordLengths: List<Int>, circled: List<List<Int>>, pattern: List<Int>,
-        checks: Int, solvedCount: Int, won: Boolean, meta: String,
+        checks: Int, solvedCount: Int, won: Boolean, meta: String, score: ShareBreakdown.Input? = null,
     ): Bitmap {
         val fonts = ShareFinish.Fonts(context)
         val ring = 0xFF7C3AED.toInt()
@@ -674,11 +715,8 @@ object ShareImage {
                 }
                 x += wordGap - sGap
             }
-            c.save(); c.translate(0f, boardH + divider + small); c.scale(w / REF_W, w / REF_W)
-            drawHeadline(c, fonts, if (won) "MUDDLE SOLVED" else "OUT OF CHECKS", REF_W / 2f, 0f, REF_W)
-            c.restore()
         }
-        return moreCard(context, "SCRAMBLE", "MUDDLE", meta, won, body)
+        return moreCard(context, "SCRAMBLE", "MUDDLE", meta, won, body, if (won) "Muddle solved" else "Out of checks", score)
     }
 
     /**

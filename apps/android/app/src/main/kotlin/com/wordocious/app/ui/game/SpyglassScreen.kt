@@ -568,7 +568,7 @@ private fun SpyglassFinished(
         val num = if (session.isDaily) session.dailyNumber else null
         val meta = "${num?.let { "#$it · " } ?: ""}${s.found.size}/${s.words.size} · ${s.misses} miss${if (s.misses == 1) "" else "es"} · ${timeText(secs)}"
         val text = "Wordocious Spyglass${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${timeText(secs)} · ${s.found.size}/${s.words.size} found · ${s.misses} miss${if (s.misses == 1) "" else "es"} · wordocious.com/spyglass"
-        val bmp = ShareImage.renderWordsearch(context, s.n, s.words, s.found, won, meta)
+        val bmp = ShareImage.renderWordsearch(context, s.n, s.words, s.found, won, meta, score = com.wordocious.app.data.ShareBreakdown.Input(GameMode.WORDSEARCH, won, s.guessCount, secs, s.found.size, s.words.size, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null))
         ShareImage.shareBitmap(context, bmp, text)
     }
     FinishedScreen(

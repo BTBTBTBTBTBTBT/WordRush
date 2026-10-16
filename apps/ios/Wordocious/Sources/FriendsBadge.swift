@@ -19,6 +19,8 @@ final class FriendsBadgeStore: ObservableObject {
     @Published private(set) var arrivals = 0
 
     private var challenges: [VsChallenge] = []
+    /// Pending match invites sent to the player (Android / web parity: `inv:` keys).
+    private var inviteIds: [String] = []
     private static let seenKey = "wd_friends_badge_seen_v1"
     private var seen: Set<String> = Set(UserDefaults.standard.stringArray(forKey: FriendsBadgeStore.seenKey) ?? [])
 
@@ -26,6 +28,7 @@ final class FriendsBadgeStore: ObservableObject {
 
     static func requestKey(_ id: String) -> String { "req:\(id)" }
     static func challengeKey(_ code: String) -> String { "vs:\(code)" }
+    static func inviteKey(_ id: String) -> String { "inv:\(id)" }
     /// A game's key carries its last update, so a new move badges again.
     static func gameKey(_ g: FriendlyGameView) -> String { "game:\(g.id):\(g.updatedAt)" }
 
@@ -35,16 +38,20 @@ final class FriendsBadgeStore: ObservableObject {
         for r in FriendsService.incoming { keys.insert(Self.requestKey(r.id)) }
         for g in FriendlyGamesService.active where g.yourTurn { keys.insert(Self.gameKey(g)) }
         for c in challenges { keys.insert(Self.challengeKey(c.code)) }
+        for id in inviteIds { keys.insert(Self.inviteKey(id)) }
         waiting = keys
         let unseen = keys.subtracting(seen).count
         if unseen > count { arrivals += 1 }
         count = unseen
     }
 
-    /// Fetch the incoming VS challenges once (the lobby's own list query).
+    /// Fetch the incoming VS challenges and pending match invites once (the lobby's and Home's own queries).
     func loadChallenges() async {
-        guard AuthService.shared.profile != nil else { return }
-        if let lists = await VsChallengeService.list() { challenges = lists.incoming }
+        guard let uid = AuthService.shared.profile?.id else { return }
+        async let lists = VsChallengeService.list()
+        async let invites = InviteService.fetchPending(userId: uid)
+        if let lists = await lists { challenges = lists.incoming }
+        inviteIds = await invites.map(\.id)
         recount()
     }
 

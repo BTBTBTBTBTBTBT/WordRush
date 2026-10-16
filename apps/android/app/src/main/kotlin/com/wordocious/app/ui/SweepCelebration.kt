@@ -240,17 +240,26 @@ fun SweepCelebration(
                         },
                     )
                 }
+                // The scene: the season's costumed scene (registry extras `art-scene-*`, when it ships) else the base art.
+                // Founder 10-16: a season dresses the SCENE, never a loose hat over it.
+                val baseScene = if (flawless) "art-scene-flawless-star" else "art-scene-sweep-broom"
+                val sceneRes = kitRes(baseScene)
+                val seasonScene = sceneRes != 0 && sceneRes != (if (flawless) R.drawable.art_scene_flawless_star else R.drawable.art_scene_sweep_broom)
                 SceneArtPop(
-                    if (flawless) R.drawable.art_scene_flawless_star else R.drawable.art_scene_sweep_broom,
+                    if (sceneRes != 0) sceneRes else if (flawless) R.drawable.art_scene_flawless_star else R.drawable.art_scene_sweep_broom,
                     height = 210.dp, glow = Color.White, delayMs = 120,
                 )
-                // Halloween: bats + a broom drift in at the corners (registry extras; none out of season)
+                // Season floats (registry extras; none out of season) drift in BESIDE the scene, pushed past the box's edge by most
+                // of their own width so they never sit on the mascot or its props (founder 10-16: the broom landed on S's head).
+                // Sweep skips float-2 (Halloween's broom: the scene already has one).
                 for ((name, left, w) in listOf(Triple("celebrate-float-1", true, 70), Triple("celebrate-float-2", false, 58))) {
+                    if (!left && !flawless) continue
                     val f = kitRes(name)
                     if (f != 0) {
                         Image(
                             painterResource(f), null, contentScale = ContentScale.Fit,
                             modifier = Modifier.align(if (left) Alignment.TopStart else Alignment.TopEnd).width(w.dp)
+                                .offset(x = if (left) (-(w - 14)).dp else (w - 14).dp, y = (-6).dp)
                                 .graphicsLayer { val k = kit.value.coerceIn(0f, 1f); alpha = k; translationY = (1f - k) * 12.dp.toPx() },
                         )
                     }
@@ -281,8 +290,9 @@ fun SweepCelebration(
                         )
                     }
                 }
-                // Flawless: the crown drops onto the star (Halloween: the witch hat)
-                val crown = if (flawless) kitRes("celebrate-crown-gold") else 0
+                // Flawless: the gold crown drops onto the star — unless the season ships its own scene (its costume carries the
+                // headwear; founder 10-16: no hat overlays on cast art)
+                val crown = if (flawless && !seasonScene) kitRes("celebrate-crown-gold") else 0
                 if (crown != 0) {
                     Image(
                         painterResource(crown), null, contentScale = ContentScale.Fit,

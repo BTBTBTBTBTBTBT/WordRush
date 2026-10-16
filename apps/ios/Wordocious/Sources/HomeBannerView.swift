@@ -247,14 +247,11 @@ struct HomeBannerView: View {
             .padding(.top, Self.hostRise)
     }
 
-    // MARK: Halloween curtain stage (founder 10-15)
+    // MARK: Season curtain stage (founder 10-15; 10-16: every season)
 
-    /// The curtain-stage art (`art-celebration-stage-halloween`, 1586 x 992) behind the headline zone, in the Halloween
-    /// season only; nil otherwise (the card stays exactly as it was). A standard-season stage comes later.
-    private static var stageArt: String? {
-        guard CastSkin.season == .halloween, ArtAsset.exists("art-celebration-stage-halloween") else { return nil }
-        return "art-celebration-stage-halloween"
-    }
+    /// The season's curtain-stage art (registry `stage` slot, e.g. `art-celebration-stage-halloween`, 1586 x 992) behind the
+    /// headline zone; nil out of season or while the art hasn't shipped (the card stays exactly as it was).
+    private static var stageArt: String? { SeasonKit.stage }
     /// The three spotlight pools on the art (core CelebrationStage): x of the card width, y of its height (feet land here).
     /// Decodes the stage art (in season only) at the zone's size off main; call on the main thread.
     static func prewarmStage() {

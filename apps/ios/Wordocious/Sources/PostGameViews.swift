@@ -429,8 +429,6 @@ struct ScoreBreakdownView: View {
                                        timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
                                        hintsUsed: hintsUsed, stagesCompleted: stagesCompleted,
                                        bestCorrectLetters: bestCorrectLetters, dateKey: day)
-        let guessesLeft = max(0, b.maxGuesses - guessCount)
-        let timeUnder = max(0, b.timeCap - timeSeconds)
         // FINISH_SPEC §B6: a lavender card with a purple top bar, dashed dividers,
         // purple values and the total as a big soft number.
         return VStack(alignment: .leading, spacing: 6) {
@@ -445,25 +443,11 @@ struct ScoreBreakdownView: View {
                 .accessibilityElement(children: .combine)
             }
             VStack(spacing: 0) {
-                row(completed ? "Win bonus" : "Did not finish", completed ? "" : "no win bonus", b.basePoints, first: true)
-                // The row reads through the mode's guess semantics (More Games §11):
-                // Sudoku and Starsweep count mistakes, so theirs says "Mistake bonus".
-                let bonusLabel: String = {
-                    switch ModeGen.byDbKey(gameMode)?.guessSemantics {
-                    case "mistakes": return "Mistake bonus"
-                    case "checks": return "Check bonus"
-                    case "misses": return "Miss bonus"
-                    case "overPar": return "Par bonus"
-                    case "rank": return "Rank bonus"
-                    default: return "Guess bonus"
-                    }
-                }()
-                if completed && b.guessBonusApplies { row(bonusLabel, "\(guessesLeft) unused × \(b.guessWeight)", b.guessBonus) }
-                if completed { row("Speed bonus", timeSeconds > b.timeCap ? "\(fmt(timeSeconds - b.timeCap)) over \(fmt(b.timeCap))" : "\(fmt(timeUnder)) under \(fmt(b.timeCap))", b.timeBonus) }
-                if b.completionBonus > 0 { completionRow(b.completionBonus) }
-                if b.hasHints {
-                    let detail = hintsUsed > 0 ? "\(hintsUsed) hint\(hintsUsed == 1 ? "" : "s") × \(Int(b.hintPenalty) / max(1, hintsUsed))" : "no hints — full credit"
-                    row("Hint penalty", detail, -b.hintPenalty, pure: completed && hintsUsed == 0)
+                ForEach(Array(Self.lines(gameMode: gameMode, completed: completed, guessCount: guessCount,
+                                         timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
+                                         hintsUsed: hintsUsed, stagesCompleted: stagesCompleted,
+                                         bestCorrectLetters: bestCorrectLetters, day: day).lines.enumerated()), id: \.offset) { i, l in
+                    row(l.label, l.detail, l.value, pure: l.pure, first: i == 0)
                 }
             }
         }
@@ -475,26 +459,62 @@ struct ScoreBreakdownView: View {
 
     private static var valueInk: Color { Theme.isDark ? Color(hex: 0xC4B5FD) : Color(hex: 0x6D28D9) }
 
-    /// Completion / progress row — relabels on a loss (Gauntlet stage progress,
-    /// single-board near-miss) to match the new loss-credit scoring.
-    private func completionRow(_ bonus: Double) -> some View {
-        let label: String
-        let detail: String
+    /// One line of the breakdown (also drawn by the share cards: ShareNightBreakdown).
+    struct ScoreLine { let label: String; let detail: String; let value: Double; var pure = false }
+
+    /// The breakdown's lines + total, from the game's numbers. The ONE source of the rows the finished screen and the
+    /// share image both print.
+    static func lines(gameMode: String, completed: Bool, guessCount: Int, timeSeconds: Int, boardsSolved: Int,
+                      totalBoards: Int, hintsUsed: Int = 0, stagesCompleted: Int? = nil, bestCorrectLetters: Int? = nil,
+                      day: String? = nil) -> (total: Double, lines: [ScoreLine]) {
+        let b = DailyScoring.breakdown(gameMode: gameMode, completed: completed, guessCount: guessCount,
+                                       timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
+                                       hintsUsed: hintsUsed, stagesCompleted: stagesCompleted,
+                                       bestCorrectLetters: bestCorrectLetters, dateKey: day)
+        let guessesLeft = max(0, b.maxGuesses - guessCount)
+        let timeUnder = max(0, b.timeCap - timeSeconds)
+        func fmt(_ s: Int) -> String { s <= 0 ? "0s" : (s >= 60 ? "\(s/60)m \(s%60)s" : "\(s)s") }
+        var out: [ScoreLine] = [ScoreLine(label: completed ? "Win bonus" : "Did not finish", detail: completed ? "" : "no win bonus", value: b.basePoints)]
+        // The row reads through the mode's guess semantics (More Games §11):
+        // Sudoku and Starsweep count mistakes, so theirs says "Mistake bonus".
+        let bonusLabel: String = {
+            switch ModeGen.byDbKey(gameMode)?.guessSemantics {
+            case "mistakes": return "Mistake bonus"
+            case "checks": return "Check bonus"
+            case "misses": return "Miss bonus"
+            case "overPar": return "Par bonus"
+            case "rank": return "Rank bonus"
+            default: return "Guess bonus"
+            }
+        }()
+        if completed && b.guessBonusApplies { out.append(ScoreLine(label: bonusLabel, detail: "\(guessesLeft) unused × \(b.guessWeight)", value: b.guessBonus)) }
         if completed {
-            label = "Completion bonus"
-            detail = totalBoards > 1 ? "\(boardsSolved)/\(totalBoards) boards" : "puzzle solved"
-        } else if gameMode == "GAUNTLET" {
-            label = "Stage progress"
-            detail = "\(stagesCompleted ?? 0)/5 stages cleared"
-        } else if totalBoards == 1 {
-            let n = bestCorrectLetters ?? 0
-            label = "Near miss"
-            detail = "\(n) correct letter\(n == 1 ? "" : "s")"
-        } else {
-            label = "Completion bonus"
-            detail = "\(boardsSolved)/\(totalBoards) boards"
+            out.append(ScoreLine(label: "Speed bonus", detail: timeSeconds > b.timeCap ? "\(fmt(timeSeconds - b.timeCap)) over \(fmt(b.timeCap))" : "\(fmt(timeUnder)) under \(fmt(b.timeCap))", value: b.timeBonus))
         }
-        return row(label, detail, bonus)
+        if b.completionBonus > 0 {
+            // Completion / progress row — relabels on a loss (Gauntlet stage progress, single-board near-miss).
+            let label: String, detail: String
+            if completed {
+                label = "Completion bonus"
+                detail = totalBoards > 1 ? "\(boardsSolved)/\(totalBoards) boards" : "puzzle solved"
+            } else if gameMode == "GAUNTLET" {
+                label = "Stage progress"
+                detail = "\(stagesCompleted ?? 0)/5 stages cleared"
+            } else if totalBoards == 1 {
+                let n = bestCorrectLetters ?? 0
+                label = "Near miss"
+                detail = "\(n) correct letter\(n == 1 ? "" : "s")"
+            } else {
+                label = "Completion bonus"
+                detail = "\(boardsSolved)/\(totalBoards) boards"
+            }
+            out.append(ScoreLine(label: label, detail: detail, value: b.completionBonus))
+        }
+        if b.hasHints {
+            let detail = hintsUsed > 0 ? "\(hintsUsed) hint\(hintsUsed == 1 ? "" : "s") × \(Int(b.hintPenalty) / max(1, hintsUsed))" : "no hints — full credit"
+            out.append(ScoreLine(label: "Hint penalty", detail: detail, value: -b.hintPenalty, pure: completed && hintsUsed == 0))
+        }
+        return (b.total, out)
     }
 
     private func row(_ label: String, _ detail: String, _ value: Double, pure: Bool = false, first: Bool = false) -> some View {

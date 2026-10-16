@@ -41,6 +41,8 @@ object SeasonKit {
         val walls: Map<String, String>,
         val props: List<String>,
         val banner: String?,
+        /** 10-16: the Home curtain-stage card art (core CelebrationStage geometry); null / unshipped = the plain card. */
+        val stage: String? = null,
         val surfaces: com.wordocious.app.ui.theme.SeasonSurfaces? = null,
         /** Normal art name -> seasonal art name for the small extras (the celebration kit: `celebrate-burst-party` ...). */
         val extras: Map<String, String> = emptyMap(),
@@ -81,6 +83,7 @@ object SeasonKit {
                 walls = map("walls"),
                 props = (slots["props"] as? JsonArray)?.map { it.jsonPrimitive.content } ?: emptyList(),
                 banner = str(slots, "banner"),
+                stage = str(slots, "stage"),
                 surfaces = (s["surfaces"] as? JsonObject)?.let(::parseSurfaces),
                 extras = map("extras"),
                 sounds = (slots["sounds"] as? JsonObject)?.let { Sounds(str(it, "intro"), str(it, "note")) },
@@ -186,6 +189,10 @@ object SeasonKit {
 
     /** The season's Home banner drawable, 0 = none. */
     fun banner(context: Context, season: String?): Int = entry(context, season)?.banner?.let { drawable(context, it) } ?: 0
+
+    /** The season's Home curtain-stage drawable (registry `stage`), 0 = none / not shipped (the plain card). */
+    @DrawableRes
+    fun stage(context: Context, season: String?): Int = entry(context, season)?.stage?.let { drawable(context, it) } ?: 0
 }
 
 /** The season's title drawable for [res] (recomposes when the admin preview flips). */

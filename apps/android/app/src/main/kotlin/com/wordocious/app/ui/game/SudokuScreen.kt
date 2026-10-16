@@ -665,7 +665,7 @@ private fun SudokuFinished(
         // Caption names each figure (founder, 2026-09-22): score, time, mistakes.
         val pts = com.wordocious.app.data.DailyScoring.breakdown(GameMode.SUDOKU.name, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed).total.toInt()
         val text = "Wordocious Sudocious${num?.let { " #$it" } ?: ""} — Score $pts pts · Time ${timeText(secs)} · ${if (won) "${s.mistakes} mistake${if (s.mistakes == 1) "" else "s"}" else "Out of mistakes"} · wordocious.com/sudoku"
-        val bmp = ShareImage.renderSudoku(context, s.givens, s.board, s.hintMask, won, meta)
+        val bmp = ShareImage.renderSudoku(context, s.givens, s.board, s.hintMask, won, meta, score = com.wordocious.app.data.ShareBreakdown.Input(GameMode.SUDOKU, won, s.mistakes + 1, secs, if (won) 1 else 0, 1, s.hintsUsed, day = day))
         ShareImage.shareBitmap(context, bmp, text)
     }
     FinishedScreen(

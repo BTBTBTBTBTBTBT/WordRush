@@ -247,7 +247,8 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
           strip={
             <ResultStrip
               won={state.status === 'WON'}
-              guesses={totalGuesses}
+              boards={{ solved: state.boards.filter(b => b.status === 'WON').length, total: 4 }}
+              guesses={state.status === 'WON' ? totalGuesses : `${totalGuesses}/${state.boards[0]?.maxGuesses || 9}`}
               time={formatTime(elapsedTime)}
               points={finishedPoints}
               srText={state.status === 'WON' ? `All 4 solved in ${totalGuesses} guesses · ${formatTime(elapsedTime)}` : `Boards Completed ${completedBoards}/4`}

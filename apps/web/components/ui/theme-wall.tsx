@@ -62,7 +62,7 @@ export function LivingWallpaper() {
   if (!mounted || !isLive('living_wallpapers')) return null;
   return (
     <div className="ambient" data-still={still ? 'true' : 'false'} aria-hidden="true">
-      {seasonal ? <SeasonalAmbient entry={seasonal.ambient} trim={trim} /> : <ThemeAmbient a={themeEntry(theme).ambient} trim={trim} />}
+      {seasonal?.ambient ? <SeasonalAmbient entry={seasonal.ambient} trim={trim} /> : <ThemeAmbient a={themeEntry(theme).ambient} trim={trim} />}
     </div>
   );
 }
@@ -134,7 +134,7 @@ function useWitchMoonPath(witchW: number): React.CSSProperties {
   return vars;
 }
 
-function SeasonalAmbient({ entry, trim }: { entry: NonNullable<ReturnType<typeof seasonalEntry>>['ambient']; trim: number }) {
+function SeasonalAmbient({ entry, trim }: { entry: NonNullable<NonNullable<ReturnType<typeof seasonalEntry>>['ambient']>; trim: number }) {
   const moonPath = useWitchMoonPath(entry.witch.size);
   const bats = Math.max(1, Math.round(entry.bats.count * trim));
   const stars = Math.round(entry.stars.count * trim);

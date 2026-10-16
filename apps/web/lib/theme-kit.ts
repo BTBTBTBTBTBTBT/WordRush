@@ -52,7 +52,8 @@ export interface SeasonalEntry {
   subtitle: string;
   previewWall: [string, string, string];
   previewTiles: { letter: string; color: string }[];
-  ambient: SeasonalAmbient;
+  /** The season's living wallpaper; absent = the base theme's ambient keeps running (Thanksgiving ships none yet). */
+  ambient?: SeasonalAmbient;
 }
 
 const REGISTRY = registryJson as unknown as { themes: ThemeEntry[]; seasonal: Record<string, SeasonalEntry> };

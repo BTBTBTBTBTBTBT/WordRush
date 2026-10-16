@@ -71,6 +71,9 @@ final class WidgetStatsTests: XCTestCase {
         XCTAssertEqual(WidgetCast.asset("w", day: "2026-10-02"), "mascot-w")
         XCTAssertEqual(WidgetCast.asset("w", day: "2026-10-09"), "art-halloween-w")
         XCTAssertEqual(WidgetCast.asset("w", day: "2026-11-01"), "mascot-w")
+        // 10-16: a not-ready season (Thanksgiving, Nov 14 – 29) keeps the hero cast until its art ships (Season.ready).
+        XCTAssertEqual(WidgetCast.asset("w", day: "2026-11-20"), Season.thanksgiving.ready ? "art-thanksgiving-w" : "mascot-w")
+        XCTAssertEqual(WidgetCast.asset("o2", day: "2026-11-30"), "mascot-o2")
     }
 
     /// BI13b: the one peeking cast member — mood by state, pose by day (Kotlin WidgetCastTest twin).

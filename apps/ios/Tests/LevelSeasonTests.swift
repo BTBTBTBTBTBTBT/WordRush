@@ -22,16 +22,41 @@ final class LevelSeasonTests: XCTestCase {
         XCTAssertNil(Season.current(day: "garbage"))
     }
 
-    /// Parity: packages/core SEASON_WINDOWS + currentSeason (level-season-fixtures.json `days` + `windows`).
+    /// Founder 10-16: Thanksgiving runs Nov 14 – Nov 29 by the calendar, but a NOT-READY season (art unshipped)
+    /// never activates for the public; the admin preview still names it (every case is listed).
+    func testThanksgivingWindowAndReadyGate() {
+        XCTAssertEqual(Season.calendar(day: "2026-10-31"), .halloween)
+        XCTAssertNil(Season.calendar(day: "2026-11-01"))
+        XCTAssertNil(Season.calendar(day: "2026-11-13"))
+        XCTAssertEqual(Season.calendar(day: "2026-11-14"), .thanksgiving)
+        XCTAssertEqual(Season.calendar(day: "2026-11-26"), .thanksgiving)
+        XCTAssertEqual(Season.calendar(day: "2026-11-29"), .thanksgiving)
+        XCTAssertNil(Season.calendar(day: "2026-11-30"))
+        XCTAssertFalse(Season.thanksgiving.ready)
+        XCTAssertTrue(Season.halloween.ready)
+        for day in ["2026-11-14", "2026-11-20", "2026-11-26", "2026-11-29"] {
+            XCTAssertEqual(Season.calendar(day: day), .thanksgiving, day)
+            XCTAssertNil(Season.current(day: day), "not-ready season must stay off: \(day)")
+        }
+        XCTAssertEqual(Season.current(day: "2026-10-31"), .halloween)
+        // The admin picker (SettingsView, CastSkin.debugKey) accepts every case, ready or not.
+        XCTAssertEqual(Season(rawValue: "thanksgiving"), .thanksgiving)
+        XCTAssertEqual(Season.allCases.map(\.rawValue), ["halloween", "thanksgiving"])
+    }
+
+    /// Parity: packages/core SEASON_WINDOWS + currentSeason / calendarSeason (level-season-fixtures.json `days` + `windows`).
     func testMatchesSharedSeasonFixture() throws {
-        struct Day: Decodable { let date: String; let season: String? }
-        struct Row: Decodable { let id: String; let start: [Int]; let end: [Int] }
+        struct Day: Decodable { let date: String; let season: String?; let calendar: String? }
+        struct Row: Decodable { let id: String; let start: [Int]; let end: [Int]; let ready: Bool }
         struct F: Decodable { let days: [Day]; let windows: [Row] }
         let url = try XCTUnwrap(Bundle.module.url(forResource: "level-season-fixtures", withExtension: "json", subdirectory: "Fixtures")
             ?? Bundle.module.url(forResource: "level-season-fixtures", withExtension: "json"))
         let f = try JSONDecoder().decode(F.self, from: Data(contentsOf: url))
-        for d in f.days { XCTAssertEqual(Season.current(day: d.date)?.rawValue, d.season, d.date) }
-        XCTAssertEqual(f.windows.map { "\($0.id) \($0.start) \($0.end)" },
-                       Season.windows.map { "\($0.season.rawValue) [\($0.start.0), \($0.start.1)] [\($0.end.0), \($0.end.1)]" })
+        for d in f.days {
+            XCTAssertEqual(Season.current(day: d.date)?.rawValue, d.season, d.date)
+            XCTAssertEqual(Season.calendar(day: d.date)?.rawValue, d.calendar, d.date)
+        }
+        XCTAssertEqual(f.windows.map { "\($0.id) \($0.start) \($0.end) \($0.ready)" },
+                       Season.windows.map { "\($0.season.rawValue) [\($0.start.0), \($0.start.1)] [\($0.end.0), \($0.end.1)] \($0.ready)" })
     }
 }

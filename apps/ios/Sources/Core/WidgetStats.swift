@@ -120,11 +120,13 @@ public enum WidgetCast {
         return era * 146097 + doe - 719468
     }
 
-    /// The image set for a cast id on `day`: the Halloween skin during the Halloween season window
-    /// (core SEASON_WINDOWS via Season.current — Oct 9 – Oct 31 since 2.8; it used to be its own Oct 24 – Nov 1).
+    /// The image set for a cast id on `day`: the season's skin during a READY season window (core SEASON_WINDOWS via
+    /// Season.current; Halloween Oct 9 – Oct 31, Thanksgiving Nov 14 – Nov 29). The widget can't read the registry, so it
+    /// pins the registry's cast pattern `art-<season>-{id}` (season-registry.json `slots.cast`, the same for every season).
     /// `seasonOn` = the `season_halloween` off-switch as the app last wrote it (false = normal cast everywhere).
     public static func asset(_ id: String, day: String, seasonOn: Bool = true) -> String {
-        seasonOn && Season.current(day: day) == .halloween ? "art-halloween-\(id)" : "mascot-\(id)"
+        guard seasonOn, let s = Season.current(day: day) else { return "mascot-\(id)" }
+        return "art-\(s.rawValue)-\(id)"
     }
 
     /// BI13b (founder 10-03: "sprinkle a mascot or two … just a little personality"): the

@@ -55,6 +55,7 @@ import com.wordocious.core.CardFriend
 import com.wordocious.core.CardGame
 import com.wordocious.core.FriendCard
 import com.wordocious.core.FriendCards
+import com.wordocious.core.FriendlyKind
 import com.wordocious.core.FriendsLayout
 import com.wordocious.core.GameTile
 
@@ -83,12 +84,16 @@ fun FriendCardsSection(
     onMenu: (FriendsService.FriendProfile) -> Unit,
     /** Resign this game (the confirm happens on its tile; the caller resigns and reloads the games). */
     onResign: (String) -> Unit,
+    /** The avatar + name open the friend's profile (iOS / web parity). */
+    onOpenProfile: (String) -> Unit = {},
+    /** A friend with no games keeps today's start row (spec): one tap starts that game with them. */
+    onStartGame: (FriendsService.FriendProfile, FriendlyKind) -> Unit = { f, _ -> onPlayWith(f) },
 ) {
     if (layout.cards.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         layout.cards.forEach { card ->
             val friend = friends.firstOrNull { it.id == card.friendId }
-            FriendCardView(card, friend, onOpenGame, onPlayWith, onMenu, onResign)
+            FriendCardView(card, friend, onOpenGame, onPlayWith, onMenu, onResign, onOpenProfile, onStartGame)
         }
     }
 }
@@ -101,8 +106,12 @@ private fun FriendCardView(
     onPlayWith: (FriendsService.FriendProfile) -> Unit,
     onMenu: (FriendsService.FriendProfile) -> Unit,
     onResign: (String) -> Unit,
+    onOpenProfile: (String) -> Unit,
+    onStartGame: (FriendsService.FriendProfile, FriendlyKind) -> Unit,
 ) {
     var expanded by remember(card.friendId) { mutableStateOf(false) }
+    // A game partner who left the friend list still has a profile to open and games to start.
+    val who = friend ?: FriendsService.FriendProfile(id = card.friendId, username = card.name)
     // The game whose flag was tapped (its row shows "Resign Ghost?" with Keep / Resign in place).
     var confirming by remember(card.friendId) { mutableStateOf<String?>(null) }
     // Every game going with them: yours to play first, then theirs.
@@ -110,6 +119,7 @@ private fun FriendCardView(
     val shown = if (expanded || all.size <= MAX_ROWS) all else all.take(MAX_ROWS)
     // The bubble headline ("1 game waiting on you") is not drawn any more (the gold row says it); TalkBack still hears it.
     val cardLabel = "Play a game with ${card.name}" + if (card.headline.isNotEmpty()) ", ${card.headline}" else ""
+    val profileLabel = listOfNotNull(card.name, card.presence, card.headline.takeIf { it.isNotEmpty() }).joinToString(", ")
     Column(
         Modifier.fillMaxWidth()
             .then(if (friend != null) Modifier.tileClickable(label = cardLabel, card = true) { onPlayWith(friend) } else Modifier)
@@ -118,11 +128,17 @@ private fun FriendCardView(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            FriendFace(
-                card.name, friend?.avatarUrl, friend?.avatarEmoji, 44.dp, online = card.online,
-                presenceRing = false, userId = card.friendId, dotSize = 11.dp,
-            )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            // iOS / web parity: the avatar and the name open the profile (the rest of the card still quick-plays).
+            Box(Modifier.tileClickable(card = false, label = "${card.name}'s profile") { onOpenProfile(card.friendId) }) {
+                FriendFace(
+                    card.name, friend?.avatarUrl, friend?.avatarEmoji, 44.dp, online = card.online,
+                    presenceRing = false, userId = card.friendId, dotSize = 11.dp,
+                )
+            }
+            Column(
+                Modifier.weight(1f).tileClickable(card = false, label = profileLabel) { onOpenProfile(card.friendId) },
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
                 FriendsName(card.name, size = 16f)
                 // ONE sub line: the presence in green, else "N GAMES", else today's start prompt.
                 FixedFont {
@@ -135,7 +151,7 @@ private fun FriendCardView(
                             if (all.size == 1) "1 GAME" else "${all.size} GAMES", fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold,
                             color = FriendsPink.muted, letterSpacing = 0.6.sp, maxLines = 1,
                         )
-                        else -> Text("Tap to pick a game", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1)
+                        else -> {}
                     }
                 }
             }
@@ -147,7 +163,9 @@ private fun FriendCardView(
             ) { FamIconImage(FamIcon.MORE, FriendsPink.solid, 20.dp) }
         }
 
-        // ALWAYS one slim row per game (yours first), at most 3; more fold behind "+N more".
+        // ALWAYS one slim row per game (yours first), at most 3; more fold behind "+N more". Nothing going yet:
+        // the six games as small tiles, tap one to start it with them (spec: "keeps today's start row").
+        if (all.isEmpty()) StartRow(card.name) { onStartGame(who, it) }
         shown.forEach { t ->
             GameRow(t, card.name, confirming == t.gameId, { confirming = if (it) t.gameId else null }, onOpenGame) { onResign(t.gameId) }
         }
@@ -158,6 +176,21 @@ private fun FriendCardView(
 private const val MAX_ROWS = 3
 private val GOLD = Color(0xFFFFC83D)
 private val GOLD_TEXT = Color(0xFFFFD45A)
+
+/** A friend with nothing going yet: the six games as small tiles (iOS `startRow` / web `StartStrip`), tap one to start it. */
+@Composable
+private fun StartRow(friendName: String, onStart: (FriendlyKind) -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FriendlyKind.entries.forEach { k ->
+            Box(
+                Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(friendsWash(k.color, 0.10f))
+                    .tileClickable(card = false, label = "Play ${k.title} with $friendName") { onStart(k) }
+                    .padding(vertical = 7.dp),
+                Alignment.Center,
+            ) { FriendlyGameGlyph(k, 30.dp) }
+        }
+    }
+}
 
 /** "+N more ⌄": the quiet fourth row that toggles the rest of the games. */
 @Composable
@@ -170,7 +203,7 @@ private fun MoreRow(more: Int, expanded: Boolean, onToggle: () -> Unit) {
                 .padding(vertical = 3.dp),
             horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(if (expanded) "Show less" else "+$more more", fontSize = 11.5.sp, fontWeight = FontWeight.Black, color = lavender, maxLines = 1)
+            Text(if (expanded) "Show fewer" else "+$more more", fontSize = 11.5.sp, fontWeight = FontWeight.Black, color = lavender, maxLines = 1)
             Spacer(Modifier.width(3.dp))
             Icon(Icons.Filled.KeyboardArrowDown, null, tint = lavender, modifier = Modifier.size(14.dp).rotate(if (expanded) 180f else 0f))
         }

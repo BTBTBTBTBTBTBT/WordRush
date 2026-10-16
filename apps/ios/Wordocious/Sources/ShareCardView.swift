@@ -78,19 +78,22 @@ struct ShareCardView: View {
     /// Defaults from the win flag; the band only shows for a signed-in player (ShareHeroBand.available).
     var hero: ShareHero.Result? = nil
 
-    private var heroResult: ShareHero.Result { hero ?? ShareHero.result(won: won) }
-    /// Set by the caller (ShareHeroBand.available: a signed-in player); the band's height is then part of the plan.
+    /// The sender's hero band is retired on the night frame (founder 10-16, option B: the title art, info line, chips and
+    /// score panel carry the card); the plumbing stays so callers keep compiling.
     var heroEnabled = false
-    private var heroBand: CGFloat { CGFloat(ShareHero.band(hasHero: heroEnabled)) }
+    /// The daily puzzle's number for the info line (`WEEKDAY, MON D · #N · …`); nil = none (unlimited).
+    var puzzleNumber: Int? = nil
+    /// Hints used (the score breakdown's last line); nil = infer from `points`.
+    var hintsUsed: Int? = nil
 
-    private let bg = Color(hex: 0xF5EEFF)
     private let lossFG = Color(hex: 0xDC2626)
 
     /// §S2: the board body's measured natural size (`ShareService.naturalSize(card.boardBody)`),
     /// set before rendering so the canvas fits the puzzle; nil → the estimate in `boardBox`.
     var boardNatural: CGSize? = nil
 
-    private var titleArt: String? { mode.flatMap(GameTitleArt.forMode)?.asset }
+    /// The game's title art, in its season variant (Halloween drip, ...) when one ships.
+    private var titleArt: String? { mode.flatMap(GameTitleArt.forMode).map { SeasonKit.title($0.asset) } }
 
     // MARK: §S2 layout — the canvas is sized to its content
 
@@ -111,15 +114,52 @@ struct ShareCardView: View {
         return Double(a)
     }
 
-    /// Founder 10-06: the FULL title art, fit to the card width inside 90-px margins (≤ 210 tall).
+    /// Founder 10-06: the FULL title art, fit to the card width inside 90-px margins (≤ 150 tall on the night frame).
     private var titleBox: CGSize {
         let t = ShareCardPlan.titleSize(aspect: titleAspect)
         return CGSize(width: t.width, height: t.height)
     }
 
-    /// Everything but the board.
+    // The night frame's blocks under the title (spec: docs/design/review/share-cards-1016/SPEC.md).
+    private static let statusH: CGFloat = 46
+    private static let chipH: CGFloat = 78
+    private static let chipGap: CGFloat = 12
+    private static let panelGap: CGFloat = 18
+
+    /// The score breakdown (daily results only: Unlimited has no points).
+    private var breakdown: (total: Int, lines: [ScoreBreakdownView.ScoreLine])? {
+        guard let points, let m = mode else { return nil }
+        var solved = 0, total = 1, stages: Int? = nil
+        switch kind {
+        case .multi(_, let s, let t): solved = s; total = t
+        case .gauntlet(_, let done, let t): solved = done; total = t; stages = done
+        default: solved = won ? 1 : 0
+        }
+        func make(_ hints: Int) -> (total: Double, lines: [ScoreBreakdownView.ScoreLine]) {
+            ScoreBreakdownView.lines(gameMode: m.rawValue, completed: won, guessCount: guesses, timeSeconds: timeSeconds,
+                                     boardsSolved: solved, totalBoards: total, hintsUsed: hints, stagesCompleted: stages)
+        }
+        var out = make(hintsUsed ?? 0)
+        if hintsUsed == nil, Int(out.total) != points {
+            // The share doesn't carry hints: find the count that reproduces the recorded score.
+            if let h = (1...12).first(where: { Int(make($0).total) == points }) { out = make(h) }
+        }
+        guard out.total > 0 || !out.lines.isEmpty else { return nil }
+        return (points, out.lines)
+    }
+
+    private var breakdownH: CGFloat {
+        guard let b = breakdown else { return 0 }
+        return ShareNightBreakdown.height(lineCount: b.lines.count)
+    }
+
+    /// Everything but the board, top pad and title included.
     private var fixedH: CGFloat {
-        CGFloat(ShareCardPlan.fixedHeight(titleAspect: titleAspect, rest: ShareCardPlan.standardRest(hero: Double(heroBand))))
+        let rest = CGFloat(ShareCardPlan.infoGap) + Self.infoH + Self.statusH + Self.chipGap + Self.chipH
+            + CGFloat(ShareCardPlan.headGap)                              // → board
+            + (breakdownH > 0 ? Self.panelGap + breakdownH : 0)
+            + CGFloat(ShareCardPlan.castGap) + ShareCastWordmark.height(Self.castW) + Self.bottomPad
+        return CGFloat(ShareCardPlan.fixedHeight(titleAspect: titleAspect, rest: Double(rest)))
     }
 
     /// The board body's natural size (measured, else estimated).
@@ -162,13 +202,22 @@ struct ShareCardView: View {
         let scale = CGFloat(p.boardScale)
         let boardH = CGFloat(p.boardH)
         ZStack(alignment: .top) {
-            if let mode { ShareWall(tint: .forGame(mode)) } else { bg }
+            ShareNightBackground()
             VStack(spacing: 0) {
                 ShareTitleBand(asset: titleAspect != nil ? titleArt : nil, size: titleBox,
                                text: modeLabel, color: accent)
                     .padding(.top, CGFloat(ShareCardPlan.topPad))
-                if heroBand > 0 { ShareHeroBand(result: heroResult) }
-                infoRow.frame(height: Self.infoH).padding(.top, CGFloat(ShareCardPlan.infoGap))
+                ShareNightInfoLine(text: infoText, size: 27)
+                    .frame(height: Self.infoH).padding(.top, CGFloat(ShareCardPlan.infoGap))
+                    .padding(.horizontal, 40)
+                Text(statusText)
+                    .font(Brand.fixedFont(40, .black)).foregroundStyle(won ? ShareNight.lavender : Color(hex: 0xFF9AA8))
+                    .lineLimit(1).minimumScaleFactor(0.5)
+                    .frame(height: Self.statusH)
+                    .padding(.horizontal, 40)
+                ShareNightChipRow(items: windows, height: Self.chipH)
+                    .padding(.horizontal, 54)
+                    .padding(.top, Self.chipGap)
 
                 // The board block in its planned box (the 4:5 floor's slack centers it).
                 body(for: kind)
@@ -179,9 +228,12 @@ struct ShareCardView: View {
                     .frame(height: boardH + CGFloat(p.slack))
                     .padding(.top, CGFloat(ShareCardPlan.headGap))
 
-                ShareStatRow(items: windows, height: Self.windowH)
-                    .padding(.horizontal, 54)
-                    .padding(.top, CGFloat(ShareCardPlan.boardGap))
+                if let b = breakdown {
+                    ShareNightBreakdown(total: b.total, lines: b.lines)
+                        .frame(height: breakdownH)
+                        .padding(.horizontal, 54)
+                        .padding(.top, Self.panelGap)
+                }
                 ShareCastWordmark(width: Self.castW)
                     .padding(.top, CGFloat(ShareCardPlan.castGap))
                     .padding(.bottom, Self.bottomPad)
@@ -190,36 +242,31 @@ struct ShareCardView: View {
             // never pushing the title off the top (founder 10-06).
             .frame(width: size.width, height: size.height, alignment: .top)
         }
+        .environment(\.shareNight, true)
         .frame(width: size.width, height: size.height, alignment: .top)
         .clipped()
     }
 
-    /// One compact info line: date · guesses · time, the ProperNoundle category pill,
-    /// and the W / L badge.
-    private var infoRow: some View {
-        HStack(spacing: 14) {
-            ShareDateLine(text: infoText, size: 30)
-            if let category {
-                Text(category.uppercased()).font(Brand.fixedFont(22, .black)).tracking(2)
-                    .foregroundStyle(accent.mixed(over: .black, 0.75))
-                    .padding(.horizontal, 16).frame(height: 40)
-                    .background(Capsule().fill(accent.wash(0.16)))
-                    .overlay(Capsule().strokeBorder(accent.wash(0.40), lineWidth: 3))
-            }
-            ShareResultBadge(won: won, size: 46)
+    /// The status line in lavender under the info line: the game's own finished word.
+    private var statusText: String {
+        switch kind {
+        case .single: return won ? "Solved in \(guesses)" : "Out of guesses"
+        case .multi(_, let solved, let total): return solved == total ? "All boards solved" : "\(solved) of \(total) boards solved"
+        case .gauntlet(_, let done, let total): return done == total ? "Gauntlet cleared" : "\(done) of \(total) stages cleared"
+        case .sudoku: return won ? "Puzzle solved" : "Out of mistakes"
+        case .regions: return won ? "Board cleared" : "Out of mistakes"
+        case .ladder: return won ? "Ladder climbed" : "Stuck on the ladder"
+        case .wordsearch(_, let words, let found, _, _, _): return found.count == words.count ? "Every word found" : "\(found.count) of \(words.count) words found"
+        case .hub(let rankName, _, _, _, _, _): return rankName
+        case .cryptogram: return won ? "Code cracked" : "Code revealed"
+        case .groups: return won ? "All groups found" : "Out of mistakes"
+        case .crossword: return won ? "Grid complete" : "Grid revealed"
+        case .scramble: return won ? "Muddle solved" : "Muddle not solved"
         }
-        .padding(.horizontal, 48)
     }
 
-    private var infoText: String {
-        let g = won ? "\(guesses)" : "X"
-        switch kind {
-        case .single, .multi: return "\(dateLineText) · \(g)/\(maxGuesses) · \(timeText)"
-        case .gauntlet: return "\(dateLineText) · \(guesses) guesses · \(timeText)"
-        case .hub: return dateLineText
-        default: return "\(dateLineText) · \(timeText)"
-        }
-    }
+    /// `WEEKDAY, MON D · #N · <size or mode detail>`: the guesses / time ride the chips.
+    private var infoText: String { dateLineText + (category.map { " · \($0)" } ?? "") }
 
     private var timeText: String { "\(timeSeconds / 60):\(String(format: "%02d", timeSeconds % 60))" }
     private func numberPrefix(_ n: Int?) -> String { n.map { " · #\($0)" } ?? "" }
@@ -229,7 +276,7 @@ struct ShareCardView: View {
     private var dateLineText: String {
         let d = ShareCast.dateLine(dateStr)
         switch kind {
-        case .single, .multi, .gauntlet: return d
+        case .single, .multi, .gauntlet: return "\(d)\(numberPrefix(puzzleNumber))"
         case .sudoku(_, _, _, _, let difficulty, let n): return "\(d)\(numberPrefix(n)) · \(difficulty)"
         case .regions(_, _, _, _, _, let sizeLabel, let n): return "\(d)\(numberPrefix(n)) · \(sizeLabel)"
         case .ladder(_, _, _, _, let par, _, let n): return "\(d)\(numberPrefix(n)) · Par \(par)"
@@ -244,7 +291,14 @@ struct ShareCardView: View {
 
     /// The three tinted windows (purple · blue · gold), semantics-aware per mode
     /// (More Games §11: mistakes / checks / moves, never "guesses" where they don't apply).
-    private var windows: [(value: String, label: String, tone: ShareStatWindow.Tone)] {
+    private var windows: [(value: String, label: String, bar: Color)] {
+        tones.map { t in
+            let l = t.label.lowercased()
+            return (t.value, l == "points" ? "pts" : l, t.tone.bar[0])
+        }
+    }
+
+    private var tones: [(value: String, label: String, tone: ShareStatWindow.Tone)] {
         let g = won ? "\(guesses)" : "X"
         func third(_ fallback: (String, String)) -> (value: String, label: String, tone: ShareStatWindow.Tone) {
             if let points { return (points.formatted(), "POINTS", .gold) }
@@ -440,7 +494,7 @@ struct ShareCardView: View {
     /// punctuation in the accent. The largest cell (58 down to 26) whose wrapped
     /// rows fit the area wins. No plain letters — the card spoils nothing.
     private func cryptogramCard(cipher: String) -> some View {
-        let accent = Color(hex: 0x92400E), codeInk = Color(hex: 0x9CA3AF)
+        let accent = Color(hex: 0xF5B97A), codeInk = Color(hex: 0xB9A9E0)
         let words = cipher.split(separator: " ", omittingEmptySubsequences: false).map(String.init)
         let maxW: CGFloat = 1080 - 70 * 2, areaHeight: CGFloat = 660, gap: CGFloat = 6, wordGap: CGFloat = 22
         func isLetter(_ ch: Character) -> Bool { ch >= "A" && ch <= "Z" }
@@ -501,7 +555,7 @@ struct ShareCardView: View {
             }
             Text(rankName.uppercased()).font(Brand.fixedFont(64, .black)).foregroundStyle(accent)
                 .shadow(color: .white.opacity(0.8), radius: 0, x: 0, y: 2)
-            Text("\(pct)% of the maximum").font(Brand.fixedFont(30, .bold)).foregroundStyle(ShareInk.muted)
+            Text("\(pct)% of the maximum").font(Brand.fixedFont(30, .bold)).foregroundStyle(ShareNight.muted)
         }
         .shareTray(accent: self.accent, state: trayState, padding: 32)
     }
@@ -585,9 +639,20 @@ struct ShareCardView: View {
                     ForEach(0..<count, id: \.self) { c in
                         let i = r * count + c
                         let g = ok ? Int(reg[i].asciiValue ?? 48) - 48 : 0
+                        let tone = StarsweepPalette.tone(slots.indices.contains(g) ? slots[g] : g)
+                        let isStar = b.count == count * count && b[i] == "*"
                         ZStack {
-                            ShareTile(fill: .color(StarsweepPalette.tone(slots.indices.contains(g) ? slots[g] : g).pastel), size: cell)
-                            if b.count == count * count && b[i] == "*" {
+                            ShareTile(fill: .color(tone.deep), size: cell)
+                            if reveal {
+                                // The finished board as the screen shows it: a purple star where one stands, a soft X elsewhere.
+                                if isStar {
+                                    Image(systemName: "star.fill").font(.system(size: cell * 0.5, weight: .black))
+                                        .foregroundStyle(Color(hex: 0x8B3FE0)).padding(.bottom, cell * 0.05)
+                                } else {
+                                    Image(systemName: "xmark").font(.system(size: cell * 0.38, weight: .black))
+                                        .foregroundStyle(Color.white.opacity(0.78)).padding(.bottom, cell * 0.05)
+                                }
+                            } else if isStar {
                                 Circle().fill(h.count == count * count && h[i] == "1" ? Color(hex: 0x8B5CF6) : ShareInk.number)
                                     .frame(width: cell * 0.48, height: cell * 0.48)
                                     .padding(.bottom, cell * 0.07)
@@ -612,7 +677,7 @@ struct ShareCardView: View {
                 HStack(spacing: 0) {
                     ForEach(0..<9, id: \.self) { c in
                         let i = r * 9 + c
-                        let color: Color? = (g.count == 81 && g[i] != "0") ? Color(hex: 0x3B1A78)
+                        let color: Color? = (g.count == 81 && g[i] != "0") ? Color(hex: 0xC9B8F5)
                             : (h.count == 81 && h[i] == "1") ? Color(hex: 0x8B5CF6)
                             : (b.count == 81 && b[i] != "0") ? Color(hex: 0x7C3AED) : nil
                         ShareTile(fill: color.map { .color($0) } ?? .frost(), size: cell)
@@ -695,11 +760,11 @@ struct ShareCardView: View {
         let ink = s.won ? Color(hex: 0x7C3AED) : Color(hex: 0x6B7891)
         let shape = RoundedRectangle(cornerRadius: 30, style: .continuous)
         return HStack(spacing: 20) {
-            Text("\(index)").shareSoftNumber(44).frame(minWidth: 40)
+            Text("\(index)").font(Brand.fixedFont(44, .black)).monospacedDigit().foregroundStyle(.white).frame(minWidth: 40)
             VStack(alignment: .leading, spacing: 2) {
-                Text(s.name).font(Brand.fixedFont(30, .black)).foregroundStyle(ShareInk.heading)
+                Text(s.name).font(Brand.fixedFont(30, .black)).foregroundStyle(ShareNight.text)
                 Text("\(s.boardsSolved)/\(s.totalBoards) boards · \(s.guesses) guesses")
-                    .font(Brand.fixedFont(20, .bold)).foregroundStyle(ShareInk.muted)
+                    .font(Brand.fixedFont(20, .bold)).foregroundStyle(ShareNight.muted)
             }
             Spacer()
             ShareResultBadge(won: s.won, size: 58)
@@ -707,13 +772,11 @@ struct ShareCardView: View {
         .padding(.horizontal, 26).padding(.top, 26).padding(.bottom, 16)
         .background(
             ZStack(alignment: .top) {
-                shape.fill(ink.wash(0.09))
+                shape.fill(LinearGradient(colors: [Color(hex: 0x2D1B5E), Color(hex: 0x24144A)], startPoint: .top, endPoint: .bottom))
                 LinearGradient(colors: [ink, ink.wash(0.6)], startPoint: .leading, endPoint: .trailing).frame(height: 10)
             }
             .clipShape(shape)
         )
-        .overlay(shape.strokeBorder(ink.wash(0.28), lineWidth: 3))
-        .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 12, x: 0, y: 8)
     }
 }
 

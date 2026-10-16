@@ -726,7 +726,7 @@ private fun KindredFinished(
         val num = if (session.isDaily) session.dailyNumber else null
         val meta = "${num?.let { "#$it · " } ?: ""}${session.groupsLabel} · ${session.mistakesLabel} · ${timeText(secs)}"
         val text = "Wordocious Kindred${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${clockText(secs)} · ${session.groupsLabel} · ${session.mistakesLabel} · wordocious.com/kindred"
-        val bmp = ShareImage.renderGroups(context, s.solved.map { it.tier }, s.mistakes, GROUPS_MAX_MISTAKES, won, meta)
+        val bmp = ShareImage.renderGroups(context, s.solved.map { it.tier }, s.mistakes, GROUPS_MAX_MISTAKES, won, meta, score = com.wordocious.app.data.ShareBreakdown.Input(GameMode.GROUPS, won, gc, secs, groupsBoardsSolved(s), GROUPS_TOTAL_BOARDS, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null))
         ShareImage.shareBitmap(context, bmp, text)
     }
     FinishedScreen(

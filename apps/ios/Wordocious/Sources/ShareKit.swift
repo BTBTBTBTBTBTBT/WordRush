@@ -20,6 +20,66 @@ enum ShareInk {
     static let link = Color(hex: 0x6D28D9)
 }
 
+// MARK: - The night frame (founder 10-16, option B)
+
+/// Share cards wear the game's night style: the `#1A0E2E` → `#2E1440` gradient, title art up top, an info line in
+/// `#E2D6FF`, dark chips and panels, the lit cast footer. Cards opt in through `.environment(\.shareNight, true)` so the
+/// light-only pieces below (tiles, tray) switch with them.
+enum ShareNight {
+    static let top = Color(hex: 0x1A0E2E)
+    static let bottom = Color(hex: 0x2E1440)
+    /// The info line and soft pills.
+    static let info = Color(hex: 0xE2D6FF)
+    /// The status line under the info line (lavender).
+    static let lavender = Color(hex: 0xC4B0FF)
+    /// Bright, readable wordocious.com.
+    static let link = Color(hex: 0xEDE6FF)
+    /// Dark chip / panel fills and the gold rank ink.
+    static let panel = Color(hex: 0x2A1850)
+    static let panelDeep = Color(hex: 0x21113F)
+    static let gold = Color(hex: 0xFFC83D)
+    static let text = Color(hex: 0xF3EEFF)
+    static let muted = Color(hex: 0xB9A9E0)
+}
+
+private struct ShareNightKey: EnvironmentKey { static let defaultValue = false }
+
+extension EnvironmentValues {
+    var shareNight: Bool {
+        get { self[ShareNightKey.self] }
+        set { self[ShareNightKey.self] = newValue }
+    }
+}
+
+/// The night gradient, top to bottom.
+struct ShareNightBackground: View {
+    var body: some View {
+        LinearGradient(colors: [ShareNight.top, ShareNight.bottom], startPoint: .top, endPoint: .bottom)
+    }
+}
+
+/// The info line under the title: one line, caps tracking, `#E2D6FF`, heavy ~27 px. `pill` sits it in a soft white 10% pill
+/// (the leaderboard cards).
+struct ShareNightInfoLine: View {
+    let text: String
+    var size: CGFloat = 27
+    var pill = false
+
+    var body: some View {
+        let t = Text(pill ? text : text.uppercased())
+            .font(Brand.fixedFont(size, .heavy))
+            .tracking(size * 0.06)
+            .foregroundStyle(ShareNight.info)
+            .lineLimit(1).minimumScaleFactor(0.5)
+        if pill {
+            t.padding(.horizontal, 26).frame(height: size * 2.1)
+                .background(Capsule().fill(Color.white.opacity(0.10)))
+        } else {
+            t
+        }
+    }
+}
+
 // MARK: - Wallpaper
 
 /// The page wallpaper (`art-wall-*`, app target only) filling the card, falling
@@ -101,9 +161,26 @@ struct ShareTrayChrome: ViewModifier {
         }
     }
 
+    @Environment(\.shareNight) private var night
+
+    private var nightTray: some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        let rim = state == .lost ? Color(hex: 0x5A5F78) : Color(hex: 0x6D3FD0)
+        return ZStack(alignment: .top) {
+            // A fill-only rim (no outline stroke): the lighter shape peeks out around the dark face.
+            shape.fill(rim.opacity(0.85))
+            shape.fill(LinearGradient(colors: [Color(hex: 0x2B1760), Color(hex: 0x21113F)], startPoint: .top, endPoint: .bottom))
+                .padding(4)
+        }
+        .shadow(color: rim.opacity(0.35), radius: 26, x: 0, y: 12)
+    }
+
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        return content
+        if night {
+            return AnyView(content.padding(padding).background { nightTray })
+        }
+        return AnyView(content
             .padding(padding)
             .background {
                 ZStack(alignment: .top) {
@@ -116,7 +193,7 @@ struct ShareTrayChrome: ViewModifier {
                 }
                 .shadow(color: ink.opacity(0.16), radius: 20, x: 0, y: 14)
             }
-            .padding(.bottom, lip)
+            .padding(.bottom, lip))
     }
 }
 
@@ -150,6 +227,7 @@ struct ShareTile: View {
     var size: CGFloat
     var height: CGFloat? = nil
     var letterColor: Color? = nil
+    @Environment(\.shareNight) private var night
 
     var body: some View {
         switch fill {
@@ -181,12 +259,25 @@ struct ShareTile: View {
         .frame(width: size, height: h)
     }
 
-    private func frost(_ tint: Color?) -> some View {
+    private func frost(_ tint: Color?) -> AnyView {
         let h = height ?? size
         let s = min(size, h)
         let lip = max(1.5, h * 0.07)
         let shape = RoundedRectangle(cornerRadius: s * 0.22, style: .continuous)
-        return ZStack(alignment: .top) {
+        if night {
+            // Night: a soft lilac glass tile (white ~15% face over a deeper lip), light glyphs, no rim stroke.
+            return AnyView(ZStack(alignment: .top) {
+                shape.fill((tint ?? Color(hex: 0x7C5CD6)).opacity(0.30))
+                ZStack(alignment: .top) {
+                    shape.fill(tint.map { $0.opacity(0.42) } ?? Color.white.opacity(0.17))
+                    gloss(width: size, height: h - lip, s: s, amount: 0.16)
+                    glyph(s: s, h: h - lip, ink: letterColor ?? ShareNight.text, shadow: .clear)
+                }
+                .frame(width: size, height: h - lip)
+            }
+            .frame(width: size, height: h))
+        }
+        return AnyView(ZStack(alignment: .top) {
             shape.fill((tint ?? Color(hex: 0xD8C8F3)).wash(tint == nil ? 1 : 0.45).opacity(0.6))
             ZStack(alignment: .top) {
                 shape.fill(tint.map { $0.wash(0.12) } ?? Color.white.opacity(0.62))
@@ -197,7 +288,7 @@ struct ShareTile: View {
             }
             .frame(width: size, height: h - lip)
         }
-        .frame(width: size, height: h)
+        .frame(width: size, height: h))
     }
 
     private func gloss(width: CGFloat, height: CGFloat, s: CGFloat, amount: Double) -> some View {
@@ -485,26 +576,40 @@ struct ShareResultBadge: View {
 /// ground shadow, with one tiny "wordocious.com" line under it. The only wordmark
 /// on a share image.
 struct ShareCastWordmark: View {
-    var width: CGFloat = 972
-    var linkSize: CGFloat = 26
+    var width: CGFloat = 994
+    var linkSize: CGFloat = CGFloat(ShareCardPlan.castLinkSize)
+    /// Night frame: a wide soft light under the row (white ~12%) so the cast reads on the dark gradient, and a bright,
+    /// solid wordocious.com (`#EDE6FF`, black weight).
+    @Environment(\.shareNight) private var night
+
+    /// Clear space between the cast's feet (and shadow) and the link line.
+    static let linkGap: CGFloat = 16
 
     /// One hero's side for a row of ten at `width` with the 6% overlap.
     static func heroSide(_ width: CGFloat) -> CGFloat { width / (10 - 9 * 0.06) }
     /// The block's full height (row + shadow + link line).
-    static func height(_ width: CGFloat, linkSize: CGFloat = 26) -> CGFloat {
-        heroSide(width) + 10 + linkSize * 1.3
+    static func height(_ width: CGFloat, linkSize: CGFloat = CGFloat(ShareCardPlan.castLinkSize)) -> CGFloat {
+        heroSide(width) + linkGap + linkSize * 1.3
     }
 
     var body: some View {
         let side = Self.heroSide(width)
-        VStack(spacing: 10) {
+        VStack(spacing: Self.linkGap) {
             ZStack(alignment: .bottom) {
+                if night {
+                    // The soft light under the cast (a wide radial, white ~12%).
+                    Ellipse()
+                        .fill(RadialGradient(colors: [Color.white.opacity(0.12), Color.white.opacity(0)],
+                                             center: .center, startRadius: 0, endRadius: width * 0.5))
+                        .frame(width: width * 1.04, height: side * 1.0)
+                }
                 // The soft ground shadow they stand on.
                 Ellipse()
-                    .fill(RadialGradient(colors: [Color(hex: 0x3C1E6E).opacity(0.28), Color(hex: 0x3C1E6E).opacity(0)],
+                    .fill(RadialGradient(colors: [(night ? Color.black : Color(hex: 0x3C1E6E)).opacity(night ? 0.4 : 0.28),
+                                                  Color.black.opacity(0)],
                                          center: .center, startRadius: 0, endRadius: width * 0.5))
-                    .frame(width: width * 0.98, height: side * 0.30)
-                    .offset(y: side * 0.10)
+                    .frame(width: width * 0.98, height: side * 0.2)
+                    .offset(y: side * 0.01)
                 HStack(spacing: -side * 0.06) {
                     ForEach(Mascots.cast, id: \.self) { m in
                         // FINISH_SPEC §X: the season's skins (Halloween) when active.
@@ -520,12 +625,108 @@ struct ShareCastWordmark: View {
             Text("wordocious.com")
                 .font(Brand.fixedFont(linkSize, .black))
                 .tracking(linkSize * 0.04)
-                .foregroundStyle(ShareInk.link)
-                .shadow(color: .white.opacity(0.85), radius: 0, x: 0, y: 2)
+                .foregroundStyle(night ? ShareNight.link : ShareInk.link)
+                .shadow(color: night ? Color(hex: 0xA78BFA).opacity(0.5) : .white.opacity(0.85),
+                        radius: night ? 8 : 0, x: 0, y: night ? 0 : 2)
                 .frame(height: linkSize * 1.3)
         }
         .accessibilityHidden(true)
     }
+}
+
+// MARK: - Night chips + score breakdown (finished-game cards)
+
+/// One stat chip like the finished screen's: a dark pill, a colored top bar, the value in white heavy digits and its
+/// small label beside it ("0 mistakes", "0:56 time", "2,319 pts"). Fills only, no outline.
+struct ShareNightChip: View {
+    let value: String
+    let label: String
+    let bar: Color
+    var height: CGFloat = 92
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: height * 0.5, style: .continuous)
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(value).font(Brand.fixedFont(height * 0.48, .black)).monospacedDigit().foregroundStyle(.white)
+            Text(label).font(Brand.fixedFont(height * 0.27, .heavy)).foregroundStyle(ShareNight.info)
+        }
+        .lineLimit(1).minimumScaleFactor(0.5)
+        .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
+        .background(
+            ZStack(alignment: .top) {
+                shape.fill(LinearGradient(colors: [Color(hex: 0x2D1B5E), Color(hex: 0x24144A)], startPoint: .top, endPoint: .bottom))
+                // The colored bar rides the top edge, inset so it sits inside the pill's round ends.
+                Capsule().fill(bar).frame(width: height * 2.0, height: 8).padding(.top, 2)
+            }
+            .clipShape(shape)
+        )
+    }
+}
+
+/// The three chips in a row.
+struct ShareNightChipRow: View {
+    let items: [(value: String, label: String, bar: Color)]
+    var height: CGFloat = 92
+
+    var body: some View {
+        HStack(spacing: 18) {
+            ForEach(0..<items.count, id: \.self) { i in
+                ShareNightChip(value: items[i].value, label: items[i].label, bar: items[i].bar, height: height)
+            }
+        }
+    }
+}
+
+/// The SCORE BREAKDOWN panel exactly like the finished screen: a purple top bar, the title row with the total, then each
+/// line with its detail and value (ScoreBreakdownView.lines is the one source of the rows).
+struct ShareNightBreakdown: View {
+    let total: Int
+    let lines: [ScoreBreakdownView.ScoreLine]
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 30, style: .continuous)
+        VStack(spacing: 0) {
+            Rectangle().fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0xA855F7)], startPoint: .leading, endPoint: .trailing))
+                .frame(height: 9)
+            VStack(spacing: 0) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("SCORE BREAKDOWN").font(Brand.fixedFont(22, .black)).tracking(2)
+                        .foregroundStyle(ShareNight.info)
+                    Spacer()
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(total.formatted()).font(Brand.fixedFont(48, .black)).monospacedDigit().foregroundStyle(.white)
+                        Text("PTS").font(Brand.fixedFont(22, .black)).tracking(2).foregroundStyle(ShareNight.info)
+                    }
+                }
+                .frame(height: 64)
+                ForEach(0..<lines.count, id: \.self) { i in
+                    let l = lines[i]
+                    let abs = Swift.abs((l.value * 100).rounded() / 100)
+                    let sign = l.value > 0 ? "+" : l.value < 0 ? "−" : ""
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Text(l.label).font(Brand.fixedFont(29, .black))
+                            .foregroundStyle(l.pure ? Color(hex: 0xB89BFF) : ShareNight.text)
+                        if !l.detail.isEmpty {
+                            Text(l.detail).font(Brand.fixedFont(24, .bold)).foregroundStyle(ShareNight.muted)
+                                .lineLimit(1).minimumScaleFactor(0.6)
+                        }
+                        Spacer(minLength: 8)
+                        Text("\(sign)\(Int(abs).formatted())").font(Brand.fixedFont(30, .black)).monospacedDigit()
+                            .foregroundStyle(l.value < 0 ? Color(hex: 0xFF7A8A) : ShareNight.text)
+                    }
+                    .frame(height: 40)
+                }
+            }
+            .padding(.horizontal, 30).padding(.top, 12).padding(.bottom, 16)
+        }
+        .background(shape.fill(LinearGradient(colors: [Color(hex: 0x2B1760), Color(hex: 0x21113F)], startPoint: .top, endPoint: .bottom)))
+        .clipShape(shape)
+    }
+
+    /// The panel's natural height: bar + padding + title row + one row per line.
+    static func height(lineCount: Int) -> CGFloat { 9 + 12 + 64 + CGFloat(lineCount) * 40 + 16 }
 }
 
 // MARK: - §S1 Image-only share sheet
@@ -579,6 +780,118 @@ extension ShareService {
     static func naturalSize<V: View>(_ view: V) -> CGSize {
         let host = UIHostingController(rootView: view.fixedSize())
         return host.sizeThatFits(in: CGSize(width: 20_000, height: 20_000))
+    }
+}
+#endif
+
+#if DEBUG && canImport(UIKit)
+// MARK: - DEBUG: render the sample share cards (`-shareCardRender`)
+
+/// Founder 10-16 night frame: with the `-shareCardRender` launch argument the app renders sample cards (the leaderboard
+/// podium cards and finished-game cards) to `Documents/share-renders/<name>.png` two seconds after launch. Debug only;
+/// copy them out with `xcrun simctl get_app_container <udid> <bundle> data`.
+enum ShareCardDemo {
+    static var requested: Bool { ProcessInfo.processInfo.arguments.contains("-shareCardRender") }
+
+    @MainActor
+    static func runIfRequested() {
+        guard requested else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { run() }
+    }
+
+    @MainActor
+    static func run() {
+        let saved = UserDefaults.standard.string(forKey: CastSkin.debugKey)
+        for (suffix, season) in [("halloween", "halloween"), ("standard", "off")] {
+            UserDefaults.standard.set(season, forKey: CastSkin.debugKey)
+            CastSkin.invalidate()
+            renderSet(suffix: suffix)
+        }
+        if let saved { UserDefaults.standard.set(saved, forKey: CastSkin.debugKey) } else { UserDefaults.standard.removeObject(forKey: CastSkin.debugKey) }
+        CastSkin.invalidate()
+    }
+
+    @MainActor
+    private static func renderSet(suffix: String) {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("share-renders")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        func save(_ name: String, _ image: UIImage?) {
+            guard let data = image?.pngData() else { print("ShareCardDemo: \(name) FAILED"); return }
+            try? data.write(to: dir.appendingPathComponent("ios-\(name)-\(suffix).png"))
+            print("ShareCardDemo: \(name) \(Int(image!.size.width))x\(Int(image!.size.height))")
+        }
+        let day = "2026-10-16"
+        let chip = "Oct 16, 2026 · #193 · as of 9:53 AM"
+        func lb(_ rows: [LbShareRow], you: LbShareRow? = nil, youLine: String? = nil, variant: LbShareVariant = .solo) -> LbShareInput {
+            LbShareInput(variant: variant, shareMode: "Starsweep", gameModeRaw: GameMode.regions.rawValue,
+                         modeAccent: Color(hex: 0x7C3AED), modeChip: "Starsweep", dateChip: chip, rows: rows, you: you,
+                         youRankLine: youLine, delta: nil, footer: "", day: day)
+        }
+        func r(_ rank: Int, _ name: String, _ score: String, _ sub: String, you: Bool = false) -> LbShareRow {
+            LbShareRow(rank: rank, name: name, scoreDisplay: score, subline: sub, isYou: you, userId: "demo-\(name)", username: name)
+        }
+        // Leaderboards
+        let two = lb([r(1, "MJT", "2,320", "0 mistakes · 0:55 · Win"), r(2, "BMT", "2,319", "0 mistakes · 0:56 · Win", you: true)])
+        let cardTwo = LeaderboardShareCardView(input: two)
+        save("leaderboard-2-players", ShareService.renderCard(cardTwo, size: cardTwo.size))
+        let six = lb([r(1, "MJT", "2,320", "0 mistakes · 0:55 · Win"), r(2, "WordWizard", "2,301", "0 mistakes · 1:02 · Win"),
+                      r(3, "VowelMaven", "2,255", "1 mistake · 1:12 · Win"), r(4, "Jasson", "2,201", "1 mistake · 1:30 · Win"),
+                      r(5, "Cloud9", "2,188", "2 mistakes · 1:24 · Win")],
+                     you: r(7, "BMT", "1,980", "2 mistakes · 1:48 · Win", you: true), youLine: "#7 of 23")
+        let cardSix = LeaderboardShareCardView(input: six)
+        save("leaderboard-6-players-you-outside", ShareService.renderCard(cardSix, size: cardSix.size))
+
+        // Finished games
+        func finished(_ kind: ShareCardView.Kind, mode: GameMode, label: String, accent: Color, won: Bool = true,
+                      guesses: Int, maxGuesses: Int, time: Int, points: Int?, number: Int? = 24, reveal: Bool = true,
+                      letters: [[String]]? = nil, hints: Int? = 0) -> (ShareCardView) {
+            var c = ShareCardView(kind: kind, modeLabel: label, accent: accent, won: won, guesses: guesses, maxGuesses: maxGuesses,
+                                  timeSeconds: time, dateStr: "Oct 16", reveal: reveal, letters: letters, mode: mode, points: points)
+            c.puzzleNumber = number
+            c.hintsUsed = hints
+            c.boardNatural = ShareService.naturalSize(c.boardBody)
+            return c
+        }
+        func saveCard(_ name: String, _ c: ShareCardView) { save(name, ShareService.renderCard(c, size: c.size)) }
+
+        if let p = generateRegions("demo-starsweep", n: 8) {
+            let sol = Array(p.solution)
+            var board = ""
+            for rr in 0..<8 { for cc in 0..<8 { board += (String(cc) == String(sol[rr])) ? "*" : "0" } }
+            let c = finished(.regions(n: 8, regions: p.regions, board: board, hintMask: String(repeating: "0", count: 64),
+                                      mistakes: 0, sizeLabel: "8 × 8", puzzleNumber: 24),
+                             mode: .regions, label: "STARSWEEP", accent: Color(hex: 0x7C3AED), guesses: 1, maxGuesses: 4,
+                             time: 56, points: 2319)
+            saveCard("starsweep-finished", c)
+        }
+        let word = Array("CRANE")
+        let grid: [[TileState]] = [[.absent, .present, .absent, .absent, .correct], [.absent, .correct, .present, .absent, .correct],
+                                   [.correct, .correct, .correct, .correct, .correct]]
+        let rowsL = [Array("SLATE"), Array("BRAKE"), word].map { $0.map(String.init) }
+        let classic = finished(.single(grid: grid), mode: .duel, label: "CLASSIC", accent: Color(hex: 0x7C3AED),
+                               guesses: 3, maxGuesses: 6, time: 74, points: 2140, letters: rowsL)
+        saveCard("classic-finished", classic)
+        let kindred = finished(.groups(solvedTiers: [1, 2, 3, 4], mistakes: 1, maxMistakes: 4, puzzleNumber: 24),
+                               mode: .groups, label: "KINDRED", accent: Color(hex: 0x9F1239), guesses: 5, maxGuesses: 8,
+                               time: 131, points: 1880)
+        saveCard("kindred-finished", kindred)
+        let hub = finished(.hub(rankName: "Genius", pct: 78, wordsFound: 41, wordCount: 52, pangramsFound: 2, puzzleNumber: 24),
+                           mode: .hub, label: "HUBBUB", accent: Color(hex: 0xC026D3), guesses: 41, maxGuesses: 52,
+                           time: 600, points: 1750)
+        saveCard("hubbub-finished", hub)
+        let stages = [GauntletStageShare(name: "Classic", won: true, guesses: 4, boardsSolved: 1, totalBoards: 1),
+                      GauntletStageShare(name: "QuadWord", won: true, guesses: 7, boardsSolved: 4, totalBoards: 4),
+                      GauntletStageShare(name: "Six", won: true, guesses: 5, boardsSolved: 1, totalBoards: 1),
+                      GauntletStageShare(name: "Seven", won: false, guesses: 8, boardsSolved: 0, totalBoards: 1)]
+        saveCard("gauntlet-finished", finished(.gauntlet(stages: stages, stagesCompleted: 3, totalStages: 4), mode: .gauntlet,
+                                               label: "GAUNTLET", accent: Color(hex: 0x7C3AED), won: false, guesses: 24, maxGuesses: 24,
+                                               time: 412, points: 640))
+        let givens = "530070000600195000098000060800060003400803001700020006060000280000419005000080079"
+        let solved = "534678912672195348198342567859761423426853791713924856961537284287419635345286179"
+        saveCard("sudoku-finished", finished(.sudoku(givens: givens, board: solved, hintMask: String(repeating: "0", count: 81),
+                                                     mistakes: 1, difficulty: "Medium", puzzleNumber: 24),
+                                             mode: .sudoku, label: "SUDOCIOUS", accent: Color(hex: 0x2563EB), guesses: 2, maxGuesses: 4,
+                                             time: 421, points: 1780))
     }
 }
 #endif

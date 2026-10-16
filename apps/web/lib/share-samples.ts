@@ -118,11 +118,33 @@ export const SHARE_EXTRA_SAMPLES: ShareSample[] = [
   { id: 'moment-levelup', input: { layout: 'moment', mode: 'Classic', kind: 'levelUp', title: 'LEVEL UP!', accentHex: '#7c3aed', big: '12', bigLabel: 'LEVEL', lines: ['Gold tier', 'Next: 13', 'Keep going'], date: DATE } },
   { id: 'moment-streak', input: { layout: 'moment', mode: 'Classic', kind: 'streak', title: 'ON A STREAK', accentHex: '#7c3aed', big: '7', bigLabel: 'DAY STREAK', lines: ['Best: 21 days', 'Nice', 'Keep it up'], dots: [true, true, false, true, true, true, true], date: DATE } },
   {
-    id: 'leaderboard',
+    // Night style (founder 10-16): two players + an open spot, the sharer on the podium.
+    id: 'leaderboard-two',
     input: {
-      layout: 'leaderboard', mode: 'Classic', variant: 'solo', modeChip: 'Classic', dateChip: 'Oct 12, 2026', footer: 'Can you beat them? Play free at wordocious.com',
-      rows: [1, 2, 3, 4, 5].map((rank) => ({ rank, name: `Player ${rank}`, scoreDisplay: '1,200', subline: '4 guesses · 3:44 · Win' })),
-      you: { rank: 12, name: 'You', scoreDisplay: '900', subline: '5 guesses · 4:10 · Win', isYou: true }, youRankLine: '#12 of 87', date: DATE,
+      layout: 'leaderboard', mode: 'Starsweep', variant: 'solo', modeChip: 'Starsweep', dateChip: 'Oct 16, 2026 · #193 · as of 9:53 AM', footer: 'Can you beat them? Play free at wordocious.com',
+      rows: [
+        { rank: 1, name: 'MJT', scoreDisplay: '2,320', subline: '0 mistakes · No hints · 55s' },
+        { rank: 2, name: 'BMT', scoreDisplay: '2,319', subline: '0 mistakes · No hints · 56s', isYou: true },
+      ],
+      date: new Date('2026-10-16T12:00:00'),
+    },
+  },
+  {
+    // Six-plus players with the sharer outside the rows shown.
+    id: 'leaderboard-many',
+    input: {
+      layout: 'leaderboard', mode: 'Classic', variant: 'solo', modeChip: 'Classic', dateChip: 'Oct 16, 2026 · #193 · as of 9:53 AM', footer: 'Can you beat them? Play free at wordocious.com',
+      rows: [
+        { rank: 1, name: 'MJT', scoreDisplay: '2,320', subline: '3 guesses · 0:55 · Win' },
+        { rank: 2, name: 'Juniper', scoreDisplay: '2,201', subline: '3 guesses · 1:02 · Win' },
+        { rank: 3, name: 'Ava', scoreDisplay: '2,150', subline: '4 guesses · 1:10 · Win' },
+        { rank: 4, name: 'VowelMaven', scoreDisplay: '2,001', subline: '4 guesses · 1:12 · Win' },
+        { rank: 5, name: 'TileTamer', scoreDisplay: '1,950', subline: '5 guesses · 1:30 · Win' },
+        { rank: 6, name: 'QuillQueen', scoreDisplay: '1,900', subline: '5 guesses · 1:40 · Win' },
+      ],
+      you: { rank: 12, name: 'BMT', scoreDisplay: '1,380', subline: '6 guesses · 2:10 · Win', isYou: true },
+      youRankLine: '#12 of 87',
+      date: new Date('2026-10-16T12:00:00'),
     },
   },
 ];

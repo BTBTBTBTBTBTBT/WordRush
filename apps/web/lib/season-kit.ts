@@ -28,6 +28,8 @@ export interface SeasonSlots {
   walls?: Record<string, string>;
   props?: string[];
   banner?: string;
+  /** The Home curtain-stage card art (10-16; core CELEBRATION_STAGE geometry). Absent / unshipped = the plain card. */
+  stage?: string;
   extras?: Record<string, string>;
   /** Seasonal sound slots (item 49): `intro` = the cold-start jingle, `note` = the musical cast's note, `{id}` = the cast id. */
   sounds?: { intro?: string; note?: string };
@@ -130,6 +132,12 @@ export function seasonNoteSound(season: string | null | undefined, castId: strin
 export function seasonBanner(season: string | null | undefined): string | null {
   const b = seasonEntry(season)?.slots.banner;
   return b && seasonArtShips(b) ? b : null;
+}
+
+/** The season's Home curtain-stage art (registry `stage`) when it ships (season-art.generated.json or lib/art.ts), else null. */
+export function seasonStage(season: string | null | undefined, shipped: (name: string) => boolean = seasonArtShips): string | null {
+  const s = seasonEntry(season)?.slots.stage;
+  return s && (seasonArtShips(s) || shipped(s)) ? s : null;
 }
 
 export function seasonPalette(season: string | null | undefined): SeasonPalette | null {

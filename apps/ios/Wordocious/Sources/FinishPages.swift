@@ -522,6 +522,10 @@ struct PodiumView: View {
     /// BJ4: places drawn as open spots (from PodiumLayout.layout(ranks).open).
     var allOpen: [Int] = []
     var onTap: ((PodiumEntry) -> Void)? = nil
+    /// Share cards (founder 10-16): draw this podium STATIC at exactly this width (pt) — no gestures, no load-in animation,
+    /// the winner's glow at rest — with `shareHeadroom` (a fraction of the width) above the art. Nil = the live podium.
+    var shareWidth: CGFloat? = nil
+    var shareHeadroom: CGFloat = 0.14
     /// 2.8 item 13: tapping another player's standing mascot opens their mini Stage card.
     @State private var stageTarget: PodiumStageTarget?
 
@@ -544,7 +548,18 @@ struct PodiumView: View {
     static let goldFigure: CGFloat = 0.335
     static let otherFigure: CGFloat = 0.285
 
+    /// The static share scene's height at `shareWidth` (art + headroom).
+    static func shareHeight(width: CGFloat, headroom: CGFloat = 0.14) -> CGFloat { width * (headroom + 1 / CGFloat(PodiumArt.aspect)) }
+
     var body: some View {
+        if let w = shareWidth {
+            scene(width: w).frame(width: w, height: Self.shareHeight(width: w, headroom: shareHeadroom))
+        } else {
+            liveBody
+        }
+    }
+
+    private var liveBody: some View {
         // Total height = the art's height + the headroom, both fractions of the width: the aspect is fixed, no measuring.
         Color.clear
             .aspectRatio(1 / (1 / CGFloat(PodiumArt.aspect) + Self.headroom), contentMode: .fit)
@@ -570,7 +585,7 @@ struct PodiumView: View {
 
     private func scene(width w: CGFloat) -> some View {
         let h = w / CGFloat(PodiumArt.aspect)
-        let top = w * Self.headroom
+        let top = w * (shareWidth != nil ? shareHeadroom : Self.headroom)
         return ZStack(alignment: .topLeading) {
             ArtThumbs.image("art-podium-stage", points: w)
                 .resizable().interpolation(.high)
@@ -584,8 +599,8 @@ struct PodiumView: View {
                 if s.place - 1 < entries.count {
                     let e = entries[s.place - 1]
                     PodiumPlace(entry: e, place: s.place, feet: feet, width: w,
-                                onStage: cardOn ? { stageTarget = PodiumStageTarget(entry: e, place: min(e.rank ?? s.place, 3)) } : nil,
-                                onTap: onTap)
+                                onStage: cardOn && shareWidth == nil ? { stageTarget = PodiumStageTarget(entry: e, place: min(e.rank ?? s.place, 3)) } : nil,
+                                onTap: shareWidth == nil ? onTap : nil, staticShare: shareWidth != nil)
                     panelText(e, panel: panel)
                 } else if open.contains(s.place) {
                     emptySpot(place: s.place, feet: feet, panel: panel, width: w)
@@ -846,6 +861,8 @@ struct PodiumPlace: View {
     /// Opens the mini Stage card (nil = the card is off).
     let onStage: (() -> Void)?
     let onTap: ((PodiumEntry) -> Void)?
+    /// A share image: no buttons, the winner's glow at rest, no sparkles (one static frame).
+    var staticShare = false
     @ObservedObject private var directory = AvatarDirectory.shared
 
     /// The label's clear gap above the DRAWN head (pt), and above the crown on #1 (core PODIUM_ART).
@@ -859,7 +876,7 @@ struct PodiumPlace: View {
         let box = width * (tone == 1 ? PodiumView.goldFigure : PodiumView.otherFigure)
         let living = PodiumFigure.standsFull(e)
         let side = living ? box : box * 0.5
-        let b = living ? (PodiumFigure.bounds(e, place: place, size: side) ?? AvatarRect(x: 0.12, y: 0.1, w: 0.76, h: 0.84))
+        let b = living ? (PodiumFigure.bounds(e, place: place, size: side, exact: staticShare) ?? AvatarRect(x: 0.12, y: 0.1, w: 0.76, h: 0.84))
                        : AvatarRect(x: 0, y: 0, w: 1, h: 1)
         let figBottom = feet.y + CGFloat(1 - (b.y + b.h)) * side
         let figTop = figBottom - side
@@ -876,7 +893,7 @@ struct PodiumPlace: View {
         let cw = max(nameWidth, side)
         let unitH = figBottom - nameTop
         let shadowW = CGFloat(b.w) * side * CGFloat(PodiumArt.shadowWidth)
-        let ownsCard = DressUp.isOwn(e.id) || (living && onStage != nil) || onTap != nil
+        let ownsCard = !staticShare && (DressUp.isOwn(e.id) || (living && onStage != nil) || onTap != nil)
 
         ZStack(alignment: .topLeading) {
             // The contact shadow under the feet (a static radial, no blur).
@@ -885,14 +902,25 @@ struct PodiumPlace: View {
                                      startRadius: 0, endRadius: shadowW / 2))
                 .frame(width: shadowW, height: shadowW * 0.26)
                 .position(x: feet.x, y: feet.y)
-            if first {
+            if first && staticShare {
+                let c = PodiumWinnerIntro.glowRgb
+                let gold = Color(red: Double(c.r) / 255, green: Double(c.g) / 255, blue: Double(c.b) / 255)
+                let d = side * CGFloat(PodiumWinnerIntro.glowSize)
+                Circle()
+                    .fill(RadialGradient(gradient: Gradient(stops: [.init(color: gold.opacity(0.9), location: 0),
+                                                                    .init(color: gold.opacity(0.4), location: 0.5),
+                                                                    .init(color: gold.opacity(0), location: 1)]),
+                                         center: .center, startRadius: 0, endRadius: d / 2))
+                    .frame(width: d, height: d).opacity(PodiumWinnerIntro.glowRestOpacity)
+                    .position(x: feet.x, y: figTop + side / 2)
+            } else if first {
                 PodiumWinnerGlow(diameter: side * CGFloat(PodiumWinnerIntro.glowSize))
                     .position(x: feet.x, y: figTop + side / 2)
             }
             unit(e, side: side, living: living, cw: cw, nameWidth: nameWidth, nameSize: nameSize,
                  unitH: unitH, figTop: figTop - nameTop, crownTop: crownTop - nameTop, crownSize: crownSize, first: iconCrown, ownsCard: ownsCard)
                 .position(x: feet.x, y: nameTop + unitH / 2)
-            if first && Self.sparkling {
+            if first && Self.sparkling && !staticShare {
                 ForEach(0..<PodiumWinnerIntro.sparkleOffsets.count, id: \.self) { i in
                     let o = PodiumWinnerIntro.sparkleOffsets[i]
                     PodiumWinnerSparkle(size: side * CGFloat(PodiumWinnerIntro.sparkleSize),
@@ -900,7 +928,7 @@ struct PodiumPlace: View {
                         .position(x: feet.x + CGFloat(o[0]) * side, y: figTop + side / 2 + CGFloat(o[1]) * side)
                 }
             }
-            if let bell = e.bell {
+            if let bell = e.bell, !staticShare {
                 // the Friends board's taunt bell: small, beside the name on the step's outer side
                 Button(action: bell) {
                     Icon3D(.bell, size: 16).frame(width: 30, height: 24).contentShape(Rectangle())
@@ -994,7 +1022,7 @@ struct PodiumFigure: View {
 
     /// The standing figure's DRAWN bounds in the box's fractions (head / hat top, feet bottom), from the same live layout the
     /// mascot is painted with. nil when it doesn't stand full-body.
-    static func bounds(_ e: PodiumEntry, place: Int, size: CGFloat) -> AvatarRect? {
+    static func bounds(_ e: PodiumEntry, place: Int, size: CGFloat, exact: Bool = false) -> AvatarRect? {
         let r = AvatarDirectory.shared.look(username: e.username, userId: e.id, url: e.avatarUrl, castId: nil, frame: nil,
                                             mascot: nil, accentHex: nil, lookup: true).resolved
         guard r.photoUrl == nil, LivingMascotView.canAnimate(r.config), let fit = MascotParts.fit else { return nil }
@@ -1005,7 +1033,7 @@ struct PodiumFigure: View {
         var b = l.bounds
         let arms: Set<String> = ["armL", "armR", "handL", "handR"]
         let tops = l.layers.filter { !arms.contains($0.ride ?? "") && !$0.layer.hasPrefix("arm") && !$0.art.hasSuffix("-armL") && !$0.art.hasSuffix("-armR") }
-            .map { $0.rect.y + MascotArtCache.inkTop($0.art) * $0.rect.h }
+            .map { $0.rect.y + MascotArtCache.inkTop($0.art, exact: exact) * $0.rect.h }
         if let head = tops.min(), head > b.y, head < b.y + b.h * 0.5 {
             b.h -= head - b.y; b.y = head
         }

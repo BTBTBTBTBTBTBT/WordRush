@@ -25,6 +25,8 @@ enum SeasonKit {
         let walls: [String: String]?
         let props: [String]?
         let banner: String?
+        /// 10-16: the Home curtain-stage card art (core CelebrationStage geometry); absent / unshipped = the plain card.
+        let stage: String?
         let extras: [String: String]?
         /// Item 49: the season's sound slots (names of `sfx-<name>.m4a` in Resources/Sounds).
         let sounds: Sounds?
@@ -226,5 +228,11 @@ enum SeasonKit {
     static var banner: String? {
         guard let b = current?.slots.banner, ArtAsset.exists(b) else { return nil }
         return b
+    }
+
+    /// The season's Home curtain-stage art (registry `stage`; nil when none / not shipped = the plain card).
+    static var stage: String? {
+        guard let s = current?.slots.stage, ArtAsset.exists(s) else { return nil }
+        return s
     }
 }

@@ -54,10 +54,12 @@ function StripChip({ accent, icon, value, label }: { accent: string; icon: React
  * R2: ONE line — the W / L badge · guesses · time · points — compact pills
  * with soft numbers. `srText` keeps the old result sentence for screen readers.
  */
-export function ResultStrip({ won, guesses, guessLabel = 'guesses', time, points, srText, headline, className = '' }: {
+export function ResultStrip({ won, boards, guesses, guessLabel = 'guesses', time, points, srText, headline, className = '' }: {
   won: boolean;
   /** FINISH_SPEC AR: the strip's headline in live lettering (default SOLVED! / NOT TODAY); null = none (OctoWord gives the room to its boards). */
   headline?: string | null;
+  /** Multi-board games: the boards chip ("3/4 solved") ahead of the guesses — iOS / Android parity. */
+  boards?: { solved: number; total: number };
   guesses?: ReactNode;
   guessLabel?: string;
   /** Already formatted (0:48). */
@@ -79,6 +81,7 @@ export function ResultStrip({ won, guesses, guessLabel = 'guesses', time, points
     <div className="w-full flex items-center justify-center gap-1.5 flex-nowrap overflow-x-auto" style={{ scrollbarWidth: 'none', justifyContent: 'safe center' }}>
       <span className="sr-only">{srText}</span>
       <Icon3D name={won ? 'badge-w' : 'badge-l'} size={24} label={won ? 'Won' : 'Lost'} />
+      {boards && <StripChip accent="#7c3aed" icon={<Icon3D name="badge-check" size={18} />} value={`${boards.solved}/${boards.total}`} label="solved" />}
       {guesses != null && <StripChip accent="#7c3aed" icon={<Icon3D name="badge-check" size={18} />} value={guesses} label={guessLabel} />}
       {time && <StripChip accent="#2563eb" icon={<ClockGlyph size={17} />} value={time} label="time" />}
       {points != null && <StripChip accent="#f5a524" icon={<Icon3D name="trophy" size={17} />} value={formatScore(points)} label="pts" />}

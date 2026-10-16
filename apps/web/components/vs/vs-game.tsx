@@ -488,6 +488,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   const [message, setMessage] = useState('');
   const [rematchState, setRematchState] = useState<'idle' | 'offered' | 'received' | 'declined'>('idle');
   const resultRecordedRef = useRef(false);
+  // Parity (iOS VSGameView / Android VSGameScreen): the Home button asks "FORFEIT MATCH?" first.
+  const [confirmForfeit, setConfirmForfeit] = useState(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
 
   // ── VS experience upgrade state ──
@@ -1384,6 +1386,16 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     // AY: the Home button always lands on the Home root (a race used to land on /vs).
     window.location.href = '/';
   }, [matchService, screen, dailyVsActive, mode, startTime, flow, race, buildRun]);
+
+  // Home during play: confirm only when leaving would TRULY forfeit (a recorded loss — a live
+  // human match or a friend's race mid-game); bot practice, the send game and settled matches
+  // just leave. Mirrors iOS `leaveWouldForfeit` + "FORFEIT MATCH?" (VSGameView) and Android.
+  const leaveWouldForfeit = screen === 'match' && !matchResult && !resultRecordedRef.current
+    && (flow === 'race' || (!isCpu && !flow));
+  const homeTapped = useCallback(() => {
+    if (leaveWouldForfeit) setConfirmForfeit(true);
+    else void handleForfeit();
+  }, [leaveWouldForfeit, handleForfeit]);
 
   // Sign-in gate — mirrors the /vs lobby's guest gate. VS is account-based
   // (live opponents, recorded results); deep links (/classic/vs, invite
@@ -2360,7 +2372,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           button and the VS pill overlay the stage stepper, like solo. */}
       {soloTitle ? (
         <div className="text-center pt-2 pb-1 px-[52px] shrink-0 relative min-h-[52px] flex items-center justify-center gap-2">
-          <GameHomeButton accentColor={accentColor} onClick={handleForfeit} />
+          <GameHomeButton accentColor={accentColor} onClick={homeTapped} />
           {/* Long titles step down a size on narrow phones so the pill never collides with Home. */}
           <h1 className={`${soloTitle.className} max-[400px]:text-2xl font-black truncate min-w-0`} style={soloTitle.style}>
             {soloTitle.title}
@@ -2369,7 +2381,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
         </div>
       ) : (
         <>
-          <GameHomeButton accentColor={accentColor} onClick={handleForfeit} positionClass="absolute top-[calc(env(safe-area-inset-top)+4px)] left-2 z-10" />
+          <GameHomeButton accentColor={accentColor} onClick={homeTapped} positionClass="absolute top-[calc(env(safe-area-inset-top)+4px)] left-2 z-10" />
           <span className="absolute right-3 z-10" style={{ top: 'calc(env(safe-area-inset-top) + 8px)' }}><VsPill /></span>
         </>
       )}
@@ -2410,6 +2422,37 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       </div>
 
       {message && <VsToast text={message} className="bottom-24" />}
+
+      {/* Forfeit confirm — the soft VS card (iOS VSConfirmCard / Android parity), only during a live match. */}
+      {confirmForfeit && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-6 animate-modal-overlay"
+          style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}
+          onClick={() => setConfirmForfeit(false)}
+        >
+          <VsCard
+            accent="#7c3aed"
+            radius={18}
+            className="w-full max-w-[340px] text-center animate-modal-content"
+            style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Forfeit match?"
+              className="px-5 pt-4 pb-5 flex flex-col items-center gap-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-[18px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>Forfeit match?</div>
+              <p className="text-[13px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                Leaving now forfeits the match — it counts as a loss{dailyVsActive ? ' and uses today’s daily VS.' : '.'}
+              </p>
+              <CastButton screen="blue" color="purple" size="lg" block onClick={() => setConfirmForfeit(false)}>Keep playing</CastButton>
+              <CastButton screen="blue" color="slate" size="lg" block onClick={() => { setConfirmForfeit(false); void handleForfeit(); }}>Forfeit &amp; leave</CastButton>
+            </div>
+          </VsCard>
+        </div>
+      )}
     </div>
   );
 }

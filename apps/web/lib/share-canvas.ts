@@ -217,7 +217,7 @@ export function drawTileGlyph(ctx: CanvasRenderingContext2D, ch: string, x: numb
   ctx.restore();
 }
 
-/** A soft number (A2): Nunito Black in #3b1a78 with the white highlight + soft purple shadow. */
+/** A soft number (night style): Nunito Black in white with a soft dark shadow. */
 export function drawSoftNumber(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -230,12 +230,10 @@ export function drawSoftNumber(
   ctx.font = shareFont(900, px);
   ctx.textAlign = align;
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-  ctx.fillText(text, x, y + Math.max(1, px * 0.04));
-  ctx.shadowColor = 'rgba(76, 29, 149, 0.18)';
-  ctx.shadowBlur = px * 0.2;
-  ctx.shadowOffsetY = px * 0.06;
-  ctx.fillStyle = SOFT_INK;
+  ctx.shadowColor = 'rgba(8, 0, 24, 0.45)';
+  ctx.shadowBlur = px * 0.18;
+  ctx.shadowOffsetY = px * 0.05;
+  ctx.fillStyle = '#ffffff';
   ctx.fillText(text, x, y);
   ctx.restore();
 }
@@ -253,9 +251,8 @@ export function fitFontPx(ctx: CanvasRenderingContext2D, text: string, px: numbe
 }
 
 /**
- * A tinted window (`.sc-stats div`): its tone's wash, soft border, a 2-stop
- * top bar, a soft number and a letterspaced label. Also used one at a time
- * (VS score windows).
+ * A night stat chip (founder 10-16, option B): a dark pill with a short colored bar at its top, the value big and white,
+ * its unit beside it in lavender ("0 mistakes", "0:56 time", "2,319 pts"). Also used one at a time (VS score windows).
  */
 export function drawStatWindow(
   ctx: CanvasRenderingContext2D,
@@ -267,56 +264,65 @@ export function drawStatWindow(
   opts: { numberPx?: number; tone?: { tint: string; line: string; bar: readonly [string, string]; label: string } } = {},
 ): void {
   const t = opts.tone ?? STAT_TONES[win.tone];
-  const r = Math.min(34, h * 0.26);
-  const bar = Math.max(10, Math.round(h * 0.12));
   ctx.save();
-  ctx.shadowColor = 'rgba(60, 30, 110, 0.14)';
-  ctx.shadowBlur = 28;
-  ctx.shadowOffsetY = 12;
-  roundRectPath(ctx, x, y, w, h, r);
+  roundRectPath(ctx, x, y, w, h, h / 2);
   ctx.fillStyle = t.tint;
   ctx.fill();
   ctx.restore();
 
-  ctx.save();
-  roundRectPath(ctx, x, y, w, h, r);
-  ctx.clip();
-  const bg = ctx.createLinearGradient(x, 0, x + w, 0);
+  // The colored top bar: a short rounded bar riding the pill's top edge.
+  const barW = w * 0.52;
+  const barH = Math.max(5, Math.round(h * 0.07));
+  const bg = ctx.createLinearGradient(x + (w - barW) / 2, 0, x + (w + barW) / 2, 0);
   bg.addColorStop(0, t.bar[0]);
   bg.addColorStop(1, t.bar[1]);
+  roundRectPath(ctx, x + (w - barW) / 2, y, barW, barH, barH / 2);
   ctx.fillStyle = bg;
-  ctx.fillRect(x, y, w, bar);
-  ctx.restore();
+  ctx.fill();
 
-  roundRectPath(ctx, x + 1.5, y + 1.5, w - 3, h - 3, r - 1.5);
-  ctx.strokeStyle = t.line;
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  const cx = x + w / 2;
-  const labelPx = Math.max(16, Math.round(h * 0.18));
-  const numPx = fitFontPx(ctx, win.value, opts.numberPx ?? Math.round(h * 0.46), w - 28);
-  const numY = y + bar + (h - bar - labelPx - 14) / 2 + 2;
-  drawSoftNumber(ctx, win.value, cx, numY, numPx);
-
+  const unit = win.label.toLowerCase();
+  const numPx0 = opts.numberPx ?? Math.round(h * 0.54);
+  const unitPx = Math.max(16, Math.round(numPx0 * 0.62));
+  let numPx = numPx0;
+  const maxW = w - 36;
+  for (; numPx > 18; numPx -= 2) {
+    ctx.font = shareFont(900, numPx);
+    const uPx = Math.max(14, Math.round(numPx * 0.62));
+    const nw = ctx.measureText(win.value).width;
+    ctx.font = shareFont(800, uPx);
+    if (nw + 10 + ctx.measureText(unit).width <= maxW) break;
+  }
+  const uPx = Math.max(14, Math.round(numPx * (unitPx / numPx0)));
   ctx.save();
-  setLetterSpacing(ctx, Math.round(labelPx * 0.12));
-  ctx.font = shareFont(900, labelPx);
-  ctx.textAlign = 'center';
+  ctx.font = shareFont(900, numPx);
+  const nw = ctx.measureText(win.value).width;
+  ctx.font = shareFont(800, uPx);
+  const uw = ctx.measureText(unit).width;
+  const total = nw + 10 + uw;
+  const x0 = x + w / 2 - total / 2;
+  const cy = y + h / 2 + barH * 0.35;
   ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+  ctx.font = shareFont(900, numPx);
+  ctx.shadowColor = 'rgba(8, 0, 24, 0.45)';
+  ctx.shadowBlur = numPx * 0.15;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(win.value, x0, cy + numPx * 0.35);
+  ctx.shadowColor = 'transparent';
+  ctx.font = shareFont(800, uPx);
   ctx.fillStyle = t.label;
-  ctx.fillText(win.label, cx, y + h - Math.round(h * 0.14));
+  ctx.fillText(unit, x0 + nw + 10, cy + numPx * 0.35);
   ctx.restore();
 }
 
 /** The three windows in a row across the card. */
-export function drawStatWindows(ctx: CanvasRenderingContext2D, wins: readonly StatWindow[], x: number, y: number, w: number, h: number, gap = 22): void {
+export function drawStatWindows(ctx: CanvasRenderingContext2D, wins: readonly StatWindow[], x: number, y: number, w: number, h: number, gap = 16): void {
   const each = (w - gap * (wins.length - 1)) / wins.length;
   wins.forEach((win, i) => drawStatWindow(ctx, win, x + i * (each + gap), y, each, h));
 }
 
 /** The letterspaced date line under the title art (`.sc-date`). */
-export function drawDateLine(ctx: CanvasRenderingContext2D, text: string, cx: number, y: number, px = 26, color = '#5b3c96', maxW = 960): void {
+export function drawDateLine(ctx: CanvasRenderingContext2D, text: string, cx: number, y: number, px = 26, color = '#E2D6FF', maxW = 960): void {
   ctx.save();
   let size = px;
   setLetterSpacing(ctx, Math.round(size * 0.14));
@@ -328,8 +334,6 @@ export function drawDateLine(ctx: CanvasRenderingContext2D, text: string, cx: nu
   }
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.shadowColor = 'rgba(255, 255, 255, 0.85)';
-  ctx.shadowOffsetY = 2;
   ctx.fillStyle = color;
   ctx.fillText(text, cx, y);
   ctx.restore();
@@ -342,7 +346,7 @@ const BADGE_GLOSS = { W: TILE_GLOSS.CORRECT, L: glossFrom('#f43f5e') } as const;
  * S2's compact info line: the letterspaced text (shrunk to fit) followed by a
  * small glossy W / L badge, the pair centered on `cx`.
  */
-export function drawInfoLine(ctx: CanvasRenderingContext2D, info: ShareInfo, cx: number, y: number, maxW = 952, color = '#5b3c96'): void {
+export function drawInfoLine(ctx: CanvasRenderingContext2D, info: ShareInfo, cx: number, y: number, maxW = 952, color = '#E2D6FF'): void {
   const badge = info.badge ? 42 : 0;
   const badgeGap = info.badge ? 16 : 0;
   ctx.save();
@@ -360,8 +364,6 @@ export function drawInfoLine(ctx: CanvasRenderingContext2D, info: ShareInfo, cx:
   const x0 = cx - (textW + badgeGap + badge) / 2;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.shadowColor = 'rgba(255, 255, 255, 0.85)';
-  ctx.shadowOffsetY = 2;
   ctx.fillStyle = color;
   ctx.fillText(info.text, x0, y);
   ctx.restore();
@@ -408,16 +410,16 @@ export function drawCastWordmark(
   };
   const skinned = row.slots.some((s) => { const img = imgs[s.id]; return !!img && !!seasonOfSrc(img.currentSrc || img.src); });
   const slots = skinned ? reflowCastRow(row, (id) => artOf(id).aspect).slots : row.slots;
-  // The soft ground shadow under the whole row.
+  // The soft light under the row (night): a wide radial glow, white ~12%, so the cast reads on the dark card.
   ctx.save();
-  const rx = row.rowW * 0.47;
-  const ry = Math.max(6, h * 0.1);
-  ctx.translate(cx, baseY + ry * 0.2);
+  const rx = row.rowW * 0.56;
+  const ry = Math.max(30, h * 0.62);
+  ctx.translate(cx, baseY - h * 0.28);
   ctx.scale(1, ry / rx);
   const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
-  g.addColorStop(0, 'rgba(76, 29, 149, 0.30)');
-  g.addColorStop(0.6, 'rgba(76, 29, 149, 0.14)');
-  g.addColorStop(1, 'rgba(76, 29, 149, 0)');
+  g.addColorStop(0, 'rgba(255, 255, 255, 0.16)');
+  g.addColorStop(0.55, 'rgba(255, 255, 255, 0.08)');
+  g.addColorStop(1, 'rgba(255, 255, 255, 0)');
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(0, 0, rx, 0, Math.PI * 2);
@@ -427,7 +429,7 @@ export function drawCastWordmark(
   for (const slot of slots) {
     const img = imgs[slot.id] ?? null;
     ctx.save();
-    ctx.shadowColor = 'rgba(60, 30, 110, 0.2)';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
     ctx.shadowBlur = Math.max(4, h * 0.09);
     ctx.shadowOffsetY = Math.max(3, h * 0.065);
     const nw = img ? img.naturalWidth || img.width : 0;
@@ -447,16 +449,29 @@ export function drawCastWordmark(
     }
   }
 
+  // wordocious.com: bright solid lettering, at least as large as the cream cards' (founder 10-16: clearly readable).
   ctx.save();
-  setLetterSpacing(ctx, 3);
-  ctx.font = shareFont(900, 26);
+  setLetterSpacing(ctx, 2);
+  ctx.font = shareFont(900, 34);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.shadowColor = 'rgba(255, 255, 255, 0.85)';
+  ctx.shadowColor = 'rgba(8, 0, 24, 0.6)';
+  ctx.shadowBlur = 6;
   ctx.shadowOffsetY = 2;
-  ctx.fillStyle = '#6d28d9';
+  ctx.fillStyle = '#EDE6FF';
   ctx.fillText(SHARE_SITE, cx, urlY);
   ctx.restore();
+}
+
+/** The night card background (founder 10-16, option B): #1A0E2E at the top to #2E1440 at the bottom. */
+export const NIGHT_TOP = '#1A0E2E';
+export const NIGHT_BOTTOM = '#2E1440';
+export function drawNightBackground(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+  const g = ctx.createLinearGradient(0, 0, 0, height);
+  g.addColorStop(0, NIGHT_TOP);
+  g.addColorStop(1, NIGHT_BOTTOM);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, width, height);
 }
 
 /** Encodes the canvas as the share PNG. */

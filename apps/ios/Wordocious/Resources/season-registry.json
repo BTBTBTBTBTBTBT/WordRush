@@ -1,5 +1,5 @@
 {
-  "_doc": "The season registry (docs/design/brand/seasons/README.md 'How to add a season'). ONE source, copied byte-for-byte to apps/ios/Wordocious/Resources/season-registry.json and apps/android/app/src/main/assets/season-registry.json (apps/web/lib/season-registry.test.ts checks the copies). Windows live in core SEASON_WINDOWS (\u00d73 ports, level-season-fixtures.json) and must list the same ids. Slots name shipped art (web /art/<name>.webp, iOS image set <name>, Android drawable <name with _>); 'titles' and 'walls' map the NORMAL art name to the seasonal one ('*' = prefix); a light-mode wall twin '<name>-light' wins in light mode. 'castSize' + 'castTrim' = the skins' square size and alpha boxes [x0, y0, x1, y1] (alpha > 8), so the cast row frames any season's skins. Any missing slot or unshipped file falls back to the normal art. 'surfaces' (optional) recolors the app's windows during the season: tone ('dark' = light on-card + on-wall text, dark system chrome / status bar), card + cardOpacity (page cards, game board panel), hero + heroOpacity (the Home hero card), raised (chips inside cards), cap (the game cards' drip trim stops, top -> base; capTint mixes each game's own color into the middle stop), glow (the cards' soft lift color), text / textMuted / textSecondary (on-card ink), headline (the hero greeting lettering: top, bottom, deep, nameTop, nameBottom), bannerGlow (a soft glow behind the hero's banner art) and cobweb (the hero's top-corner web ink; absent = none). The DEBUG key debug-season-surfaces = 'off' (web ?surfaces=off) turns the surfaces off for an A/B (perf, contrast) while the season art stays. Any missing surface slot keeps the normal look.",
+  "_doc": "The season registry (docs/design/brand/seasons/README.md 'How to add a season'). ONE source, copied byte-for-byte to apps/ios/Wordocious/Resources/season-registry.json and apps/android/app/src/main/assets/season-registry.json (apps/web/lib/season-registry.test.ts checks the copies). Windows live in core SEASON_WINDOWS (×3 ports, level-season-fixtures.json) and must list the same ids. Slots name shipped art (web /art/<name>.webp, iOS image set <name>, Android drawable <name with _>); 'titles' and 'walls' map the NORMAL art name to the seasonal one ('*' = prefix); a light-mode wall twin '<name>-light' wins in light mode. 'castSize' + 'castTrim' = the skins' square size and alpha boxes [x0, y0, x1, y1] (alpha > 8), so the cast row frames any season's skins. Any missing slot or unshipped file falls back to the normal art. 'surfaces' (optional) recolors the app's windows during the season: tone ('dark' = light on-card + on-wall text, dark system chrome / status bar), card + cardOpacity (page cards, game board panel), hero + heroOpacity (the Home hero card), raised (chips inside cards), cap (the game cards' drip trim stops, top -> base; capTint mixes each game's own color into the middle stop), glow (the cards' soft lift color), text / textMuted / textSecondary (on-card ink), headline (the hero greeting lettering: top, bottom, deep, nameTop, nameBottom), bannerGlow (a soft glow behind the hero's banner art) and cobweb (the hero's top-corner web ink; absent = none). The DEBUG key debug-season-surfaces = 'off' (web ?surfaces=off) turns the surfaces off for an A/B (perf, contrast) while the season art stays. Any missing surface slot keeps the normal look. 'stage' (10-16, optional) = the Home curtain-stage card art behind the headline zone (core CELEBRATION_STAGE pool geometry, 1586 x 992); absent or unshipped = the plain card. Whether a season is LIVE for the public is core SEASON_WINDOWS[].ready (x3 ports): a not-ready season is listed for the admin Season preview only. 'extras' may also map the sweep / flawless celebration SCENE art itself ('art-scene-sweep-broom' / 'art-scene-flawless-star' -> a costumed scene, e.g. celebrate-h-scene-flawless-star); when the season scene is present the crown overlay is NOT drawn (the scene carries its own headwear: founder 10-16, no loose hats on cast art).",
   "seasons": [
     {
       "id": "halloween",
@@ -125,14 +125,16 @@
           "art-halloween-prop-ghost"
         ],
         "banner": "art-scene-banner-halloween",
+        "stage": "art-celebration-stage-halloween",
         "extras": {
           "celebrate-burst-party": "celebrate-h-candy-burst",
           "celebrate-burst-gold": "celebrate-h-candy-burst",
           "celebrate-streamers-pair": "celebrate-h-streamers",
-          "celebrate-crown-gold": "celebrate-h-witch-hat",
           "celebrate-seal-gold": "celebrate-h-pumpkin-glow",
           "celebrate-float-1": "celebrate-h-bats",
-          "celebrate-float-2": "celebrate-h-broom"
+          "celebrate-float-2": "celebrate-h-broom",
+          "art-scene-flawless-star": "celebrate-h-scene-flawless-star",
+          "art-scene-sweep-broom": "celebrate-h-scene-sweep-broom"
         },
         "sounds": {
           "intro": "intro-halloween",
@@ -165,6 +167,102 @@
         ],
         "bannerGlow": "#F97316",
         "cobweb": "#E9DDF7"
+      }
+    },
+    {
+      "id": "thanksgiving",
+      "title": "Thanksgiving",
+      "_note": "Nov 14 – Nov 29 (founder 10-16). Harvest palette per docs/design/brand/social/jp45/STYLE.md: cranberry, wheat, burnt orange, sage, plum. Art: docs/design/brand/seasons/thanksgiving/ (draft until the founder approves in the Art Library). castTrim is measured by ship-art.py when the skins ship (until then the hero cast draws); every slot falls back to the normal art while its file is missing. Public activation = core SEASON_WINDOWS thanksgiving.ready.",
+      "palette": {
+        "accent": "#F0824A",
+        "buttonTint": "#D62A4A",
+        "quietTint": "#7E2A5B",
+        "wallLight": [
+          "#FBEFE2",
+          "#F6E3CC",
+          "#EBD2B8"
+        ],
+        "wallDark": [
+          "#1A0E12",
+          "#2B1418",
+          "#3A1C14"
+        ]
+      },
+      "slots": {
+        "cast": "art-thanksgiving-{id}",
+        "castSize": 320,
+        "titles": {
+          "art-titlecast-dailies": "art-title-thanksgiving-dailies",
+          "art-titlecast-puzzles": "art-title-thanksgiving-puzzles",
+          "art-titlecast-friends": "art-title-thanksgiving-friends",
+          "art-titlecast-leaderboard": "art-title-thanksgiving-leaderboard",
+          "art-titlecast-stats": "art-title-thanksgiving-stats",
+          "art-titlecast-wotd": "art-title-thanksgiving-wotd",
+          "art-game-practice": "art-title-thanksgiving-practice",
+          "art-game-six": "art-title-thanksgiving-six",
+          "art-game-seven": "art-title-thanksgiving-seven",
+          "art-game-quordle": "art-title-thanksgiving-quordle",
+          "art-game-octordle": "art-title-thanksgiving-octordle",
+          "art-game-sequence": "art-title-thanksgiving-sequence",
+          "art-game-rescue": "art-title-thanksgiving-rescue",
+          "art-game-gauntlet": "art-title-thanksgiving-gauntlet",
+          "art-game-propernoundle": "art-title-thanksgiving-propernoundle",
+          "art-game-sudoku": "art-title-thanksgiving-sudoku",
+          "art-game-scramble": "art-title-thanksgiving-scramble",
+          "art-game-hub": "art-title-thanksgiving-hub",
+          "art-game-crossword": "art-title-thanksgiving-crossword",
+          "art-game-groups": "art-title-thanksgiving-groups",
+          "art-game-ladder": "art-title-thanksgiving-ladder",
+          "art-game-cryptogram": "art-title-thanksgiving-cryptogram",
+          "art-game-wordsearch": "art-title-thanksgiving-wordsearch",
+          "art-game-regions": "art-title-thanksgiving-regions"
+        },
+        "walls": {
+          "art-wall-home": "art-wall-thanksgiving-home",
+          "art-wall-leaderboard": "art-wall-thanksgiving-leaderboard",
+          "art-wall-stats": "art-wall-thanksgiving-stats",
+          "art-wall-friends": "art-wall-thanksgiving-friends",
+          "art-wall-vs": "art-wall-thanksgiving-games",
+          "art-wall-game-*": "art-wall-thanksgiving-games"
+        },
+        "props": [
+          "art-thanksgiving-prop-turkey-platter",
+          "art-thanksgiving-prop-pumpkin-pie",
+          "art-thanksgiving-prop-leaf-maple",
+          "art-thanksgiving-prop-acorn"
+        ],
+        "banner": "art-scene-banner-thanksgiving",
+        "stage": "art-celebration-stage-thanksgiving",
+        "extras": {
+          "art-scene-flawless-star": "celebrate-t-scene-flawless-star",
+          "art-scene-sweep-broom": "celebrate-t-scene-sweep-broom"
+        }
+      },
+      "surfaces": {
+        "tone": "dark",
+        "card": "#2A1419",
+        "cardOpacity": 0.92,
+        "hero": "#26121A",
+        "heroOpacity": 0.92,
+        "raised": "#3E2029",
+        "cap": [
+          "#F7D08C",
+          "#EA580C",
+          "#5C1A12"
+        ],
+        "capTint": 0.3,
+        "glow": "#EA580C",
+        "text": "#FFF4E8",
+        "textMuted": "#D9BFA7",
+        "textSecondary": "#F1DCC6",
+        "headline": [
+          "#F7D08C",
+          "#EA580C",
+          "#4A1515",
+          "#F8B86B",
+          "#C8324F"
+        ],
+        "bannerGlow": "#EA580C"
       }
     }
   ]

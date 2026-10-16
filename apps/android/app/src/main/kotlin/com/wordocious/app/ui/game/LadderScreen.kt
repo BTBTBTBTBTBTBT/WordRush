@@ -532,7 +532,7 @@ private fun LadderFinished(
         val over = s.moves - s.par
         val meta = "${num?.let { "#$it · " } ?: ""}Par ${s.par} · ${if (won) (if (over <= 0) "On par" else "+$over") else "Out of moves"} · ${timeText(secs)}"
         val text = "Wordocious Letter Ladder${num?.let { " #$it" } ?: ""} — Score ${session.points} pts · Time ${timeText(secs)} · Par ${s.par} · ${if (won) (if (over <= 0) "On par" else "+$over over par") else "Out of moves"} · wordocious.com/letter-ladder"
-        val bmp = ShareImage.renderLadder(context, s.start, s.end, s.words, s.hintMask, won, meta)
+        val bmp = ShareImage.renderLadder(context, s.start, s.end, s.words, s.hintMask, won, meta, score = com.wordocious.app.data.ShareBreakdown.Input(GameMode.LADDER, won, gc, secs, if (won) 1 else 0, 1, s.hintsUsed, day = if (session.isDaily) todayLocalDate() else null))
         ShareImage.shareBitmap(context, bmp, text)
     }
     FinishedScreen(

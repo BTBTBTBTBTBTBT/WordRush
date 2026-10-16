@@ -8,7 +8,7 @@
 // standing together, the Home header's .castrow) is the only wordmark.
 // No DOM, no canvas: unit-tested in share-fit.test.ts.
 
-import { SHARE_FRAMES, type ShareFrame } from '@wordle-duel/core';
+import { PODIUM_ART, SHARE_FRAMES, podiumLayout, type ShareFrame } from '@wordle-duel/core';
 import { castAspect } from './cast-moves';
 import { CAST, type MascotId } from './mascots';
 import type {
@@ -35,28 +35,32 @@ export const MULTI_GAP = Math.round(SHARE_W * 0.04);
 export const TITLE_MARGIN = 90;
 export const TITLE_MAX_W = SHARE_W - TITLE_MARGIN * 2;
 export const TITLE_MAX_H = 210;
+/** Night frame (10-16): the game title art is ~150 tall; a leaderboard card's day title above it ~190. */
+export const NIGHT_TITLE_H = 150;
+export const NIGHT_DAY_H = 190;
+export const NIGHT_TITLE_GAP = 6;
 /** The lettered title's height when the art didn't load. */
 export const TITLE_FALLBACK_H = 96;
 
 /** Vertical rhythm of every card (canvas px). */
 export const SHARE_SPACE = {
-  top: 32,
+  top: 28,
   /** Title → info line (or the header rows that replace it). */
-  titleGap: 12,
+  titleGap: 8,
   /** The compact info line. */
   info: 44,
   /** Header → board. */
-  headGap: 20,
+  headGap: 10,
   /** Board → stat windows. */
-  boardGap: 24,
-  /** The three stat windows. */
-  stats: 120,
+  boardGap: 14,
+  /** The three stat chips. */
+  stats: 76,
   /** Last block → cast row. */
-  castGap: 24,
+  castGap: 8,
   /** Cast row → "wordocious.com". */
-  urlGap: 12,
-  url: 26,
-  bottom: 24,
+  urlGap: 8,
+  url: 36,
+  bottom: 14,
 } as const;
 
 export function clampShareHeight(h: number, frame: ShareFrame = 'message'): number {
@@ -97,7 +101,7 @@ export function titleFitsCard(r: Rect, height: number, below = height): boolean 
 // ── The cast wordmark (S3) ──────────────────────────────────────────────────
 
 /** The Home header's .castrow: margin-right -2.2% of the row, even characters lifted 7 px on ~46 px characters. */
-export const CAST_ROW = { widthFrac: 0.8, overlap: 0.022, liftFrac: 7 / 46, shadowFrac: 0.1 } as const;
+export const CAST_ROW = { widthFrac: 0.92, overlap: 0.022, liftFrac: 7 / 46, shadowFrac: 0.03 } as const;
 
 export interface CastSlot {
   id: MascotId;
@@ -138,7 +142,7 @@ export function castRowLayout(rowW: number, cx: number, baseY: number): CastRowL
   return { charH, lift, height: charH + lift, rowW, slots };
 }
 
-/** The cast row at its share size (80% of the card; 3:4 budget). */
+/** The cast row at its share size (92% of the card: 15% larger than the cream cards' 80%). */
 export function shareCastRow(cx = SHARE_W / 2, baseY = 0): CastRowLayout {
   return castRowLayout(Math.round(SHARE_W * CAST_ROW.widthFrac), cx, baseY);
 }
@@ -162,6 +166,8 @@ export interface ShareStackSpec {
   heroH?: number;
   /** The card's frame: 'message' (4:5 .. 3:4, the default) or 'story' (exactly 9:16). Square is a re-framing of a message card. */
   frame?: ShareFrame;
+  /** A shorter ceiling than the frame's (a leaderboard with 2-3 players stays 4:5: its podium scales down instead). */
+  maxH?: number;
 }
 
 export interface SharePlan {
@@ -211,7 +217,8 @@ export function planShareCard(spec: ShareStackSpec, measure: (maxH: number) => n
   const s = SHARE_SPACE;
   const fixed = shareFixedHeight(spec);
   const frame = spec.frame ?? 'message';
-  const room = Math.max(40, SHARE_FRAMES[frame].maxH - fixed);
+  const ceiling = Math.max(SHARE_FRAMES[frame].minH, Math.min(SHARE_FRAMES[frame].maxH, spec.maxH ?? SHARE_FRAMES[frame].maxH));
+  const room = Math.max(40, ceiling - fixed);
   const natural = Math.max(0, measure(100000));
   const contentH = natural > room ? Math.min(room, Math.max(0, measure(room))) : natural;
   const height = clampShareHeight(fixed + contentH, frame);
@@ -243,6 +250,71 @@ export function planShareCard(spec: ShareStackSpec, measure: (maxH: number) => n
     cast: placed,
     urlY,
   };
+}
+
+// ── The night blocks (founder 10-16, option B) ──────────────────────────────
+
+/** A finished-game card's head: info line, status line, three stat chips. */
+export const NIGHT_INFO_H = 40;
+export const NIGHT_STATUS_H = 48;
+export const NIGHT_CHIPS_H = SHARE_SPACE.stats;
+export const NIGHT_HEAD_GAP = 6;
+export const NIGHT_HEAD_H = NIGHT_INFO_H + NIGHT_HEAD_GAP + NIGHT_STATUS_H + NIGHT_HEAD_GAP + NIGHT_CHIPS_H;
+
+/** The score-breakdown panel: top bar + title row + one row per line + bottom pad. */
+export const BD_BAR_H = 8;
+export const BD_TITLE_H = 72;
+export const BD_ROW_H = 42;
+export const BD_PAD = 16;
+export function breakdownBlockHeight(nRows: number): number {
+  return BD_BAR_H + BD_TITLE_H + Math.max(0, nRows) * BD_ROW_H + (nRows > 0 ? BD_PAD : 10);
+}
+
+/** The leaderboard card's info pill. */
+export const LB_PILL_H = 52;
+/** Rows under the podium (places 4+ and the sharer's own row). */
+export const LB_ROW_H = 68;
+export const LB_ROW_GAP = 10;
+export const LB_DOTS_H = 28;
+/** The podium image's headroom above the stage (names + crowns stand there), as a fraction of the podium width. */
+export const PODIUM_HEADROOM = 0.15;
+/** With rows under the podium (3:4) the titles shrink first so the podium stays at least this wide. */
+export const NIGHT_DAY_H_ROWS = 100;
+export const NIGHT_TITLE_H_ROWS = 120;
+/** Full card width minus ~60 px. */
+export const PODIUM_MAX_W = SHARE_W - 60;
+
+/** Records cards list days, not competitors: they have no podium. */
+export function lbUsesPodium(variant: ShareLeaderboardInput['variant']): boolean {
+  return variant !== 'flawlessStreak' && variant !== 'trophyCase';
+}
+
+/** What a leaderboard card draws: the podium's places, then the rows under it, then the sharer's own row. */
+export function lbLayout(input: Pick<ShareLeaderboardInput, 'rows' | 'you' | 'variant'>) {
+  const { filled, open } = lbUsesPodium(input.variant) ? podiumLayout(input.rows.map((r) => r.rank)) : { filled: 0, open: [] as number[] };
+  const rest = input.rows.slice(filled);
+  // Compact: one row under the podium when the sharer's own row follows (the podium keeps its width), else two.
+  const youIn = !!input.you || rest.some((r) => r.isYou);
+  const cap = filled > 0 ? (youIn ? 1 : 2) : 5;
+  const list = rest.slice(0, cap);
+  let you = input.you ?? null;
+  if (!you) {
+    const y = rest.find((r) => r.isYou);
+    if (y && !list.includes(y)) you = y;
+  }
+  const gap = !!you && list.length > 0 && you.rank > list[list.length - 1].rank + 1;
+  const n = list.length + (you ? 1 : 0);
+  const rowsH = n ? n * LB_ROW_H + (n - 1) * LB_ROW_GAP + (gap ? LB_DOTS_H : 0) : 0;
+  return { podium: filled > 0, filled, open, list, you, gap, rowsH };
+}
+
+/** The podium block's geometry in `maxH`: width (≤ card width − 60), stage height, headroom. */
+export function podiumGeometry(maxH: number): { w: number; stageH: number; headroom: number; h: number } {
+  const per = 1 / PODIUM_ART.aspect + PODIUM_HEADROOM;
+  const w = Math.max(240, Math.min(PODIUM_MAX_W, Math.floor(maxH / per)));
+  const stageH = Math.round(w / PODIUM_ART.aspect);
+  const headroom = Math.round(w * PODIUM_HEADROOM);
+  return { w, stageH, headroom, h: stageH + headroom };
 }
 
 // ── Board geometry (shared by measure + draw) ───────────────────────────────
@@ -576,8 +648,10 @@ export function boardBlockHeight(input: ShareImageInput, maxW: number, maxH: num
       return profileGeometry(maxH).h;
     case 'moment':
       return Math.min(maxH, MOMENT_BODY_H);
-    case 'leaderboard':
-      return leaderboardPanelGeometry(input, maxH).h;
+    case 'leaderboard': {
+      const lb = lbLayout(input);
+      return lb.podium ? podiumGeometry(maxH).h : lb.rowsH;
+    }
     default:
       return 0;
   }

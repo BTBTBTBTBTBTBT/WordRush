@@ -49,7 +49,7 @@ import { podiumLayout, podiumOpenSpot, podiumWinnerHead, PODIUM_ART, PODIUM_ART_
 import { nameHex, plateHexes } from '../src/player-tint';
 import { AVATAR_MANIFEST, applyAvatarPick, avatarLayout, avatarPatternShapes, avatarPickConflict } from '../src/avatar-layout';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
-import { SEASON_WINDOWS, currentSeason, levelTier, levelTierLabel } from '../src/level-season';
+import { SEASON_WINDOWS, calendarSeason, currentSeason, levelTier, levelTierLabel } from '../src/level-season';
 import { AVATAR_ACCESS_TABLE, avatarAccessKey, avatarEarnedKeys, avatarLockedCardLines, avatarPartAccess, avatarPartRule, avatarSaveCheck, enforceAvatarAccess, evaluateEarn, type AvatarAccessContext, type AvatarEarnCondition, type AvatarEarnStats } from '../src/avatar-access';
 import { HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO, SEASON_NOTE_PREFIX, activeMelodies, MELODY_GAP_MS, MELODY_START, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_POP_KEYS, MUSICAL_SCALE, MUSICAL_TIMING, matchMelody, melodyIntervals, melodyReplay, melodyReplayDuration, melodySong, melodyTap, midiNoteName, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState } from '../src/musical-cast';
 import { SECRET_ACHIEVEMENT_KEYS, achievementListed } from '../src/achievement-rules';
@@ -799,8 +799,10 @@ export function renderShareCaptionFixtures() {
 // FINISH_SPEC V + X: level tiers and the seasonal skin window.
 export function renderLevelSeasonFixtures() {
   const levels = [0, 1, 5, 10, 11, 25, 26, 50, 51, 99, 100, 101, 500].map((level) => ({ level, tier: levelTier(level), label: levelTierLabel(levelTier(level)) }));
-  const days = ['2026-10-01', '2026-10-16', '2026-10-17', '2026-10-23', '2026-10-24', '2026-10-31', '2026-11-01', '2026-11-02', '2026-12-25', '2027-10-24'].map((date) => ({ date, season: currentSeason(date) }));
-  const windows = SEASON_WINDOWS.map((w) => ({ id: w.id, start: [...w.start], end: [...w.end] }));
+  // `season` = the public season (ready windows only), `calendar` = the window the day falls in, ready or not.
+  const days = ['2026-10-01', '2026-10-16', '2026-10-17', '2026-10-23', '2026-10-24', '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-13', '2026-11-14', '2026-11-20', '2026-11-26', '2026-11-29', '2026-11-30', '2026-12-25', '2027-10-24', '2027-11-14']
+    .map((date) => ({ date, season: currentSeason(date), calendar: calendarSeason(date) }));
+  const windows = SEASON_WINDOWS.map((w) => ({ id: w.id, start: [...w.start], end: [...w.end], ready: w.ready }));
   return { levels, days, windows };
 }
 

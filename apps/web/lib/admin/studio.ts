@@ -8,7 +8,7 @@
  * - The publisher posts a target only when it is due, the post is approved, nothing is paused, the platform is
  *   connected and that target has not been posted.
  */
-import { currentSeason } from '@wordle-duel/core';
+import { calendarSeason } from '@wordle-duel/core';
 
 /* ------------------------------------------------------------- platforms */
 
@@ -422,7 +422,7 @@ export function seasonBands(years: readonly number[]): Band[] {
   for (const y of years) {
     let run: { id: string; start: string; end: string } | null = null;
     for (let day = `${y}-01-01`; day <= `${y}-12-31`; day = addDays(day, 1)) {
-      const s = currentSeason(day);
+      const s = calendarSeason(day); // every window, ready or not: the content calendar plans ahead of the art
       if (s && run && run.id === s && addDays(run.end, 1) === day) { run.end = day; continue; }
       if (run) out.push({ id: `${run.id}-${run.start}`, label: run.id.charAt(0).toUpperCase() + run.id.slice(1), start: run.start, end: run.end, tone: 'season' });
       run = s ? { id: s, start: day, end: day } : null;

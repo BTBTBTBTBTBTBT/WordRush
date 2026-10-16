@@ -1,25 +1,28 @@
 'use client';
 
-import { MOMENT_BODY_H } from './share-fit';
 import { SHARE_HERO_GAP, shareHeroBand, shareHeroResultFor, shareHeroResultForRank, type ShareFrame, type ShareHeroResult } from '@wordle-duel/core';
 import { getShareSender } from './share-sender';
 import { drawShareHero, loadShareHero } from './share-hero-canvas';
 import { activeSeason } from './season';
+import { seasonalTitle } from './season-kit';
+import { drawBreakdownPanel, drawInfoPill, drawNightHead, drawNightRows, drawPodium, renderBubbleName, type PodiumAssets } from './share-night';
+import { nameColorHex, secondaryColorHex } from './player-tint';
+import { loadPodiumMascot, shareAvatarFor, type ShareAvatar } from './share-avatar';
 import { GameStatus, type BoardState } from '@wordle-duel/core';
 import { getTodayLocal } from './daily-service';
-import { WIN_FG } from './tile-theme';
 import { MODES } from './modes.generated';
 import { boardToGrid, boardToLetters, MODE_SHARE_GLYPH } from './share-grid';
 import {
-  ART_SIZE, PAGE_TINTS, artSrc, gameArtSrc, gameTint, pageWall,
+  ART_SIZE, DAY_ART, PAGE_TINTS, artSrc, gameArtSrc, gameTint, pageWall,
   type ArtName, type TintStops,
 } from './art';
 import {
   LEADERBOARD_SHARE_ART, TILE_GLOSS, fallbackSharePoints, gameShareArt, glossFrom,
-  shareDayKey, shareInfoLine, shareStatWindows, shareSweepInfo,
+  shareBreakdown, shareDayKey, shareInfoLine, shareStatWindows, shareSweepInfo,
   type GlossPalette,
 } from './share-look';
 import {
+  MOMENT_BODY_H, NIGHT_DAY_H, NIGHT_DAY_H_ROWS, NIGHT_TITLE_H_ROWS, NIGHT_HEAD_H, NIGHT_TITLE_GAP, NIGHT_TITLE_H, LB_PILL_H, breakdownBlockHeight, lbLayout, podiumGeometry,
   ANSWER_CAPTION_H, BOARD_W, GROUPS_DOTS_H, HUB_RANK_H, MULTI_CHROME, PROFILE_HEAD_H, SCRAMBLE_DIVIDER_H,
   SHARE_SPACE, SHARE_W, TITLE_MAX_W,
   boardBlockHeight, cipherWordWidth, crosswordGeometry, cryptoGeometry, gridGeometry, groupsGeometry,
@@ -27,9 +30,8 @@ import {
   profileGeometry, scrambleGeometry, singleCaptionH, squareSize, stackGeometry, titleBoxHeight,
   type GridGeometry, type SharePlan,
 } from './share-fit';
-import { shareHookLine } from './leaderboard-share';
 import {
-  canvasToPng, drawCastWordmark, drawDateLine, drawGlossTile, drawImageContain, drawInfoLine, drawSoftNumber,
+  canvasToPng, drawCastWordmark, drawDateLine, drawGlossTile, drawNightBackground, drawImageContain, drawInfoLine, drawSoftNumber,
   drawStatWindow, drawStatWindows, drawTileGlyph, drawWallpaper, fitFontPx, loadCastImages, loadShareImage,
   resolveCanvasFontStack, setLetterSpacing,
 } from './share-canvas';
@@ -108,6 +110,11 @@ interface ShareBase {
    * (mistake-scored modes list "Score · Time · Mistakes" by name, §18d).
    */
   points?: number;
+  /**
+   * What the finished card's score breakdown can't know from the card itself (hints used, the game's own guess count,
+   * boards solved): callers that have them pass them; the rest fall back to the card's own numbers.
+   */
+  scoreArgs?: { guessCount?: number; boardsSolved?: number; totalBoards?: number; hintsUsed?: number; stagesCompleted?: number; bestCorrect?: number };
 }
 
 export interface ShareSingleInput extends ShareBase {
@@ -367,6 +374,18 @@ export interface ShareLeaderboardRowInput {
   subline?: string;
   /** Sharer's own row — gets the gold "you" highlight + "· YOU" label. */
   isYou?: boolean;
+  /** The player's resolved avatar for the podium mascot (default: the mascot their name seeds). */
+  avatar?: ShareAvatar | null;
+  /** The row's raw avatar columns from the board (avatar_config / avatar_cast_id / avatar_frame / avatar_url / accent_color); resolved like the app. */
+  avatarRow?: ShareRowAvatarFields | null;
+}
+
+export interface ShareRowAvatarFields {
+  avatar_url?: unknown;
+  avatar_config?: unknown;
+  avatar_cast_id?: unknown;
+  avatar_frame?: unknown;
+  accent_color?: string | null;
 }
 
 /** Daily-leaderboard share card (1080 wide, sized to its rows): solo board, VS board, or
@@ -458,27 +477,27 @@ export type ShareImageInput =
 // ──────────────────────────────────────────────────────────────────────────
 
 // The card's inks (FINISH_SPEC E1): dark purples on the wallpaper, never gray-on-white.
-const BG = '#f3eeff';
+const BG = '#1A0E2E';
 
 // Per-mode accent, derived from the single-source mode catalog (keyed by title == ShareMode).
 const MODE_ACCENT: Record<ShareMode, string> = Object.fromEntries(
   MODES.filter((m) => m.dbKey).map((m) => [m.title, m.accentHex]),
 ) as Record<ShareMode, string>;
 
-const TEXT_DARK = '#2a1650';
-const TEXT_MUTED = '#6f5f8f';
+const TEXT_DARK = '#F3EDFF';
+const TEXT_MUTED = '#BDAEE6';
 
 // Win / loss accents (WIN_FG comes from tile-theme, Royal violet).
-const LOSS_FG = '#e11d48';
+const LOSS_FG = '#FF8FA8';
+/** Night style: the cleared / won ink on dark panels (the royal violet WIN_FG is for light cards). */
+const NIGHT_WIN = '#C9B3FF';
 
 // The tinted panels behind a board (never white): lilac for a win, rose for a loss.
-const PANEL_WIN = 'rgba(245, 238, 255, 0.86)';
-const PANEL_LOSS = 'rgba(255, 236, 241, 0.86)';
-const PANEL_WIN_LINE = 'rgba(124, 58, 237, 0.55)';
-const PANEL_LOSS_LINE = 'rgba(225, 29, 72, 0.55)';
+const PANEL_WIN = 'rgba(124, 58, 237, 0.22)';
+const PANEL_LOSS = 'rgba(244, 63, 94, 0.18)';
 
 // Accent palettes the More Games boards draw their glossy cells in.
-const GLOSS_DARK = glossFrom('#3b2a5c');
+const GLOSS_DARK = glossFrom('#6B5A94');
 const GLOSS_VIOLET = glossFrom('#8b5cf6');
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -507,20 +526,11 @@ function drawRoundRect(
   ctx.closePath();
 }
 
-/** A tinted board panel (lilac win / rose loss) with its soft ring — the old white-bordered card. */
+/** A tinted board panel (violet win / rose loss on the night card): a fill only, no outline. */
 function drawResultPanel(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, won: boolean, radius = 28): void {
-  ctx.save();
-  ctx.shadowColor = 'rgba(60, 30, 110, 0.14)';
-  ctx.shadowBlur = 24;
-  ctx.shadowOffsetY = 10;
   drawRoundRect(ctx, x, y, w, h, radius);
   ctx.fillStyle = won ? PANEL_WIN : PANEL_LOSS;
   ctx.fill();
-  ctx.restore();
-  drawRoundRect(ctx, x, y, w, h, radius);
-  ctx.strokeStyle = won ? PANEL_WIN_LINE : PANEL_LOSS_LINE;
-  ctx.lineWidth = 3;
-  ctx.stroke();
 }
 
 /** A glossy result tile (game kit): purple correct, gold present, slate absent, frosted empty. */
@@ -658,15 +668,18 @@ interface ShareArt {
 }
 
 async function loadShareArt(opts: {
-  wall: string;
+  /** Night cards have no wallpaper; kept for callers that still pass one. */
+  wall?: string | null;
   title: ArtName | null;
+  /** The season's title art path when one ships (else the standard art). */
+  titleSrc?: string | null;
   icons?: string[];
 }): Promise<ShareArt> {
   const iconModes = opts.icons ?? [];
   const iconSrc = (mode: string) => gameArtSrc(MODES.find((m) => m.title === mode)?.id);
   const [wall, title, ...icons] = await Promise.all([
-    loadShareImage([artSrc(opts.wall)]),
-    opts.title ? loadShareImage([artSrc(opts.title)]) : Promise.resolve(null),
+    opts.wall ? loadShareImage([artSrc(opts.wall as ArtName)]) : Promise.resolve(null),
+    opts.title ? loadShareImage(opts.titleSrc ? [opts.titleSrc, artSrc(opts.title)] : [artSrc(opts.title)]) : Promise.resolve(null),
     ...iconModes.map((m) => {
       const src = iconSrc(m);
       return src ? loadShareImage([src]) : Promise.resolve(null);
@@ -685,7 +698,7 @@ function titleNatural(art: ShareArt): readonly [number, number] | null {
   if (!art.title || !art.titleName) return null;
   return art.title.naturalWidth && art.title.naturalHeight
     ? [art.title.naturalWidth, art.title.naturalHeight]
-    : ART_SIZE[art.titleName];
+    : ART_SIZE[art.titleName] ?? null;
 }
 
 /**
@@ -715,7 +728,7 @@ function drawCardTitle(
   const baseY = top + boxH / 2 + px * 0.36;
   ctx.lineJoin = 'round';
   ctx.lineWidth = Math.max(6, px * 0.14);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+  ctx.strokeStyle = 'rgba(26, 14, 46, 0.92)';
   ctx.strokeText(fallbackText, width / 2, baseY);
   if (typeof fallbackColor === 'string') {
     ctx.fillStyle = fallbackColor;
@@ -786,7 +799,7 @@ function drawSudoku(ctx: CanvasRenderingContext2D, input: ShareSudokuInput, widt
 // Starsweep (More Games §18d): the regions as tinted glossy squares, the placed
 // stars as dark dots (hint stars violet), nothing else — no crosses and never
 // the missing stars, so the card spoils nothing and invites a try.
-const REGIONS_SHARE_TINTS = ['#ede9fe', '#d1fae5', '#e0f2fe', '#fce7f3', '#fef9c3', '#ccfbf1', '#ffedd5', '#ecfccb', '#e2e8f0'];
+const REGIONS_SHARE_TINTS = ['#8b5cf6', '#34d399', '#38bdf8', '#f472b6', '#facc15', '#2dd4bf', '#fb923c', '#a3e635', '#94a3b8'];
 const REGIONS_GLOSS = REGIONS_SHARE_TINTS.map((t) => glossFrom(t));
 function drawRegions(ctx: CanvasRenderingContext2D, input: ShareRegionsInput, width: number, box: Box): void {
   const n = Math.max(1, input.n);
@@ -806,7 +819,7 @@ function drawRegions(ctx: CanvasRenderingContext2D, input: ShareRegionsInput, wi
     const g = (input.regions.charCodeAt(i) || 48) - 48;
     const faceH = drawCell(ctx, x, y, cell, REGIONS_GLOSS[g % REGIONS_GLOSS.length]);
     if (input.board[i] === '*') {
-      ctx.fillStyle = input.hintMask[i] === '1' ? HINTC : '#3b1a78';
+      ctx.fillStyle = input.hintMask[i] === '1' ? HINTC : '#2A1458';
       ctx.beginPath();
       ctx.arc(x + cell / 2, y + faceH / 2, cell * 0.24, 0, Math.PI * 2);
       ctx.fill();
@@ -865,14 +878,14 @@ function drawWordsearch(ctx: CanvasRenderingContext2D, input: ShareWordsearchInp
   const x0 = (width - size) / 2, y0 = box.top + (box.h - size) / 2;
   ctx.save();
   drawResultPanel(ctx, x0, y0, size, size, input.won);
-  const ACCENT = '#4d7c0f';
+  const ACCENT = '#A3E635';
   // Capsules first, dots on top.
   for (const p of input.words) {
     if (!input.found.includes(p.w)) continue;
     const [dr, dc] = WORDSEARCH_DIR_DELTAS[p.d] ?? [0, 1];
     const ax = x0 + cardPad + (p.c + 0.5) * cell, ay = y0 + cardPad + (p.r + 0.5) * cell;
     const bx = x0 + cardPad + (p.c + dc * (p.w.length - 1) + 0.5) * cell, by = y0 + cardPad + (p.r + dr * (p.w.length - 1) + 0.5) * cell;
-    ctx.strokeStyle = `${ACCENT}66`;
+    ctx.strokeStyle = `${ACCENT}99`;
     ctx.lineWidth = cell * 0.72;
     ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
@@ -944,9 +957,9 @@ function drawCrossword(ctx: CanvasRenderingContext2D, input: ShareCrosswordInput
 
 // Kindred (More Games §18d): four glossy tier bars in solve order with pips,
 // unsolved tiers dashed beneath on a loss, then the mistake dots. No words.
-const GROUPS_TIER_FILL: Record<number, [string, string]> = { 1: ['#ddd6fe', '#3b0764'], 2: ['#a78bfa', '#1a1a2e'], 3: ['#7c3aed', '#ffffff'], 4: ['#1a1a2e', '#ffffff'] };
+const GROUPS_TIER_FILL: Record<number, [string, string]> = { 1: ['#ddd6fe', '#3b0764'], 2: ['#a78bfa', '#1a1a2e'], 3: ['#7c3aed', '#ffffff'], 4: ['#5B4A8E', '#ffffff'] };
 function drawGroups(ctx: CanvasRenderingContext2D, input: ShareGroupsInput, width: number, box: Box): void {
-  const ACCENT = '#9f1239', DOT_OFF = 'rgba(159, 18, 57, 0.18)';
+  const ACCENT = '#FF8FA8', DOT_OFF = 'rgba(255, 143, 168, 0.22)';
   const tiers = [...input.solvedTiers, ...[1, 2, 3, 4].filter((t) => !input.solvedTiers.includes(t))];
   const geo = groupsGeometry(tiers.length, box.h);
   const { barH, gap } = geo;
@@ -987,7 +1000,7 @@ function drawGroups(ctx: CanvasRenderingContext2D, input: ShareGroupsInput, widt
 // Codebreaker (More Games §18d): the ciphertext as rows of frosted cells with
 // the code letter beneath each, words wrapped whole. No plain letters.
 function drawCryptogram(ctx: CanvasRenderingContext2D, input: ShareCryptogramInput, width: number, box: Box): void {
-  const ACCENT = '#92400e', CODE = '#6f5f8f';
+  const ACCENT = '#FFC857', CODE = '#BDAEE6';
   const geo = cryptoGeometry(input.cipher, BOARD_W, box.h);
   const { cell, gap, wordGap, rowH, codeH, rowGap, rows } = geo;
   let y = box.top + (box.h - geo.h) / 2;
@@ -1094,7 +1107,7 @@ function drawGauntlet(ctx: CanvasRenderingContext2D, input: ShareGauntletInput, 
     ctx.fillStyle = TEXT_DARK;
     ctx.fillText(stage.name, textX, midY - 16 * k);
     ctx.font = `800 ${Math.round(24 * k)}px ${SHARE_FONT_STACK}`;
-    ctx.fillStyle = won ? WIN_FG : LOSS_FG;
+    ctx.fillStyle = won ? NIGHT_WIN : LOSS_FG;
     ctx.fillText(`${stage.boardsSolved}/${stage.totalBoards} boards · ${stage.guesses} guesses`, textX, midY + 20 * k);
     ctx.restore();
 
@@ -1416,11 +1429,8 @@ function drawDailySweepRows(ctx: CanvasRenderingContext2D, input: ShareDailySwee
     const accent = MODE_ACCENT[g.mode] ?? '#7c3aed';
 
     ctx.save();
-    ctx.shadowColor = 'rgba(60, 30, 110, 0.12)';
-    ctx.shadowBlur = 16;
-    ctx.shadowOffsetY = 6;
     drawRoundRect(ctx, horizontalPad, rowY, areaWidth, rowH, 22);
-    ctx.fillStyle = softMix(accent, 0.13);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.085)';
     ctx.fill();
     ctx.restore();
     // The game-card bar down the left edge.
@@ -1430,10 +1440,6 @@ function drawDailySweepRows(ctx: CanvasRenderingContext2D, input: ShareDailySwee
     ctx.fillStyle = accent;
     ctx.fillRect(horizontalPad, rowY, 10, rowH);
     ctx.restore();
-    drawRoundRect(ctx, horizontalPad + 1.5, rowY + 1.5, areaWidth - 3, rowH - 3, 21);
-    ctx.strokeStyle = softMix(accent, 0.32);
-    ctx.lineWidth = 3;
-    ctx.stroke();
 
     // The game's glossy icon, or the accent badge with its lucide glyph.
     const badge = Math.min(rowH - 18, 80);
@@ -1943,7 +1949,10 @@ export interface ShareCardArt {
 export function shareCardArt(input: ShareImageInput): ShareCardArt {
   if (input.layout === 'leaderboard') {
     const lb = LEADERBOARD_SHARE_ART[input.variant];
-    return { wall: pageWall(lb.wall), title: lb.title, tint: PAGE_TINTS[lb.wall].light, fallbackTitle: lb.label, fallbackColor: LB_THEME[input.variant].label };
+    // A game's daily board wears that game's own title art (night style); every other board its page title.
+    const gameTitle = input.variant === 'solo' || input.variant === 'podium' || input.variant === 'friends' || input.variant === 'friendsPodium'
+      ? gameShareArt(input.mode).title : null;
+    return { wall: pageWall(lb.wall), title: gameTitle ?? lb.title, tint: PAGE_TINTS[lb.wall].light, fallbackTitle: lb.label, fallbackColor: LB_THEME[input.variant].label };
   }
   if (input.layout === 'daily-sweep') {
     return {
@@ -1980,22 +1989,45 @@ export function shareCardArt(input: ShareImageInput): ShareCardArt {
 export function shareCardPlan(
   input: ShareImageInput,
   titleNat: readonly [number, number] | null,
-  /** Item 46: the hero band's height (shareHeroBand) and the frame ('message' default, 'story' = exactly 9:16). */
-  extra: { heroH?: number; frame?: ShareFrame } = {},
-): { plan: SharePlan; titleH: number; hook: string } {
-  const titleH = titleBoxHeight(titleNat);
-  const hook = input.layout === 'leaderboard' ? shareHookLine(input.footer) : '';
-  let headH: number = SHARE_SPACE.info;
-  let footH: number = SHARE_SPACE.stats;
+  /**
+   * Item 46: the hero band's height (shareHeroBand: height + gap) and the frame ('message' default, 'story' = exactly 9:16).
+   * `dayNat`: a leaderboard card's day title art size (undefined = the standard 190 px slot, null = none).
+   */
+  extra: { heroH?: number; frame?: ShareFrame; dayNat?: readonly [number, number] | null } = {},
+): { plan: SharePlan; titleH: number; hook: string; headH: number; footH: number; dayH: number; breakdownRows: number | null } {
+  const lbRows = input.layout === 'leaderboard' && lbLayout(input).rowsH > 0 && lbLayout(input).podium;
+  const gameH = titleBoxHeight(titleNat, TITLE_MAX_W, lbRows ? NIGHT_TITLE_H_ROWS : NIGHT_TITLE_H);
+  let dayH = 0;
   if (input.layout === 'leaderboard') {
-    headH = LB_HEAD_H;
-    footH = hook ? LB_HOOK_H : 0;
+    const n = extra.dayNat;
+    // Rows under the podium (3:4) take the room: the day title shrinks first.
+    const dayMax = lbRows ? NIGHT_DAY_H_ROWS : NIGHT_DAY_H;
+    dayH = n === null ? 0 : n && n[0] && n[1] ? Math.round(n[1] * Math.min(560 / n[0], dayMax / n[1])) : dayMax;
+  }
+  const titleH = gameH + (dayH ? dayH + NIGHT_TITLE_GAP : 0);
+  let headH: number = NIGHT_HEAD_H;
+  let footH = 0;
+  let breakdownRows: number | null = null;
+  if (input.layout === 'leaderboard') {
+    const lb = lbLayout(input);
+    headH = LB_PILL_H;
+    footH = lb.podium ? lb.rowsH : 0;
   } else if (input.layout === 'profile' || input.layout === 'moment') {
     headH = 0;
-    footH = 0;
+  } else if (input.layout === 'daily-sweep') {
+    headH = SHARE_SPACE.info;
+    footH = SHARE_SPACE.stats;
+  } else {
+    const bd = shareBreakdown(input, 'date' in input && input.date ? shareDayKey(input.date) : undefined);
+    if (bd) {
+      breakdownRows = bd.rows.length;
+      footH = breakdownBlockHeight(bd.rows.length);
+    }
   }
-  const plan = planShareCard({ titleH, headH, footH, heroH: extra.heroH, frame: extra.frame }, (maxH) => boardBlockHeight(input, BOARD_W, maxH));
-  return { plan, titleH, hook };
+  // 2-3 players (no rows under the podium) stay 4:5; more rows grow the card to 3:4, then the podium scales down.
+  const ceilingH = input.layout === 'leaderboard' && footH === 0 && lbLayout(input).podium ? 1350 : undefined;
+  const plan = planShareCard({ titleH, headH, footH, heroH: extra.heroH, frame: extra.frame, maxH: ceilingH }, (maxH) => boardBlockHeight(input, BOARD_W, maxH));
+  return { plan, titleH, hook: '', headH, footH, dayH, breakdownRows };
 }
 
 /** What a share card celebrates: the hero's result for this input (item 46). */
@@ -2017,8 +2049,8 @@ export interface ShareRenderOpts {
   hero?: ShareHeroResult | null;
 }
 
-/** A 1080 square around a message card: the card scaled to fit, centered on its own wallpaper tint. */
-function reframeSquare(card: HTMLCanvasElement, tint: readonly string[]): HTMLCanvasElement {
+/** A 1080 square around a message card: the card scaled to fit, centered on the night gradient. */
+function reframeSquare(card: HTMLCanvasElement): HTMLCanvasElement {
   const size = 1080;
   const dpr = card.width / SHARE_W;
   const out = document.createElement('canvas');
@@ -2026,15 +2058,31 @@ function reframeSquare(card: HTMLCanvasElement, tint: readonly string[]): HTMLCa
   out.height = size * dpr;
   const c = out.getContext('2d');
   if (!c) return card;
-  const g = c.createLinearGradient(0, 0, 0, out.height);
-  g.addColorStop(0, tint[0] ?? BG);
-  g.addColorStop(1, tint[2] ?? tint[1] ?? BG);
-  c.fillStyle = g;
-  c.fillRect(0, 0, out.width, out.height);
+  drawNightBackground(c, out.width, out.height);
   const k = Math.min(out.width / card.width, out.height / card.height);
   const w = card.width * k, h = card.height * k;
   c.drawImage(card, (out.width - w) / 2, (out.height - h) / 2, w, h);
   return out;
+}
+
+/** The podium's pictures: the stage, the sleeping R and each standing mascot (null where one failed). */
+async function loadPodiumAssets(input: ShareLeaderboardInput, filled: number, podiumW: number): Promise<PodiumAssets> {
+  const rows = input.rows.slice(0, filled);
+  const avatars = rows.map((row) => row.avatar ?? shareAvatarFor(row.avatarRow ?? null, row.name, row.avatarRow?.accent_color ?? null));
+  const nameSize = Math.round(podiumW * 0.068);
+  const [stage, sleepingR, mascots, names] = await Promise.all([
+    loadShareImage([artSrc('art-podium-stage')], 4000),
+    loadShareImage([artSrc('art-scene-r-asleep')]),
+    Promise.all(avatars.map((a, i) => loadPodiumMascot(a, (Math.min(3, i + 1)) as 1 | 2 | 3, 480))),
+    Promise.all(rows.map((row, i) => {
+      const a = avatars[i];
+      const cfg = a.kind === 'player' ? a.config : null;
+      const accent = cfg ? nameColorHex(cfg.bg, cfg.color) : '#c4b5fd';
+      const glow = cfg ? secondaryColorHex(cfg.patternColor) : '#7c3aed';
+      return renderBubbleName((row.isYou ? 'YOU' : row.name).toUpperCase(), accent, glow, nameSize);
+    })),
+  ]);
+  return { stage, sleepingR, mascots, names };
 }
 
 export async function generateShareImage(input: ShareImageInput, opts: ShareRenderOpts = {}): Promise<Blob | null> {
@@ -2045,25 +2093,36 @@ export async function generateShareImage(input: ShareImageInput, opts: ShareRend
 
   const date = ('date' in input && input.date) || new Date(getTodayLocal() + 'T00:00:00');
   const day = shareDayKey(date);
-  const { wall, title, tint, fallbackTitle, fallbackColor } = shareCardArt(input);
-  const [art, castImgs] = await Promise.all([
+  const { title, fallbackTitle, fallbackColor } = shareCardArt(input);
+  // Night style: in season the title is the season's art (art-title-halloween-<mode>), else the standard title art.
+  const season = activeSeason();
+  const swapped = title ? seasonalTitle(title, season) : null;
+  const isLb = input.layout === 'leaderboard';
+  const dayName: ArtName = DAY_ART[date.getDay()];
+  const lbPlan = isLb ? lbLayout(input) : null;
+  const [art, castImgs, dayImg, podiumAssets] = await Promise.all([
     loadShareArt({
-      wall,
       title,
+      titleSrc: swapped?.src ?? null,
       icons: input.layout === 'daily-sweep' ? input.games.map((g) => g.mode) : undefined,
     }),
     loadCastImages(),
+    isLb ? loadShareImage([artSrc(dayName)]) : Promise.resolve(null),
+    isLb && lbPlan?.podium ? loadPodiumAssets(input, lbPlan.filled, podiumGeometry(1000).w) : Promise.resolve(null),
   ]);
 
   // Item 46: the sender's mascot, big and posed by the result (no band for a guest, or on a share with no result).
   const frame: ShareFrame = opts.frame === 'story' ? 'story' : 'message';
   const sender = getShareSender();
   const heroResult = opts.hero === null ? null : opts.hero ?? shareHeroResultOf(input);
-  const halloween = activeSeason() !== null;
+  const halloween = season !== null;
   const heroArt = sender && heroResult ? await loadShareHero(sender, heroResult, halloween, 360) : null;
   const heroH = heroArt?.img ? shareHeroBand(frame, true) : 0;
 
-  const { plan, titleH, hook } = shareCardPlan(input, titleNatural(art), { heroH, frame });
+  const dayNat: readonly [number, number] | null | undefined = !isLb ? undefined : dayImg
+    ? (dayImg.naturalWidth && dayImg.naturalHeight ? [dayImg.naturalWidth, dayImg.naturalHeight] : ART_SIZE[dayName])
+    : null;
+  const { plan, titleH, headH, dayH } = shareCardPlan(input, titleNatural(art), { heroH, frame, dayNat });
   const height = plan.height;
 
   const canvas = document.createElement('canvas');
@@ -2074,17 +2133,32 @@ export async function generateShareImage(input: ShareImageInput, opts: ShareRend
   if (!ctx) return null;
   ctx.scale(dpr, dpr);
 
-  // Background fill under everything (the wallpaper covers it once loaded).
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, width, height);
-  drawWallpaper(ctx, width, height, art.wall, tint);
-  drawCardTitle(ctx, art, width, plan.titleTop, titleH, fallbackTitle, fallbackColor);
+  // The night gradient, then the title art (a leaderboard card: the day title above the game title).
+  drawNightBackground(ctx, width, height);
+  if (isLb && dayH > 0 && dayImg && dayNat) {
+    drawImageContain(ctx, dayImg, width / 2, plan.titleTop, 560, dayH, dayNat);
+    drawCardTitle(ctx, art, width, plan.titleTop + dayH + NIGHT_TITLE_GAP, titleH - dayH - NIGHT_TITLE_GAP, fallbackTitle, fallbackColor);
+  } else {
+    drawCardTitle(ctx, art, width, plan.titleTop, titleH, fallbackTitle, fallbackColor);
+  }
   if (heroArt && heroH > 0) drawShareHero(ctx, heroArt, width / 2, plan.heroTop + SHARE_HERO_GAP / 2, heroH - SHARE_HERO_GAP);
   const box: Box = { top: plan.boardTop, h: plan.boardH };
   const infoY = plan.headTop + SHARE_SPACE.info / 2;
 
   if (input.layout === 'leaderboard') {
-    drawLeaderboardCard(ctx, input, width, plan, hook);
+    const lb = lbPlan!;
+    // "DAILY LEADERBOARD · Oct 16, 2026 · #193 · as of 9:53 AM" in a soft pill (the mode joins it when no game title is lettered).
+    const named = art.titleName?.startsWith('art-game-') ?? false;
+    const pill = [LB_LABEL[input.variant], input.dateChip, !named ? input.modeChip : null].filter(Boolean).join(' · ');
+    drawInfoPill(ctx, pill, width / 2, plan.headTop);
+    const pad = 60;
+    if (lb.podium) {
+      const geo = podiumGeometry(plan.boardH);
+      drawPodium(ctx, lb, input.rows, podiumAssets!, width / 2, plan.boardTop + Math.max(0, (plan.boardH - geo.h) / 2), geo);
+      drawNightRows(ctx, lb, input.youRankLine, false, pad, plan.footTop, width - pad * 2);
+    } else {
+      drawNightRows(ctx, lb, input.youRankLine, input.variant === 'flawlessStreak', pad, plan.boardTop + Math.max(0, (plan.boardH - lb.rowsH) / 2), width - pad * 2);
+    }
   } else if (input.layout === 'moment') {
     drawMomentCard(ctx, input, width, box);
   } else if (input.layout === 'profile') {
@@ -2096,7 +2170,9 @@ export async function generateShareImage(input: ShareImageInput, opts: ShareRend
     drawDailySweepRows(ctx, input, width, box, art);
     drawCardStats(ctx, input, width, plan.footTop, null);
   } else {
-    drawInfoLine(ctx, shareInfoLine(input, date), width / 2, infoY);
+    // Title, info line, status line and the three chips (the finished screen's), then the board, then the breakdown.
+    const points = typeof input.points === 'number' ? input.points : fallbackSharePoints(input, day);
+    drawNightHead(ctx, input, width, plan.headTop, date, points);
     if (input.layout === 'single') drawSingle(ctx, input, width, box);
     else if (input.layout === 'multi') drawMulti(ctx, input, width, box);
     else if (input.layout === 'gauntlet') drawGauntlet(ctx, input, width, box);
@@ -2110,13 +2186,13 @@ export async function generateShareImage(input: ShareImageInput, opts: ShareRend
     else if (input.layout === 'crossword') drawCrossword(ctx, input, width, box);
     else if (input.layout === 'scramble') drawScramble(ctx, input, width, box);
 
-    // Purple guesses · blue time · gold points (recomputed when the caller didn't pass them).
-    const points = typeof input.points === 'number' ? input.points : fallbackSharePoints(input, day);
-    drawCardStats(ctx, input, width, plan.footTop, points);
+    const bd = shareBreakdown(input, day);
+    if (bd) drawBreakdownPanel(ctx, bd, 70, plan.footTop, width - 140);
   }
+  void headH;
 
   // S3: the cast IS the wordmark — the ten heroes standing together over "wordocious.com".
   drawCastWordmark(ctx, plan.cast, castImgs, width / 2, plan.castBase, plan.urlY);
 
-  return canvasToPng(opts.frame === 'square' ? reframeSquare(canvas, tint) : canvas);
+  return canvasToPng(opts.frame === 'square' ? reframeSquare(canvas) : canvas);
 }
