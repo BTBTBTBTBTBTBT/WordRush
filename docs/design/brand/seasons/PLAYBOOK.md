@@ -49,6 +49,12 @@ Deliverance, ProperNoundle, Starsweep, Sudocious, Crosswordocious, Kindred, Spyg
 Codebreaker), every POCKET game (Rock Paper Scissors, Tic-Tac-Tile, Call It, Pass the Puzzle, Ghost, Word Chain), VS
 Battle, Unlimited, pages (Dailies + alt, Puzzles, Leaderboard, Stats, Friends, Word of the Day), "HAPPY <SEASON>" + alt,
 2–3 labels (e.g. GIVE THANKS / GOBBLE GOBBLE).
+**Time of day (founder 10-16: "different wallpapers to match the time of day"):** every season's walls come in four
+looks from the same scene — MORNING (sunrise), DAY (blue sky), EVENING (golden dusk, windows glowing), NIGHT — picked
+from the player's local clock (proposed: morning 5–10, day 10–16, evening 16–19, night 19–5) with a slow crossfade;
+a static image swap only (no per-frame cost). Daytime skies are bright, so the readability gate must pass for each
+time (light cards or a soft scrim in daytime — decided from the mockup in `seasons/time-of-day/`). The code-drawn
+wall engine takes a time-of-day parameter; never fork the script per time.
 **Walls (code-drawn, full resolution):** home, leaderboard, stats, friends, games — each phone + `-wide`. Same scene
 quality as Halloween (sky, moon/sun + glow, flying silhouettes, horizon silhouette with a per-screen focal), calm
 center/bottom, a lighter band where page titles sit.
