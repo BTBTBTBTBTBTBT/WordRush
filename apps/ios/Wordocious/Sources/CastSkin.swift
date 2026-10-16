@@ -93,7 +93,7 @@ enum CastSkin {
         switchState = on
         switchLock.unlock()
         if changed { invalidate() }
-        if changed { DispatchQueue.main.async { ThemeManager.shared.seasonEpoch += 1 } }
+        if changed { DispatchQueue.main.async { ThemeManager.shared.seasonEpoch += 1; HomeBannerView.prewarmStage() } }
     }
 
     /// The image set to draw for a cast member: its season skin when one is active

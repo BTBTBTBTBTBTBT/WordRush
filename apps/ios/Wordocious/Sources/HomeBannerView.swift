@@ -1055,8 +1055,11 @@ private struct StageArtLayer: View {
 
     var body: some View {
         Group {
+            // 10-16 perf: never draw `Image(name)` as the placeholder — even at opacity 0 SwiftUI decodes the full 1586 x 992
+            // art on the main thread (a ~0.5 s frame when Home appears with a not-yet-decoded time-of-day stage). Nothing
+            // shows until the off-main decode lands, then it fades in.
             if let img { Image(uiImage: img).resizable().interpolation(.high) }
-            else { Image(name).resizable().interpolation(.high) }
+            else { Color.clear }
         }
         .frame(width: rect.width, height: rect.height)
         .offset(x: rect.minX, y: rect.minY)
@@ -1066,7 +1069,10 @@ private struct StageArtLayer: View {
         .task(id: Int(rect.width)) {
             guard !ready else { return }
             let n = name, p = rect.width
-            let ui = await Task.detached(priority: .userInitiated) { ArtThumbs.uiImage(n, points: p) }.value
+            // The downsample, or (when the art is already about the zone's size) the full image decoded off main.
+            let ui = await Task.detached(priority: .userInitiated) {
+                ArtThumbs.uiImage(n, points: p) ?? UIImage(named: n)?.preparingForDisplay()
+            }.value
             img = ui
             withAnimation(.easeOut(duration: 0.25)) { ready = true }
         }

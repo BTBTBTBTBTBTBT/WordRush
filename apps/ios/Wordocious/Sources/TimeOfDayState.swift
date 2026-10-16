@@ -129,6 +129,7 @@ final class TimeOfDayState: ObservableObject {
         guard force || s != Self.appliedSlot else { return }
         setApplied(s)
         guard seasonShowing else { return }
+        HomeBannerView.prewarmStage()   // the new slot's stage, decoded off main before Home draws it
         let bump = { ThemeManager.shared.seasonEpoch += 1 }
         if !Theme.reduceMotion { withAnimation(.easeInOut(duration: TimeOfDay.fadeSeconds), bump) } else { bump() }
     }
