@@ -59,3 +59,4 @@ export * from './theme-surfaces';
 export * from './leaderboard-stage';
 export * from './whats-new';
 export * from './share-hero';
+export * from './share-spoilers';

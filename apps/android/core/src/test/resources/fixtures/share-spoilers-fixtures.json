@@ -1,0 +1,2111 @@
+{
+  "variants": [
+    "clean",
+    "full"
+  ],
+  "subtitles": {
+    "regions": [
+      "Regions only",
+      "Stars revealed"
+    ],
+    "sudoku": [
+      "Givens only",
+      "Digits revealed"
+    ],
+    "crossword": [
+      "Grid only",
+      "Letters revealed"
+    ],
+    "groups": [
+      "Colors only",
+      "Words revealed"
+    ],
+    "wordsearch": [
+      "Paths only",
+      "Letters revealed"
+    ],
+    "hub": [
+      "Rank only",
+      "Words revealed"
+    ],
+    "scramble": [
+      "Stats only",
+      "Answer revealed"
+    ],
+    "ladder": [
+      "Rungs only",
+      "Words revealed"
+    ],
+    "cryptogram": [
+      "Shape only",
+      "Quote revealed"
+    ]
+  },
+  "defaultSubtitles": [
+    "Colors only",
+    "Letters revealed"
+  ],
+  "copy": [
+    {
+      "mode": "regions",
+      "clean": {
+        "title": "No spoilers",
+        "subtitle": "Regions only"
+      },
+      "full": {
+        "title": "Full results",
+        "subtitle": "Stars revealed"
+      }
+    },
+    {
+      "mode": "sudoku",
+      "clean": {
+        "title": "No spoilers",
+        "subtitle": "Givens only"
+      },
+      "full": {
+        "title": "Full results",
+        "subtitle": "Digits revealed"
+      }
+    },
+    {
+      "mode": "crossword",
+      "clean": {
+        "title": "No spoilers",
+        "subtitle": "Grid only"
+      },
+      "full": {
+        "title": "Full results",
+        "subtitle": "Letters revealed"
+      }
+    },
+    {
+      "mode": "groups",
+      "clean": {
+        "title": "No spoilers",
+        "subtitle": "Colors only"
+      },
+      "full": {
+        "title": "Full results",
+        "subtitle": "Words revealed"
+      }
+    },
+    {
+      "mode": "wordsearch",
+      "clean": {
+        "title": "No spoilers",
+        "subtitle": "Paths only"
+      },
+      "full": {
+        "title": "Full results",
+        "subtitle": "Letters revealed"
+      }
+    },
+    {
+      "mode": "hub",
+      "clean": {
+        "title": "No spoilers",
+        "subtitle": "Rank only"
+      },
+      "full": {
+        "title": "Full results",
+        "subtitle": "Words revealed"
+      }
+    },
+    {
+      "mode": "scramble",
+      "clean": {
+        "title": "No spoilers",
+        "subtitle": "Stats only"
+      },
+      "full": {
+        "title": "Full results",
+        "subtitle": "Answer revealed"
+      }
+    },
+    {
+      "mode": "ladder",
+      "clean": {
+        "title": "No spoilers",
+        "subtitle": "Rungs only"
+      },
+      "full": {
+        "title": "Full results",
+        "subtitle": "Words revealed"
+      }
+    },
+    {
+      "mode": "cryptogram",
+      "clean": {
+        "title": "No spoilers",
+        "subtitle": "Shape only"
+      },
+      "full": {
+        "title": "Full results",
+        "subtitle": "Quote revealed"
+      }
+    },
+    {
+      "mode": "practice",
+      "clean": {
+        "title": "No spoilers",
+        "subtitle": "Colors only"
+      },
+      "full": {
+        "title": "Full results",
+        "subtitle": "Letters revealed"
+      }
+    },
+    {
+      "mode": "quordle",
+      "clean": {
+        "title": "No spoilers",
+        "subtitle": "Colors only"
+      },
+      "full": {
+        "title": "Full results",
+        "subtitle": "Letters revealed"
+      }
+    },
+    {
+      "mode": "nope",
+      "clean": {
+        "title": "No spoilers",
+        "subtitle": "Colors only"
+      },
+      "full": {
+        "title": "Full results",
+        "subtitle": "Letters revealed"
+      }
+    }
+  ],
+  "starsweep": [
+    {
+      "input": {
+        "n": 8,
+        "regions": "0111112201111222001113320011332200113442005536440077766400076664",
+        "solution": "17046253",
+        "board": "x*...x....x....**...x....x..*.x....x..*.x.*..x....x..*.x...*x..."
+      },
+      "clean": {
+        "kind": "starsweep",
+        "n": 8,
+        "regions": "0111112201111222001113320011332200113442005536440077766400076664",
+        "slots": [
+          0,
+          2,
+          5,
+          3,
+          1,
+          7,
+          6,
+          4
+        ],
+        "solved": true,
+        "stars": null,
+        "crosses": null
+      },
+      "full": {
+        "kind": "starsweep",
+        "n": 8,
+        "regions": "0111112201111222001113320011332200113442005536440077766400076664",
+        "slots": [
+          0,
+          2,
+          5,
+          3,
+          1,
+          7,
+          6,
+          4
+        ],
+        "solved": true,
+        "stars": [
+          1,
+          15,
+          16,
+          28,
+          38,
+          42,
+          53,
+          59
+        ],
+        "crosses": [
+          0,
+          5,
+          10,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60
+        ]
+      }
+    },
+    {
+      "input": {
+        "n": 8,
+        "regions": "0111112201111222001113320011332200113442005536440077766400076664",
+        "solution": "17046253",
+        "board": "x*...x....x....*x...x....x..*.x....x..*.x.*..x....x..*.x...*x..."
+      },
+      "clean": {
+        "kind": "starsweep",
+        "n": 8,
+        "regions": "0111112201111222001113320011332200113442005536440077766400076664",
+        "slots": [
+          0,
+          2,
+          5,
+          3,
+          1,
+          7,
+          6,
+          4
+        ],
+        "solved": false,
+        "stars": null,
+        "crosses": null
+      },
+      "full": {
+        "kind": "starsweep",
+        "n": 8,
+        "regions": "0111112201111222001113320011332200113442005536440077766400076664",
+        "slots": [
+          0,
+          2,
+          5,
+          3,
+          1,
+          7,
+          6,
+          4
+        ],
+        "solved": false,
+        "stars": [
+          1,
+          15,
+          28,
+          38,
+          42,
+          53,
+          59
+        ],
+        "crosses": [
+          0,
+          5,
+          10,
+          16,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60
+        ]
+      }
+    }
+  ],
+  "sudocious": [
+    {
+      "input": {
+        "givens": "080000170004067090761090500010289035003010002800003000208040010030670000070000050",
+        "solution": "982534176354167298761892543617289435543716982829453761298345617435671829176928354",
+        "board": "982534176354167298761892543617289435543716982829453761298345617435671829176928354"
+      },
+      "clean": {
+        "kind": "sudocious",
+        "givens": "080000170004067090761090500010289035003010002800003000208040010030670000070000050",
+        "cells": "fgffffggfffgfggfgfgggfgfgfffgfgggfggffgfgfffggffffgfffgfgfgffgffgfggfffffgfffffgf",
+        "solved": true,
+        "board": null
+      },
+      "full": {
+        "kind": "sudocious",
+        "givens": "080000170004067090761090500010289035003010002800003000208040010030670000070000050",
+        "cells": "fgffffggfffgfggfgfgggfgfgfffgfgggfggffgfgfffggffffgfffgfgfgffgffgfggfffffgfffffgf",
+        "solved": true,
+        "board": "982534176354167298761892543617289435543716982829453761298345617435671829176928354"
+      }
+    },
+    {
+      "input": {
+        "givens": "080000170004067090761090500010289035003010002800003000208040010030670000070000050",
+        "solution": "982534176354167298761892543617289435543716982829453761298345617435671829176928354",
+        "board": "182534176354167298761892543617289435543716982829453761298345617435671829176928354"
+      },
+      "clean": {
+        "kind": "sudocious",
+        "givens": "080000170004067090761090500010289035003010002800003000208040010030670000070000050",
+        "cells": "wgffffggfffgfggfgfgggfgfgfffgfgggfggffgfgfffggffffgfffgfgfgffgffgfggfffffgfffffgf",
+        "solved": false,
+        "board": null
+      },
+      "full": {
+        "kind": "sudocious",
+        "givens": "080000170004067090761090500010289035003010002800003000208040010030670000070000050",
+        "cells": "wgffffggfffgfggfgfgggfgfgfffgfgggfggffgfgfffggffffgfffgfgfgffgffgfggfffffgfffffgf",
+        "solved": false,
+        "board": "182534176354167298761892543617289435543716982829453761298345617435671829176928354"
+      }
+    },
+    {
+      "input": {
+        "givens": "080000170004067090761090500010289035003010002800003000208040010030670000070000050",
+        "solution": "982534176354167298761892543617289435543716982829453761298345617435671829176928354",
+        "board": "080000170004067090761090500010289035003010002800003000208040010030670000070000050"
+      },
+      "clean": {
+        "kind": "sudocious",
+        "givens": "080000170004067090761090500010289035003010002800003000208040010030670000070000050",
+        "cells": ".g....gg...g.gg.g.ggg.g.g...g.ggg.gg..g.g...gg....g...g.g.g..g..g.gg.....g.....g.",
+        "solved": false,
+        "board": null
+      },
+      "full": {
+        "kind": "sudocious",
+        "givens": "080000170004067090761090500010289035003010002800003000208040010030670000070000050",
+        "cells": ".g....gg...g.gg.g.ggg.g.g...g.ggg.gg..g.g...gg....g...g.g.g..g..g.gg.....g.....g.",
+        "solved": false,
+        "board": "080000170004067090761090500010289035003010002800003000208040010030670000070000050"
+      }
+    }
+  ],
+  "crossword": [
+    {
+      "input": {
+        "w": 9,
+        "h": 11,
+        "solution": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "fill": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA...."
+      },
+      "clean": {
+        "kind": "crossword",
+        "w": 9,
+        "h": 11,
+        "cells": "....#......#####..#.#.#..#.##########.#.#..#.#.#..###.####.#......#.#...#######..#..#.#...#.###....",
+        "solved": true,
+        "letters": null
+      },
+      "full": {
+        "kind": "crossword",
+        "w": 9,
+        "h": 11,
+        "cells": "....#......#####..#.#.#..#.##########.#.#..#.#.#..###.####.#......#.#...#######..#..#.#...#.###....",
+        "solved": true,
+        "letters": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA...."
+      }
+    },
+    {
+      "input": {
+        "w": 9,
+        "h": 11,
+        "solution": "....M......BOOTS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA....",
+        "fill": "....Z......BO_TS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA...."
+      },
+      "clean": {
+        "kind": "crossword",
+        "w": 9,
+        "h": 11,
+        "cells": "....x......##_##..#.#.#..#.##########.#.#..#.#.#..###.####.#......#.#...#######..#..#.#...#.###....",
+        "solved": false,
+        "letters": null
+      },
+      "full": {
+        "kind": "crossword",
+        "w": 9,
+        "h": 11,
+        "cells": "....x......##_##..#.#.#..#.##########.#.#..#.#.#..###.####.#......#.#...#######..#..#.#...#.###....",
+        "solved": false,
+        "letters": "....Z......BO_TS..C.R.U..H.HEARTBEATE.I.H..I.S.N..EAR.TEST.L......A.B...EYEBROW..A..L.W...T.TEA...."
+      }
+    }
+  ],
+  "kindred": [
+    {
+      "input": {
+        "groups": [
+          {
+            "tier": 1,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 4,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          }
+        ],
+        "solvedTiers": [
+          4,
+          3,
+          2,
+          1
+        ],
+        "mistakes": 0
+      },
+      "clean": {
+        "kind": "kindred",
+        "rows": [
+          {
+            "tier": 4,
+            "solved": true,
+            "label": null,
+            "words": null
+          },
+          {
+            "tier": 3,
+            "solved": true,
+            "label": null,
+            "words": null
+          },
+          {
+            "tier": 2,
+            "solved": true,
+            "label": null,
+            "words": null
+          },
+          {
+            "tier": 1,
+            "solved": true,
+            "label": null,
+            "words": null
+          }
+        ],
+        "mistakes": 0,
+        "solved": true
+      },
+      "full": {
+        "kind": "kindred",
+        "rows": [
+          {
+            "tier": 4,
+            "solved": true,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          },
+          {
+            "tier": 3,
+            "solved": true,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 2,
+            "solved": true,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 1,
+            "solved": true,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          }
+        ],
+        "mistakes": 0,
+        "solved": true
+      }
+    },
+    {
+      "input": {
+        "groups": [
+          {
+            "tier": 1,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 4,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          }
+        ],
+        "solvedTiers": [
+          3,
+          1
+        ],
+        "mistakes": 2
+      },
+      "clean": {
+        "kind": "kindred",
+        "rows": [
+          {
+            "tier": 3,
+            "solved": true,
+            "label": null,
+            "words": null
+          },
+          {
+            "tier": 1,
+            "solved": true,
+            "label": null,
+            "words": null
+          },
+          {
+            "tier": 2,
+            "solved": false,
+            "label": null,
+            "words": null
+          },
+          {
+            "tier": 4,
+            "solved": false,
+            "label": null,
+            "words": null
+          }
+        ],
+        "mistakes": 2,
+        "solved": false
+      },
+      "full": {
+        "kind": "kindred",
+        "rows": [
+          {
+            "tier": 3,
+            "solved": true,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 1,
+            "solved": true,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          },
+          {
+            "tier": 2,
+            "solved": false,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 4,
+            "solved": false,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          }
+        ],
+        "mistakes": 2,
+        "solved": false
+      }
+    },
+    {
+      "input": {
+        "groups": [
+          {
+            "tier": 1,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 4,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          }
+        ],
+        "solvedTiers": [],
+        "mistakes": 4
+      },
+      "clean": {
+        "kind": "kindred",
+        "rows": [
+          {
+            "tier": 1,
+            "solved": false,
+            "label": null,
+            "words": null
+          },
+          {
+            "tier": 2,
+            "solved": false,
+            "label": null,
+            "words": null
+          },
+          {
+            "tier": 3,
+            "solved": false,
+            "label": null,
+            "words": null
+          },
+          {
+            "tier": 4,
+            "solved": false,
+            "label": null,
+            "words": null
+          }
+        ],
+        "mistakes": 4,
+        "solved": false
+      },
+      "full": {
+        "kind": "kindred",
+        "rows": [
+          {
+            "tier": 1,
+            "solved": false,
+            "label": "In the mouth",
+            "words": [
+              "TONGUE",
+              "MOLAR",
+              "GUM",
+              "PALATE"
+            ]
+          },
+          {
+            "tier": 2,
+            "solved": false,
+            "label": "Sticky stuff",
+            "words": [
+              "PASTE",
+              "GLUE",
+              "TAR",
+              "RESIN"
+            ]
+          },
+          {
+            "tier": 3,
+            "solved": false,
+            "label": "___drop",
+            "words": [
+              "EYE",
+              "RAIN",
+              "LEMON",
+              "COUGH"
+            ]
+          },
+          {
+            "tier": 4,
+            "solved": false,
+            "label": "Hidden EAR",
+            "words": [
+              "BEARD",
+              "PEARL",
+              "LEARN",
+              "YEARN"
+            ]
+          }
+        ],
+        "mistakes": 4,
+        "solved": false
+      }
+    }
+  ],
+  "spyglass": [
+    {
+      "input": {
+        "grid": "SYSNCUPSRIUTMEADOWSENHBLANKETDSENCIOIALTHRPICKLEEHIMGPOPNSIDNOEOHGANATESCRACKERSANOESFUMLHLSHADERAAE",
+        "words": [
+          {
+            "w": "SUNSHINE",
+            "r": 0,
+            "c": 0,
+            "d": "S"
+          },
+          {
+            "w": "CRACKERS",
+            "r": 7,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "COOKIES",
+            "r": 7,
+            "c": 2,
+            "d": "NE"
+          },
+          {
+            "w": "BLANKET",
+            "r": 2,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "THERMOS",
+            "r": 1,
+            "c": 1,
+            "d": "S"
+          },
+          {
+            "w": "MEADOW",
+            "r": 1,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "PICKLE",
+            "r": 4,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "SHADE",
+            "r": 9,
+            "c": 1,
+            "d": "E"
+          },
+          {
+            "w": "PLATE",
+            "r": 5,
+            "c": 5,
+            "d": "NE"
+          },
+          {
+            "w": "CUPS",
+            "r": 0,
+            "c": 4,
+            "d": "E"
+          }
+        ],
+        "found": [
+          "CUPS",
+          "PLATE",
+          "SHADE",
+          "PICKLE",
+          "MEADOW",
+          "THERMOS",
+          "BLANKET",
+          "COOKIES",
+          "CRACKERS",
+          "SUNSHINE"
+        ]
+      },
+      "clean": {
+        "kind": "spyglass",
+        "n": 10,
+        "paths": [
+          {
+            "cells": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "word": null
+          },
+          {
+            "cells": [
+              55,
+              46,
+              37,
+              28,
+              19
+            ],
+            "word": null
+          },
+          {
+            "cells": [
+              91,
+              92,
+              93,
+              94,
+              95
+            ],
+            "word": null
+          },
+          {
+            "cells": [
+              42,
+              43,
+              44,
+              45,
+              46,
+              47
+            ],
+            "word": null
+          },
+          {
+            "cells": [
+              12,
+              13,
+              14,
+              15,
+              16,
+              17
+            ],
+            "word": null
+          },
+          {
+            "cells": [
+              11,
+              21,
+              31,
+              41,
+              51,
+              61,
+              71
+            ],
+            "word": null
+          },
+          {
+            "cells": [
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28
+            ],
+            "word": null
+          },
+          {
+            "cells": [
+              72,
+              63,
+              54,
+              45,
+              36,
+              27,
+              18
+            ],
+            "word": null
+          },
+          {
+            "cells": [
+              72,
+              73,
+              74,
+              75,
+              76,
+              77,
+              78,
+              79
+            ],
+            "word": null
+          },
+          {
+            "cells": [
+              0,
+              10,
+              20,
+              30,
+              40,
+              50,
+              60,
+              70
+            ],
+            "word": null
+          }
+        ],
+        "found": 10,
+        "total": 10,
+        "solved": true,
+        "letters": null
+      },
+      "full": {
+        "kind": "spyglass",
+        "n": 10,
+        "paths": [
+          {
+            "cells": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "word": "CUPS"
+          },
+          {
+            "cells": [
+              55,
+              46,
+              37,
+              28,
+              19
+            ],
+            "word": "PLATE"
+          },
+          {
+            "cells": [
+              91,
+              92,
+              93,
+              94,
+              95
+            ],
+            "word": "SHADE"
+          },
+          {
+            "cells": [
+              42,
+              43,
+              44,
+              45,
+              46,
+              47
+            ],
+            "word": "PICKLE"
+          },
+          {
+            "cells": [
+              12,
+              13,
+              14,
+              15,
+              16,
+              17
+            ],
+            "word": "MEADOW"
+          },
+          {
+            "cells": [
+              11,
+              21,
+              31,
+              41,
+              51,
+              61,
+              71
+            ],
+            "word": "THERMOS"
+          },
+          {
+            "cells": [
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28
+            ],
+            "word": "BLANKET"
+          },
+          {
+            "cells": [
+              72,
+              63,
+              54,
+              45,
+              36,
+              27,
+              18
+            ],
+            "word": "COOKIES"
+          },
+          {
+            "cells": [
+              72,
+              73,
+              74,
+              75,
+              76,
+              77,
+              78,
+              79
+            ],
+            "word": "CRACKERS"
+          },
+          {
+            "cells": [
+              0,
+              10,
+              20,
+              30,
+              40,
+              50,
+              60,
+              70
+            ],
+            "word": "SUNSHINE"
+          }
+        ],
+        "found": 10,
+        "total": 10,
+        "solved": true,
+        "letters": "SYSNCUPSRIUTMEADOWSENHBLANKETDSENCIOIALTHRPICKLEEHIMGPOPNSIDNOEOHGANATESCRACKERSANOESFUMLHLSHADERAAE"
+      }
+    },
+    {
+      "input": {
+        "grid": "SYSNCUPSRIUTMEADOWSENHBLANKETDSENCIOIALTHRPICKLEEHIMGPOPNSIDNOEOHGANATESCRACKERSANOESFUMLHLSHADERAAE",
+        "words": [
+          {
+            "w": "SUNSHINE",
+            "r": 0,
+            "c": 0,
+            "d": "S"
+          },
+          {
+            "w": "CRACKERS",
+            "r": 7,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "COOKIES",
+            "r": 7,
+            "c": 2,
+            "d": "NE"
+          },
+          {
+            "w": "BLANKET",
+            "r": 2,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "THERMOS",
+            "r": 1,
+            "c": 1,
+            "d": "S"
+          },
+          {
+            "w": "MEADOW",
+            "r": 1,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "PICKLE",
+            "r": 4,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "SHADE",
+            "r": 9,
+            "c": 1,
+            "d": "E"
+          },
+          {
+            "w": "PLATE",
+            "r": 5,
+            "c": 5,
+            "d": "NE"
+          },
+          {
+            "w": "CUPS",
+            "r": 0,
+            "c": 4,
+            "d": "E"
+          }
+        ],
+        "found": [
+          "SUNSHINE",
+          "CRACKERS",
+          "COOKIES"
+        ]
+      },
+      "clean": {
+        "kind": "spyglass",
+        "n": 10,
+        "paths": [
+          {
+            "cells": [
+              0,
+              10,
+              20,
+              30,
+              40,
+              50,
+              60,
+              70
+            ],
+            "word": null
+          },
+          {
+            "cells": [
+              72,
+              73,
+              74,
+              75,
+              76,
+              77,
+              78,
+              79
+            ],
+            "word": null
+          },
+          {
+            "cells": [
+              72,
+              63,
+              54,
+              45,
+              36,
+              27,
+              18
+            ],
+            "word": null
+          }
+        ],
+        "found": 3,
+        "total": 10,
+        "solved": false,
+        "letters": null
+      },
+      "full": {
+        "kind": "spyglass",
+        "n": 10,
+        "paths": [
+          {
+            "cells": [
+              0,
+              10,
+              20,
+              30,
+              40,
+              50,
+              60,
+              70
+            ],
+            "word": "SUNSHINE"
+          },
+          {
+            "cells": [
+              72,
+              73,
+              74,
+              75,
+              76,
+              77,
+              78,
+              79
+            ],
+            "word": "CRACKERS"
+          },
+          {
+            "cells": [
+              72,
+              63,
+              54,
+              45,
+              36,
+              27,
+              18
+            ],
+            "word": "COOKIES"
+          }
+        ],
+        "found": 3,
+        "total": 10,
+        "solved": false,
+        "letters": "SYSNCUPSRIUTMEADOWSENHBLANKETDSENCIOIALTHRPICKLEEHIMGPOPNSIDNOEOHGANATESCRACKERSANOESFUMLHLSHADERAAE"
+      }
+    },
+    {
+      "input": {
+        "grid": "SYSNCUPSRIUTMEADOWSENHBLANKETDSENCIOIALTHRPICKLEEHIMGPOPNSIDNOEOHGANATESCRACKERSANOESFUMLHLSHADERAAE",
+        "words": [
+          {
+            "w": "SUNSHINE",
+            "r": 0,
+            "c": 0,
+            "d": "S"
+          },
+          {
+            "w": "CRACKERS",
+            "r": 7,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "COOKIES",
+            "r": 7,
+            "c": 2,
+            "d": "NE"
+          },
+          {
+            "w": "BLANKET",
+            "r": 2,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "THERMOS",
+            "r": 1,
+            "c": 1,
+            "d": "S"
+          },
+          {
+            "w": "MEADOW",
+            "r": 1,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "PICKLE",
+            "r": 4,
+            "c": 2,
+            "d": "E"
+          },
+          {
+            "w": "SHADE",
+            "r": 9,
+            "c": 1,
+            "d": "E"
+          },
+          {
+            "w": "PLATE",
+            "r": 5,
+            "c": 5,
+            "d": "NE"
+          },
+          {
+            "w": "CUPS",
+            "r": 0,
+            "c": 4,
+            "d": "E"
+          }
+        ],
+        "found": []
+      },
+      "clean": {
+        "kind": "spyglass",
+        "n": 10,
+        "paths": [],
+        "found": 0,
+        "total": 10,
+        "solved": false,
+        "letters": null
+      },
+      "full": {
+        "kind": "spyglass",
+        "n": 10,
+        "paths": [],
+        "found": 0,
+        "total": 10,
+        "solved": false,
+        "letters": "SYSNCUPSRIUTMEADOWSENHBLANKETDSENCIOIALTHRPICKLEEHIMGPOPNSIDNOEOHGANATESCRACKERSANOESFUMLHLSHADERAAE"
+      }
+    }
+  ],
+  "hubbub": [
+    {
+      "input": {
+        "letters": "UDELMNP",
+        "found": [
+          "DELUDED",
+          "DUDE",
+          "DUEL",
+          "DULL",
+          "DUMP",
+          "DUMPED",
+          "DUNE",
+          "DUPED",
+          "LULL",
+          "LUMP",
+          "MENU",
+          "MULE",
+          "NUDE",
+          "NULL",
+          "PENDULUM",
+          "PLUM",
+          "PLUME",
+          "PLUMP",
+          "PUDDLE",
+          "PULL",
+          "PULLED",
+          "PULP",
+          "PUMP",
+          "PUMPED",
+          "UNDUE"
+        ],
+        "points": 81,
+        "max": 81,
+        "wordCount": 25,
+        "pangramCount": 1
+      },
+      "clean": {
+        "kind": "hubbub",
+        "letters": "UDELMNP",
+        "rank": 9,
+        "rankName": "Pandemonium",
+        "points": 81,
+        "max": 81,
+        "found": 25,
+        "total": 25,
+        "pangrams": 1,
+        "pangramTotal": 1,
+        "words": null
+      },
+      "full": {
+        "kind": "hubbub",
+        "letters": "UDELMNP",
+        "rank": 9,
+        "rankName": "Pandemonium",
+        "points": 81,
+        "max": 81,
+        "found": 25,
+        "total": 25,
+        "pangrams": 1,
+        "pangramTotal": 1,
+        "words": [
+          "DELUDED",
+          "DUDE",
+          "DUEL",
+          "DULL",
+          "DUMP",
+          "DUMPED",
+          "DUNE",
+          "DUPED",
+          "LULL",
+          "LUMP",
+          "MENU",
+          "MULE",
+          "NUDE",
+          "NULL",
+          "PENDULUM",
+          "PLUM",
+          "PLUME",
+          "PLUMP",
+          "PUDDLE",
+          "PULL",
+          "PULLED",
+          "PULP",
+          "PUMP",
+          "PUMPED",
+          "UNDUE"
+        ]
+      }
+    },
+    {
+      "input": {
+        "letters": "UDELMNP",
+        "found": [
+          "PENDULUM",
+          "DELUDED",
+          "DUDE",
+          "DUEL"
+        ],
+        "points": 24,
+        "max": 81,
+        "wordCount": 25,
+        "pangramCount": 1
+      },
+      "clean": {
+        "kind": "hubbub",
+        "letters": "UDELMNP",
+        "rank": 3,
+        "rankName": "Banter",
+        "points": 24,
+        "max": 81,
+        "found": 4,
+        "total": 25,
+        "pangrams": 1,
+        "pangramTotal": 1,
+        "words": null
+      },
+      "full": {
+        "kind": "hubbub",
+        "letters": "UDELMNP",
+        "rank": 3,
+        "rankName": "Banter",
+        "points": 24,
+        "max": 81,
+        "found": 4,
+        "total": 25,
+        "pangrams": 1,
+        "pangramTotal": 1,
+        "words": [
+          "PENDULUM",
+          "DELUDED",
+          "DUDE",
+          "DUEL"
+        ]
+      }
+    },
+    {
+      "input": {
+        "letters": "UDELMNP",
+        "found": [],
+        "points": 0,
+        "max": 81,
+        "wordCount": 25,
+        "pangramCount": 1
+      },
+      "clean": {
+        "kind": "hubbub",
+        "letters": "UDELMNP",
+        "rank": 0,
+        "rankName": "Hush",
+        "points": 0,
+        "max": 81,
+        "found": 0,
+        "total": 25,
+        "pangrams": 0,
+        "pangramTotal": 1,
+        "words": null
+      },
+      "full": {
+        "kind": "hubbub",
+        "letters": "UDELMNP",
+        "rank": 0,
+        "rankName": "Hush",
+        "points": 0,
+        "max": 81,
+        "found": 0,
+        "total": 25,
+        "pangrams": 0,
+        "pangramTotal": 1,
+        "words": []
+      }
+    }
+  ],
+  "muddle": [
+    {
+      "input": {
+        "words": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER"
+        ],
+        "final": "PERFECT HARMONY",
+        "solved": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "checks": 5,
+        "mistakes": 0,
+        "hintsUsed": 0,
+        "caption": "The choir shared one changing room without a single squabble; they lived in ____."
+      },
+      "clean": {
+        "kind": "muddle",
+        "lengths": [
+          6,
+          5,
+          5,
+          6,
+          14
+        ],
+        "solved": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "boardsSolved": 5,
+        "checks": 5,
+        "mistakes": 0,
+        "hintsUsed": 0,
+        "won": true,
+        "answers": null,
+        "caption": null
+      },
+      "full": {
+        "kind": "muddle",
+        "lengths": [
+          6,
+          5,
+          5,
+          6,
+          14
+        ],
+        "solved": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "boardsSolved": 5,
+        "checks": 5,
+        "mistakes": 0,
+        "hintsUsed": 0,
+        "won": true,
+        "answers": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER",
+          "PERFECT HARMONY"
+        ],
+        "caption": "The choir shared one changing room without a single squabble; they lived in ____."
+      }
+    },
+    {
+      "input": {
+        "words": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER"
+        ],
+        "final": "PERFECT HARMONY",
+        "solved": [
+          true,
+          false,
+          true,
+          true,
+          false
+        ],
+        "checks": 7,
+        "mistakes": 4,
+        "hintsUsed": 1,
+        "caption": "The choir shared one changing room without a single squabble; they lived in ____."
+      },
+      "clean": {
+        "kind": "muddle",
+        "lengths": [
+          6,
+          5,
+          5,
+          6,
+          14
+        ],
+        "solved": [
+          true,
+          false,
+          true,
+          true,
+          false
+        ],
+        "boardsSolved": 3,
+        "checks": 7,
+        "mistakes": 4,
+        "hintsUsed": 1,
+        "won": false,
+        "answers": null,
+        "caption": null
+      },
+      "full": {
+        "kind": "muddle",
+        "lengths": [
+          6,
+          5,
+          5,
+          6,
+          14
+        ],
+        "solved": [
+          true,
+          false,
+          true,
+          true,
+          false
+        ],
+        "boardsSolved": 3,
+        "checks": 7,
+        "mistakes": 4,
+        "hintsUsed": 1,
+        "won": false,
+        "answers": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER",
+          "PERFECT HARMONY"
+        ],
+        "caption": "The choir shared one changing room without a single squabble; they lived in ____."
+      }
+    },
+    {
+      "input": {
+        "words": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER"
+        ],
+        "final": "PERFECT HARMONY",
+        "solved": [
+          true,
+          true,
+          true,
+          true,
+          false
+        ],
+        "checks": 13,
+        "mistakes": 9,
+        "hintsUsed": 3,
+        "caption": "The choir shared one changing room without a single squabble; they lived in ____."
+      },
+      "clean": {
+        "kind": "muddle",
+        "lengths": [
+          6,
+          5,
+          5,
+          6,
+          14
+        ],
+        "solved": [
+          true,
+          true,
+          true,
+          true,
+          false
+        ],
+        "boardsSolved": 4,
+        "checks": 13,
+        "mistakes": 9,
+        "hintsUsed": 3,
+        "won": false,
+        "answers": null,
+        "caption": null
+      },
+      "full": {
+        "kind": "muddle",
+        "lengths": [
+          6,
+          5,
+          5,
+          6,
+          14
+        ],
+        "solved": [
+          true,
+          true,
+          true,
+          true,
+          false
+        ],
+        "boardsSolved": 4,
+        "checks": 13,
+        "mistakes": 9,
+        "hintsUsed": 3,
+        "won": false,
+        "answers": [
+          "FATTEN",
+          "THYME",
+          "CARRY",
+          "PROPER",
+          "PERFECT HARMONY"
+        ],
+        "caption": "The choir shared one changing room without a single squabble; they lived in ____."
+      }
+    }
+  ],
+  "ladder": [
+    {
+      "input": {
+        "start": "SKIRT",
+        "end": "CHOKE",
+        "words": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE",
+          "SHORE",
+          "CHORE",
+          "CHOKE"
+        ],
+        "hintMask": "010000",
+        "par": 5,
+        "moves": 5
+      },
+      "clean": {
+        "kind": "ladder",
+        "rungs": [
+          {
+            "color": "start",
+            "word": null
+          },
+          {
+            "color": "hint",
+            "word": null
+          },
+          {
+            "color": "step",
+            "word": null
+          },
+          {
+            "color": "step",
+            "word": null
+          },
+          {
+            "color": "step",
+            "word": null
+          },
+          {
+            "color": "end",
+            "word": null
+          }
+        ],
+        "rungCount": 6,
+        "par": 5,
+        "moves": 5,
+        "solved": true
+      },
+      "full": {
+        "kind": "ladder",
+        "rungs": [
+          {
+            "color": "start",
+            "word": "SKIRT"
+          },
+          {
+            "color": "hint",
+            "word": "SHIRT"
+          },
+          {
+            "color": "step",
+            "word": "SHIRE"
+          },
+          {
+            "color": "step",
+            "word": "SHORE"
+          },
+          {
+            "color": "step",
+            "word": "CHORE"
+          },
+          {
+            "color": "end",
+            "word": "CHOKE"
+          }
+        ],
+        "rungCount": 6,
+        "par": 5,
+        "moves": 5,
+        "solved": true
+      }
+    },
+    {
+      "input": {
+        "start": "SKIRT",
+        "end": "CHOKE",
+        "words": [
+          "SKIRT",
+          "SHIRT",
+          "SHIRE",
+          "SHORE",
+          "CHORE"
+        ],
+        "hintMask": "01000",
+        "par": 5,
+        "moves": 10
+      },
+      "clean": {
+        "kind": "ladder",
+        "rungs": [
+          {
+            "color": "start",
+            "word": null
+          },
+          {
+            "color": "hint",
+            "word": null
+          },
+          {
+            "color": "step",
+            "word": null
+          },
+          {
+            "color": "step",
+            "word": null
+          },
+          {
+            "color": "step",
+            "word": null
+          }
+        ],
+        "rungCount": 5,
+        "par": 5,
+        "moves": 10,
+        "solved": false
+      },
+      "full": {
+        "kind": "ladder",
+        "rungs": [
+          {
+            "color": "start",
+            "word": "SKIRT"
+          },
+          {
+            "color": "hint",
+            "word": "SHIRT"
+          },
+          {
+            "color": "step",
+            "word": "SHIRE"
+          },
+          {
+            "color": "step",
+            "word": "SHORE"
+          },
+          {
+            "color": "step",
+            "word": "CHORE"
+          }
+        ],
+        "rungCount": 5,
+        "par": 5,
+        "moves": 10,
+        "solved": false
+      }
+    }
+  ],
+  "codebreaker": [
+    {
+      "input": {
+        "text": "Give him an inch and he'll take a mile.",
+        "correct": 13,
+        "total": 13,
+        "checks": 1,
+        "solved": true
+      },
+      "clean": {
+        "kind": "codebreaker",
+        "shape": [
+          4,
+          3,
+          2,
+          4,
+          3,
+          4,
+          4,
+          1,
+          4
+        ],
+        "correct": 13,
+        "total": 13,
+        "checks": 1,
+        "solved": true,
+        "text": null
+      },
+      "full": {
+        "kind": "codebreaker",
+        "shape": [
+          4,
+          3,
+          2,
+          4,
+          3,
+          4,
+          4,
+          1,
+          4
+        ],
+        "correct": 13,
+        "total": 13,
+        "checks": 1,
+        "solved": true,
+        "text": "Give him an inch and he'll take a mile."
+      }
+    },
+    {
+      "input": {
+        "text": "Give him an inch and he'll take a mile.",
+        "correct": 12,
+        "total": 13,
+        "checks": 3,
+        "solved": false
+      },
+      "clean": {
+        "kind": "codebreaker",
+        "shape": [
+          4,
+          3,
+          2,
+          4,
+          3,
+          4,
+          4,
+          1,
+          4
+        ],
+        "correct": 12,
+        "total": 13,
+        "checks": 3,
+        "solved": false,
+        "text": null
+      },
+      "full": {
+        "kind": "codebreaker",
+        "shape": [
+          4,
+          3,
+          2,
+          4,
+          3,
+          4,
+          4,
+          1,
+          4
+        ],
+        "correct": 12,
+        "total": 13,
+        "checks": 3,
+        "solved": false,
+        "text": "Give him an inch and he'll take a mile."
+      }
+    }
+  ],
+  "shapes": [
+    {
+      "text": "Give him an inch and he'll take a mile.",
+      "shape": [
+        4,
+        3,
+        2,
+        4,
+        3,
+        4,
+        4,
+        1,
+        4
+      ]
+    },
+    {
+      "text": "Don't count the days, make the days count.",
+      "shape": [
+        4,
+        5,
+        3,
+        4,
+        4,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "text": "  a -- b  ",
+      "shape": [
+        1,
+        1
+      ]
+    },
+    {
+      "text": "ONE",
+      "shape": [
+        3
+      ]
+    }
+  ]
+}

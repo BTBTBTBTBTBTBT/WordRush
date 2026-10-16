@@ -33,7 +33,7 @@ import { groupsPuzzleForDay, groupsPuzzleForSeed, groupsDailyNumber, groupsTileO
 import { cryptogramPuzzleForDay, cryptogramPuzzleForSeed, cryptogramDailyNumber, cryptogramEncipher, cryptogramCodeLetters, cryptogramFrequencies, cryptogramHintTarget, cryptogramGuessCount, cryptogramConflicts, cryptogramCorrectCount, createCryptogramState, cryptogramReduce, cryptogramMatchRow, reconstructCryptogram, type CryptogramBank, type CryptogramAction } from '../src/games/cryptogram';
 import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, reconstructRegions, countRegionsSolutions, regionsSizeForDay, regionsRuledOut, regionColorSlots, REGION_COLOR_DIST, type RegionsAction } from '../src/games/regions';
 import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
-import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
+import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, LADDER_EXTRA_MOVES, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
 import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, wordsearchNearWord, wordsearchSelection, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
 import { streakHeadline } from '../src/streak-headline';
 import { ageGateView, AGE_GATE_MAX_WAIT_MS } from '../src/age-check';
@@ -62,6 +62,7 @@ import { ADS_SERVING } from '../src/ads';
 import { PRO_BENEFIT_CAPTION, proBenefitForReason } from '../src/stats-profile';
 import { waitingStatusLine, waitClock, waitedSeconds, keepyLine, idleBit, type WaitingKind } from '../src/waiting-room';
 import { vsBannerHeadline, vsBannerClockLine, vsTodayStatus, vsRecordLine, vsOutcome, vsMargin, challengeHeadline, ladderAfterGame, ladderRungs, type VsBannerInput, type VsDayResult, type VsRun } from '../src/vs-lobby';
+import { SHARE_VARIANT_SUBTITLES, SHARE_VARIANT_DEFAULT_SUBTITLES, shareVariantCopy, starsweepShareModel, sudociousShareModel, crosswordShareModel, kindredShareModel, spyglassShareModel, hubbubShareModel, muddleShareModel, ladderShareModel, codebreakerShareModel, codebreakerShape, type ShareVariant } from '../src/share-spoilers';
 import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -1380,6 +1381,92 @@ export function renderPlayerTintFixtures() {
   };
 }
 
+// share-cards-1016/SPEC.md "Spoilers": the chooser copy per mode and each puzzle game's share model, both variants,
+// from a finished game built with the real generators / banks (clean never carries the answer).
+export function renderShareSpoilerFixtures() {
+  const data = <T,>(name: string): T => JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', `${name}.json`), 'utf8')) as T;
+  const variants: ShareVariant[] = ['clean', 'full'];
+  const both = <I, M>(input: I, fn: (g: I, v: ShareVariant) => M) => ({ input, clean: fn(input, 'clean'), full: fn(input, 'full') });
+  const modes = ['regions', 'sudoku', 'crossword', 'groups', 'wordsearch', 'hub', 'scramble', 'ladder', 'cryptogram', 'practice', 'quordle', 'nope'];
+  const copy = modes.map((mode) => ({ mode, ...shareVariantCopy(mode) }));
+
+  // Starsweep: the won board (stars + a few crosses) and a loss missing one star.
+  const rp = generateRegions('daily-2026-10-03-REGIONS', 8)!;
+  const starCells = Array.from({ length: rp.n }, (_, r) => r * rp.n + (rp.solution.charCodeAt(r) - 48));
+  const wonBoard = Array.from({ length: rp.n * rp.n }, (_, i) => (starCells.includes(i) ? '*' : i % 5 === 0 ? 'x' : '.')).join('');
+  const lostBoard = wonBoard.slice(0, starCells[2]) + 'x' + wonBoard.slice(starCells[2] + 1);
+  const starsweep = [wonBoard, lostBoard].map((board) => both({ n: rp.n, regions: rp.regions, solution: rp.solution, board }, starsweepShareModel));
+
+  // Sudocious: solved, one wrong digit, and untouched.
+  const sp = generateSudoku('daily-2026-10-03-SUDOKU');
+  const firstEmpty = sp.givens.indexOf('0');
+  const wrongDigit = sp.solution[firstEmpty] === '1' ? '2' : '1';
+  const sudokuBoards = [sp.solution, sp.solution.slice(0, firstEmpty) + wrongDigit + sp.solution.slice(firstEmpty + 1), sp.givens];
+  const sudocious = sudokuBoards.map((board) => both({ givens: sp.givens, solution: sp.solution, board }, sudociousShareModel));
+
+  // Crosswordocious: the first daily, solved, and with the first entry's first letter wrong + one cell empty.
+  const cb = data<CrosswordBank>('crossword-puzzles');
+  const cp = cb.daily[0];
+  const csol = crosswordSolution(cp);
+  const c0 = crosswordEntryCells(cp, cp.entries[0]);
+  const wrongLetter = csol[c0[0]] === 'Z' ? 'Y' : 'Z';
+  const cfillWrong = [...csol].map((ch, i) => (i === c0[0] ? wrongLetter : i === c0[1] ? '_' : ch)).join('');
+  const crossword = [csol, cfillWrong].map((fill) => both({ w: cp.w, h: cp.h, solution: csol, fill }, crosswordShareModel));
+
+  // Kindred: perfect, two groups solved out of order, nothing solved.
+  const gb = data<GroupsBank>('groups-puzzles');
+  const gp = gb.daily[0];
+  const kindred = [[4, 3, 2, 1], [3, 1], []].map((solvedTiers, i) => both({ groups: gp.groups, solvedTiers, mistakes: [0, 2, 4][i] }, kindredShareModel));
+
+  // Spyglass: every word found (in reverse), three found, none found.
+  const wb = data<WordsearchBank>('wordsearch-puzzles');
+  const wp = wb.daily[0];
+  const allWords = wp.words.map((w) => w.w);
+  const spyglass = [[...allWords].reverse(), allWords.slice(0, 3), []].map((found) => both({ grid: wp.grid, words: wp.words, found }, spyglassShareModel));
+
+  // Hubbub: every word, the pangrams plus three words, nothing.
+  const hb = data<HubBank>('hub-puzzles');
+  const hp = hb.daily[0];
+  const hubFound = [hp.words, [...hp.pangrams, ...hp.words.filter((w) => !hp.pangrams.includes(w)).slice(0, 3)], []];
+  const hubbub = hubFound.map((found) => both({
+    letters: hp.letters, found, points: found.reduce((n, w) => n + hubWordScore(w, hp.letters), 0), max: hp.max, wordCount: hp.words.length, pangramCount: hp.pangrams.length,
+  }, hubbubShareModel));
+
+  // Muddle: won, three rows solved, lost; the caption rides along in full only.
+  const sb = data<ScrambleBank>('scramble-puzzles');
+  const scp = sb.daily[0];
+  const muddleBase = { words: scp.words.map((w) => w.answer), final: scp.final.answer };
+  const muddle = [
+    { ...muddleBase, solved: [true, true, true, true, true], checks: 5, mistakes: 0, hintsUsed: 0 },
+    { ...muddleBase, solved: [true, false, true, true, false], checks: 7, mistakes: 4, hintsUsed: 1 },
+    { ...muddleBase, solved: [true, true, true, true, false], checks: 13, mistakes: 9, hintsUsed: 3 },
+  ].map((g) => ({ input: { ...g, caption: scp.caption }, clean: muddleShareModel(g, 'clean', scp.caption), full: muddleShareModel(g, 'full', scp.caption) }));
+
+  // Letter Ladder: the bank's shortest route with one hinted rung, and a run that stopped short.
+  const lb = data<LadderBank>('ladder-puzzles');
+  const lp = lb.daily[0];
+  const hintMask = lp.path.map((_, i) => (i === 1 ? '1' : '0')).join('');
+  const ladder = [
+    { start: lp.start, end: lp.end, words: lp.path, hintMask, par: lp.par, moves: lp.path.length - 1 },
+    { start: lp.start, end: lp.end, words: lp.path.slice(0, -1), hintMask: hintMask.slice(0, -1), par: lp.par, moves: lp.par + LADDER_EXTRA_MOVES },
+  ].map((g) => both(g, ladderShareModel));
+
+  // Codebreaker: the first daily solved, and one short after three checks.
+  const kb = data<CryptogramBank>('cryptogram-puzzles');
+  const kp = kb.daily[0];
+  const total = cryptogramCodeLetters(cryptogramEncipher(kp.text, kp.key)).length;
+  const codebreaker = [
+    { text: kp.text, correct: total, total, checks: 1, solved: true },
+    { text: kp.text, correct: total - 1, total, checks: 3, solved: false },
+  ].map((g) => both(g, codebreakerShareModel));
+  const shapes = [kp.text, "Don't count the days, make the days count.", '  a -- b  ', 'ONE'].map((text) => ({ text, shape: codebreakerShape(text) }));
+
+  return {
+    variants, subtitles: SHARE_VARIANT_SUBTITLES, defaultSubtitles: SHARE_VARIANT_DEFAULT_SUBTITLES, copy,
+    starsweep, sudocious, crossword, kindred, spyglass, hubbub, muddle, ladder, codebreaker, shapes,
+  };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['player-tint-fixtures.json', renderPlayerTintFixtures()],
   ['seed-fixtures.json', renderSeedFixtures()],
@@ -1418,6 +1505,7 @@ const FILES: Array<[string, unknown]> = [
   ['age-gate-fixtures.json', renderAgeGateFixtures()],
   ['a11y-labels-fixtures.json', renderA11yLabelFixtures()],
   ['ad-copy-fixtures.json', renderAdCopyFixtures()],
+  ['share-spoilers-fixtures.json', renderShareSpoilerFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports
