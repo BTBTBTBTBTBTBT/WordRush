@@ -2,11 +2,14 @@
  "thanksgiving/cast/w.png": {
   "method": "layered",
   "hero": "w",
-  "faceRegionDiff": 0.0,
+  "faceRegionDiff": 10.372,
   "pieces": [
+   "pilgrim-shoe-l",
+   "pilgrim-shoe-r",
+   "pilgrim-belt",
    "pilgrim-hat"
   ],
-  "caption": "W as a pilgrim: black buckle hat, his own magenta cape kept."
+  "caption": "W as a pilgrim: black buckle hat, brown belt with gold buckle, buckle shoes, his own magenta cape kept."
  },
  "thanksgiving/cast/c.png": {
   "method": "layered",
@@ -18,13 +21,9 @@
   "caption": "C as an acorn: crosshatched acorn cap with a curly stem."
  },
  "thanksgiving/cast/o3.png": {
-  "method": "layered",
+  "method": "redraw",
   "hero": "o3",
-  "faceRegionDiff": 0.0,
-  "pieces": [
-   "pie-hat"
-  ],
-  "caption": "Orange cyclops O wearing a slice of pumpkin pie as a hat (whipped cream on top)."
+  "caption": "Whole pumpkin pie character: fluted crust collar and whipped-cream hat (full redraw, free ChatGPT 10-16)."
  },
  "thanksgiving/cast/u.png": {
   "method": "layered",
@@ -40,28 +39,31 @@
   "hero": "s",
   "faceRegionDiff": 0.0,
   "pieces": [
-   "turkey-hat"
+   "turkey-tail-v2",
+   "turkey-hat-v2"
   ],
-  "caption": "S in a plush turkey hat sitting on top of his own headband."
+  "caption": "S as the Turkey Trot runner: a turkey tail fan trailing behind and a mini turkey on his headband."
  },
  "thanksgiving/cast/d.png": {
   "method": "layered",
   "hero": "d",
-  "faceRegionDiff": 0.486,
+  "faceRegionDiff": 10.701,
   "pieces": [
-   "chef-toque",
-   "pumpkin-pie"
+   "pie-mitt",
+   "chef-toque"
   ],
-  "caption": "D as the pie chef: tall white toque, a whole pumpkin pie at his feet."
+  "caption": "D as the pie chef: tall white toque and an oven mitt holding a pumpkin pie at his chest."
  },
  "thanksgiving/cast/i.png": {
   "method": "layered",
   "hero": "i",
-  "faceRegionDiff": 0.0,
+  "faceRegionDiff": 14.505,
   "pieces": [
-   "corn-husk"
+   "corn-husk-v2",
+   "husk-wrap",
+   "kernel-band"
   ],
-  "caption": "I as an ear of corn: open corn husk leaves behind him; his sprout stays the silk on top."
+  "caption": "I as an ear of corn: husk wraps his body from the front, open husk behind, a row of kernels at the waist."
  },
  "thanksgiving/cast/o1.png": {
   "method": "layered",
@@ -73,23 +75,22 @@
   "caption": "Amber O as a turkey cheerleader: a big fan of tail feathers behind her, purple pom-poms kept."
  },
  "thanksgiving/cast/r.png": {
-  "method": "layered",
+  "method": "redraw",
   "hero": "r",
-  "faceRegionDiff": 0.0,
-  "pieces": [
-   "plaid-cape",
-   "maple-leaf"
-  ],
-  "caption": "R wrapped for a cozy nap: red-and-orange plaid blanket cape behind him, a maple leaf on his nightcap."
+  "caption": "R wrapped in the plaid blanket with cocoa, maple leaf tucked in the nightcap brim (full redraw, free ChatGPT 10-16)."
  },
  "thanksgiving/cast/o2.png": {
   "method": "layered",
   "hero": "o2",
-  "faceRegionDiff": 0.0,
+  "faceRegionDiff": 23.882,
   "pieces": [
-   "autumn-shawl"
+   "card-left",
+   "card-right",
+   "leaf-pendant",
+   "acorn-earring-l",
+   "acorn-earring-r"
   ],
-  "caption": "Pink O in a cranberry-and-mustard knitted shawl cape with tassels; heart sunglasses kept."
+  "caption": "O2 in a cranberry knit cardigan with acorn buttons, leaf pendant and acorn earrings; heart sunglasses kept."
  },
  "thanksgiving/cast/w-alt1.png": {
   "method": "layered",
@@ -183,5 +184,15 @@
    "maple-leaf"
   ],
   "caption": "Alternate: R napping beside a whole pumpkin pie, maple leaf on his nightcap."
+ },
+ "thanksgiving/cast/u-alt1-v2.png": {
+  "method": "layered",
+  "hero": "u",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "shawl-back",
+   "cocoa-mug"
+  ],
+  "caption": "U wrapped in a knit shawl with a cocoa mug."
  }
 }

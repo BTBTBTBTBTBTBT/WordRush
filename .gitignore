@@ -51,3 +51,4 @@ apps/web/scripts/propernoundle-validation.json
 # BJ3 perf tour reports (scripts/web-perf-tour.mjs)
 .perf/
 apps/web/e2e/.contrast-report.json
+docs/design/review/share-cards-1016/renders/

@@ -30,7 +30,7 @@ const bundle = await esbuild.build({
   logLevel: 'error',
 });
 const js = bundle.outputFiles[0].text;
-const html = '<!doctype html><html><body><script src="/bundle.js"></script></body></html>';
+const html = '<!doctype html><html><body style="font-family: system-ui, -apple-system, Helvetica, sans-serif"><script src="/bundle.js"></script></body></html>';
 const TYPES = { '.webp': 'image/webp', '.png': 'image/png', '.svg': 'image/svg+xml', '.js': 'text/javascript' };
 const server = createServer(async (req, res) => {
   const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -49,15 +49,16 @@ const exe = process.env.PLAYWRIGHT_CHROMIUM ?? (existsSync(MAC_CHROME) ? MAC_CHR
 const browser = await chromium.launch({ executablePath: exe });
 const page = await browser.newPage({ deviceScaleFactor: 1 });
 page.on('pageerror', (e) => console.error('page error:', e.message));
-await page.goto(`http://localhost:${port}/`);
-await mkdir(join(here, 'out'), { recursive: true });
+await page.goto(`http://localhost:${port}/${process.env.SHARE_SEASON ? `?season=${process.env.SHARE_SEASON}` : ''}`);
+const outDir = process.env.SHARE_OUT ? resolve(process.env.SHARE_OUT) : join(here, 'out');
+await mkdir(outDir, { recursive: true });
 // Pass 1: a guest's cards (no hero band) -> web-<id>.png; pass 2: a signed-in sender's -> webhero-<id>.png.
-for (const [withHero, prefix] of [[false, 'web'], [true, 'webhero']]) {
+for (const [withHero, prefix] of process.env.SHARE_GUEST_ONLY ? [[false, 'web']] : [[false, 'web'], [true, 'webhero']]) {
   const cards = await page.evaluate((h) => window.renderAll(h), withHero);
   for (const { id, url } of cards) {
     if (!url) { console.error(`${id}: no image`); continue; }
-    await writeFile(join(here, 'out', `${prefix}-${id}.png`), Buffer.from(url.split(',')[1], 'base64'));
-    console.log(`${prefix}-${id}.png`);
+    await writeFile(join(outDir, `${prefix}-${id}${process.env.SHARE_SUFFIX ?? ''}.png`), Buffer.from(url.split(',')[1], 'base64'));
+    console.log(`${prefix}-${id}${process.env.SHARE_SUFFIX ?? ''}.png`);
   }
 }
 await browser.close();
