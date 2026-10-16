@@ -63,6 +63,7 @@ import { PRO_BENEFIT_CAPTION, proBenefitForReason } from '../src/stats-profile';
 import { waitingStatusLine, waitClock, waitedSeconds, keepyLine, idleBit, type WaitingKind } from '../src/waiting-room';
 import { vsBannerHeadline, vsBannerClockLine, vsTodayStatus, vsRecordLine, vsOutcome, vsMargin, challengeHeadline, ladderAfterGame, ladderRungs, type VsBannerInput, type VsDayResult, type VsRun } from '../src/vs-lobby';
 import { SHARE_VARIANT_SUBTITLES, SHARE_VARIANT_DEFAULT_SUBTITLES, shareVariantCopy, starsweepShareModel, sudociousShareModel, crosswordShareModel, kindredShareModel, spyglassShareModel, hubbubShareModel, muddleShareModel, ladderShareModel, codebreakerShareModel, codebreakerShape, type ShareVariant } from '../src/share-spoilers';
+import { SHARE_CARD_ORDER, SHARE_CARD_TITLES, SHARE_CHANNEL_AVAILABILITY, SHARE_CHANNEL_LABELS, SHARE_CHANNEL_ORDER, SHARE_CHANNEL_PAYLOADS, SHARE_CHANNEL_SLUGS, SHARE_CHANNEL_WEB_MOBILE_ONLY, SHARE_LINK_BASE, SHARE_LOOK_LABELS, SHARE_SURFACE_DEFAULT_CARD, channelFrame, shareSheetCards, shareSheetLooks, shareSheetModel, type SharePlatform, type ShareSheetContext } from '../src/share-sheet';
 import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -1469,6 +1470,40 @@ export function renderShareSpoilerFixtures() {
   };
 }
 
+export function renderShareSheetFixtures() {
+  const platforms: SharePlatform[] = ['ios', 'android', 'web'];
+  const contexts: Array<{ name: string } & ShareSheetContext> = [
+    { name: 'finished-regions-daily-halloween', surface: 'finished', mode: 'regions', play: 'daily', cards: ['streak', 'result'], hasSpoilerVariant: true, season: 'halloween',
+      caption: { kind: 'win', date: '2026-10-16', game: 'Starsweep', n: '1', t: '2:10', d: 5 } },
+    { name: 'finished-quordle-unlimited-no-season', surface: 'finished', mode: 'quordle', play: 'unlimited', cards: ['result', 'achievement'], hasSpoilerVariant: true, season: null,
+      caption: { kind: 'multiWin', date: '2026-10-16', game: 'QuadWord', n: '8', b: '4' } },
+    { name: 'finished-scramble-lost', surface: 'finished', mode: 'scramble', play: 'daily', cards: ['result'], hasSpoilerVariant: true, season: 'thanksgiving',
+      caption: { kind: 'lose', date: '2026-11-20', game: 'Muddle', d: 2 } },
+    { name: 'finished-no-spoiler-variant', surface: 'finished', mode: 'gauntlet', play: 'daily', cards: ['result', 'streak'], hasSpoilerVariant: false, season: null,
+      caption: { kind: 'gauntletLose', date: '2026-10-16', game: 'Gauntlet', k: '3' } },
+    { name: 'leaderboard', surface: 'leaderboard', mode: '', play: null, cards: [], hasSpoilerVariant: false, season: 'halloween', caption: null },
+    { name: 'sweep', surface: 'sweep', mode: '', play: null, cards: ['daily-sweep', 'streak'], hasSpoilerVariant: false, season: null,
+      caption: { kind: 'sweep', date: '2026-10-16', game: 'Wordocious', d: 12 } },
+    { name: 'vs', surface: 'vs', mode: 'hub', play: null, cards: ['vs-result'], hasSpoilerVariant: false, season: null,
+      caption: { kind: 'vsWin', date: '2026-10-16', game: 'Hubbub', opp: 'Mira' } },
+    { name: 'profile', surface: 'profile', mode: '', play: null, cards: ['achievement', 'streak', 'profile'], hasSpoilerVariant: false, season: null, caption: null },
+    { name: 'moment', surface: 'moment', mode: 'ladder', play: 'daily', cards: ['moment'], hasSpoilerVariant: true, season: 'halloween', caption: null },
+    { name: 'unknown-season-label', surface: 'moment', mode: '', play: null, cards: [], hasSpoilerVariant: false, season: 'winter', caption: null },
+  ];
+  const models = contexts.map(({ name, ...ctx }) => ({ name, context: ctx, ios: shareSheetModel(ctx, 'ios'), android: shareSheetModel(ctx, 'android'), web: shareSheetModel(ctx, 'web') }));
+  const cards = [
+    { surface: 'finished', available: [] }, { surface: 'profile', available: [...SHARE_CARD_ORDER].reverse() }, { surface: 'vs', available: ['achievement', 'vs-result', 'nope'] },
+  ].map((c) => ({ ...c, cards: shareSheetCards(c.surface as ShareSheetContext['surface'], c.available as ShareSheetContext['cards']) }));
+  const looks = ['halloween', 'thanksgiving', 'normal', '', null, 'winter'].map((season) => ({ season, looks: shareSheetLooks(season) }));
+  const frames = SHARE_CHANNEL_ORDER.map((id) => ({ id, frame: channelFrame(id) }));
+  return {
+    platforms, cardOrder: SHARE_CARD_ORDER, cardTitles: SHARE_CARD_TITLES, surfaceDefaultCard: SHARE_SURFACE_DEFAULT_CARD, lookLabels: SHARE_LOOK_LABELS,
+    channelOrder: SHARE_CHANNEL_ORDER, channelLabels: SHARE_CHANNEL_LABELS, channelSlugs: SHARE_CHANNEL_SLUGS, channelAvailability: SHARE_CHANNEL_AVAILABILITY,
+    channelPayloads: SHARE_CHANNEL_PAYLOADS, webMobileOnly: SHARE_CHANNEL_WEB_MOBILE_ONLY, linkBase: SHARE_LINK_BASE,
+    cards, looks, frames, models,
+  };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['player-tint-fixtures.json', renderPlayerTintFixtures()],
   ['seed-fixtures.json', renderSeedFixtures()],
@@ -1508,6 +1543,7 @@ const FILES: Array<[string, unknown]> = [
   ['a11y-labels-fixtures.json', renderA11yLabelFixtures()],
   ['ad-copy-fixtures.json', renderAdCopyFixtures()],
   ['share-spoilers-fixtures.json', renderShareSpoilerFixtures()],
+  ['share-sheet-fixtures.json', renderShareSheetFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

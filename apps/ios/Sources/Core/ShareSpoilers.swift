@@ -16,8 +16,8 @@ public enum ShareVariant: String, Codable, CaseIterable {
     case clean, full
 }
 
-public struct ShareVariantCopy: Equatable {
-    public struct Side: Equatable {
+public struct ShareVariantCopy: Equatable, Encodable {
+    public struct Side: Equatable, Encodable {
         public let title: String
         public let subtitle: String
     }

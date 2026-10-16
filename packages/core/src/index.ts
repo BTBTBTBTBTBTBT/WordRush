@@ -60,3 +60,4 @@ export * from './leaderboard-stage';
 export * from './whats-new';
 export * from './share-hero';
 export * from './share-spoilers';
+export * from './share-sheet';

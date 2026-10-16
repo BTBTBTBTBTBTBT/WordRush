@@ -1,0 +1,4604 @@
+{
+  "platforms": [
+    "ios",
+    "android",
+    "web"
+  ],
+  "cardOrder": [
+    "result",
+    "vs-result",
+    "daily-sweep",
+    "leaderboard",
+    "moment",
+    "profile",
+    "streak",
+    "achievement"
+  ],
+  "cardTitles": {
+    "result": "Result",
+    "vs-result": "Race result",
+    "daily-sweep": "Daily sweep",
+    "leaderboard": "Leaderboard",
+    "moment": "Moment",
+    "profile": "Profile",
+    "streak": "Streak",
+    "achievement": "Achievement"
+  },
+  "surfaceDefaultCard": {
+    "finished": "result",
+    "leaderboard": "leaderboard",
+    "sweep": "daily-sweep",
+    "vs": "vs-result",
+    "profile": "profile",
+    "moment": "moment"
+  },
+  "lookLabels": {
+    "normal": "Normal",
+    "halloween": "Halloween",
+    "thanksgiving": "Thanksgiving"
+  },
+  "channelOrder": [
+    "copy",
+    "messages",
+    "whatsapp",
+    "stories",
+    "x",
+    "facebook",
+    "snapchat",
+    "tiktok",
+    "save",
+    "more"
+  ],
+  "channelLabels": {
+    "copy": "Copy link",
+    "messages": "Messages",
+    "whatsapp": "WhatsApp",
+    "stories": "Stories",
+    "x": "X",
+    "facebook": "Facebook",
+    "snapchat": "Snapchat",
+    "tiktok": "TikTok",
+    "save": "Save image",
+    "more": "More"
+  },
+  "channelSlugs": {
+    "copy": "copy",
+    "messages": "msg",
+    "whatsapp": "wa",
+    "stories": "instagram",
+    "x": "x",
+    "facebook": "facebook",
+    "snapchat": "snapchat",
+    "tiktok": "tiktok",
+    "save": null,
+    "more": null
+  },
+  "channelAvailability": {
+    "copy": "ready",
+    "messages": "ready",
+    "whatsapp": "ready",
+    "stories": "needsRegistration",
+    "x": "ready",
+    "facebook": "ready",
+    "snapchat": "needsRegistration",
+    "tiktok": "needsRegistration",
+    "save": "ready",
+    "more": "ready"
+  },
+  "channelPayloads": {
+    "copy": {
+      "ios": "link",
+      "android": "link",
+      "web": "link"
+    },
+    "messages": {
+      "ios": "image",
+      "android": "image",
+      "web": "text"
+    },
+    "whatsapp": {
+      "ios": "image",
+      "android": "image",
+      "web": "text"
+    },
+    "stories": {
+      "ios": "image",
+      "android": "image",
+      "web": null
+    },
+    "x": {
+      "ios": "image",
+      "android": "imageText",
+      "web": "text"
+    },
+    "facebook": {
+      "ios": "image",
+      "android": "image",
+      "web": "link"
+    },
+    "snapchat": {
+      "ios": "image",
+      "android": "image",
+      "web": "link"
+    },
+    "tiktok": {
+      "ios": "image",
+      "android": "image",
+      "web": null
+    },
+    "save": {
+      "ios": "image",
+      "android": "image",
+      "web": "image"
+    },
+    "more": {
+      "ios": "image",
+      "android": "image",
+      "web": "image"
+    }
+  },
+  "webMobileOnly": [
+    "messages",
+    "whatsapp"
+  ],
+  "linkBase": "https://wordocious.com/go/",
+  "cards": [
+    {
+      "surface": "finished",
+      "available": [],
+      "cards": [
+        {
+          "kind": "result",
+          "frame": "message",
+          "title": "Result"
+        }
+      ]
+    },
+    {
+      "surface": "profile",
+      "available": [
+        "achievement",
+        "streak",
+        "profile",
+        "moment",
+        "leaderboard",
+        "daily-sweep",
+        "vs-result",
+        "result"
+      ],
+      "cards": [
+        {
+          "kind": "result",
+          "frame": "message",
+          "title": "Result"
+        },
+        {
+          "kind": "vs-result",
+          "frame": "message",
+          "title": "Race result"
+        },
+        {
+          "kind": "daily-sweep",
+          "frame": "message",
+          "title": "Daily sweep"
+        },
+        {
+          "kind": "leaderboard",
+          "frame": "message",
+          "title": "Leaderboard"
+        },
+        {
+          "kind": "moment",
+          "frame": "message",
+          "title": "Moment"
+        },
+        {
+          "kind": "profile",
+          "frame": "message",
+          "title": "Profile"
+        },
+        {
+          "kind": "streak",
+          "frame": "message",
+          "title": "Streak"
+        },
+        {
+          "kind": "achievement",
+          "frame": "message",
+          "title": "Achievement"
+        }
+      ]
+    },
+    {
+      "surface": "vs",
+      "available": [
+        "achievement",
+        "vs-result",
+        "nope"
+      ],
+      "cards": [
+        {
+          "kind": "vs-result",
+          "frame": "message",
+          "title": "Race result"
+        },
+        {
+          "kind": "achievement",
+          "frame": "message",
+          "title": "Achievement"
+        }
+      ]
+    }
+  ],
+  "looks": [
+    {
+      "season": "halloween",
+      "looks": {
+        "shown": true,
+        "options": [
+          {
+            "id": "halloween",
+            "label": "Halloween"
+          },
+          {
+            "id": "normal",
+            "label": "Normal"
+          }
+        ],
+        "initial": "halloween"
+      }
+    },
+    {
+      "season": "thanksgiving",
+      "looks": {
+        "shown": true,
+        "options": [
+          {
+            "id": "thanksgiving",
+            "label": "Thanksgiving"
+          },
+          {
+            "id": "normal",
+            "label": "Normal"
+          }
+        ],
+        "initial": "thanksgiving"
+      }
+    },
+    {
+      "season": "normal",
+      "looks": {
+        "shown": false,
+        "options": [
+          {
+            "id": "normal",
+            "label": "Normal"
+          }
+        ],
+        "initial": "normal"
+      }
+    },
+    {
+      "season": "",
+      "looks": {
+        "shown": false,
+        "options": [
+          {
+            "id": "normal",
+            "label": "Normal"
+          }
+        ],
+        "initial": "normal"
+      }
+    },
+    {
+      "season": null,
+      "looks": {
+        "shown": false,
+        "options": [
+          {
+            "id": "normal",
+            "label": "Normal"
+          }
+        ],
+        "initial": "normal"
+      }
+    },
+    {
+      "season": "winter",
+      "looks": {
+        "shown": true,
+        "options": [
+          {
+            "id": "winter",
+            "label": "Winter"
+          },
+          {
+            "id": "normal",
+            "label": "Normal"
+          }
+        ],
+        "initial": "winter"
+      }
+    }
+  ],
+  "frames": [
+    {
+      "id": "copy",
+      "frame": "message"
+    },
+    {
+      "id": "messages",
+      "frame": "message"
+    },
+    {
+      "id": "whatsapp",
+      "frame": "message"
+    },
+    {
+      "id": "stories",
+      "frame": "story"
+    },
+    {
+      "id": "x",
+      "frame": "message"
+    },
+    {
+      "id": "facebook",
+      "frame": "message"
+    },
+    {
+      "id": "snapchat",
+      "frame": "story"
+    },
+    {
+      "id": "tiktok",
+      "frame": "story"
+    },
+    {
+      "id": "save",
+      "frame": "message"
+    },
+    {
+      "id": "more",
+      "frame": "message"
+    }
+  ],
+  "models": [
+    {
+      "name": "finished-regions-daily-halloween",
+      "context": {
+        "surface": "finished",
+        "mode": "regions",
+        "play": "daily",
+        "cards": [
+          "streak",
+          "result"
+        ],
+        "hasSpoilerVariant": true,
+        "season": "halloween",
+        "caption": {
+          "kind": "win",
+          "date": "2026-10-16",
+          "game": "Starsweep",
+          "n": "1",
+          "t": "2:10",
+          "d": 5
+        }
+      },
+      "ios": {
+        "cards": [
+          {
+            "kind": "result",
+            "frame": "message",
+            "title": "Result"
+          },
+          {
+            "kind": "streak",
+            "frame": "message",
+            "title": "Streak"
+          }
+        ],
+        "variant": {
+          "shown": true,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Regions only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Stars revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "halloween",
+              "label": "Halloween"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "halloween"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=finished&m=regions",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "android": {
+        "cards": [
+          {
+            "kind": "result",
+            "frame": "message",
+            "title": "Result"
+          },
+          {
+            "kind": "streak",
+            "frame": "message",
+            "title": "Streak"
+          }
+        ],
+        "variant": {
+          "shown": true,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Regions only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Stars revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "halloween",
+              "label": "Halloween"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "halloween"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=finished&m=regions",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "imageText",
+            "link": "https://wordocious.com/go/x?s=finished&m=regions",
+            "caption": "Cracked Starsweep in 2:10 ⚡ Beat that! 🔥 Day 5",
+            "text": "Cracked Starsweep in 2:10 ⚡ Beat that! 🔥 Day 5 https://wordocious.com/go/x?s=finished&m=regions",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "web": {
+        "cards": [
+          {
+            "kind": "result",
+            "frame": "message",
+            "title": "Result"
+          },
+          {
+            "kind": "streak",
+            "frame": "message",
+            "title": "Streak"
+          }
+        ],
+        "variant": {
+          "shown": true,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Regions only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Stars revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "halloween",
+              "label": "Halloween"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "halloween"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=finished&m=regions",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/msg?s=finished&m=regions",
+            "caption": "Cracked Starsweep in 2:10 ⚡ Beat that! 🔥 Day 5",
+            "text": "Cracked Starsweep in 2:10 ⚡ Beat that! 🔥 Day 5 https://wordocious.com/go/msg?s=finished&m=regions",
+            "mobileOnly": true
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/wa?s=finished&m=regions",
+            "caption": "Cracked Starsweep in 2:10 ⚡ Beat that! 🔥 Day 5",
+            "text": "Cracked Starsweep in 2:10 ⚡ Beat that! 🔥 Day 5 https://wordocious.com/go/wa?s=finished&m=regions",
+            "mobileOnly": true
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/x?s=finished&m=regions",
+            "caption": "Cracked Starsweep in 2:10 ⚡ Beat that! 🔥 Day 5",
+            "text": "Cracked Starsweep in 2:10 ⚡ Beat that! 🔥 Day 5 https://wordocious.com/go/x?s=finished&m=regions",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/facebook?s=finished&m=regions",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "link",
+            "link": "https://wordocious.com/go/snapchat?s=finished&m=regions",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "finished-quordle-unlimited-no-season",
+      "context": {
+        "surface": "finished",
+        "mode": "quordle",
+        "play": "unlimited",
+        "cards": [
+          "result",
+          "achievement"
+        ],
+        "hasSpoilerVariant": true,
+        "season": null,
+        "caption": {
+          "kind": "multiWin",
+          "date": "2026-10-16",
+          "game": "QuadWord",
+          "n": "8",
+          "b": "4"
+        }
+      },
+      "ios": {
+        "cards": [
+          {
+            "kind": "result",
+            "frame": "message",
+            "title": "Result"
+          },
+          {
+            "kind": "achievement",
+            "frame": "message",
+            "title": "Achievement"
+          }
+        ],
+        "variant": {
+          "shown": true,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=finished&m=quordle",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "android": {
+        "cards": [
+          {
+            "kind": "result",
+            "frame": "message",
+            "title": "Result"
+          },
+          {
+            "kind": "achievement",
+            "frame": "message",
+            "title": "Achievement"
+          }
+        ],
+        "variant": {
+          "shown": true,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=finished&m=quordle",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "imageText",
+            "link": "https://wordocious.com/go/x?s=finished&m=quordle",
+            "caption": "All 4 QuadWord boards cleared in 8 guesses 🧠✨",
+            "text": "All 4 QuadWord boards cleared in 8 guesses 🧠✨ https://wordocious.com/go/x?s=finished&m=quordle",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "web": {
+        "cards": [
+          {
+            "kind": "result",
+            "frame": "message",
+            "title": "Result"
+          },
+          {
+            "kind": "achievement",
+            "frame": "message",
+            "title": "Achievement"
+          }
+        ],
+        "variant": {
+          "shown": true,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=finished&m=quordle",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/msg?s=finished&m=quordle",
+            "caption": "All 4 QuadWord boards cleared in 8 guesses 🧠✨",
+            "text": "All 4 QuadWord boards cleared in 8 guesses 🧠✨ https://wordocious.com/go/msg?s=finished&m=quordle",
+            "mobileOnly": true
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/wa?s=finished&m=quordle",
+            "caption": "All 4 QuadWord boards cleared in 8 guesses 🧠✨",
+            "text": "All 4 QuadWord boards cleared in 8 guesses 🧠✨ https://wordocious.com/go/wa?s=finished&m=quordle",
+            "mobileOnly": true
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/x?s=finished&m=quordle",
+            "caption": "All 4 QuadWord boards cleared in 8 guesses 🧠✨",
+            "text": "All 4 QuadWord boards cleared in 8 guesses 🧠✨ https://wordocious.com/go/x?s=finished&m=quordle",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/facebook?s=finished&m=quordle",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "link",
+            "link": "https://wordocious.com/go/snapchat?s=finished&m=quordle",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "finished-scramble-lost",
+      "context": {
+        "surface": "finished",
+        "mode": "scramble",
+        "play": "daily",
+        "cards": [
+          "result"
+        ],
+        "hasSpoilerVariant": true,
+        "season": "thanksgiving",
+        "caption": {
+          "kind": "lose",
+          "date": "2026-11-20",
+          "game": "Muddle",
+          "d": 2
+        }
+      },
+      "ios": {
+        "cards": [
+          {
+            "kind": "result",
+            "frame": "message",
+            "title": "Result"
+          }
+        ],
+        "variant": {
+          "shown": true,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Stats only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Answer revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "thanksgiving",
+              "label": "Thanksgiving"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "thanksgiving"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=finished&m=scramble",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "android": {
+        "cards": [
+          {
+            "kind": "result",
+            "frame": "message",
+            "title": "Result"
+          }
+        ],
+        "variant": {
+          "shown": true,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Stats only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Answer revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "thanksgiving",
+              "label": "Thanksgiving"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "thanksgiving"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=finished&m=scramble",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "imageText",
+            "link": "https://wordocious.com/go/x?s=finished&m=scramble",
+            "caption": "Muddle got me today 😅 Can you crack it?",
+            "text": "Muddle got me today 😅 Can you crack it? https://wordocious.com/go/x?s=finished&m=scramble",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "web": {
+        "cards": [
+          {
+            "kind": "result",
+            "frame": "message",
+            "title": "Result"
+          }
+        ],
+        "variant": {
+          "shown": true,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Stats only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Answer revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "thanksgiving",
+              "label": "Thanksgiving"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "thanksgiving"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=finished&m=scramble",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/msg?s=finished&m=scramble",
+            "caption": "Muddle got me today 😅 Can you crack it?",
+            "text": "Muddle got me today 😅 Can you crack it? https://wordocious.com/go/msg?s=finished&m=scramble",
+            "mobileOnly": true
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/wa?s=finished&m=scramble",
+            "caption": "Muddle got me today 😅 Can you crack it?",
+            "text": "Muddle got me today 😅 Can you crack it? https://wordocious.com/go/wa?s=finished&m=scramble",
+            "mobileOnly": true
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/x?s=finished&m=scramble",
+            "caption": "Muddle got me today 😅 Can you crack it?",
+            "text": "Muddle got me today 😅 Can you crack it? https://wordocious.com/go/x?s=finished&m=scramble",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/facebook?s=finished&m=scramble",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "link",
+            "link": "https://wordocious.com/go/snapchat?s=finished&m=scramble",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "finished-no-spoiler-variant",
+      "context": {
+        "surface": "finished",
+        "mode": "gauntlet",
+        "play": "daily",
+        "cards": [
+          "result",
+          "streak"
+        ],
+        "hasSpoilerVariant": false,
+        "season": null,
+        "caption": {
+          "kind": "gauntletLose",
+          "date": "2026-10-16",
+          "game": "Gauntlet",
+          "k": "3"
+        }
+      },
+      "ios": {
+        "cards": [
+          {
+            "kind": "result",
+            "frame": "message",
+            "title": "Result"
+          },
+          {
+            "kind": "streak",
+            "frame": "message",
+            "title": "Streak"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=finished&m=gauntlet",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "android": {
+        "cards": [
+          {
+            "kind": "result",
+            "frame": "message",
+            "title": "Result"
+          },
+          {
+            "kind": "streak",
+            "frame": "message",
+            "title": "Streak"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=finished&m=gauntlet",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "imageText",
+            "link": "https://wordocious.com/go/x?s=finished&m=gauntlet",
+            "caption": "Reached stage 3 of the Gauntlet. Can you go further?",
+            "text": "Reached stage 3 of the Gauntlet. Can you go further? https://wordocious.com/go/x?s=finished&m=gauntlet",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "web": {
+        "cards": [
+          {
+            "kind": "result",
+            "frame": "message",
+            "title": "Result"
+          },
+          {
+            "kind": "streak",
+            "frame": "message",
+            "title": "Streak"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=finished&m=gauntlet",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/msg?s=finished&m=gauntlet",
+            "caption": "Reached stage 3 of the Gauntlet. Can you go further?",
+            "text": "Reached stage 3 of the Gauntlet. Can you go further? https://wordocious.com/go/msg?s=finished&m=gauntlet",
+            "mobileOnly": true
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/wa?s=finished&m=gauntlet",
+            "caption": "Reached stage 3 of the Gauntlet. Can you go further?",
+            "text": "Reached stage 3 of the Gauntlet. Can you go further? https://wordocious.com/go/wa?s=finished&m=gauntlet",
+            "mobileOnly": true
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/x?s=finished&m=gauntlet",
+            "caption": "Reached stage 3 of the Gauntlet. Can you go further?",
+            "text": "Reached stage 3 of the Gauntlet. Can you go further? https://wordocious.com/go/x?s=finished&m=gauntlet",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/facebook?s=finished&m=gauntlet",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "link",
+            "link": "https://wordocious.com/go/snapchat?s=finished&m=gauntlet",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "leaderboard",
+      "context": {
+        "surface": "leaderboard",
+        "mode": "",
+        "play": null,
+        "cards": [],
+        "hasSpoilerVariant": false,
+        "season": "halloween",
+        "caption": null
+      },
+      "ios": {
+        "cards": [
+          {
+            "kind": "leaderboard",
+            "frame": "message",
+            "title": "Leaderboard"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "halloween",
+              "label": "Halloween"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "halloween"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=leaderboard",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "android": {
+        "cards": [
+          {
+            "kind": "leaderboard",
+            "frame": "message",
+            "title": "Leaderboard"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "halloween",
+              "label": "Halloween"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "halloween"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=leaderboard",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "imageText",
+            "link": "https://wordocious.com/go/x?s=leaderboard",
+            "caption": null,
+            "text": "https://wordocious.com/go/x?s=leaderboard",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "web": {
+        "cards": [
+          {
+            "kind": "leaderboard",
+            "frame": "message",
+            "title": "Leaderboard"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "halloween",
+              "label": "Halloween"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "halloween"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=leaderboard",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/msg?s=leaderboard",
+            "caption": null,
+            "text": "https://wordocious.com/go/msg?s=leaderboard",
+            "mobileOnly": true
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/wa?s=leaderboard",
+            "caption": null,
+            "text": "https://wordocious.com/go/wa?s=leaderboard",
+            "mobileOnly": true
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/x?s=leaderboard",
+            "caption": null,
+            "text": "https://wordocious.com/go/x?s=leaderboard",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/facebook?s=leaderboard",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "link",
+            "link": "https://wordocious.com/go/snapchat?s=leaderboard",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "sweep",
+      "context": {
+        "surface": "sweep",
+        "mode": "",
+        "play": null,
+        "cards": [
+          "daily-sweep",
+          "streak"
+        ],
+        "hasSpoilerVariant": false,
+        "season": null,
+        "caption": {
+          "kind": "sweep",
+          "date": "2026-10-16",
+          "game": "Wordocious",
+          "d": 12
+        }
+      },
+      "ios": {
+        "cards": [
+          {
+            "kind": "daily-sweep",
+            "frame": "message",
+            "title": "Daily sweep"
+          },
+          {
+            "kind": "streak",
+            "frame": "message",
+            "title": "Streak"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=sweep",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "android": {
+        "cards": [
+          {
+            "kind": "daily-sweep",
+            "frame": "message",
+            "title": "Daily sweep"
+          },
+          {
+            "kind": "streak",
+            "frame": "message",
+            "title": "Streak"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=sweep",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "imageText",
+            "link": "https://wordocious.com/go/x?s=sweep",
+            "caption": "Swept every Wordocious daily today 🧹✨ 🔥 Day 12",
+            "text": "Swept every Wordocious daily today 🧹✨ 🔥 Day 12 https://wordocious.com/go/x?s=sweep",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "web": {
+        "cards": [
+          {
+            "kind": "daily-sweep",
+            "frame": "message",
+            "title": "Daily sweep"
+          },
+          {
+            "kind": "streak",
+            "frame": "message",
+            "title": "Streak"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=sweep",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/msg?s=sweep",
+            "caption": "Swept every Wordocious daily today 🧹✨ 🔥 Day 12",
+            "text": "Swept every Wordocious daily today 🧹✨ 🔥 Day 12 https://wordocious.com/go/msg?s=sweep",
+            "mobileOnly": true
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/wa?s=sweep",
+            "caption": "Swept every Wordocious daily today 🧹✨ 🔥 Day 12",
+            "text": "Swept every Wordocious daily today 🧹✨ 🔥 Day 12 https://wordocious.com/go/wa?s=sweep",
+            "mobileOnly": true
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/x?s=sweep",
+            "caption": "Swept every Wordocious daily today 🧹✨ 🔥 Day 12",
+            "text": "Swept every Wordocious daily today 🧹✨ 🔥 Day 12 https://wordocious.com/go/x?s=sweep",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/facebook?s=sweep",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "link",
+            "link": "https://wordocious.com/go/snapchat?s=sweep",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "vs",
+      "context": {
+        "surface": "vs",
+        "mode": "hub",
+        "play": null,
+        "cards": [
+          "vs-result"
+        ],
+        "hasSpoilerVariant": false,
+        "season": null,
+        "caption": {
+          "kind": "vsWin",
+          "date": "2026-10-16",
+          "game": "Hubbub",
+          "opp": "Mira"
+        }
+      },
+      "ios": {
+        "cards": [
+          {
+            "kind": "vs-result",
+            "frame": "message",
+            "title": "Race result"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Rank only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Words revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=vs&m=hub",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "android": {
+        "cards": [
+          {
+            "kind": "vs-result",
+            "frame": "message",
+            "title": "Race result"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Rank only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Words revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=vs&m=hub",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "imageText",
+            "link": "https://wordocious.com/go/x?s=vs&m=hub",
+            "caption": "Beat Mira at Hubbub ⚔️",
+            "text": "Beat Mira at Hubbub ⚔️ https://wordocious.com/go/x?s=vs&m=hub",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "web": {
+        "cards": [
+          {
+            "kind": "vs-result",
+            "frame": "message",
+            "title": "Race result"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Rank only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Words revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=vs&m=hub",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/msg?s=vs&m=hub",
+            "caption": "Beat Mira at Hubbub ⚔️",
+            "text": "Beat Mira at Hubbub ⚔️ https://wordocious.com/go/msg?s=vs&m=hub",
+            "mobileOnly": true
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/wa?s=vs&m=hub",
+            "caption": "Beat Mira at Hubbub ⚔️",
+            "text": "Beat Mira at Hubbub ⚔️ https://wordocious.com/go/wa?s=vs&m=hub",
+            "mobileOnly": true
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/x?s=vs&m=hub",
+            "caption": "Beat Mira at Hubbub ⚔️",
+            "text": "Beat Mira at Hubbub ⚔️ https://wordocious.com/go/x?s=vs&m=hub",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/facebook?s=vs&m=hub",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "link",
+            "link": "https://wordocious.com/go/snapchat?s=vs&m=hub",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "profile",
+      "context": {
+        "surface": "profile",
+        "mode": "",
+        "play": null,
+        "cards": [
+          "achievement",
+          "streak",
+          "profile"
+        ],
+        "hasSpoilerVariant": false,
+        "season": null,
+        "caption": null
+      },
+      "ios": {
+        "cards": [
+          {
+            "kind": "profile",
+            "frame": "message",
+            "title": "Profile"
+          },
+          {
+            "kind": "streak",
+            "frame": "message",
+            "title": "Streak"
+          },
+          {
+            "kind": "achievement",
+            "frame": "message",
+            "title": "Achievement"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=profile",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "android": {
+        "cards": [
+          {
+            "kind": "profile",
+            "frame": "message",
+            "title": "Profile"
+          },
+          {
+            "kind": "streak",
+            "frame": "message",
+            "title": "Streak"
+          },
+          {
+            "kind": "achievement",
+            "frame": "message",
+            "title": "Achievement"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=profile",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "imageText",
+            "link": "https://wordocious.com/go/x?s=profile",
+            "caption": null,
+            "text": "https://wordocious.com/go/x?s=profile",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "web": {
+        "cards": [
+          {
+            "kind": "profile",
+            "frame": "message",
+            "title": "Profile"
+          },
+          {
+            "kind": "streak",
+            "frame": "message",
+            "title": "Streak"
+          },
+          {
+            "kind": "achievement",
+            "frame": "message",
+            "title": "Achievement"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": false,
+          "options": [
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "normal"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=profile",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/msg?s=profile",
+            "caption": null,
+            "text": "https://wordocious.com/go/msg?s=profile",
+            "mobileOnly": true
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/wa?s=profile",
+            "caption": null,
+            "text": "https://wordocious.com/go/wa?s=profile",
+            "mobileOnly": true
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/x?s=profile",
+            "caption": null,
+            "text": "https://wordocious.com/go/x?s=profile",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/facebook?s=profile",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "link",
+            "link": "https://wordocious.com/go/snapchat?s=profile",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "moment",
+      "context": {
+        "surface": "moment",
+        "mode": "ladder",
+        "play": "daily",
+        "cards": [
+          "moment"
+        ],
+        "hasSpoilerVariant": true,
+        "season": "halloween",
+        "caption": null
+      },
+      "ios": {
+        "cards": [
+          {
+            "kind": "moment",
+            "frame": "message",
+            "title": "Moment"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Rungs only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Words revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "halloween",
+              "label": "Halloween"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "halloween"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=moment&m=ladder",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "android": {
+        "cards": [
+          {
+            "kind": "moment",
+            "frame": "message",
+            "title": "Moment"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Rungs only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Words revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "halloween",
+              "label": "Halloween"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "halloween"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=moment&m=ladder",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "imageText",
+            "link": "https://wordocious.com/go/x?s=moment&m=ladder",
+            "caption": null,
+            "text": "https://wordocious.com/go/x?s=moment&m=ladder",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "web": {
+        "cards": [
+          {
+            "kind": "moment",
+            "frame": "message",
+            "title": "Moment"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Rungs only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Words revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "halloween",
+              "label": "Halloween"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "halloween"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=moment&m=ladder",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/msg?s=moment&m=ladder",
+            "caption": null,
+            "text": "https://wordocious.com/go/msg?s=moment&m=ladder",
+            "mobileOnly": true
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/wa?s=moment&m=ladder",
+            "caption": null,
+            "text": "https://wordocious.com/go/wa?s=moment&m=ladder",
+            "mobileOnly": true
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/x?s=moment&m=ladder",
+            "caption": null,
+            "text": "https://wordocious.com/go/x?s=moment&m=ladder",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/facebook?s=moment&m=ladder",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "link",
+            "link": "https://wordocious.com/go/snapchat?s=moment&m=ladder",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "unknown-season-label",
+      "context": {
+        "surface": "moment",
+        "mode": "",
+        "play": null,
+        "cards": [],
+        "hasSpoilerVariant": false,
+        "season": "winter",
+        "caption": null
+      },
+      "ios": {
+        "cards": [
+          {
+            "kind": "moment",
+            "frame": "message",
+            "title": "Moment"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "winter",
+              "label": "Winter"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "winter"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=moment",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "android": {
+        "cards": [
+          {
+            "kind": "moment",
+            "frame": "message",
+            "title": "Moment"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "winter",
+              "label": "Winter"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "winter"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=moment",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "imageText",
+            "link": "https://wordocious.com/go/x?s=moment",
+            "caption": null,
+            "text": "https://wordocious.com/go/x?s=moment",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "stories",
+            "label": "Stories",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "tiktok",
+            "label": "TikTok",
+            "availability": "needsRegistration",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      },
+      "web": {
+        "cards": [
+          {
+            "kind": "moment",
+            "frame": "message",
+            "title": "Moment"
+          }
+        ],
+        "variant": {
+          "shown": false,
+          "initial": "clean",
+          "copy": {
+            "clean": {
+              "title": "No spoilers",
+              "subtitle": "Colors only"
+            },
+            "full": {
+              "title": "Full results",
+              "subtitle": "Letters revealed"
+            }
+          }
+        },
+        "looks": {
+          "shown": true,
+          "options": [
+            {
+              "id": "winter",
+              "label": "Winter"
+            },
+            {
+              "id": "normal",
+              "label": "Normal"
+            }
+          ],
+          "initial": "winter"
+        },
+        "channels": [
+          {
+            "id": "copy",
+            "label": "Copy link",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/copy?s=moment",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "messages",
+            "label": "Messages",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/msg?s=moment",
+            "caption": null,
+            "text": "https://wordocious.com/go/msg?s=moment",
+            "mobileOnly": true
+          },
+          {
+            "id": "whatsapp",
+            "label": "WhatsApp",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/wa?s=moment",
+            "caption": null,
+            "text": "https://wordocious.com/go/wa?s=moment",
+            "mobileOnly": true
+          },
+          {
+            "id": "x",
+            "label": "X",
+            "availability": "ready",
+            "payload": "text",
+            "link": "https://wordocious.com/go/x?s=moment",
+            "caption": null,
+            "text": "https://wordocious.com/go/x?s=moment",
+            "mobileOnly": false
+          },
+          {
+            "id": "facebook",
+            "label": "Facebook",
+            "availability": "ready",
+            "payload": "link",
+            "link": "https://wordocious.com/go/facebook?s=moment",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "save",
+            "label": "Save image",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          },
+          {
+            "id": "more",
+            "label": "More",
+            "availability": "ready",
+            "payload": "image",
+            "link": null,
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ],
+        "hiddenChannels": [
+          {
+            "id": "snapchat",
+            "label": "Snapchat",
+            "availability": "needsRegistration",
+            "payload": "link",
+            "link": "https://wordocious.com/go/snapchat?s=moment",
+            "caption": null,
+            "text": null,
+            "mobileOnly": false
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -21,7 +21,9 @@ enum class ShareVariant(val id: String) { CLEAN("clean"), FULL("full");
     companion object { fun from(id: String?): ShareVariant? = values().firstOrNull { it.id == id } }
 }
 
+@Serializable
 data class ShareVariantSide(val title: String, val subtitle: String)
+@Serializable
 data class ShareVariantCopy(val clean: ShareVariantSide, val full: ShareVariantSide)
 
 object ShareSpoilers {
