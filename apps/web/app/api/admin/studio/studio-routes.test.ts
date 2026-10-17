@@ -101,8 +101,8 @@ describe('publisher cron', () => {
 });
 
 describe('publisher video guard', () => {
-  it('picks its images through publishableImages (which drops video entries), never straight from post.media', () => {
-    const src = readFileSync(join(__dirname, '../../cron/social-publish/route.ts'), 'utf8');
+  it('the shared publisher picks its images through publishableImages (which drops video entries), never straight from post.media', () => {
+    const src = readFileSync(join(__dirname, '../../../../lib/social/publish-target.ts'), 'utf8');   // the cron + Send to TikTok drafts share it
     expect(src).toContain('publishableImages(post.media');
     expect(src).not.toMatch(/post\.media\.filter/);
   });

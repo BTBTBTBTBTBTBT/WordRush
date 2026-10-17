@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { stampHeartbeat } from '@/lib/heartbeat';
-import { loadPaused, loadStudioReviewers, mediaUrls, POST_COLUMNS, REVIEW_COLUMNS, TARGET_COLUMNS } from '@/lib/admin/studio-db';
+import { loadPaused, loadStudioReviewers, POST_COLUMNS, REVIEW_COLUMNS, TARGET_COLUMNS } from '@/lib/admin/studio-db';
 import {
-  CLAIM_STALE_MS, finalText, MAX_ATTEMPTS, PLATFORM_INFO, publishableImages, publishEligibility, retryDelayMs, reviewState, rollupStatus, trackedUrl,
-  type Platform, type SocialPost, type SocialReview, type SocialTarget,
+  CLAIM_STALE_MS, publishEligibility, reviewState, rollupStatus, type Platform, type SocialPost, type SocialReview, type SocialTarget,
 } from '@/lib/admin/studio';
-import { PUBLISHERS, providerEnv, scrub, type AccountRow } from '@/lib/social/adapters';
+import type { AccountRow } from '@/lib/social/adapters';
+import { publishClaimedTarget } from '@/lib/social/publish-target';
 
 export const maxDuration = 60;
 export const runtime = 'nodejs';
@@ -88,51 +88,11 @@ export async function GET(req: NextRequest) {
         .select('id').maybeSingle();
       if (!claimed) continue;
 
-      const attempt = target.attempts + 1;
-      let acct = accounts.get(target.platform)!;
-      const publisher = PUBLISHERS[target.platform];
-      try {
-        const env = providerEnv(PLATFORM_INFO[target.platform].provider);
-        if (!env) throw new Error('App keys are not set in Vercel');
-        if (publisher.refresh) {
-          const fresh = await publisher.refresh(acct, env);
-          if (fresh) {
-            acct = { ...acct, ...fresh };
-            accounts.set(target.platform, acct);
-            await admin.from('social_accounts').update({ ...fresh, updated_at: new Date().toISOString() }).eq('platform', target.platform);
-          }
-        }
-        const size = PLATFORM_INFO[target.platform].size;
-        // Images only: a 'video' entry is never sent (video posting is not built; those posts stay paused).
-        const pick = publishableImages(post.media, size);
-        const urls = await mediaUrls(admin, pick, SITE, 3 * 3600);
-        const imageUrls = pick.map((m) => urls[m.path]).filter(Boolean);
-        if (!imageUrls.length) throw new Error('No image for this platform');
-        const link = trackedUrl(target.link_slug, SITE) ?? post.link_target;
-        const result = await publisher.publish(acct, {
-          text: finalText(target.platform, target.caption, post.hashtags, link),
-          imageUrls,
-          link,
-          title: post.title,
-        });
-        await admin.from('social_post_targets').update({
-          status: 'posted', attempts: attempt, remote_id: result.remoteId, remote_url: result.url, posted_at: new Date().toISOString(),
-          last_error: result.note ?? null, claimed_at: null, next_attempt_at: null, updated_at: new Date().toISOString(),
-        }).eq('id', target.id);
-        await admin.from('social_publish_log').insert({ post_id: post.id, target_id: target.id, platform: target.platform, attempt, ok: true, remote_id: result.remoteId, remote_url: result.url });
-        target.status = 'posted';
-        posted += 1;
-      } catch (e) {
-        const msg = scrub(e instanceof Error ? e.message : String(e), [acct.access_token, acct.refresh_token]);
-        const failed = attempt >= MAX_ATTEMPTS;
-        await admin.from('social_post_targets').update({
-          status: failed ? 'failed' : 'pending', attempts: attempt, last_error: msg, claimed_at: null,
-          next_attempt_at: failed ? null : new Date(Date.now() + retryDelayMs(attempt)).toISOString(), updated_at: new Date().toISOString(),
-        }).eq('id', target.id);
-        await admin.from('social_publish_log').insert({ post_id: post.id, target_id: target.id, platform: target.platform, attempt, ok: false, error: msg });
-        target.status = failed ? 'failed' : 'pending';
-        errors.push(`${target.platform}: ${msg}`);
-      }
+      const out = await publishClaimedTarget(admin, post, target, accounts.get(target.platform)!, SITE);
+      accounts.set(target.platform, out.account);
+      target.status = out.status;
+      if (out.error) errors.push(`${target.platform}: ${out.error}`);
+      else posted += 1;
     }
     const next = rollupStatus(mine);
     if (next !== post.status) await admin.from('social_posts').update({ status: next, updated_at: new Date().toISOString() }).eq('id', post.id);

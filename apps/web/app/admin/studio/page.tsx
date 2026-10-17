@@ -219,6 +219,18 @@ export default function SocialStudioPage() {
       if (!next.length) { flash('Keep at least one platform'); return; }
       schedule(post, { platforms: next }, on ? `Added ${PLATFORM_INFO[platform].label}: it needs both approvals again` : `Removed ${PLATFORM_INFO[platform].label}`);
     },
+    sendTikTok: (data?.accounts ?? []).some((a) => a.platform === 'tiktok' && a.connected) ? async (post) => {
+      try {
+        const j = await postJson<{ post?: SocialPost; targets?: SocialTarget[]; fixture?: boolean }>('/api/admin/studio/send-tiktok', { post_id: post.id });
+        if (j.post && j.targets) {
+          setPosts((list) => list.map((p) => (p.id === post.id ? j.post! : p)));
+          setTargets((list) => [...list.filter((t) => t.post_id !== post.id), ...j.targets!]);
+        }
+        flash(`${post.title} sent to the TikTok inbox. Open TikTok to finish it.`);
+      } catch (e) {
+        flash(`Could not send to TikTok: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    } : null,
   };
 
   const move = (postId: string, day: string) => {

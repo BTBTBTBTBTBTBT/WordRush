@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { STATUS_LOOK } from './status-look';
 import {
-  AlertTriangle, CalendarClock, ExternalLink, Link2, MousePointerClick, Pause, Play, RotateCcw, UserPlus,
+  AlertTriangle, CalendarClock, ExternalLink, Inbox, Link2, MousePointerClick, Pause, Play, RotateCcw, UserPlus,
 } from 'lucide-react';
 import { ReviewerDisc, TileActions } from '../art/review-panel';
 import {
@@ -24,6 +24,8 @@ export interface CardActions {
   reschedule: (post: SocialPost, iso: string) => void;
   togglePause: (post: SocialPost) => void;
   togglePlatform: (post: SocialPost, platform: Platform, on: boolean) => void;
+  /** Send the TikTok version to the TikTok inbox as a private draft now (null while TikTok is not connected). */
+  sendTikTok: ((post: SocialPost) => Promise<void>) | null;
 }
 
 export function PostCard({
@@ -150,6 +152,9 @@ export function PostCard({
           )}
           <HashtagEditor key={`${post.id}-tags-${post.version}`} post={post} locked={done} hasApprovals={state.approvedBy.length > 0} onSave={(t) => actions.saveHashtags(post, t)} />
           {target && <LinkLine target={target} links={links} />}
+          {target?.platform === 'tiktok' && target.status === 'pending' && actions.sendTikTok && (
+            <SendTikTok onSend={() => actions.sendTikTok!(post)} />
+          )}
           {target?.status === 'failed' && (
             <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 break-words">
               Failed after {target.attempts} {target.attempts === 1 ? 'try' : 'tries'}: {target.last_error ?? 'unknown error'}
@@ -327,6 +332,22 @@ function Schedule({ post, onChange, onPause }: { post: SocialPost; onChange: (is
       <button onClick={onPause} className={`ml-auto h-8 rounded-lg px-2.5 text-xs font-extrabold inline-flex items-center gap-1 ${post.paused ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
         {post.paused ? <><Play className="w-3.5 h-3.5" /> Resume</> : <><Pause className="w-3.5 h-3.5" /> Hold</>}
       </button>
+    </div>
+  );
+}
+
+function SendTikTok({ onSend }: { onSend: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        disabled={busy}
+        onClick={async () => { setBusy(true); await onSend(); setBusy(false); }}
+        className="h-8 rounded-lg bg-gray-900 px-3 text-xs font-extrabold text-white hover:bg-black disabled:opacity-60 inline-flex items-center gap-1.5"
+      >
+        <Inbox className="w-3.5 h-3.5" />{busy ? 'Sending…' : 'Send to TikTok drafts'}
+      </button>
+      <span className="text-[11px] font-semibold text-gray-400">Lands in the @playwordocious TikTok inbox as a private draft; you finish and post it in TikTok.</span>
     </div>
   );
 }
