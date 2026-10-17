@@ -152,7 +152,7 @@ export function PostCard({
           )}
           <HashtagEditor key={`${post.id}-tags-${post.version}`} post={post} locked={done} hasApprovals={state.approvedBy.length > 0} onSave={(t) => actions.saveHashtags(post, t)} />
           {target && <LinkLine target={target} links={links} />}
-          {target?.platform === 'tiktok' && target.status === 'pending' && actions.sendTikTok && (
+          {target?.platform === 'tiktok' && target.status === 'pending' && !video && actions.sendTikTok && (
             <SendTikTok onSend={() => actions.sendTikTok!(post)} />
           )}
           {target?.status === 'failed' && (
