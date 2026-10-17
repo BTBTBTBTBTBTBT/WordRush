@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AudioLines, ChevronLeft, ChevronRight, Columns2, Download, LayoutGrid, MessageSquareText, PackageCheck, Palette,
+  AudioLines, BookOpen, ChevronLeft, ChevronRight, Columns2, Download, LayoutGrid, MessageSquareText, PackageCheck, Palette,
   RotateCcw, Search, SlidersHorizontal, Smartphone, Star, X,
 } from 'lucide-react';
 import { PageHeader, useAdminData } from '../components/admin-ui';
+import { AdminTabs, useTabParam, type AdminTabDef } from '../components/admin-tabs';
+import { PlaybookView } from '../components/playbook-view';
+import { PLAYBOOKS } from '@/lib/admin/playbooks.generated';
 import { PreviewPanel } from './preview-panel';
 import { SectionBlock, type SectionMode } from './sections';
 import { CHECKER, FRESH_MS, MediaGlyph, Thumb, useSigner, type Signer } from './thumbs';
@@ -89,6 +92,12 @@ type Tab = ReviewTab | 'preview';
 interface Undo { id: number; message: string; undo: (() => void) | null }
 interface PendingOp { timer: ReturnType<typeof setTimeout>; commit: (keepalive: boolean) => void }
 
+// ?tab=playbook opens the art playbook (docs/design/brand/ART-PLAYBOOK.md, rendered at build time).
+const PAGE_TABS: ReadonlyArray<AdminTabDef<'library' | 'playbook'>> = [
+  { id: 'library', label: 'Library', icon: Palette },
+  { id: 'playbook', label: 'Art playbook', icon: BookOpen },
+];
+
 const TAB_LABEL: Record<Tab, { long: string; short: string }> = {
   preview: { long: 'In app preview', short: 'In app preview' },
   mine: { long: 'Needs my review', short: 'To review' },
@@ -144,6 +153,7 @@ export default function ArtLibraryPage() {
   const ctx = useMemo<ReviewContext>(() => ({ index: reviewIndex, reviewers, me }), [reviewIndex, reviewers, me]);
   const openFeedback = useOpenFeedback();
 
+  const [pageTab, setPageTab] = useTabParam(PAGE_TABS.map((t) => t.id), 'library');
   const [view, setView] = useState<'sections' | 'picks' | 'feedback'>('sections');
   const [tab, setTab] = useState<Tab>('all');
   const [mode, setMode] = useState<Mode>('grid');
@@ -376,7 +386,16 @@ export default function ArtLibraryPage() {
         subtitle="New art by section. Approve, reject or comment right on each piece; BMT and JP both approve the keepers."
       />
 
-      {error && !data ? (
+      <AdminTabs tabs={PAGE_TABS} value={pageTab} onChange={setPageTab} label="Art Library sections" />
+
+      {pageTab === 'playbook' ? (
+        <PlaybookView
+          title="Art playbook"
+          purpose="How we make, check, compress and ship every piece of Wordocious art: the cast rules, the ChatGPT pipeline, the look, the quality bar, compression, approvals and the lessons behind each rule."
+          doc={PLAYBOOKS.art}
+          missing="The art playbook is not in this build yet."
+        />
+      ) : error && !data ? (
         <StateScene
           scene="offline"
           title="The library did not load"

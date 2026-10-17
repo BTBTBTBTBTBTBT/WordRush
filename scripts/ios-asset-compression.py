@@ -2,16 +2,13 @@
 """iOS asset-catalog compression policy (docs/review/app-size/REPORT.md).
 
 Every raster imageset in apps/ios/Wordocious/Resources/Assets.xcassets declares its actool `compression-type`
-in its Contents.json `properties`:
-
-    "lossy"     HEVC (HEIF) with alpha. ~70% smaller Assets.car than the default lossless deepmap2.
-    "lossless"  kept exactly as the PNG. Used ONLY where lossy is wrong:
-                - `bubble-*`: the glyph atlas is a three-channel TINT MAP (R/G/B carry data, not colour,
-                  decoded per pixel by BubbleGlyphTint, byte-identical to web/Android; see
-                  scripts/build-bubble-atlas.py and packages/core/src/bubble-text.test.ts);
-                - any fully opaque image (no alpha): actool encodes those as RGB555 (15-bit colour) when lossy,
-                  which bands on gradients, whereas an image with an alpha channel takes the HEVC path.
-
+in its Contents.json `properties`. Since 10-16 (2.9 rollback) the policy is LOSSLESS for every imageset:
+    "lossless"  kept exactly as the PNG. Lossy HEVC turned faint-alpha art (the button light maps art-fam-lm-*,
+                600+ mascot pieces) into an opaque white haze over every keyboard key in 2.9 (265).
+                `bubble-*` is a three-channel TINT MAP (data, not color) and stays lossless whatever the policy.
+    "lossy"     HEVC with alpha: NOT used. Re-enabling it needs a per-image visual gate (SSIM + screenshots of a
+                keyboard, candy/quiet buttons, a finish screen and the mascot maker, night and day). See
+                docs/design/brand/ART-PLAYBOOK.md "Compression".
 Skipped (no property written): vector imagesets (svg / preserves-vector-representation), multi-scale sets
 (launch-w), non-PNG sources (the Wallpapers catalog is JPEG already, opaque, 2 MB).
 

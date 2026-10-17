@@ -7,21 +7,24 @@ import { outline, parseMarkdown, safeHref } from '@/lib/admin/markdown-lite';
 import { Markdown, PlaybookView } from '@/app/admin/components/playbook-view';
 
 const SOURCES = gen.PLAYBOOKS as Record<string, string>;
-const buildPlaybooks = gen.buildPlaybooks as () => Record<'season' | 'social', { path: string; markdown: string | null; updated: string | null }>;
+const buildPlaybooks = gen.buildPlaybooks as () => Record<'season' | 'social' | 'art', { path: string; markdown: string | null; updated: string | null }>;
 const html = (md: string) => renderToStaticMarkup(createElement(Markdown, { source: md }));
 
 describe('gen-playbooks', () => {
-  it('reads both playbook paths, with the season playbook included', () => {
+  it('reads every playbook path, with the season and art playbooks included', () => {
     const built = buildPlaybooks();
-    expect(Object.keys(SOURCES)).toEqual(['season', 'social']);
+    expect(Object.keys(SOURCES)).toEqual(['season', 'social', 'art']);
+    expect(built.art.path).toBe('docs/design/brand/ART-PLAYBOOK.md');
+    expect(built.art.markdown).toContain('Art Playbook');
     expect(built.season.path).toBe('docs/design/brand/seasons/PLAYBOOK.md');
     expect(built.social.path).toBe('docs/marketing/SOCIAL-PLAYBOOK.md');
     expect(built.season.markdown).toContain('Season Playbook');
     // The social playbook is written by another agent: present => non-empty text, absent => null (friendly state).
     expect(built.social.markdown === null || built.social.markdown.length > 0).toBe(true);
   });
-  it('the committed generated module exposes both entries', () => {
+  it('the committed generated module exposes every entry', () => {
     expect(PLAYBOOKS.season.markdown).toContain('Season Playbook');
+    expect(PLAYBOOKS.art.markdown).toContain('Art Playbook');
     expect(PLAYBOOKS.social).toHaveProperty('markdown');
   });
   it('shows a being-written state when a playbook is missing', () => {
