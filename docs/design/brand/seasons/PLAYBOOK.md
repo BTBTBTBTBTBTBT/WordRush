@@ -1,5 +1,7 @@
 # Season Playbook — how we ship a season, end to end
 
+Last updated: 2026-10-16
+
 Founder 10-16: "develop a roadmap on the whole process on how we do this … so when we continue on with our efforts on
 the Christmas one, it would be a well oiled machine. Everything from the flow, to the image adjustments, share screens,
 everything we are currently covering."
