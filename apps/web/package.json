@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "node scripts/copy-bible.mjs && next build && node scripts/trace-app-includes.mjs",
+    "dev": "node scripts/gen-playbooks.mjs && next dev",
+    "build": "node scripts/copy-bible.mjs && node scripts/gen-playbooks.mjs && next build && node scripts/trace-app-includes.mjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",

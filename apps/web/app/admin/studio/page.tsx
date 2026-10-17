@@ -1,13 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, AtSign, CalendarDays, CalendarRange, ListChecks, CircleCheck, CircleDashed, Clapperboard, Pause, Play, RotateCcw, X } from 'lucide-react';
+import { AlertTriangle, AtSign, CalendarDays, BookOpen, CalendarRange, ListChecks, CircleCheck, CircleDashed, Clapperboard, Pause, Play, RotateCcw, X } from 'lucide-react';
 import { PageHeader, useAdminData } from '../components/admin-ui';
 import { AdminTabs, useTabParam, type AdminTabDef } from '../components/admin-tabs';
 import { SocialRegistry } from './social-registry';
 import { StudioCalendar, type CalPost } from './calendar';
 import { PostCard, type CardActions } from './post-card';
 import { PlanDayCard, PlanTab } from './plan-view';
+import { PlaybookView } from '../components/playbook-view';
+import { PLAYBOOKS } from '@/lib/admin/playbooks.generated';
 import { planDay } from '@/lib/admin/social-plan';
 import { artSrc, PAGE_SCENES } from '@/lib/art';
 import {
@@ -23,9 +25,10 @@ import type { StudioPayload } from '@/lib/admin/studio-types';
 // Rules: lib/admin/studio.ts. Tables: docs/sql/20261005-social-studio.sql.
 
 // ?tab= is shared with the other merged pages (the Calendar view is the default).
-const TABS: ReadonlyArray<AdminTabDef<'calendar' | 'plan' | 'accounts'>> = [
+const TABS: ReadonlyArray<AdminTabDef<'calendar' | 'plan' | 'playbook' | 'accounts'>> = [
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'plan', label: "JP's plan", icon: ListChecks },
+  { id: 'playbook', label: 'Playbook', icon: BookOpen },
   { id: 'accounts', label: 'Accounts', icon: AtSign },
 ];
 
@@ -280,6 +283,13 @@ export default function SocialStudioPage() {
 
       {tab === 'plan' ? (
         <PlanTab today={today} onOpenDay={openPlanDay} />
+      ) : tab === 'playbook' ? (
+        <PlaybookView
+          title="Social playbook"
+          purpose="How we run social for Wordocious: the accounts, the voice, what we post and when, how posts get approved, and the rules every post follows."
+          doc={PLAYBOOKS.social}
+          missing="The social playbook (docs/marketing/SOCIAL-PLAYBOOK.md) is still being written. It will appear here automatically on the next deploy after it lands."
+        />
       ) : error && !data ? (
         <StateScene
           scene="offline"

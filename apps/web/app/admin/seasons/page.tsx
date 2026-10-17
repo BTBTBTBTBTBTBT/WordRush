@@ -2,11 +2,14 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { Ghost, ExternalLink, Smartphone, CalendarRange } from 'lucide-react';
+import { Ghost, ExternalLink, Smartphone, CalendarRange, BookOpen } from 'lucide-react';
 import { halloweenSrc } from '@/lib/art';
 import { CAST, MASCOT_LETTER } from '@/lib/mascots';
 import { halloweenStatus } from '@/lib/admin/admin-aggregates';
 import { PageHeader, Section, Stat, Callout } from '../components/admin-ui';
+import { AdminTabs, useTabParam, type AdminTabDef } from '../components/admin-tabs';
+import { PlaybookView } from '../components/playbook-view';
+import { PLAYBOOKS } from '@/lib/admin/playbooks.generated';
 
 // admin > Design > Seasons: the seasonal cast skins (FINISH_SPEC X).
 // core currentSeason decides on the player's LOCAL date; this page reads the
@@ -17,6 +20,12 @@ const localDay = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+
+// ?tab=playbook opens the season playbook (docs/design/brand/seasons/PLAYBOOK.md, rendered at build time).
+const TABS: ReadonlyArray<AdminTabDef<'seasons' | 'playbook'>> = [
+  { id: 'seasons', label: 'Seasons', icon: Ghost },
+  { id: 'playbook', label: 'Season playbook', icon: BookOpen },
+];
 
 const PREVIEWS: Array<{ q: string; label: string; note: string }> = [
   { q: 'halloween', label: 'Force Halloween', note: 'Skins on for this browser session' },
@@ -31,6 +40,7 @@ const monthDay = (ymd: string) => `${MONTHS[Number(ymd.slice(5, 7)) - 1]} ${Numb
 export default function AdminSeasonsPage() {
   const day = useMemo(localDay, []);
   const s = useMemo(() => halloweenStatus(day), [day]);
+  const [tab, setTab] = useTabParam(TABS.map((t) => t.id), 'seasons');
 
   return (
     <div className="space-y-6">
@@ -40,6 +50,17 @@ export default function AdminSeasonsPage() {
         subtitle={`Halloween runs ${monthDay(s.start)} to ${monthDay(s.end)} on each player's local date. During the season the registry (season-registry.json) swaps the cast skins, the game and page titles, the wallpapers, the button tints and the Home banner; admins preview any season from Settings > Season preview.`}
       />
 
+      <AdminTabs tabs={TABS} value={tab} onChange={setTab} label="Seasons sections" />
+
+      {tab === 'playbook' ? (
+        <PlaybookView
+          title="Season playbook"
+          purpose="How we ship a season end to end: the timeline, who does what, the full art and code kit, the quality bar, review and release, and the lessons from every season so far."
+          doc={PLAYBOOKS.season}
+          missing="The season playbook is not in this build yet."
+        />
+      ) : (
+      <>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Status today" value={s.active ? 'Halloween is on' : 'Off season'} sub={`Your local date: ${day}`} icon={Ghost} tone={s.active ? 'text-orange-600 bg-orange-50' : 'text-gray-500 bg-gray-100'} />
         <Stat label={s.active ? 'Days left' : 'Starts in'} value={s.active ? `${s.daysLeft} day${s.daysLeft === 1 ? '' : 's'}` : `${s.daysUntilStart} day${s.daysUntilStart === 1 ? '' : 's'}`} sub={s.active ? `Ends after ${s.end}` : `Opens ${s.start}`} icon={CalendarRange} />
@@ -80,6 +101,8 @@ export default function AdminSeasonsPage() {
       <Callout>
         <span className="inline-flex items-center gap-1.5 font-bold"><Smartphone className="w-4 h-4" /> iOS and Android:</span> turn on Settings → Halloween preview (shown to admin accounts only). To see a single piece of art in the app before it ships, use the In app preview tab on the <Link href="/admin/art" className="font-bold text-purple-700">Art Library</Link>.
       </Callout>
+      </>
+      )}
     </div>
   );
 }
