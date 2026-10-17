@@ -124,7 +124,7 @@ no-go list for the season is named in the test. Optional: a seasonal voicing (`n
 `sounds.note` + SEASON_NOTE_PREFIX ×3; iOS checks every sample ships) and an intro jingle the founder hears first.
 **Share cards:** automatic — the night share style uses the season's title art + cast; render every card kind in the
 season AND in the standard look and archive them in the Art Library (§8).
-**Social:** posts in the season's palette, holiday greeting posts (7 AM, mascot image), reveal post tied to the ship date.
+**Social:** posts in the season's palette, holiday greeting posts (7 AM, mascot image), reveal post tied to the ship date. Full social operating manual: [`docs/marketing/SOCIAL-PLAYBOOK.md`](../../../marketing/SOCIAL-PLAYBOOK.md).
 
 ## 4. Making the art (ChatGPT pipeline)
 

@@ -32,3 +32,5 @@ from the brand kit, so they match the app:
 Copy used: "DAILY WORD GAMES", "Same puzzles for everyone · iPhone, Android & web",
 "Play today's puzzles", wordocious.com, and one line per character on the carousel slides
 (edit `ROLES` / `TAGLINE` in compose-social.py and re-run to change any of it).
+
+Operating manual for every social block (timeline, roles, images, copy, Studio, KPIs, lessons): [`docs/marketing/SOCIAL-PLAYBOOK.md`](../../../marketing/SOCIAL-PLAYBOOK.md).
