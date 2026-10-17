@@ -102,8 +102,9 @@ season AND in the standard look and archive them in the Art Library (§8).
 5. Log every kept file + prompt (`<season>/NEW-<date>.md`).
    Runner safety: NEVER click ChatGPT's Share button (it makes a public link) — find "Download" by its accessible name
    and click by ref after a screenshot; clear the prompt box before each prompt (drafts carry over between tabs).
-   iOS art ships with lossy (HEVC) asset compression (`compression-type: lossy`) — visually identical, ~70% smaller;
-   only the few fully-opaque backdrops stay lossless (the check script lists them).
+   iOS art ships LOSSLESS (10-16 rollback): lossy HEVC turned the button gloss maps into an opaque white haze over every
+   keyboard key in 2.9 (265) — 'unreadable, unplayable'. Never switch image compression/formats without on-screen checks of
+   a game keyboard, candy/quiet buttons, a finish screen and the mascot maker, at night and day.
 6. Wallpapers are code (never upscale a ChatGPT image into a full-screen wall).
 7. **Every new image, from day one (founder 10-16):** (a) anything that sits on a wall — walls, the Home stage card, any
    full-bleed window art — is made in all FOUR times of day (morning / day / evening / night) in the same round, never
