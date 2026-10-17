@@ -142,6 +142,14 @@ Series colors per season are in STYLE.md (add each new season's column before th
 
 ## 8. Lessons log and the next-block kickoff
 
+**Lessons from the block 2 image run (10-16 evening):**
+
+- **ChatGPT's image limit is shared by every tab on the account:** two runners × 2 tabs made 34 images in about 20 minutes, then the whole account hit the limit (21:12 CT, reset ~13.5 h later, 10:40 AM). Plan a block's images across two sittings (about 30–35 per sitting) and put the time-critical posts (the next 7 days, holiday greetings) at the FRONT of the queue.
+- **Landscape twins:** ask for the landscape version as a follow-up in the same chat as the portrait (same scene, same cast) instead of a fresh prompt — faster and the two stay consistent.
+- **ChatGPT takes at most 10 attachments:** for 4–5 character scenes, attach one side-by-side sheet per character (hero + season costume in a single image) so every character still gets both references.
+- **Rejects caught by the runners' own vetting:** a gift covering W's letter, mittens hiding I's letter (retry fixed it), a cream card drawn into the empty content band, and a Kwanzaa kinara with all seven candles lit on Dec 26 (day 1 = only the black center candle) — write candle counts and 'letter fully visible' into every holiday prompt.
+- **Headlines drawn too high:** several scenes start the headline above the 14% calm band; fix at accept with `scene.py accept --scale/--top` (or ask for 'headline starting below the top fifth').
+
 **Lessons from the first 45 days (blocks 1 and 2 prep):**
 - Off-model mascots were the top reject: friendly raised brows on S (three scenes; S is the angry-determined one), R drawn twice in one scene, and a letter or costume drifting from the hero. Attach hero + costume art to every prompt and compare crops side by side.
 - Spelling: "HALOWEEN" slipped through once; spell every headline letter by letter, and keep one canonical headline per queue item.

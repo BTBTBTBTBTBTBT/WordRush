@@ -23,12 +23,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o1.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-26-fb/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "front",
    "notes": "a kitchen-counter scene after the feast: a tidy stack of plates and a dish towel, the cast relaxed; ONE tiny snowflake drifting at the very edge of a window (the subtle hint for tomorrow)",
    "hint": "hint: a single snowflake at the edge (subtle nod to tomorrow's winter season, not a giveaway)",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Thanksgiving is over: who did the dishes? (and tomorrow)).\nATTACH: hero/w.png = canonical Webster; hero/d.png = canonical Dewey; hero/o1.png = canonical Ollie; 2026-11-26-fb/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 3 character(s), each exactly once: Webster (the letter W): no costume, the plain look from the canonical art; Dewey (the letter D): no costume, the plain look from the canonical art; Ollie (the letter O): no costume, the plain look from the canonical art. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"DISHES ARE DONE\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"REMATCH STARTS NOW.\".\nSETTING: a kitchen-counter scene after the feast: a tidy stack of plates and a dish towel, the cast relaxed; ONE tiny snowflake drifting at the very edge of a window (the subtle hint for tomorrow).\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, vetted vs hero: W D O on-model, headline + sub spelled right, snowflake hint at window edge top right)"
   },
   {
    "id": "2026-11-30-x-1",
@@ -53,12 +54,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/r.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-23-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "front",
    "notes": "plain lilac-to-pink kit sky (standard look, Thanksgiving is over), soft bokeh, the three standing in a relaxed row",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Monday Masters: race reset).\nATTACH: hero/u.png = canonical Umi; hero/s.png = canonical Scoot; hero/r.png = canonical Rip; 2026-11-23-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 3 character(s), each exactly once: Umi (the letter U): no costume, the plain look from the canonical art; Scoot (the letter S): no costume, the plain look from the canonical art; Rip (the letter R): no costume, the plain look from the canonical art. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MONDAY MASTERS\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"THE CROWN IS OPEN.\".\nSETTING: plain lilac-to-pink kit sky (standard look, Thanksgiving is over), soft bokeh, the three standing in a relaxed row.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, vetted vs hero: U S R on-model, MONDAY MASTERS + THE CROWN IS OPEN. spelled right, plain lilac sky, hint none)"
   },
   {
    "id": "2026-12-01-feed-1",
@@ -92,12 +94,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/i.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-26-fb/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "front",
    "notes": "a cozy snow-globe feel: frosted window frame, string lights, five cast members standing in a relaxed arc",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Winter reveal: wallpaper and costumes).\nATTACH: hero/r.png = canonical Rip; hero/c.png = canonical Cosmo; hero/s.png = canonical Scoot; hero/o3.png = canonical Ozzy; hero/i.png = canonical Ivy; winter-holidays/r.png = Rip's approved winter costume art; winter-holidays/c.png = Cosmo's approved winter costume art; winter-holidays/s.png = Scoot's approved winter costume art; winter-holidays/o3.png = Ozzy's approved winter costume art; winter-holidays/i.png = Ivy's approved winter costume art; 2026-11-26-fb/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 5 character(s), each exactly once: Rip (the letter R): patchwork quilt wrap, striped nightcap with holly and a cocoa mug; Cosmo (the letter C): blue-and-silver scarf and beanie, a dreidel (gimel side) in hand, gelt at his feet; Scoot (the letter S): kente-inspired sash, scarf and an ear of corn baton; keeps his angled, determined brows (friendly raised brows on S are off-model); Ozzy (the letter O): knit ugly Christmas sweater, pom beanie and red mittens; Ivy (the letter I): striped scarf, earmuffs and white mittens. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"WINTER IS HERE\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"SNOW ON EVERY SCREEN.\".\nSETTING: a cozy snow-globe feel: frosted window frame, string lights, five cast members standing in a relaxed arc. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, 5 on-model: R C S O3 I once each, costumes match winter art, WINTER IS HERE + SNOW ON EVERY SCREEN. spelled right, snow-capped headline letters, hint none)"
   },
   {
    "id": "2026-12-01-x-1",
@@ -128,12 +131,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o1.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-24-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "front",
    "notes": "snowy winter-night home wall with warm string lights, a lit window glow, the four standing in a group, soft snowfall",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Winter reveal: the app put on a coat).\nATTACH: hero/w.png = canonical Webster; hero/d.png = canonical Dewey; hero/u.png = canonical Umi; hero/o1.png = canonical Ollie; winter-holidays/w.png = Webster's approved winter costume art; winter-holidays/d.png = Dewey's approved winter costume art; winter-holidays/u.png = Umi's approved winter costume art; winter-holidays/o1.png = Ollie's approved winter costume art; 2026-11-24-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 4 character(s), each exactly once: Webster (the letter W): Santa hat, black belt with a gold buckle, fur-cuffed mittens and fur boots; the cape stays; Dewey (the letter D): blue-and-silver knit Hanukkah sweater with a dreidel and snowflake pattern (round opening for the D), beanie, holding a chocolate gelt coin; Umi (the letter U): Kwanzaa wrap with red, black and green kente-inspired trim and a beanie, holding a kinara (3 red, 1 black, 3 green candles); Ollie (the letter O): reindeer antlers with holly, a jingle-bell collar, tan belly bib and pom-poms. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"WINTER IS HERE\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"THE WHOLE APP PUT ON A COAT.\".\nSETTING: snowy winter-night home wall with warm string lights, a lit window glow, the four standing in a group, soft snowfall. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, W D U O1 on-model vs hero + winter art, kinara 3 red 1 black 3 green verified, WINTER IS HERE + THE WHOLE APP PUT ON A COAT. spelled right; headline starts ~8% from top so use scene.py --scale/--top)"
   },
   {
    "id": "2026-12-02-feed-1",
@@ -158,14 +162,15 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/s.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-18-feed/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots standing low under a calm empty rectangle (70% width x 28% height) for the cartoon, frosty wall",
    "hint": "hint: none (yesterday's, already-played cartoon)",
    "layout": "calm empty rectangle ~70% x 28% between the sub line and the mascots' heads, mascots standing low (heads below 68% of the height), headline in the top 33%",
    "content": "cartoon|<yesterday Muddle cartoon file>|700",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Muddle Wednesday: caption this).\nATTACH: hero/d.png = canonical Dewey; hero/s.png = canonical Scoot; winter-holidays/d.png = Dewey's approved winter costume art; winter-holidays/s.png = Scoot's approved winter costume art; 2026-11-18-feed/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Dewey (the letter D): blue-and-silver knit Hanukkah sweater with a dreidel and snowflake pattern (round opening for the D), beanie, holding a chocolate gelt coin; Scoot (the letter S): kente-inspired sash, scarf and an ear of corn baton; keeps his angled, determined brows (friendly raised brows on S are off-model). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MUDDLE WEDNESDAY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"CAPTION THIS.\".\nSETTING: two mascots standing low under a calm empty rectangle (70% width x 28% height) for the cartoon, frosty wall. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; calm empty rectangle ~70% x 28% between the sub line and the mascots' heads, mascots standing low (heads below 68% of the height), headline in the top 33%; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (retry 2: first try drew a cream card in the empty area, rejected; keeper = plain stone wall, D + S on-model vs hero/winter art, headline + CAPTION THIS. right; empty band is only ~14% tall (mascots' heads at ~52%), so pass --scale/--top or shrink the cartoon when accepting)"
   },
   {
    "id": "2026-12-02-x-1",
@@ -190,14 +195,15 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/i.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-18-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots standing low at the far left and far right, cozy snowy wall, calm empty center for the cartoon",
    "hint": "hint: none (yesterday's, already-played cartoon; caption and answer not shown)",
    "layout": "only TWO mascots, far left and far right, low; leave the center (about 30 percent of the width, sub line down to the floor) empty for a cartoon added in code",
    "content": "cartoon|<yesterday Muddle cartoon file>|520",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Muddle Wednesday).\nATTACH: hero/o2.png = canonical Opal; hero/i.png = canonical Ivy; winter-holidays/o2.png = Opal's approved winter costume art; winter-holidays/i.png = Ivy's approved winter costume art; 2026-11-18-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Opal (the letter O): Christmas cape with a bow, a muff and a gift (heart sunglasses stay on); Ivy (the letter I): striped scarf, earmuffs and white mittens. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MUDDLE WEDNESDAY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"FOUR WORDS. ONE PUNCHLINE.\".\nSETTING: two mascots standing low at the far left and far right, cozy snowy wall, calm empty center for the cartoon. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; only TWO mascots, far left and far right, low; leave the center (about 30 percent of the width, sub line down to the floor) empty for a cartoon added in code; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, O2 Opal + I Ivy on-model vs hero/winter art, two mascots far left/right, clean empty center for the cartoon, MUDDLE WEDNESDAY + FOUR WORDS. ONE PUNCHLINE. spelled right)"
   },
   {
    "id": "2026-12-03-pin-1",
@@ -222,12 +228,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/r.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-1/pin.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "a winter-night scene with a magnifying lens motif and a frosted grid of letter tiles at the edge (decor only)",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Pin: How to play Spyglass).\nATTACH: hero/u.png = canonical Umi; hero/r.png = canonical Rip; winter-holidays/u.png = Umi's approved winter costume art; winter-holidays/r.png = Rip's approved winter costume art; 2026-11-19-pin-1/pin.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Umi (the letter U): Kwanzaa wrap with red, black and green kente-inspired trim and a beanie, holding a kinara (3 red, 1 black, 3 green candles); Rip (the letter R): patchwork quilt wrap, striped nightcap with holly and a cocoa mug. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"HOW TO PLAY SPYGLASS\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"A NEW PUZZLE EVERY DAY.\".\nSETTING: a winter-night scene with a magnifying lens motif and a frosted grid of letter tiles at the edge (decor only). Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, U + R on-model vs hero/winter art, kinara 3 red 1 black 3 green, magnifier + frosted tile windows as decor (no letters), HOW TO PLAY SPYGLASS + A NEW PUZZLE EVERY DAY. spelled right)"
   },
   {
    "id": "2026-12-03-pin-2",
@@ -249,12 +256,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o2.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-2/pin.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "cocoa steam and soft snow, one mascot centered",
    "hint": "hint: none (BLISS was the Oct 19 Word of the Day: a past word)",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Pin: Word card, BLISS).\nATTACH: hero/o2.png = canonical Opal; winter-holidays/o2.png = Opal's approved winter costume art; 2026-11-19-pin-2/pin.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 1 character(s), each exactly once: Opal (the letter O): Christmas cape with a bow, a muff and a gift (heart sunglasses stay on). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"BLISS\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"WORD OF THE DAY\".\nSETTING: cocoa steam and soft snow, one mascot centered. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, O2 Opal on-model: heart sunglasses, cape, bow, muff, gift; BLISS + WORD OF THE DAY spelled right; hint: the headline word BLISS is the day's word card)"
   },
   {
    "id": "2026-12-03-pin-3",
@@ -276,12 +284,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o2.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-3/pin.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "Opal in her winter cape and muff, glowing string lights",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Pin: Cast art, Opal).\nATTACH: hero/o2.png = canonical Opal; winter-holidays/o2.png = Opal's approved winter costume art; 2026-11-19-pin-3/pin.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 1 character(s), each exactly once: Opal (the letter O): Christmas cape with a bow, a muff and a gift (heart sunglasses stay on). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MEET OPAL.\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"BRING YOUR FAMILY.\".\nSETTING: Opal in her winter cape and muff, glowing string lights. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, O2 Opal on-model with cape bow muff gift + heart sunglasses; MEET OPAL. + BRING YOUR FAMILY. spelled right; hint none)"
   },
   {
    "id": "2026-12-03-x-1",
@@ -306,14 +315,15 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o3.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots low and small at the sides, cocoa-steam and snow, calm empty band (28% of height / center 30% of width) for the word tiles",
    "hint": "hint: the word card shows the day's Word of the Day only (not a puzzle answer)",
    "layout": "leave a completely empty calm band (about 20 percent of the height, nothing in it) directly under the headline for the word card added in code; heads no higher than 62 percent of the height",
    "content": "wotd|CHILI|WORD OF THE DAY|1.2",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (WOTD quiz CHILI + Hubbub pangram tease).\nATTACH: hero/c.png = canonical Cosmo; hero/o3.png = canonical Ozzy; winter-holidays/c.png = Cosmo's approved winter costume art; winter-holidays/o3.png = Ozzy's approved winter costume art; 2026-11-19-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Cosmo (the letter C): blue-and-silver scarf and beanie, a dreidel (gimel side) in hand, gelt at his feet; Ozzy (the letter O): knit ugly Christmas sweater, pom beanie and red mittens. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"WORD OF THE DAY QUIZ\". Spell it letter by letter exactly like this. No sub line.\nSETTING: two mascots low and small at the sides, cocoa-steam and snow, calm empty band (28% of height / center 30% of width) for the word tiles. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; leave a completely empty calm band (about 20 percent of the height, nothing in it) directly under the headline for the word card added in code; heads no higher than 62 percent of the height; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, C Cosmo + O3 Ozzy on-model vs hero/winter art, calm empty band under headline, WORD OF THE DAY QUIZ spelled right; note QUIZ line is drawn gold/orange so recolor only the first line rows with --y0/--y1; hint none)"
   },
   {
    "id": "2026-12-04-holiday-feed-1",
@@ -341,12 +351,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/r.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-26-holiday/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "front",
    "notes": "a warm blue-and-silver winter evening: a hanukkiah (nine holders: four, the raised center shamash, four) with night one set (shamash plus ONE candle at the far right, both lit, the other seven holders empty), a dreidel (nun, gimel), gelt, a plate of latkes, soft snow",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Happy Hanukkah (morning greeting)).\nATTACH: hero/d.png = canonical Dewey; hero/c.png = canonical Cosmo; hero/r.png = canonical Rip; winter-holidays/d.png = Dewey's approved winter costume art; winter-holidays/c.png = Cosmo's approved winter costume art; winter-holidays/r.png = Rip's approved winter costume art; 2026-11-26-holiday/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 3 character(s), each exactly once: Dewey (the letter D): blue-and-silver knit Hanukkah sweater with a dreidel and snowflake pattern (round opening for the D), beanie, holding a chocolate gelt coin; Cosmo (the letter C): blue-and-silver scarf and beanie, a dreidel (gimel side) in hand, gelt at his feet; Rip (the letter R): patchwork quilt wrap, striped nightcap with holly and a cocoa mug. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"HAPPY HANUKKAH\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"LIGHT UP THE NIGHT.\".\nSETTING: a warm blue-and-silver winter evening: a hanukkiah (nine holders: four, the raised center shamash, four) with night one set (shamash plus ONE candle at the far right, both lit, the other seven holders empty), a dreidel (nun, gimel), gelt, a plate of latkes, soft snow. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, D C R on-model vs hero/winter art, hanukkiah 9 holders raised shamash lit + ONE candle far right lit, dreidel/gelt/latkes, HAPPY HANUKKAH + LIGHT UP THE NIGHT. spelled right, no religious garments)"
   },
   {
    "id": "2026-12-04-holiday-x-1",
@@ -374,12 +385,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/r.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-26-holiday/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "front",
    "notes": "a warm blue-and-silver winter evening: a hanukkiah (nine holders: four, the raised center shamash, four) with night one set (shamash plus ONE candle at the far right, both lit, the other seven holders empty), a dreidel (nun, gimel), gelt, a plate of latkes, soft snow",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Happy Hanukkah (morning greeting)).\nATTACH: hero/d.png = canonical Dewey; hero/c.png = canonical Cosmo; hero/r.png = canonical Rip; winter-holidays/d.png = Dewey's approved winter costume art; winter-holidays/c.png = Cosmo's approved winter costume art; winter-holidays/r.png = Rip's approved winter costume art; 2026-11-26-holiday/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 3 character(s), each exactly once: Dewey (the letter D): blue-and-silver knit Hanukkah sweater with a dreidel and snowflake pattern (round opening for the D), beanie, holding a chocolate gelt coin; Cosmo (the letter C): blue-and-silver scarf and beanie, a dreidel (gimel side) in hand, gelt at his feet; Rip (the letter R): patchwork quilt wrap, striped nightcap with holly and a cocoa mug. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"HAPPY HANUKKAH\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"LIGHT UP THE NIGHT.\".\nSETTING: a warm blue-and-silver winter evening: a hanukkiah (nine holders: four, the raised center shamash, four) with night one set (shamash plus ONE candle at the far right, both lit, the other seven holders empty), a dreidel (nun, gimel), gelt, a plate of latkes, soft snow. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, D C R on-model, hanukkiah 9 holders lit shamash + one far-right candle, latkes/dreidel/gelt, HAPPY HANUKKAH + LIGHT UP THE NIGHT. spelled right; headline top is only ~6.5% from the top, so pass --scale S --top T to scene.py so it clears the wordmark)"
   },
   {
    "id": "2026-12-25-holiday-feed-1",
@@ -413,12 +425,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/i.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-26-holiday/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "front",
    "notes": "a warm living-room scene: a decorated tree with glowing ornaments, wrapped gifts, stockings, string lights, snow in the window, the cast together",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Merry Christmas (morning greeting)).\nATTACH: hero/w.png = canonical Webster; hero/o1.png = canonical Ollie; hero/o3.png = canonical Ozzy; hero/r.png = canonical Rip; hero/i.png = canonical Ivy; winter-holidays/w.png = Webster's approved winter costume art; winter-holidays/o1.png = Ollie's approved winter costume art; winter-holidays/o3.png = Ozzy's approved winter costume art; winter-holidays/r.png = Rip's approved winter costume art; winter-holidays/i.png = Ivy's approved winter costume art; 2026-11-26-holiday/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 5 character(s), each exactly once: Webster (the letter W): Santa hat, black belt with a gold buckle, fur-cuffed mittens and fur boots; the cape stays; Ollie (the letter O): reindeer antlers with holly, a jingle-bell collar, tan belly bib and pom-poms; Ozzy (the letter O): knit ugly Christmas sweater, pom beanie and red mittens; Rip (the letter R): patchwork quilt wrap, striped nightcap with holly and a cocoa mug; Ivy (the letter I): striped scarf, earmuffs and white mittens. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MERRY CHRISTMAS\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"FROM THE WHOLE CAST.\".\nSETTING: a warm living-room scene: a decorated tree with glowing ornaments, wrapped gifts, stockings, string lights, snow in the window, the cast together. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, W O1 O3 R I once each on-model vs hero/winter art, MERRY CHRISTMAS + FROM THE WHOLE CAST. spelled right, tree/gifts/stockings, no religious garments)"
   },
   {
    "id": "2026-12-25-holiday-x-1",
@@ -452,12 +465,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/i.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-26-holiday/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "front",
    "notes": "a warm living-room scene: a decorated tree with glowing ornaments, wrapped gifts, stockings, string lights, snow in the window, the cast together",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Merry Christmas (morning greeting)).\nATTACH: hero/w.png = canonical Webster; hero/o1.png = canonical Ollie; hero/o3.png = canonical Ozzy; hero/r.png = canonical Rip; hero/i.png = canonical Ivy; winter-holidays/w.png = Webster's approved winter costume art; winter-holidays/o1.png = Ollie's approved winter costume art; winter-holidays/o3.png = Ozzy's approved winter costume art; winter-holidays/r.png = Rip's approved winter costume art; winter-holidays/i.png = Ivy's approved winter costume art; 2026-11-26-holiday/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 5 character(s), each exactly once: Webster (the letter W): Santa hat, black belt with a gold buckle, fur-cuffed mittens and fur boots; the cape stays; Ollie (the letter O): reindeer antlers with holly, a jingle-bell collar, tan belly bib and pom-poms; Ozzy (the letter O): knit ugly Christmas sweater, pom beanie and red mittens; Rip (the letter R): patchwork quilt wrap, striped nightcap with holly and a cocoa mug; Ivy (the letter I): striped scarf, earmuffs and white mittens. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MERRY CHRISTMAS\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"FROM THE WHOLE CAST.\".\nSETTING: a warm living-room scene: a decorated tree with glowing ornaments, wrapped gifts, stockings, string lights, snow in the window, the cast together. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, W O1 O3 R I once each on-model, costumes match, MERRY CHRISTMAS + FROM THE WHOLE CAST. spelled right, tree/stockings/gifts, no religious garments)"
   },
   {
    "id": "2026-12-26-holiday-feed-1",
@@ -482,12 +496,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/s.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-26-holiday/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "front",
    "notes": "a warm table scene in red, black and green: a kinara with SEVEN candle positions (three red left, one black center, three green right) with only the black center candle lit for day one, a woven mkeka mat, ears of corn (muhindi), the unity cup (kikombe), kente-inspired trim, soft snow",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Happy Kwanzaa (morning greeting)).\nATTACH: hero/u.png = canonical Umi; hero/s.png = canonical Scoot; winter-holidays/u.png = Umi's approved winter costume art; winter-holidays/s.png = Scoot's approved winter costume art; 2026-11-26-holiday/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Umi (the letter U): Kwanzaa wrap with red, black and green kente-inspired trim and a beanie, holding a kinara (3 red, 1 black, 3 green candles); Scoot (the letter S): kente-inspired sash, scarf and an ear of corn baton; keeps his angled, determined brows (friendly raised brows on S are off-model). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"HAPPY KWANZAA\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"UMOJA. UNITY.\".\nSETTING: a warm table scene in red, black and green: a kinara with SEVEN candle positions (three red left, one black center, three green right) with only the black center candle lit for day one, a woven mkeka mat, ears of corn (muhindi), the unity cup (kikombe), kente-inspired trim, soft snow. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "captured 10-16 block 2 runner A (whole scene, U + S on-model, kinara 3 red 1 black 3 green on a mkeka mat with corn + unity cup, HAPPY KWANZAA + UMOJA. UNITY. spelled right; caveats: small flames drawn on all 7 candles not only the black center, and a flame partly overlaps the U on Umi's tummy but the U is readable; redo only if time)"
   },
   {
    "id": "2026-12-26-holiday-x-1",
@@ -517,7 +532,8 @@
    "notes": "a warm table scene in red, black and green: a kinara with SEVEN candle positions (three red left, one black center, three green right) with only the black center candle lit for day one, a woven mkeka mat, ears of corn (muhindi), the unity cup (kikombe), kente-inspired trim, soft snow",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Happy Kwanzaa (morning greeting)).\nATTACH: hero/u.png = canonical Umi; hero/s.png = canonical Scoot; winter-holidays/u.png = Umi's approved winter costume art; winter-holidays/s.png = Scoot's approved winter costume art; 2026-11-26-holiday/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Umi (the letter U): Kwanzaa wrap with red, black and green kente-inspired trim and a beanie, holding a kinara (3 red, 1 black, 3 green candles); Scoot (the letter S): kente-inspired sash, scarf and an ear of corn baton; keeps his angled, determined brows (friendly raised brows on S are off-model). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"HAPPY KWANZAA\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"UMOJA. UNITY.\".\nSETTING: a warm table scene in red, black and green: a kinara with SEVEN candle positions (three red left, one black center, three green right) with only the black center candle lit for day one, a woven mkeka mat, ears of corn (muhindi), the unity cup (kikombe), kente-inspired trim, soft snow. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "A"
+   "tab_group": "A",
+   "note": "10-16 runner A: ChatGPT image limit hit at ~21:12 CT (resets 10:40 AM CT 10-17); not generated. Tip: ask for the landscape as a follow-up in the portrait chat (refs stay attached); pair sheets (hero|costume) for 5-char items"
   },
   {
    "id": "2026-12-04-feed-1",
@@ -550,7 +566,8 @@
    "notes": "three mascots cheering around a small gold trophy, snowy window behind",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Friday's Finest).\nATTACH: hero/o1.png = canonical Ollie; hero/u.png = canonical Umi; hero/i.png = canonical Ivy; winter-holidays/o1.png = Ollie's approved winter costume art; winter-holidays/u.png = Umi's approved winter costume art; winter-holidays/i.png = Ivy's approved winter costume art; 2026-11-20-feed/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 3 character(s), each exactly once: Ollie (the letter O): reindeer antlers with holly, a jingle-bell collar, tan belly bib and pom-poms; Umi (the letter U): Kwanzaa wrap with red, black and green kente-inspired trim and a beanie, holding a kinara (3 red, 1 black, 3 green candles); Ivy (the letter I): striped scarf, earmuffs and white mittens. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"FRIDAY'S FINEST\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"BEST BOARD OF THE WEEK.\".\nSETTING: three mascots cheering around a small gold trophy, snowy window behind. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "B"
+   "tab_group": "B",
+   "note": "10-16 runner A: ChatGPT image limit hit at ~21:12 CT (resets 10:40 AM CT 10-17); prompt was sent but returned 'out of images', nothing generated"
   },
   {
    "id": "2026-12-04-x-1",
@@ -997,12 +1014,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o3.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-14-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "O3 alone in the knit ugly sweater and pom beanie with red mittens, warm string lights, snow",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Cast Saturday: Ozzy guesses tricky).\nATTACH: hero/o3.png = canonical Ozzy; winter-holidays/o3.png = Ozzy's approved winter costume art; 2026-11-14-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 1 character(s), each exactly once: Ozzy (the letter O): knit ugly Christmas sweater, pom beanie and red mittens. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"OZZY GUESSES TRICKY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"CAST SATURDAY\".\nSETTING: O3 alone in the knit ugly sweater and pom beanie with red mittens, warm string lights, snow. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "B"
+   "tab_group": "B",
+   "note": "captured 10-16 block-2 runner B (whole scene), attempt 1"
   },
   {
    "id": "2026-12-13-fb-1",
@@ -1030,12 +1048,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/r.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-22-fb/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "three mascots around a glowing hearth-colored tile board, snowy window",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Sweep Sunday (Facebook)).\nATTACH: hero/w.png = canonical Webster; hero/i.png = canonical Ivy; hero/r.png = canonical Rip; winter-holidays/w.png = Webster's approved winter costume art; winter-holidays/i.png = Ivy's approved winter costume art; winter-holidays/r.png = Rip's approved winter costume art; 2026-11-22-fb/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 3 character(s), each exactly once: Webster (the letter W): Santa hat, black belt with a gold buckle, fur-cuffed mittens and fur boots; the cape stays; Ivy (the letter I): striped scarf, earmuffs and white mittens; Rip (the letter R): patchwork quilt wrap, striped nightcap with holly and a cocoa mug. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"SWEEP SUNDAY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"ALL 18 DAILIES. ONE DAY.\".\nSETTING: three mascots around a glowing hearth-colored tile board, snowy window. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B (whole scene), attempt 1; headline top ~y105 so accept needs --scale/--top"
   },
   {
    "id": "2026-12-13-x-1",
@@ -1060,12 +1079,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/c.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-22-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots, one on a sled-like sweep motif of colored tiles, snowy hill, midnight-indigo glow",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Sweep Sunday).\nATTACH: hero/o1.png = canonical Ollie; hero/c.png = canonical Cosmo; winter-holidays/o1.png = Ollie's approved winter costume art; winter-holidays/c.png = Cosmo's approved winter costume art; 2026-11-22-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Ollie (the letter O): reindeer antlers with holly, a jingle-bell collar, tan belly bib and pom-poms; Cosmo (the letter C): blue-and-silver scarf and beanie, a dreidel (gimel side) in hand, gelt at his feet. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"SWEEP SUNDAY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"ALL 18 DAILIES. ONE DAY.\".\nSETTING: two mascots, one on a sled-like sweep motif of colored tiles, snowy hill, midnight-indigo glow. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B (whole scene), attempt 1; Cosmo gelt coins + brows missing, headline top ~y75 (needs --scale/--top at accept)"
   },
   {
    "id": "2026-12-14-x-1",
@@ -1090,12 +1110,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o2.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-23-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "icy blue night, snow-capped gold crown on a pedestal of snow, two mascots at the sides",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Monday Masters: race reset).\nATTACH: hero/s.png = canonical Scoot; hero/o2.png = canonical Opal; winter-holidays/s.png = Scoot's approved winter costume art; winter-holidays/o2.png = Opal's approved winter costume art; 2026-11-23-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Scoot (the letter S): kente-inspired sash, scarf and an ear of corn baton; keeps his angled, determined brows (friendly raised brows on S are off-model); Opal (the letter O): Christmas cape with a bow, a muff and a gift (heart sunglasses stay on). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MONDAY MASTERS\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"THE CROWN IS OPEN.\".\nSETTING: icy blue night, snow-capped gold crown on a pedestal of snow, two mascots at the sides. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1; S brows ok, headline top ~y100"
   },
   {
    "id": "2026-12-15-x-1",
@@ -1120,14 +1141,15 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o1.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots low at the sides, evergreen branches, soft snow, calm empty band for the word card",
    "hint": "hint: Word of the Day on the card only",
    "layout": "completely empty calm band (about 20 percent of the height) under the headline for the word card added in code",
    "content": "wotd|BLEAK|WORD OF THE DAY|1.2",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Word of the Day quiz: BLEAK).\nATTACH: hero/i.png = canonical Ivy; hero/o1.png = canonical Ollie; winter-holidays/i.png = Ivy's approved winter costume art; winter-holidays/o1.png = Ollie's approved winter costume art; 2026-11-19-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Ivy (the letter I): striped scarf, earmuffs and white mittens; Ollie (the letter O): reindeer antlers with holly, a jingle-bell collar, tan belly bib and pom-poms. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"WORD OF THE DAY QUIZ\". Spell it letter by letter exactly like this. No sub line.\nSETTING: two mascots low at the sides, evergreen branches, soft snow, calm empty band for the word card. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; completely empty calm band (about 20 percent of the height) under the headline for the word card added in code; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1; empty calm band under headline OK (y~540-740)"
   },
   {
    "id": "2026-12-16-feed-1",
@@ -1152,14 +1174,15 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/c.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-18-feed/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots low under a calm empty rectangle for the cartoon, warm lights on a frosted wall",
    "hint": "hint: none (yesterday's cartoon)",
    "layout": "calm empty rectangle ~70% x 28% between the sub line and the mascots' heads; mascots low",
    "content": "cartoon|<yesterday Muddle cartoon file>|700",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Muddle Wednesday: caption this).\nATTACH: hero/u.png = canonical Umi; hero/c.png = canonical Cosmo; winter-holidays/u.png = Umi's approved winter costume art; winter-holidays/c.png = Cosmo's approved winter costume art; 2026-11-18-feed/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Umi (the letter U): Kwanzaa wrap with red, black and green kente-inspired trim and a beanie, holding a kinara (3 red, 1 black, 3 green candles); Cosmo (the letter C): blue-and-silver scarf and beanie, a dreidel (gimel side) in hand, gelt at his feet. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MUDDLE WEDNESDAY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"CAPTION THIS.\".\nSETTING: two mascots low under a calm empty rectangle for the cartoon, warm lights on a frosted wall. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; calm empty rectangle ~70% x 28% between the sub line and the mascots' heads; mascots low; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1; cream empty rectangle y~525-825 for cartoon; kinara 3R/1K/3G correct"
   },
   {
    "id": "2026-12-16-x-1",
@@ -1184,14 +1207,15 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/w.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-18-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots far left and far right, low, frosty wall, calm empty center",
    "hint": "hint: none (yesterday's cartoon)",
    "layout": "only TWO mascots, far left and far right, low; the center 30 percent of the width empty for a cartoon added in code",
    "content": "cartoon|<yesterday Muddle cartoon file>|520",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Muddle Wednesday).\nATTACH: hero/o3.png = canonical Ozzy; hero/w.png = canonical Webster; winter-holidays/o3.png = Ozzy's approved winter costume art; winter-holidays/w.png = Webster's approved winter costume art; 2026-11-18-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Ozzy (the letter O): knit ugly Christmas sweater, pom beanie and red mittens; Webster (the letter W): Santa hat, black belt with a gold buckle, fur-cuffed mittens and fur boots; the cape stays. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MUDDLE WEDNESDAY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"FOUR WORDS. ONE PUNCHLINE.\".\nSETTING: two mascots far left and far right, low, frosty wall, calm empty center. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; only TWO mascots, far left and far right, low; the center 30 percent of the width empty for a cartoon added in code; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1; center empty for cartoon"
   },
   {
    "id": "2026-12-17-pin-1",
@@ -1216,12 +1240,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/u.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-1/pin.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "four frosted board-shaped windows glowing at the edges (decor only, no letters)",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Pin: How to play QuadWord).\nATTACH: hero/o1.png = canonical Ollie; hero/u.png = canonical Umi; winter-holidays/o1.png = Ollie's approved winter costume art; winter-holidays/u.png = Umi's approved winter costume art; 2026-11-19-pin-1/pin.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Ollie (the letter O): reindeer antlers with holly, a jingle-bell collar, tan belly bib and pom-poms; Umi (the letter U): Kwanzaa wrap with red, black and green kente-inspired trim and a beanie, holding a kinara (3 red, 1 black, 3 green candles). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"HOW TO PLAY QUADWORD\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"A NEW PUZZLE EVERY DAY.\".\nSETTING: four frosted board-shaped windows glowing at the edges (decor only, no letters). Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1; 4 frosted windows decor only, no letters"
   },
   {
    "id": "2026-12-17-pin-2",
@@ -1243,12 +1268,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/r.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-2/pin.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "soft snow and a gold crown sparkle",
    "hint": "hint: none (NOBLE was the Nov 8 Word of the Day)",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Pin: Word card, NOBLE).\nATTACH: hero/r.png = canonical Rip; winter-holidays/r.png = Rip's approved winter costume art; 2026-11-19-pin-2/pin.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 1 character(s), each exactly once: Rip (the letter R): patchwork quilt wrap, striped nightcap with holly and a cocoa mug. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"NOBLE\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"WORD OF THE DAY\".\nSETTING: soft snow and a gold crown sparkle. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1"
   },
   {
    "id": "2026-12-17-pin-3",
@@ -1270,12 +1296,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o1.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-3/pin.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "Ollie alone in the reindeer antlers and bell collar, string lights, snow",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Pin: Cast art, Ollie (reindeer)).\nATTACH: hero/o1.png = canonical Ollie; winter-holidays/o1.png = Ollie's approved winter costume art; 2026-11-19-pin-3/pin.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 1 character(s), each exactly once: Ollie (the letter O): reindeer antlers with holly, a jingle-bell collar, tan belly bib and pom-poms. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MEET OLLIE.\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"BRING YOUR FAMILY.\".\nSETTING: Ollie alone in the reindeer antlers and bell collar, string lights, snow. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1"
   },
   {
    "id": "2026-12-17-x-1",
@@ -1300,14 +1327,15 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o2.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots low at the sides, gift boxes and ribbon at the edges, calm empty band for the word card",
    "hint": "hint: Word of the Day on the card only",
    "layout": "completely empty calm band (about 20 percent of the height) under the headline for the word card added in code",
    "content": "wotd|EXTRA|WORD OF THE DAY|1.2",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (WOTD quiz EXTRA + Hubbub pangram tease).\nATTACH: hero/s.png = canonical Scoot; hero/o2.png = canonical Opal; winter-holidays/s.png = Scoot's approved winter costume art; winter-holidays/o2.png = Opal's approved winter costume art; 2026-11-19-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Scoot (the letter S): kente-inspired sash, scarf and an ear of corn baton; keeps his angled, determined brows (friendly raised brows on S are off-model); Opal (the letter O): Christmas cape with a bow, a muff and a gift (heart sunglasses stay on). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"WORD OF THE DAY QUIZ\". Spell it letter by letter exactly like this. No sub line.\nSETTING: two mascots low at the sides, gift boxes and ribbon at the edges, calm empty band for the word card. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; completely empty calm band (about 20 percent of the height) under the headline for the word card added in code; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1; WOTD band under headline is plain background (no objects) but mascots tall at the sides (heads y~420-450)"
   },
   {
    "id": "2026-12-18-feed-1",
@@ -1335,12 +1363,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/w.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-20-feed/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "three mascots cheering with a small gold trophy, twinkling lights, snow",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Friday's Finest).\nATTACH: hero/r.png = canonical Rip; hero/u.png = canonical Umi; hero/w.png = canonical Webster; winter-holidays/r.png = Rip's approved winter costume art; winter-holidays/u.png = Umi's approved winter costume art; winter-holidays/w.png = Webster's approved winter costume art; 2026-11-20-feed/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 3 character(s), each exactly once: Rip (the letter R): patchwork quilt wrap, striped nightcap with holly and a cocoa mug; Umi (the letter U): Kwanzaa wrap with red, black and green kente-inspired trim and a beanie, holding a kinara (3 red, 1 black, 3 green candles); Webster (the letter W): Santa hat, black belt with a gold buckle, fur-cuffed mittens and fur boots; the cape stays. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"FRIDAY'S FINEST\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"BEST BOARD OF THE WEEK.\".\nSETTING: three mascots cheering with a small gold trophy, twinkling lights, snow. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1; kinara 3R/1K/3G correct"
   },
   {
    "id": "2026-12-18-x-1",
@@ -1365,12 +1394,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o3.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-20-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots with a gold ribbon rosette between them, wrapped gifts at the edge",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Friday's Finest).\nATTACH: hero/d.png = canonical Dewey; hero/o3.png = canonical Ozzy; winter-holidays/d.png = Dewey's approved winter costume art; winter-holidays/o3.png = Ozzy's approved winter costume art; 2026-11-20-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Dewey (the letter D): blue-and-silver knit Hanukkah sweater with a dreidel and snowflake pattern (round opening for the D), beanie, holding a chocolate gelt coin; Ozzy (the letter O): knit ugly Christmas sweater, pom beanie and red mittens. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"FRIDAY'S FINEST\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"BEST BOARD OF THE WEEK.\".\nSETTING: two mascots with a gold ribbon rosette between them, wrapped gifts at the edge. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1; Dewey glasses+gelt ok, headline top ~y100"
   },
   {
    "id": "2026-12-19-x-1",
@@ -1392,12 +1422,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/i.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-14-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "I alone in the striped scarf, earmuffs and white mittens, soft snow, warm string lights",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Cast Saturday: Ivy is shy but steady).\nATTACH: hero/i.png = canonical Ivy; winter-holidays/i.png = Ivy's approved winter costume art; 2026-11-14-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 1 character(s), each exactly once: Ivy (the letter I): striped scarf, earmuffs and white mittens. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"IVY IS SHY BUT STEADY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"CAST SATURDAY\".\nSETTING: I alone in the striped scarf, earmuffs and white mittens, soft snow, warm string lights. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 2 (attempt 1 hid the I behind mittens/scarf; retry prompt kept the I visible)"
   },
   {
    "id": "2026-12-20-fb-1",
@@ -1425,12 +1456,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/i.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-22-fb/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "three mascots on a cozy rug with a stack of glossy tiles and a mug of cocoa",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Sweep Sunday (Facebook)).\nATTACH: hero/s.png = canonical Scoot; hero/c.png = canonical Cosmo; hero/i.png = canonical Ivy; winter-holidays/s.png = Scoot's approved winter costume art; winter-holidays/c.png = Cosmo's approved winter costume art; winter-holidays/i.png = Ivy's approved winter costume art; 2026-11-22-fb/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 3 character(s), each exactly once: Scoot (the letter S): kente-inspired sash, scarf and an ear of corn baton; keeps his angled, determined brows (friendly raised brows on S are off-model); Cosmo (the letter C): blue-and-silver scarf and beanie, a dreidel (gimel side) in hand, gelt at his feet; Ivy (the letter I): striped scarf, earmuffs and white mittens. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"SWEEP SUNDAY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"ALL 18 DAILIES. ONE DAY.\".\nSETTING: three mascots on a cozy rug with a stack of glossy tiles and a mug of cocoa. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1; S brows ok; tile stack not drawn (mug+gelt+rug instead)"
   },
   {
    "id": "2026-12-20-x-1",
@@ -1458,12 +1490,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o2.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-22-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "three mascots with colored game tiles tumbling like snowflakes, midnight-indigo glow",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Sweep Sunday).\nATTACH: hero/u.png = canonical Umi; hero/d.png = canonical Dewey; hero/o2.png = canonical Opal; winter-holidays/u.png = Umi's approved winter costume art; winter-holidays/d.png = Dewey's approved winter costume art; winter-holidays/o2.png = Opal's approved winter costume art; 2026-11-22-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 3 character(s), each exactly once: Umi (the letter U): Kwanzaa wrap with red, black and green kente-inspired trim and a beanie, holding a kinara (3 red, 1 black, 3 green candles); Dewey (the letter D): blue-and-silver knit Hanukkah sweater with a dreidel and snowflake pattern (round opening for the D), beanie, holding a chocolate gelt coin; Opal (the letter O): Christmas cape with a bow, a muff and a gift (heart sunglasses stay on). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"SWEEP SUNDAY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"ALL 18 DAILIES. ONE DAY.\".\nSETTING: three mascots with colored game tiles tumbling like snowflakes, midnight-indigo glow. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1; kinara 3R/1K/3G correct"
   },
   {
    "id": "2026-12-21-x-1",
@@ -1491,12 +1524,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/r.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-23-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "deep midnight-blue sky full of stars and a low glowing horizon, snow, three mascots in a relaxed row",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Monday Masters: the longest night).\nATTACH: hero/w.png = canonical Webster; hero/o1.png = canonical Ollie; hero/r.png = canonical Rip; winter-holidays/w.png = Webster's approved winter costume art; winter-holidays/o1.png = Ollie's approved winter costume art; winter-holidays/r.png = Rip's approved winter costume art; 2026-11-23-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 3 character(s), each exactly once: Webster (the letter W): Santa hat, black belt with a gold buckle, fur-cuffed mittens and fur boots; the cape stays; Ollie (the letter O): reindeer antlers with holly, a jingle-bell collar, tan belly bib and pom-poms; Rip (the letter R): patchwork quilt wrap, striped nightcap with holly and a cocoa mug. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MONDAY MASTERS\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"THE CROWN IS OPEN.\".\nSETTING: deep midnight-blue sky full of stars and a low glowing horizon, snow, three mascots in a relaxed row. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "C"
+   "tab_group": "C",
+   "note": "captured 10-16 block-2 runner B, attempt 1; headline top ~y95"
   },
   {
    "id": "2026-12-22-feed-1",
@@ -1526,7 +1560,8 @@
    "notes": "two mascots holding a big wrapped gift together, glowing shield emblem on the ribbon",
    "hint": "hint: none",
    "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Gift a streak shield).\nATTACH: hero/o3.png = canonical Ozzy; hero/w.png = canonical Webster; winter-holidays/o3.png = Ozzy's approved winter costume art; winter-holidays/w.png = Webster's approved winter costume art; 2026-11-26-fb/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Ozzy (the letter O): knit ugly Christmas sweater, pom beanie and red mittens; Webster (the letter W): Santa hat, black belt with a gold buckle, fur-cuffed mittens and fur boots; the cape stays. Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"GIFT A SHIELD\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"THEN BEAT THEM ANYWAY.\".\nSETTING: two mascots holding a big wrapped gift together, glowing shield emblem on the ribbon. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "D"
+   "tab_group": "D",
+   "note": "runner B 10-16: attempt 1 rejected (the gift covers most of Webster's W). Redo: gift held low at the hips between them, W fully visible."
   },
   {
    "id": "2026-12-22-x-1",
@@ -1554,12 +1589,13 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/s.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-24-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "a gift box with a glowing shield emblem on the ribbon, three mascots around it, ribbons and snow",
    "hint": "hint: none",
    "prompt": "Make a 3:2 landscape (1536x1024) social-media scene for the Wordocious word-game brand (Last-minute gift: a streak shield).\nATTACH: hero/d.png = canonical Dewey; hero/c.png = canonical Cosmo; hero/s.png = canonical Scoot; winter-holidays/d.png = Dewey's approved winter costume art; winter-holidays/c.png = Cosmo's approved winter costume art; winter-holidays/s.png = Scoot's approved winter costume art; 2026-11-24-x/landscape.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 3 character(s), each exactly once: Dewey (the letter D): blue-and-silver knit Hanukkah sweater with a dreidel and snowflake pattern (round opening for the D), beanie, holding a chocolate gelt coin; Cosmo (the letter C): blue-and-silver scarf and beanie, a dreidel (gimel side) in hand, gelt at his feet; Scoot (the letter S): kente-inspired sash, scarf and an ear of corn baton; keeps his angled, determined brows (friendly raised brows on S are off-model). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"GIFT A SHIELD\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"THEN BEAT THEM ANYWAY.\".\nSETTING: a gift box with a glowing shield emblem on the ribbon, three mascots around it, ribbons and snow. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
-   "tab_group": "D"
+   "tab_group": "D",
+   "note": "captured 10-16 block-2 runner B, attempt 1; kinara n/a; Dewey holds pencil as in hero art"
   },
   {
    "id": "2026-12-23-feed-1",
@@ -1913,6 +1949,9 @@
    "tab_group": "D"
   }
  ],
- "limit": null,
+ "limit": {
+  "hit": "2026-10-16 ~21:12 CT (runner B)",
+  "resets": "2026-10-17 10:40 AM CT (per ChatGPT: \"try again tomorrow at 10:40 AM\", Plus plan image limit)"
+ },
  "note": "Block 2 (Nov 30 - Dec 27). status todo|sent|done. scene.py reads only incoming/full/queue.json, so append these items first: from incoming/full run python3 -c \"import json;a=json.load(open('queue.json'));b=json.load(open('queue-block2.json'));a['queue']+=b['queue'];json.dump(a,open('queue.json','w'),indent=1)\". tab_group A-D = four parallel ChatGPT tabs (free web app, MacBook Chrome only; never click Share). Each item's 'prompt' is ready to paste with its 'refs' attached."
 }
