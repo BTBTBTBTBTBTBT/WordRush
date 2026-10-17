@@ -9,6 +9,33 @@ This is the operating manual. The technical how-to for each step (scripts, regis
 2026 is the worked example; Thanksgiving 2026 is where most lessons below came from. Keep this file current: every
 season ends with a "Lessons" entry (bottom).
 
+## 0. Season tracker (one table per season — the single place to see where it stands)
+
+Update it whenever an item moves. Status words: **todo** · **made** (art/code exists) · **in preview** (visible in
+Settings → admin Season preview) · **approved** (founder + JP, Art Library) · **shipped** (in a store build / live).
+"Art only" = the art exists but the app has no slot to show it yet (needs wiring).
+
+| Item | Halloween 2026 | Thanksgiving 2026 | Winter holidays 2026 |
+|---|---|---|---|
+| Window + registry entry (`ready`) | shipped (live Oct 9–31) | in preview (`ready: false`, Nov 14–29) | todo (drafts only) |
+| Walls, every page, ×4 times of day | shipped (2.9) | in preview | made (night v2 only) |
+| Titles (games, pages, VS, pocket games, Unlimited) | shipped | in preview (30) · art only: Happy Thanksgiving, Give Thanks, Gobble Gobble, dailies-alt1 | made (25 redone) |
+| Cast skins (10, integrated costumes) | shipped | in preview | made (I + O2 redone) |
+| Home stage card ×4 times | shipped (2.9) | in preview | todo |
+| Podium stadium ×4 times (shared) | shipped (2.9) | shipped (shared art) | shipped (shared art) |
+| Flawless + Sweep costumed scenes | shipped | in preview | made (round 1) |
+| Ambient flyers (bats / geese) | shipped | in preview (geese flock) | todo |
+| Props for day titles | shipped | in preview (10) | made (inclusive set) |
+| Extras: candy buttons, badges, streak flame/shield, tile theme, podium decoration, Home hosts | **art only** (never wired) | **art only** (6 buttons, 2 badges, flame, shield, tile, podium, hosts) | todo |
+| Dressing Room tab + tag | shipped | in preview | todo |
+| Songs + secret achievements + moment badge | shipped (7 tunes + Spooky Season) | in preview (4 tunes + Harvest Feast, badges made) | planned (SONGS-ACHIEVEMENTS.md) |
+| Palette + readability gate ×4 times | shipped | in preview | todo |
+| Share cards rendered + archived (season + standard) | made (archive owed) | todo | todo |
+| Widgets, season icon, splash, store screenshots/text | shipped | todo | todo |
+| Social: greeting posts + season reveal | shipped | planned (Nov 26 greeting) | planned (block 2: Hanukkah, Christmas, Kwanzaa) |
+| Founder + JP approval in the admin preview | done | **pending** | todo |
+| Season build (store) | 2.8 → 2.9 | due ~Nov 6–9 | due ~Nov 13 |
+
 ---
 
 ## 1. Timeline (count back from the season's first day, "D")
@@ -66,8 +93,12 @@ header cast row; Home hosts (W, O1) in costume.
 **Celebrations:** Home stage card art (Halloween = curtain stage; Thanksgiving = harvest barn stage) with the same pool
 geometry; the costumed FLAWLESS scene (`scene-flawless-star`) and SWEEP scene (`scene-sweep-broom`); celebration extras
 (burst, streamers, seal, floats) — floats sit beside the art, never on a mascot, never duplicating the scene's own prop.
-**Extras:** candy buttons ×3, badges, streak flame, streak shield, tile theme, podium decoration, Dressing Room season
-tab + shelf tag, props for day titles, mascot-maker pieces (optional, README step 8).
+**Extras:** candy buttons ×6, badges, streak flame, streak shield, tile theme, podium decoration, Home hosts, Dressing Room
+season tab + shelf tag, props for day titles, mascot-maker pieces (optional, README step 8). **Status 10-16: the candy
+buttons, badges, streak flame/shield, tile theme, podium decoration and Home hosts are ART ONLY for every season** — the
+apps have no slot that shows them (found while wiring Thanksgiving). Wiring them = one generalized registry slot per
+extra on iOS, Android and web, Halloween's values first (queued for the week of Oct 19, before Thanksgiving goes live).
+Until a slot exists, don't count an extra as done — the tracker says "art only".
 **System:** registry entry + window, surfaces palette (readability gate), theme row "Seasonal — <season>", ambient
 animation (optional), widgets (iOS + Android, every size), season icon, splash color, store screenshots + text,
 sounds (optional).
@@ -76,8 +107,11 @@ the musical cast that only count in the window (core `musical-cast.ts` SEASON_ME
 `MusicalCast.seasonMelodies`, Kotlin `MusicalCast.SEASON_MELODIES`, parity fixtures), one SECRET achievement per tune
 (`secret(...)` in `achievement-rules.ts`, listed only once unlocked) and one seasonal moment badge ("Finish a daily
 during the <season> season", `momentAchievements`, gated by `currentSeason` so `ready` is respected; the admin preview
-passes the season id). Halloween = 7 tunes + Spooky Season; Thanksgiving = Simple Gifts wired + 6 in
-THANKSGIVING_TUNES_TODO + Harvest Feast (`thanksgiving/NEEDS-BADGES.md`); winter = `winter-holidays/SONGS-ACHIEVEMENTS.md`.
+passes the season id). Halloween = 7 tunes + Spooky Season; Thanksgiving = 4 tunes wired (Simple Gifts, We Gather Together, Come Ye Thankful
+People Come, Now Thank We All Our God — each checked against two published PD scores) + 3 parked in THANKSGIVING_TUNES_TODO
++ Harvest Feast (`thanksgiving/NEEDS-BADGES.md`); winter = `winter-holidays/SONGS-ACHIEVEMENTS.md`. A short list of
+verified tunes beats a long list of guesses: if no PD score can be found (or the tune leaves the cast's range), the tune
+stays parked — never transcribe from memory. The portal's Sound Library › Secret songs shows them by season.
 Quality bar: (1) PD verified for the melody AND any words shown (composer/lyricist dates; 1927-era songs like "I Have a
 Little Dreidel" are NOT safe), never a recording or a copyrighted arrangement; (2) every note on the cast's white keys
 C4–E5 (realize by interval shape; a natural may stand in for a sharp as in Halloween's G-for-G#), notation checked
@@ -127,7 +161,13 @@ season AND in the standard look and archive them in the Art Library (§8).
 - **Readability gate** for the palette (WCAG AA vs the real wall pixels), **per time of day**: every page, every
   window, every button is tinted from that time's sky; no surface or button color that clashes with its wall; the
   gate is measured on the composited card-over-wall pixels for morning, day, evening and night.
-- **Smoothness:** the perf gate on/off for the season (no new per-frame work; prewarm new art).
+- **Smoothness:** the perf gate on/off for the season (no new per-frame work; prewarm new art). Run the core tour A/B vs
+  the live build on a quiet machine (`-perfTour -perfTourOnly home,tabs,leaderboard,stats,friends,season`, 2 runs each)
+  at a non-night time too: 10-16 it caught `season.toHome` ~3× slower — the Home stage drew `Image(name)` as an
+  invisible placeholder, decoding the full art on the main thread for every new time-of-day stage.
+- **On-screen checks before any build:** look at a game keyboard, candy + quiet buttons, a finish screen, the mascot
+  maker and Home on iOS, Android and web, at night and in daytime, in the season and in the normal look. 10-16 an
+  image-compression change passed every test and the perf gate but made the keyboard unreadable — only eyes catch that.
 
 ## 6. Code steps (see README "How to add a season")
 
@@ -142,8 +182,11 @@ celebration scenes, widgets) → ship art with the repo scripts (`ship-art.py --
 1. Sim captures of every surface in the season (`-debug-season <id>`, `-storeDemo -storeShot …`): Home (idle + stage),
    every game title, finished screens, Flawless + Sweep celebrations, Leaderboard podium, Friends, Stats, Settings,
    Dressing Room, widgets; iPad + Android + web. Look at every one.
-2. Founder previews in Settings → admin Season preview; JP too; feedback in the Art Library.
-3. Approve in the Art Library → `ready: true` → season build → TestFlight + internal → founder green light → submit both
+2. Founder previews in Settings → admin Season preview; JP too; feedback in the Art Library. Use the **Time of day**
+   picker (Auto / Morning / Day / Evening / Night) under it to check every time — walls, windows, buttons, stage and
+   podium — before approving.
+3. Approve in the Art Library → `ready: true` → **release gates: full test suites ×3, the core perf tour A/B vs live
+   (PASS), the on-screen checks (§5)** → season build → TestFlight + internal → founder green light → submit both
    stores (auto-release) → bible entry.
 
 ## 8. Share cards (night style, 10-16)
