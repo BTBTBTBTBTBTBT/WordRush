@@ -180,3 +180,12 @@ Time-boxed run on a machine at load average 30-46 (other agents' Next/vitest/xco
 - The before/after **PerfTour** A/B and **-storeShot home/leaderboard/flawless SSIM** shots: the Perf xcodebuild of the unchanged tree needed >60 min wall time at nice 5 and was killed at the time box (DerivedData deleted). Rerun on a quiet machine: `apps/ios/scripts/perf-tour.sh --build --only home,tabs,leaderboard,season,friends,pocket --loops 2 --demo` (label before) with `git stash`-free approach = build once with the property removed (`git checkout -- apps/ios/Wordocious/Resources/Assets.xcassets`-style revert) and once with it, then compare warm-loop hitch ms/s and main busy %. The report's expectations stand: first-draw HEVC decode of podium/celebration stage/avatar maker must be eyeballed, and pre-warm with `byPreparingForDisplay()` if a step regresses. Rollback = `git checkout` of the Contents.json files.
 - Android `bundleRelease` before/after size: started, not finished at the time box and stopped (last AAB on disk is the 10-15 build, 70.7 MB, older tree). Estimated effect from the files: drawable-nodpi -3.5 MB (PNG->WebP -2.3 MB, aliases -1.2 MB); run `./gradlew :app:bundleRelease` (upload key) on a quiet machine to measure.
 - iOS avatar dedupe NOT applied: `scripts/ios-art-dedupe.py` (staged, not wired) would remove ~40 pure-pet groups + brows/extras groups (4.8 MB of PNG today, ~1.3 MB after lossy) but needs a name-alias lookup in `MascotArtCache.uiImage` / `ArtAsset.exists` (the only funnels that load avatar layer art; verified) plus the Swift coverage test reading `Resources/art-aliases.json`, and a full Swift rebuild to verify. Left for the next batch rather than ship an unbuilt Swift edit.
+
+## ROLLED BACK 10-16 (2.9 build 266 / Android 231)
+iOS lossy (HEVC) corrupted faint-alpha art: the button light maps (`art-fam-lm-key` / `-frost` / `-frost-pressed`) rendered
+as an opaque white haze over every keyboard key and candy button on device (founder, TestFlight 265: "unreadable,
+unplayable"). 606 lossy imagesets had large faint-alpha areas (mostly `art-av-*`). Every imageset is lossless again
+(`scripts/ios-asset-compression.py` now returns lossless; the guard still checks the key is declared). Android's 30 lossy
+WebP conversions were restored to their exact 2.8.4 PNGs (`KEEP_PNG_PREFIX`); the avatar dedupe aliases stay
+(byte-identical). Any future size work needs a per-image visual gate (SSIM + on-screen checks of keys, buttons, mascot
+maker) — never a blanket format switch.
