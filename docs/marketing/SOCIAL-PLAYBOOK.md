@@ -135,6 +135,20 @@ Series colors per season are in STYLE.md (add each new season's column before th
 | not started | Pinterest | pending | Own OAuth from Accounts |
 | not started | TikTok | pending | Own OAuth; drafts to inbox until the app audit |
 
+8. **JP's access checklist (JP = Jasson Patterson, jp@pattersonlp.com — what JP does and what Brian does so JP is an admin everywhere):**
+
+| Where | Status (10-16 night) | What JP does | What Brian does |
+|---|---|---|---|
+| Admin portal (wordocious.com/admin: Social Studio approvals, Seasons + Social playbooks) | confirm | Sign in to wordocious.com with jp@pattersonlp.com | Tell the lead to grant admin on that profile (one SQL flag, `profiles.is_admin`) |
+| Meta business portfolio "Wordocious" (covers the Facebook Page, Instagram @playwordocious, and both developer apps: Wordocious Studio + Wordocious Threads) | to do | Accept the Meta Business Suite email invite (to jp@pattersonlp.com); for developer-app roles also create a Meta developer account at developers.facebook.com (SMS verify) | Meta Business Suite → Settings → People → Add → jp@pattersonlp.com → **Full control** (admin); then in each app's App roles confirm he appears |
+| Threads @playwordocious | n/a | Nothing extra — Threads rides on the Instagram account; app access comes with the business portfolio | — |
+| X @wordocious | blocked on JP | X → Settings → Privacy and safety → allow **Delegate** invites (so others can invite him) | Re-send the delegate invite from @wordocious (Settings → Account → Delegate) |
+| Pinterest "wordocious" | invite sent 10-14 | Accept the Pinterest **Business Access / Manager** invite email | (Optional) Developer app "Wordocious Social Studio" → Collaborators → add his Pinterest email |
+| TikTok Business Center "ShowLoud LLC" (@playwordocious linked) | invite pending | Accept the **Business Center admin** invite email (admins automatically get the linked TikTok account) | — (an email code to Brian is needed only when adding members) |
+| TikTok developer organization (ShowLoud LLC, being created 10-16) | to do after setup | Accept the member invite email | Developer portal → Organization → Members → invite jp@pattersonlp.com |
+
+Not needed for JP: Vercel, GitHub, App Store Connect, Play Console (ask Brian if that changes).
+
 ## 7. Measuring and the next block
 
 - **KPIs** (PLAN_KPIS in `social-plan.ts`, checkpoints Day 15, 30, 45): posts published, combined followers, social-attributed installs and signups (admin Marketing, tracked links), referral redemptions from social CTAs, share rate (Weekly Five), videos over 5,000 views, press placements, Product Hunt. Targets are working numbers; the Week 2 Monday review re-bases them against actuals. A variance over 25 percent on installs or share rate gets a one-line written cause.
