@@ -1,6 +1,6 @@
 # Social Playbook: how we run a social block, end to end
 
-Last updated: 2026-10-16
+Last updated: 2026-10-17
 
 Founder 10-16: "develop a social media roadmap same as what we did for the seasonality piece so when we continue on I'll have something to reference for you to pick it up as smooth as you currently are."
 
@@ -13,7 +13,7 @@ Status words: **planned** (calendar written) · **seeded** (SQL applied, drafts 
 | Block | Window | Plan | Posts seeded | Images | Approvals | Notes |
 |---|---|---|---|---|---|---|
 | 1 | Oct 13 to Nov 29 | `jp45-posts.json` | seeded 10-14 (122) + 5 greetings 10-15 | accepted (127 with media) | in progress | Halloween, Thanksgiving; first publish waits on account connections (section 6) |
-| 2 | Nov 30 to Dec 27 | `BLOCK-2-NOV30-DEC27.md` | planned (SQL `20261016-jp45-block2-posts.sql`, not applied) | queued (`queue-block2.json`, 61 scenes) | todo | winter holidays + New Year teaser; 22 posts paused until facts/captures |
+| 2 | Nov 30 to Dec 27 | `BLOCK-2-NOV30-DEC27.md` | seeded 10-16 (73 drafts, SQL `20261016-jp45-block2-posts.sql`) | **art 10-17**: 61 scenes + 3 redos accepted, 58 image posts attached (X posts carry a Threads portrait twin), 89 finals in the Art Library | todo | winter holidays + New Year teaser; 15 video posts paused `[Needs capture]` (winter captures), Wrapped teaser paused (founder call) |
 | 3 | Dec 28 to Jan 24 | not started | | | | New Year to Valentine's lead-in (kickoff list, section 8) |
 
 ---
@@ -157,6 +157,18 @@ Not needed for JP: Vercel, GitHub, App Store Connect, Play Console (ask Brian if
 - **Feeding the next block:** the Monday notes and `social_open_feedback` decide the next calendar: promote winning series and formats, retire losers, rotate cast toward the characters that perform, and move the budget of effort accordingly. Write the numbers and the decisions into the block's Lessons entry.
 
 ## 8. Lessons log and the next-block kickoff
+
+**Lessons from finishing block 2 (10-17):**
+
+- **Two runners, one ~/Downloads:** both Sonnet runners grabbed each other's newest download twice (one image overwritten, one filed under the wrong id). Give each runner its own download rule (one runner downloads at a time, or rename by headline before moving) and have every runner re-open each saved file and match it to its id before finishing. Keystrokes from one runner also landed in the other's tab once: insert prompts by script/form_input, never by typing into a focused box while another runner is active. A newline in ChatGPT's box sends the message: prompts go in as one line.
+- **The limit held:** about 32 images in ~35 minutes with two runners (two tabs each) plus 2 redos did not hit the cap the morning after a reset.
+- **Costume art can carry the wrong detail:** Umi's approved winter costume shows all seven kinara candles lit, so ChatGPT copied it onto Kwanzaa day one. Say the date-correct count explicitly AND that the attached art differs (Dec 24/25 unlit, Dec 26 black only, Dec 27 black + leftmost red). Umi's folded lotus legs are on-model (not "feet").
+- **Muddle portraits fail most:** two of four drew the mascots big and high, leaving no room for the cartoon. The fix that worked: headline + sub end by 37%, the band 37–66% EMPTY across the middle 75% of the width, mascots ~22% of the height with hat tops below 66%, and attach an accepted Muddle portrait as the layout example.
+- **Same-day duplicates:** a word pin and a Meet pin on the same day both used Opal in the same pose: check each day's pins side by side; swap the cast on one.
+- **Threads needs a portrait:** X-slot posts also go to Threads, whose size is portrait. Every X scene gets a portrait twin (`jp45/block2/portrait_twins.py`: the same native scene centered on a blurred, slightly dimmed copy of itself, real wordmark + @playwordocious footer, content re-placed). Reflect-padding mirrored the mascots upside down: never use it for twins.
+- **Headline recolor:** read headline rows off a gridded contact sheet (`block2/grid_sheet.py`, lines every 5%) and add a margin to y1: one band stopped mid-word (SUNDAY half pink). Two-color holiday headlines (red/green) sweep through blue or split mid-word: holidays use one hue (Christmas holly red, Hanukkah blue, Kwanzaa green); Cast Saturday uses stepped bands (`--nl` = letters in the longest line). The exact accept parameters per scene are in `block2/accept_params.py`.
+- **Uploads flake:** Supabase storage uploads failed with "fetch failed" about one in four times on a 56-post attach; `social-attach.mjs` now retries with backoff. After any attach or Art Library sync, verify by query (posts with empty media, art rows per block) instead of trusting the log.
+- **Muddle cartoon for a Wednesday** = the previous day's daily (`scramble-puzzles.json` daily[(date - epoch) mod 365], skipping `holiday-days.json` days); this formula reproduced block 1's Oct 20, Nov 3 and Nov 17 picks.
 
 **Lessons from the block 2 image run (10-16 evening):**
 

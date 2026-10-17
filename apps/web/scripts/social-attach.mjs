@@ -83,6 +83,18 @@ function credentials() {
 }
 
 /* --------------------------------------------------------------- render */
+/** Storage uploads fail intermittently with "fetch failed" (10-17: about 1 in 4 on a 56-post run): retry with backoff. */
+async function uploadRetry(path, buf, opts) {
+  let last;
+  for (let i = 0; i < 4; i += 1) {
+    const res = await admin.storage.from('social-media').upload(path, buf, { ...opts, upsert: true }).catch((e) => ({ error: e }));
+    if (!res.error) return res;
+    last = res.error;
+    await new Promise((r) => setTimeout(r, 800 * (i + 1)));
+  }
+  return { error: last };
+}
+
 async function render(input, size) {
   const [width, height] = MEDIA_SIZES[size];
   const buf = await sharp(input).rotate().resize(width, height, { fit: 'cover', position: 'attention' })
@@ -200,7 +212,7 @@ async function run(job) {
   const post = await loadDraft(job.postId);
   const fresh = [];
   for (const r of rendered) {
-    const { error } = await admin.storage.from('social-media').upload(r.path, r.buf, { contentType: 'image/jpeg', upsert: false });
+    const { error } = await uploadRetry(r.path, r.buf, { contentType: 'image/jpeg' });
     if (error) throw new Error(`upload ${r.size}: ${error.message}`);
     fresh.push({ size: r.size, src: 'bucket', path: r.path, width: r.width, height: r.height });
   }
@@ -233,10 +245,10 @@ async function runVideo(job) {
 
   const post = await loadDraft(job.postId);
   // Fixed paths: a re-run replaces the file in place (upsert), so there is nothing stale to clean up.
-  const up = await admin.storage.from('social-media').upload(entry.path, mp4, { contentType: 'video/mp4', upsert: true });
+  const up = await uploadRetry(entry.path, mp4, { contentType: 'video/mp4' });
   if (up.error) throw new Error(`upload video: ${up.error.message}`);
   if (poster) {
-    const pu = await admin.storage.from('social-media').upload(entry.poster, poster, { contentType: 'image/jpeg', upsert: true });
+    const pu = await uploadRetry(entry.poster, poster, { contentType: 'image/jpeg' });
     if (pu.error) throw new Error(`upload poster: ${pu.error.message}`);
   }
   const next = [...(post.media ?? []).filter((m) => m.size !== 'video'), entry];

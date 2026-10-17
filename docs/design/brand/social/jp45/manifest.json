@@ -2585,5 +2585,1502 @@
     "hint": "hint: none",
     "notes": "Round 3 (new scene). Portrait of the same post (Day 45 feed) rejected for an off-model S; redo queued.",
     "source": "chatgpt-scene"
+  },
+  {
+    "key": "2026-11-30-x",
+    "post_id": "68a35930-ad99-5df9-9fb0-f54e06fe58bf",
+    "date": "2026-11-30",
+    "slot": "x",
+    "title": "Monday Masters: race reset",
+    "files": {
+      "landscape": "2026-11-30-x/landscape.png",
+      "portrait": "2026-11-30-x/portrait.png"
+    },
+    "caption": "MONDAY MASTERS: THE CROWN IS OPEN.",
+    "card": "monday",
+    "season": "standard",
+    "series_color": "hue 225-210",
+    "cast": [
+      "u",
+      "s",
+      "r"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-11-30-feed",
+    "post_id": "303f4125-5264-5e87-a892-81f38c34a060",
+    "date": "2026-11-30",
+    "slot": "feed",
+    "title": "Thanksgiving is over: who did the dishes? (and tomorrow)",
+    "files": {
+      "portrait": "2026-11-30-feed/portrait.png"
+    },
+    "caption": "DISHES ARE DONE: REMATCH STARTS NOW.",
+    "card": "thanks-recap",
+    "season": "standard",
+    "series_color": "house purple-pink",
+    "cast": [
+      "w",
+      "d",
+      "o1"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: a single snowflake at the edge (subtle nod to tomorrow's winter season, not a giveaway)",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-01-x",
+    "post_id": "70988d94-13bf-5207-bc28-9835db67e770",
+    "date": "2026-12-01",
+    "slot": "x",
+    "title": "Winter reveal: the app put on a coat",
+    "files": {
+      "landscape": "2026-12-01-x/landscape.png",
+      "portrait": "2026-12-01-x/portrait.png"
+    },
+    "caption": "WINTER IS HERE: THE WHOLE APP PUT ON A COAT.",
+    "card": "winter",
+    "season": "winter",
+    "series_color": "house purple-pink",
+    "cast": [
+      "w",
+      "d",
+      "u",
+      "o1"
+    ],
+    "cast_count": 4,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Tied to the winter build going live Dec 1 (core SEASON_WINDOWS must have the winter-holidays row, ready: true, and the store build approved). If the build slips, move to the ship date and keep it paused until then. Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-01-feed",
+    "post_id": "a18da268-6b5b-5652-ab83-a92e1d884181",
+    "date": "2026-12-01",
+    "slot": "feed",
+    "title": "Winter reveal: wallpaper and costumes",
+    "files": {
+      "portrait": "2026-12-01-feed/portrait.png"
+    },
+    "caption": "WINTER IS HERE: SNOW ON EVERY SCREEN.",
+    "card": "winter",
+    "season": "winter",
+    "series_color": "house purple-pink",
+    "cast": [
+      "r",
+      "c",
+      "s",
+      "o3",
+      "i"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Same release gate as the X reveal.",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-02-x",
+    "post_id": "7248ca63-3882-5f5b-a614-ec21bc5d5b44",
+    "date": "2026-12-02",
+    "slot": "x",
+    "title": "Muddle Wednesday",
+    "files": {
+      "landscape": "2026-12-02-x/landscape.png",
+      "portrait": "2026-12-02-x/portrait.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: FOUR WORDS. ONE PUNCHLINE.",
+    "card": "muddle",
+    "season": "winter",
+    "series_color": "hue 48-38",
+    "cast": [
+      "o2",
+      "i"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (yesterday's, already-played cartoon; caption and answer not shown)",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-02-feed",
+    "post_id": "6b7e1a5d-f53f-5ff8-a5a9-d0705a6d4dbe",
+    "date": "2026-12-02",
+    "slot": "feed",
+    "title": "Muddle Wednesday: caption this",
+    "files": {
+      "portrait": "2026-12-02-feed/portrait.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: CAPTION THIS.",
+    "card": "muddle",
+    "season": "winter",
+    "series_color": "hue 48-38",
+    "cast": [
+      "d",
+      "s"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (yesterday's, already-played cartoon)",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-03-x",
+    "post_id": "0e295a4d-1c08-56dd-aaf8-078ea7d60a53",
+    "date": "2026-12-03",
+    "slot": "x",
+    "title": "WOTD quiz CHILI + Hubbub pangram tease",
+    "files": {
+      "landscape": "2026-12-03-x/landscape.png",
+      "portrait": "2026-12-03-x/portrait.png"
+    },
+    "caption": "WORD OF THE DAY QUIZ",
+    "card": "wotd",
+    "season": "winter",
+    "series_color": "hue 145-128",
+    "cast": [
+      "c",
+      "o3"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: the word card shows the day's Word of the Day only (not a puzzle answer)",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-03-pin-1",
+    "post_id": "c0a37eb8-962f-579d-bcad-1217e9a6fcbd",
+    "date": "2026-12-03",
+    "slot": "pin",
+    "title": "Pin: How to play Spyglass",
+    "files": {
+      "pin": "2026-12-03-pin-1/pin.png"
+    },
+    "caption": "HOW TO PLAY SPYGLASS: A NEW PUZZLE EVERY DAY.",
+    "card": "pin-explainer",
+    "season": "winter",
+    "series_color": "hue 48-38",
+    "cast": [
+      "u",
+      "r"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-03-pin-2",
+    "post_id": "2ee9add2-4bc1-5c39-8985-a2ee2865800c",
+    "date": "2026-12-03",
+    "slot": "pin",
+    "title": "Pin: Word card, BLISS",
+    "files": {
+      "pin": "2026-12-03-pin-2/pin.png"
+    },
+    "caption": "BLISS: WORD OF THE DAY",
+    "card": "pin-word",
+    "season": "winter",
+    "series_color": "hue 145-128",
+    "cast": [
+      "o2"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (BLISS was the Oct 19 Word of the Day: a past word)",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-03-pin-3",
+    "post_id": "be5daba2-f7fd-543e-a138-da3b2bbc52a6",
+    "date": "2026-12-03",
+    "slot": "pin",
+    "title": "Pin: Cast art, Opal",
+    "files": {
+      "pin": "2026-12-03-pin-3/pin.png"
+    },
+    "caption": "MEET OPAL.: BRING YOUR FAMILY.",
+    "card": "pin-cast",
+    "season": "winter",
+    "series_color": "house purple-pink",
+    "cast": [
+      "o2"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-04-holiday",
+    "post_id": "0052e048-4361-5ea1-8c1b-31a43a413269",
+    "date": "2026-12-04",
+    "slot": "holiday",
+    "title": "Happy Hanukkah (morning greeting)",
+    "files": {
+      "portrait": "2026-12-04-holiday/portrait.png",
+      "landscape": "2026-12-04-holiday/landscape.png"
+    },
+    "caption": "HAPPY HANUKKAH: LIGHT UP THE NIGHT.",
+    "card": "holiday-hanukkah",
+    "season": "winter",
+    "series_color": "hue 222-205",
+    "cast": [
+      "d",
+      "c",
+      "r"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Greeting at 7 AM CT on Dec 4: Hanukkah begins at sundown tonight, so a morning-of post lets people see it before lighting. Themed puzzles in the app are on Dec 5 (data/holiday-days.json), so do NOT say \"today's themed puzzles\".",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-04-x",
+    "post_id": "f24bdf56-21c1-5c0b-84b4-9efc4a198558",
+    "date": "2026-12-04",
+    "slot": "x",
+    "title": "Friday's Finest",
+    "files": {
+      "landscape": "2026-12-04-x/landscape.png",
+      "portrait": "2026-12-04-x/portrait.png"
+    },
+    "caption": "FRIDAY'S FINEST: BEST BOARD OF THE WEEK.",
+    "card": "friday",
+    "season": "winter",
+    "series_color": "hue 358-348",
+    "cast": [
+      "s",
+      "w"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-04-feed",
+    "post_id": "691b0f15-0b9d-5c48-9b52-351ef5f0ca74",
+    "date": "2026-12-04",
+    "slot": "feed",
+    "title": "Friday's Finest",
+    "files": {
+      "portrait": "2026-12-04-feed/portrait.png"
+    },
+    "caption": "FRIDAY'S FINEST: BEST BOARD OF THE WEEK.",
+    "card": "friday",
+    "season": "winter",
+    "series_color": "hue 358-348",
+    "cast": [
+      "o1",
+      "u",
+      "i"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-05-x",
+    "post_id": "53b8af85-c812-57a8-902e-ff30a3368911",
+    "date": "2026-12-05",
+    "slot": "x",
+    "title": "Cast Saturday: Dewey studies every letter",
+    "files": {
+      "landscape": "2026-12-05-x/landscape.png",
+      "portrait": "2026-12-05-x/portrait.png"
+    },
+    "caption": "DEWEY STUDIES EVERY LETTER: CAST SATURDAY",
+    "card": "cast",
+    "season": "winter",
+    "series_color": "stepped 355/140/45/210/300",
+    "cast": [
+      "d"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Themed puzzles: Dec 5 is the app's Hanukkah day. Verify the live app before approving. Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-06-x",
+    "post_id": "b57ac629-90ed-55fb-bf9d-2864c56bb238",
+    "date": "2026-12-06",
+    "slot": "x",
+    "title": "Sweep Sunday",
+    "files": {
+      "landscape": "2026-12-06-x/landscape.png",
+      "portrait": "2026-12-06-x/portrait.png"
+    },
+    "caption": "SWEEP SUNDAY: ALL 18 DAILIES. ONE DAY.",
+    "card": "sweep",
+    "season": "winter",
+    "series_color": "hue 238-226",
+    "cast": [
+      "r"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-06-fb",
+    "post_id": "882d5658-086c-55fb-9ef9-9c6d80675b74",
+    "date": "2026-12-06",
+    "slot": "fb",
+    "title": "Sweep Sunday (Facebook)",
+    "files": {
+      "portrait": "2026-12-06-fb/portrait.png"
+    },
+    "caption": "SWEEP SUNDAY: ALL 18 DAILIES. ONE DAY.",
+    "card": "sweep",
+    "season": "winter",
+    "series_color": "hue 238-226",
+    "cast": [
+      "c",
+      "o1",
+      "w"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-07-x",
+    "post_id": "91a8f869-03d4-5bea-adc6-f1f31cd3676d",
+    "date": "2026-12-07",
+    "slot": "x",
+    "title": "Monday Masters: race reset",
+    "files": {
+      "landscape": "2026-12-07-x/landscape.png",
+      "portrait": "2026-12-07-x/portrait.png"
+    },
+    "caption": "MONDAY MASTERS: THE CROWN IS OPEN.",
+    "card": "monday",
+    "season": "winter",
+    "series_color": "hue 205-192",
+    "cast": [
+      "o3",
+      "i",
+      "d"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-08-x",
+    "post_id": "aadaf18a-c2c4-5d00-b262-503f2c4a8ea8",
+    "date": "2026-12-08",
+    "slot": "x",
+    "title": "Word of the Day quiz: HONOR",
+    "files": {
+      "landscape": "2026-12-08-x/landscape.png",
+      "portrait": "2026-12-08-x/portrait.png"
+    },
+    "caption": "WORD OF THE DAY QUIZ",
+    "card": "wotd",
+    "season": "winter",
+    "series_color": "hue 145-128",
+    "cast": [
+      "u",
+      "w"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: word card shows the day's Word of the Day only",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-09-x",
+    "post_id": "93a7ca4f-caf7-57a0-9cc1-269004b1fe44",
+    "date": "2026-12-09",
+    "slot": "x",
+    "title": "Muddle Wednesday",
+    "files": {
+      "landscape": "2026-12-09-x/landscape.png",
+      "portrait": "2026-12-09-x/portrait.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: FOUR WORDS. ONE PUNCHLINE.",
+    "card": "muddle",
+    "season": "winter",
+    "series_color": "hue 48-38",
+    "cast": [
+      "c",
+      "o1"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (yesterday's cartoon)",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-09-feed",
+    "post_id": "87d9f720-5397-5f56-95ac-a683daf1154f",
+    "date": "2026-12-09",
+    "slot": "feed",
+    "title": "Muddle Wednesday: caption this",
+    "files": {
+      "portrait": "2026-12-09-feed/portrait.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: CAPTION THIS.",
+    "card": "muddle",
+    "season": "winter",
+    "series_color": "hue 48-38",
+    "cast": [
+      "r",
+      "u"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (yesterday's cartoon)",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-10-x",
+    "post_id": "4d3fa44e-6c13-5ed7-aed0-8054176da17a",
+    "date": "2026-12-10",
+    "slot": "x",
+    "title": "WOTD quiz VOTED + Hubbub pangram tease",
+    "files": {
+      "landscape": "2026-12-10-x/landscape.png",
+      "portrait": "2026-12-10-x/portrait.png"
+    },
+    "caption": "WORD OF THE DAY QUIZ",
+    "card": "wotd",
+    "season": "winter",
+    "series_color": "hue 145-128",
+    "cast": [
+      "r",
+      "d"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: Word of the Day on the card only",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-10-pin-1",
+    "post_id": "77ad1640-fa46-5a65-a733-a48b145ea43a",
+    "date": "2026-12-10",
+    "slot": "pin",
+    "title": "Pin: How to play Sudocious",
+    "files": {
+      "pin": "2026-12-10-pin-1/pin.png"
+    },
+    "caption": "HOW TO PLAY SUDOCIOUS: A NEW PUZZLE EVERY DAY.",
+    "card": "pin-explainer",
+    "season": "winter",
+    "series_color": "hue 48-38",
+    "cast": [
+      "d",
+      "i"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-10-pin-2",
+    "post_id": "3bbf229e-9562-56d2-9e6c-540654ce0ba9",
+    "date": "2026-12-10",
+    "slot": "pin",
+    "title": "Pin: Word card, SCORE",
+    "files": {
+      "pin": "2026-12-10-pin-2/pin.png"
+    },
+    "caption": "SCORE: WORD OF THE DAY",
+    "card": "pin-word",
+    "season": "winter",
+    "series_color": "hue 145-128",
+    "cast": [
+      "o3",
+      "c"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (SCORE was the Nov 26 Word of the Day)",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-10-pin-3",
+    "post_id": "56cd3a6a-a53c-5f74-8936-e6603a623993",
+    "date": "2026-12-10",
+    "slot": "pin",
+    "title": "Pin: Cast art, W (Santa)",
+    "files": {
+      "pin": "2026-12-10-pin-3/pin.png"
+    },
+    "caption": "MEET W.: BRING YOUR FAMILY.",
+    "card": "pin-cast",
+    "season": "winter",
+    "series_color": "house purple-pink",
+    "cast": [
+      "w"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-11-x",
+    "post_id": "cc7e74a6-bdcf-5158-ab3c-93ded2cf4a7a",
+    "date": "2026-12-11",
+    "slot": "x",
+    "title": "Friday's Finest",
+    "files": {
+      "landscape": "2026-12-11-x/landscape.png",
+      "portrait": "2026-12-11-x/portrait.png"
+    },
+    "caption": "FRIDAY'S FINEST: BEST BOARD OF THE WEEK.",
+    "card": "friday",
+    "season": "winter",
+    "series_color": "hue 358-348",
+    "cast": [
+      "i",
+      "o2",
+      "c"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-11-feed",
+    "post_id": "8e0ddbc4-828e-575d-b362-685e73162d52",
+    "date": "2026-12-11",
+    "slot": "feed",
+    "title": "Friday's Finest",
+    "files": {
+      "portrait": "2026-12-11-feed/portrait.png"
+    },
+    "caption": "FRIDAY'S FINEST: BEST BOARD OF THE WEEK.",
+    "card": "friday",
+    "season": "winter",
+    "series_color": "hue 358-348",
+    "cast": [
+      "s"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-12-x",
+    "post_id": "8f4e3391-97fa-5439-8860-32a7564a5b5d",
+    "date": "2026-12-12",
+    "slot": "x",
+    "title": "Cast Saturday: Ozzy guesses tricky",
+    "files": {
+      "landscape": "2026-12-12-x/landscape.png",
+      "portrait": "2026-12-12-x/portrait.png"
+    },
+    "caption": "OZZY GUESSES TRICKY: CAST SATURDAY",
+    "card": "cast",
+    "season": "winter",
+    "series_color": "stepped 355/140/45/210/300",
+    "cast": [
+      "o3"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-13-x",
+    "post_id": "0c771add-a13b-5611-82b2-002ae4ea2d61",
+    "date": "2026-12-13",
+    "slot": "x",
+    "title": "Sweep Sunday",
+    "files": {
+      "landscape": "2026-12-13-x/landscape.png",
+      "portrait": "2026-12-13-x/portrait.png"
+    },
+    "caption": "SWEEP SUNDAY: ALL 18 DAILIES. ONE DAY.",
+    "card": "sweep",
+    "season": "winter",
+    "series_color": "hue 238-226",
+    "cast": [
+      "o1",
+      "c"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-13-fb",
+    "post_id": "cdc8b62e-0d1d-5d00-b3bb-9b843e76fc9b",
+    "date": "2026-12-13",
+    "slot": "fb",
+    "title": "Sweep Sunday (Facebook)",
+    "files": {
+      "portrait": "2026-12-13-fb/portrait.png"
+    },
+    "caption": "SWEEP SUNDAY: ALL 18 DAILIES. ONE DAY.",
+    "card": "sweep",
+    "season": "winter",
+    "series_color": "hue 238-226",
+    "cast": [
+      "w",
+      "i",
+      "r"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-14-x",
+    "post_id": "180af578-1619-5e75-bbb6-1e7b341f3932",
+    "date": "2026-12-14",
+    "slot": "x",
+    "title": "Monday Masters: race reset",
+    "files": {
+      "landscape": "2026-12-14-x/landscape.png",
+      "portrait": "2026-12-14-x/portrait.png"
+    },
+    "caption": "MONDAY MASTERS: THE CROWN IS OPEN.",
+    "card": "monday",
+    "season": "winter",
+    "series_color": "hue 205-192",
+    "cast": [
+      "s",
+      "o2"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-15-x",
+    "post_id": "63487875-53dc-51e0-be78-181532b96119",
+    "date": "2026-12-15",
+    "slot": "x",
+    "title": "Word of the Day quiz: BLEAK",
+    "files": {
+      "landscape": "2026-12-15-x/landscape.png",
+      "portrait": "2026-12-15-x/portrait.png"
+    },
+    "caption": "WORD OF THE DAY QUIZ",
+    "card": "wotd",
+    "season": "winter",
+    "series_color": "hue 145-128",
+    "cast": [
+      "i",
+      "o1"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: Word of the Day on the card only",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-16-x",
+    "post_id": "38f0426e-59b6-5d8f-8d49-eb85537f07fd",
+    "date": "2026-12-16",
+    "slot": "x",
+    "title": "Muddle Wednesday",
+    "files": {
+      "landscape": "2026-12-16-x/landscape.png",
+      "portrait": "2026-12-16-x/portrait.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: FOUR WORDS. ONE PUNCHLINE.",
+    "card": "muddle",
+    "season": "winter",
+    "series_color": "hue 48-38",
+    "cast": [
+      "o3",
+      "w"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (yesterday's cartoon)",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-16-feed",
+    "post_id": "b09da60f-16a8-568b-9b3f-7d5ed3719121",
+    "date": "2026-12-16",
+    "slot": "feed",
+    "title": "Muddle Wednesday: caption this",
+    "files": {
+      "portrait": "2026-12-16-feed/portrait.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: CAPTION THIS.",
+    "card": "muddle",
+    "season": "winter",
+    "series_color": "hue 48-38",
+    "cast": [
+      "u",
+      "c"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (yesterday's cartoon)",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-17-x",
+    "post_id": "dfed1694-f768-5850-a3d2-3c72d5402574",
+    "date": "2026-12-17",
+    "slot": "x",
+    "title": "WOTD quiz EXTRA + Hubbub pangram tease",
+    "files": {
+      "landscape": "2026-12-17-x/landscape.png",
+      "portrait": "2026-12-17-x/portrait.png"
+    },
+    "caption": "WORD OF THE DAY QUIZ",
+    "card": "wotd",
+    "season": "winter",
+    "series_color": "hue 145-128",
+    "cast": [
+      "s",
+      "o2"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: Word of the Day on the card only",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-17-pin-1",
+    "post_id": "5a9be3b6-2057-5ea6-bae2-4eb25dfc3819",
+    "date": "2026-12-17",
+    "slot": "pin",
+    "title": "Pin: How to play QuadWord",
+    "files": {
+      "pin": "2026-12-17-pin-1/pin.png"
+    },
+    "caption": "HOW TO PLAY QUADWORD: A NEW PUZZLE EVERY DAY.",
+    "card": "pin-explainer",
+    "season": "winter",
+    "series_color": "hue 48-38",
+    "cast": [
+      "o1",
+      "u"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-17-pin-2",
+    "post_id": "71d585ac-9b1e-504b-9a3a-1a5024e8b7bf",
+    "date": "2026-12-17",
+    "slot": "pin",
+    "title": "Pin: Word card, NOBLE",
+    "files": {
+      "pin": "2026-12-17-pin-2/pin.png"
+    },
+    "caption": "NOBLE: WORD OF THE DAY",
+    "card": "pin-word",
+    "season": "winter",
+    "series_color": "hue 145-128",
+    "cast": [
+      "r"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (NOBLE was the Nov 8 Word of the Day)",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-17-pin-3",
+    "post_id": "1e7eaa26-5c11-5537-9b61-0bbb94bc6716",
+    "date": "2026-12-17",
+    "slot": "pin",
+    "title": "Pin: Cast art, Ollie (reindeer)",
+    "files": {
+      "pin": "2026-12-17-pin-3/pin.png"
+    },
+    "caption": "MEET OLLIE.: BRING YOUR FAMILY.",
+    "card": "pin-cast",
+    "season": "winter",
+    "series_color": "house purple-pink",
+    "cast": [
+      "o1"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-18-x",
+    "post_id": "ce101181-d0a2-5a35-ac58-0d09b1a4174c",
+    "date": "2026-12-18",
+    "slot": "x",
+    "title": "Friday's Finest",
+    "files": {
+      "landscape": "2026-12-18-x/landscape.png",
+      "portrait": "2026-12-18-x/portrait.png"
+    },
+    "caption": "FRIDAY'S FINEST: BEST BOARD OF THE WEEK.",
+    "card": "friday",
+    "season": "winter",
+    "series_color": "hue 358-348",
+    "cast": [
+      "d",
+      "o3"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-18-feed",
+    "post_id": "069d244e-adbf-54af-afee-b68d4d0d814c",
+    "date": "2026-12-18",
+    "slot": "feed",
+    "title": "Friday's Finest",
+    "files": {
+      "portrait": "2026-12-18-feed/portrait.png"
+    },
+    "caption": "FRIDAY'S FINEST: BEST BOARD OF THE WEEK.",
+    "card": "friday",
+    "season": "winter",
+    "series_color": "hue 358-348",
+    "cast": [
+      "r",
+      "u",
+      "w"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-19-x",
+    "post_id": "4c70139b-e0b5-5f3c-8c05-9d72c026a4f6",
+    "date": "2026-12-19",
+    "slot": "x",
+    "title": "Cast Saturday: Ivy is shy but steady",
+    "files": {
+      "landscape": "2026-12-19-x/landscape.png",
+      "portrait": "2026-12-19-x/portrait.png"
+    },
+    "caption": "IVY IS SHY BUT STEADY: CAST SATURDAY",
+    "card": "cast",
+    "season": "winter",
+    "series_color": "stepped 355/140/45/210/300",
+    "cast": [
+      "i"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-20-x",
+    "post_id": "070d0e61-dfea-5cb8-9f35-51856726b11c",
+    "date": "2026-12-20",
+    "slot": "x",
+    "title": "Sweep Sunday",
+    "files": {
+      "landscape": "2026-12-20-x/landscape.png",
+      "portrait": "2026-12-20-x/portrait.png"
+    },
+    "caption": "SWEEP SUNDAY: ALL 18 DAILIES. ONE DAY.",
+    "card": "sweep",
+    "season": "winter",
+    "series_color": "hue 238-226",
+    "cast": [
+      "u",
+      "d",
+      "o2"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-20-fb",
+    "post_id": "1eb22411-c5c4-5537-a4e7-fadc61626b7f",
+    "date": "2026-12-20",
+    "slot": "fb",
+    "title": "Sweep Sunday (Facebook)",
+    "files": {
+      "portrait": "2026-12-20-fb/portrait.png"
+    },
+    "caption": "SWEEP SUNDAY: ALL 18 DAILIES. ONE DAY.",
+    "card": "sweep",
+    "season": "winter",
+    "series_color": "hue 238-226",
+    "cast": [
+      "s",
+      "c",
+      "i"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-21-x",
+    "post_id": "358513d0-f7c7-5922-9395-183c2587ad8e",
+    "date": "2026-12-21",
+    "slot": "x",
+    "title": "Monday Masters: the longest night",
+    "files": {
+      "landscape": "2026-12-21-x/landscape.png",
+      "portrait": "2026-12-21-x/portrait.png"
+    },
+    "caption": "MONDAY MASTERS: THE CROWN IS OPEN.",
+    "card": "monday",
+    "season": "winter",
+    "series_color": "hue 205-192",
+    "cast": [
+      "w",
+      "o1",
+      "r"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Winter solstice nod only. Not a holiday greeting: the greeting rule covers real holidays, and the solstice is an astronomical observance with no themed puzzle day. Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-22-x",
+    "post_id": "3f7103d5-a2f8-5ba7-bb6d-a25c60769c74",
+    "date": "2026-12-22",
+    "slot": "x",
+    "title": "Last-minute gift: a streak shield",
+    "files": {
+      "landscape": "2026-12-22-x/landscape.png",
+      "portrait": "2026-12-22-x/portrait.png"
+    },
+    "caption": "GIFT A SHIELD: THEN BEAT THEM ANYWAY.",
+    "card": "gift",
+    "season": "winter",
+    "series_color": "house purple-pink",
+    "cast": [
+      "d",
+      "c",
+      "s"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-22-feed",
+    "post_id": "a2dd80b1-9b17-540c-876e-49fdc3f09097",
+    "date": "2026-12-22",
+    "slot": "feed",
+    "title": "Gift a streak shield",
+    "files": {
+      "portrait": "2026-12-22-feed/portrait.png"
+    },
+    "caption": "GIFT A SHIELD: THEN BEAT THEM ANYWAY.",
+    "card": "gift",
+    "season": "winter",
+    "series_color": "house purple-pink",
+    "cast": [
+      "o3",
+      "w"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-23-x",
+    "post_id": "7e53b99f-6b0f-5181-8b03-d0ba65a21626",
+    "date": "2026-12-23",
+    "slot": "x",
+    "title": "Muddle Wednesday",
+    "files": {
+      "landscape": "2026-12-23-x/landscape.png",
+      "portrait": "2026-12-23-x/portrait.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: FOUR WORDS. ONE PUNCHLINE.",
+    "card": "muddle",
+    "season": "winter",
+    "series_color": "hue 48-38",
+    "cast": [
+      "r",
+      "o2"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (yesterday's cartoon)",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-23-feed",
+    "post_id": "1bd5f1a8-99c5-5684-be8d-92269001dd14",
+    "date": "2026-12-23",
+    "slot": "feed",
+    "title": "Muddle Wednesday: caption this",
+    "files": {
+      "portrait": "2026-12-23-feed/portrait.png"
+    },
+    "caption": "MUDDLE WEDNESDAY: CAPTION THIS.",
+    "card": "muddle",
+    "season": "winter",
+    "series_color": "hue 48-38",
+    "cast": [
+      "i",
+      "o1"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (yesterday's cartoon)",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-24-x",
+    "post_id": "9746fc56-cdb3-5cd3-b3e2-7f64122f6b15",
+    "date": "2026-12-24",
+    "slot": "x",
+    "title": "WOTD quiz HASTE + Hubbub pangram tease",
+    "files": {
+      "landscape": "2026-12-24-x/landscape.png",
+      "portrait": "2026-12-24-x/portrait.png"
+    },
+    "caption": "WORD OF THE DAY QUIZ",
+    "card": "wotd",
+    "season": "winter",
+    "series_color": "hue 145-128",
+    "cast": [
+      "w",
+      "r"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: Word of the Day on the card only",
+    "notes": "Christmas Eve themed puzzles are live in the app (data/holiday-days.json); an optional extra sentence is fine, but the quiz stays the lead. Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-24-pin-1",
+    "post_id": "55a1aa80-a904-5240-8452-22927b8afe0a",
+    "date": "2026-12-24",
+    "slot": "pin",
+    "title": "Pin: How to play Crosswordocious",
+    "files": {
+      "pin": "2026-12-24-pin-1/pin.png"
+    },
+    "caption": "HOW TO PLAY CROSSWORDOCIOUS: A NEW PUZZLE EVERY DAY.",
+    "card": "pin-explainer",
+    "season": "winter",
+    "series_color": "hue 48-38",
+    "cast": [
+      "d",
+      "o3"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-24-pin-2",
+    "post_id": "dd28d28c-28b5-5c9f-a653-ed2317233c7a",
+    "date": "2026-12-24",
+    "slot": "pin",
+    "title": "Pin: Word card, SKIES",
+    "files": {
+      "pin": "2026-12-24-pin-2/pin.png"
+    },
+    "caption": "SKIES: WORD OF THE DAY",
+    "card": "pin-word",
+    "season": "winter",
+    "series_color": "hue 145-128",
+    "cast": [
+      "o1",
+      "c"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (SKIES was the Oct 23 Word of the Day)",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-24-pin-3",
+    "post_id": "89e916fe-dc91-5755-b611-0431e6eedf9a",
+    "date": "2026-12-24",
+    "slot": "pin",
+    "title": "Pin: Cast art, happy holidays",
+    "files": {
+      "pin": "2026-12-24-pin-3/pin.png"
+    },
+    "caption": "HAPPY HOLIDAYS: FROM THE WHOLE CAST.",
+    "card": "pin-cast",
+    "season": "winter",
+    "series_color": "house purple-pink",
+    "cast": [
+      "w",
+      "d",
+      "u",
+      "o1",
+      "r"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-25-holiday",
+    "post_id": "62c7af3e-5ea9-5023-b5c3-76ee02424c9e",
+    "date": "2026-12-25",
+    "slot": "holiday",
+    "title": "Merry Christmas (morning greeting)",
+    "files": {
+      "portrait": "2026-12-25-holiday/portrait.png",
+      "landscape": "2026-12-25-holiday/landscape.png"
+    },
+    "caption": "MERRY CHRISTMAS: FROM THE WHOLE CAST.",
+    "card": "holiday-christmas",
+    "season": "winter",
+    "series_color": "hue 359-349",
+    "cast": [
+      "w",
+      "o1",
+      "o3",
+      "r",
+      "i"
+    ],
+    "cast_count": 5,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "7 AM CT. Themed puzzles are live Dec 24-26 per data/holiday-days.json. Cast: Santa W, reindeer Ollie, ugly sweater Ozzy, R cocoa, Ivy scarf; no one else.",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-25-x",
+    "post_id": "9705eec7-aa0d-55cf-9f31-b60d2cbe5e2c",
+    "date": "2026-12-25",
+    "slot": "x",
+    "title": "Friday's Finest: Christmas edition",
+    "files": {
+      "landscape": "2026-12-25-x/landscape.png",
+      "portrait": "2026-12-25-x/portrait.png"
+    },
+    "caption": "FRIDAY'S FINEST: BEST BOARD OF THE WEEK.",
+    "card": "friday",
+    "season": "winter",
+    "series_color": "hue 358-348",
+    "cast": [
+      "c",
+      "s"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-25-feed",
+    "post_id": "34877938-a806-5c12-8553-f53979feb92c",
+    "date": "2026-12-25",
+    "slot": "feed",
+    "title": "Friday's Finest",
+    "files": {
+      "portrait": "2026-12-25-feed/portrait.png"
+    },
+    "caption": "FRIDAY'S FINEST: BEST BOARD OF THE WEEK.",
+    "card": "friday",
+    "season": "winter",
+    "series_color": "hue 358-348",
+    "cast": [
+      "u",
+      "d"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-26-holiday",
+    "post_id": "683701ff-2302-5d99-b78a-3e4bae1c0373",
+    "date": "2026-12-26",
+    "slot": "holiday",
+    "title": "Happy Kwanzaa (morning greeting)",
+    "files": {
+      "portrait": "2026-12-26-holiday/portrait.png",
+      "landscape": "2026-12-26-holiday/landscape.png"
+    },
+    "caption": "HAPPY KWANZAA: UMOJA. UNITY.",
+    "card": "holiday-kwanzaa",
+    "season": "winter",
+    "series_color": "hue 140-128",
+    "cast": [
+      "u",
+      "s"
+    ],
+    "cast_count": 2,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "7 AM CT, Dec 26 = the first day (Umoja). The app's Kwanzaa themed-puzzle day is Dec 27, so do NOT say \"today's themed puzzles\" (see lead notes). Respect: objects, light, color only; no religious garments; cast wearing the kente wrap (U) and sash (S).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-26-x",
+    "post_id": "7e36551d-9b4a-54dc-b89b-55c6d2d133e4",
+    "date": "2026-12-26",
+    "slot": "x",
+    "title": "Cast Saturday: Rip takes it easy",
+    "files": {
+      "landscape": "2026-12-26-x/landscape.png",
+      "portrait": "2026-12-26-x/portrait.png"
+    },
+    "caption": "RIP TAKES IT EASY: CAST SATURDAY",
+    "card": "cast",
+    "season": "winter",
+    "series_color": "stepped 355/140/45/210/300",
+    "cast": [
+      "r"
+    ],
+    "cast_count": 1,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-27-x",
+    "post_id": "1124337c-a489-578a-9f7c-8694c70ba7c0",
+    "date": "2026-12-27",
+    "slot": "x",
+    "title": "Sweep Sunday + Kwanzaa themed puzzles",
+    "files": {
+      "landscape": "2026-12-27-x/landscape.png",
+      "portrait": "2026-12-27-x/portrait.png"
+    },
+    "caption": "SWEEP SUNDAY: ALL 18 DAILIES. ONE DAY.",
+    "card": "sweep",
+    "season": "winter",
+    "series_color": "hue 238-226",
+    "cast": [
+      "s",
+      "u",
+      "i"
+    ],
+    "cast_count": 3,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none",
+    "notes": "Kwanzaa themed puzzles per data/holiday-days.json: Dec 27. Verify in the live app. Threads portrait = the same scene centered on a blurred backdrop (10-17).",
+    "source": "chatgpt-scene",
+    "status": "final"
+  },
+  {
+    "key": "2026-12-27-feed",
+    "post_id": "49a7ac62-825b-5d94-b3a7-667fd1152cea",
+    "date": "2026-12-27",
+    "slot": "feed",
+    "title": "Your year in Wordocious: coming soon (founder call)",
+    "files": {
+      "portrait": "2026-12-27-feed/portrait.png"
+    },
+    "caption": "YOUR YEAR IN WORDS: COMING SOON.",
+    "card": "wrapped",
+    "season": "newyear",
+    "series_color": "house purple-pink",
+    "cast": [
+      "w",
+      "o2",
+      "c",
+      "u"
+    ],
+    "cast_count": 4,
+    "mascot_check": "pass (checked vs hero + winter costume, 10-17)",
+    "aesthetic_check": "pass (contact sheet 10-17)",
+    "hint": "hint: none (teaser only, no stats)",
+    "notes": "FOUNDER CALL: only approve if a year-in-review feature really ships (or this stays a pure teaser with no feature claim). No real user data anywhere. New Year season art (Dec 27-Jan 2) is not built yet, so the scene uses the winter cast with gold confetti. Paused until decided.",
+    "source": "chatgpt-scene",
+    "status": "final"
   }
 ]

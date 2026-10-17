@@ -34,7 +34,7 @@ def frame(im, fmt):
     return im.resize((W, H), Image.LANCZOS)
 
 
-def recolor_headline(im, season, series, y0, y1, nl=None, x0=None, x1=None, dil=14, smin=0.4, ex=None):
+def recolor_headline(im, season, series, y0, y1, nl=None, x0=None, x1=None, dil=14, smin=0.4, ex=None, hmax=345):
     """Hue-shift the purple-pink headline lettering of a scene (rows y0..y1 of the native scene) to the series color for this season.
     Only bright saturated purple/pink pixels (plus a thin rim halo) inside the band are touched, never mascots or the sub line."""
     import numpy as np
@@ -47,9 +47,9 @@ def recolor_headline(im, season, series, y0, y1, nl=None, x0=None, x1=None, dil=
     band = np.zeros(H.shape, bool); band[y0:y1, (x0 or 0):(x1 or H.shape[1])] = True
     for r in (ex or []):                      # exclusion rects (x0,y0,x1,y1) in native scene px: same-hue props beside the headline (purple floating tiles)
         band[r[1]:r[3], r[0]:r[2]] = False
-    letters = band & (H > 255) & (H < 345) & (S > smin) & (V > 0.62)
+    letters = band & (H > 255) & (H < hmax) & (S > smin) & (V > 0.62)   # hmax 358: deep-pink letter bottoms
     letters = ndimage.binary_closing(letters, iterations=3)
-    area = ndimage.binary_dilation(letters, iterations=dil) & band & (H > 240) & (H < 350) & (S > 0.3)
+    area = ndimage.binary_dilation(letters, iterations=dil) & band & (H > 240) & (H < max(350, hmax + 2)) & (S > 0.3)
     t = np.clip((H - 272) / 53, 0, 1)
     if sp[0] == 'multi':
         # letters touch in bubble lettering, so no per-letter labeling: hues sweep left to right across the headline
@@ -171,7 +171,7 @@ def overlay(im, fmt, slot, season):
     return base.convert('RGB')
 
 
-def accept(cid, season=None, slot=None, scale=None, top=None, series=None, y0=None, y1=None, kw_nl=None, content=None, at=None, x0=None, x1=None, dil=None, smin=None, ex=None):
+def accept(cid, season=None, slot=None, scale=None, top=None, series=None, y0=None, y1=None, kw_nl=None, content=None, at=None, x0=None, x1=None, dil=None, smin=None, ex=None, hmax=None):
     q = json.load(open(os.path.join(FULL, 'queue.json')))['queue']
     item = next(x for x in q if x['id'] == cid)
     fmt = item['fmt']; slot = slot or item['slot']; season = season or item['season']
@@ -182,7 +182,7 @@ def accept(cid, season=None, slot=None, scale=None, top=None, series=None, y0=No
         src = os.path.join('/private/tmp/claude-501/-Users-brianterchin-Developer-WordRush--claude-worktrees-new-session-38fb01/c71b5614-4332-4087-96d2-47d25779769a/scratchpad', 'accepted', cid + '.png')
     raw = Image.open(src).convert('RGB')
     if series:
-        raw = recolor_headline(raw, season, series, int(y0), int(y1), int(kw_nl) if kw_nl else None, int(x0) if x0 else None, int(x1) if x1 else None, int(dil) if dil else 14, float(smin) if smin else 0.4, [tuple(int(v) for v in r.split(',')) for r in ex.split(';')] if ex else None)
+        raw = recolor_headline(raw, season, series, int(y0), int(y1), int(kw_nl) if kw_nl else None, int(x0) if x0 else None, int(x1) if x1 else None, int(dil) if dil else 14, float(smin) if smin else 0.4, [tuple(int(v) for v in r.split(',')) for r in ex.split(';')] if ex else None, int(hmax) if hmax else 345)
     if scale == 'crop':
         im = frame(raw, fmt)
     elif scale == 'fill':
@@ -252,10 +252,13 @@ def review(cid, out_dir_=None, src=None):
     refs = []
     for c in item['cast']:
         base = c.split('|')[0]
-        if season in ('halloween', 'thanksgiving'):
-            folder = os.path.join(C.BRAND, 'seasons', season, 'cast')
+        if season in ('halloween', 'thanksgiving', 'winter'):
+            folder = os.path.join(C.BRAND, 'seasons', 'winter-holidays' if season == 'winter' else season, 'cast')
             fs = [f for f in sorted(os.listdir(folder)) if f == base + '.png' or f.startswith(base + '-alt')]
             fs.sort(key=lambda f: (f != base + '.png', f))      # base costume first, then the alts
+            if season == 'winter':      # winter -alt1 files are old duplicates: compare against the hero + the 10-16 costume only
+                refs.append(Image.open(os.path.join(C.BRAND, 'cast', 'hero', base + '.png')).convert('RGBA'))
+                refs[-1] = refs[-1].crop(refs[-1].getchannel('A').getbbox()); fs = [base + '.png']
         else:
             folder = os.path.join(C.BRAND, 'cast', 'hero'); fs = [base + '.png']
         for f in fs[:4]:
@@ -289,7 +292,7 @@ if __name__ == '__main__':
                 kw[a[i][2:]] = a[i + 1]; i += 2
             else:
                 i += 1
-        accept(pos[0], None, None, kw.get('scale'), kw.get('top'), kw.get('series'), kw.get('y0'), kw.get('y1'), kw.get('nl'), kw.get('content'), kw.get('at'), kw.get('x0'), kw.get('x1'), kw.get('dil'), kw.get('smin'), kw.get('ex'))
+        accept(pos[0], None, None, kw.get('scale'), kw.get('top'), kw.get('series'), kw.get('y0'), kw.get('y1'), kw.get('nl'), kw.get('content'), kw.get('at'), kw.get('x0'), kw.get('x1'), kw.get('dil'), kw.get('smin'), kw.get('ex'), kw.get('hmax'))
     elif cmd == 'review':
         print(review(sys.argv[2]))
     elif cmd == 'reject':

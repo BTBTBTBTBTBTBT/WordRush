@@ -1,0 +1,121 @@
+[
+ {
+  "id": "2026-12-26-holiday-x-1",
+  "status": "done",
+  "file": "2026-12-26-holiday-x-1.png",
+  "checks": "U+S on-model (S angled brows, U lotus legs, letters visible); HAPPY KWANZAA / UMOJA. UNITY. spelled right; headline top ~19%, bottom band clear; kinara 3 red-1 black-3 green, only black lit",
+  "notes": "v2 after asking headline lower (v1 started at ~8%). Red/green wicks show tiny warm dots (no flames/glow) - zoom-check. v1 in session scratchpad kwanzaa-v1.png"
+ },
+ {
+  "id": "2026-12-26-holiday-feed-1",
+  "status": "done",
+  "file": "2026-12-26-holiday-feed-1.png",
+  "checks": "U+S on-model, lotus legs, S angled brows; spelling right; headline top ~14%, feet ~81%; only black center candle lit",
+  "notes": "portrait twin, asked in same chat. NOTE: the other runner's 'Festive Muddle Wednesday Snowfall.png' (1536x1024) was briefly moved by me into incoming/full by mistake and moved back to ~/Downloads; also the other runner briefly grabbed my portrait as 12-23-x-1 and moved it away (now correct here)"
+ },
+ {
+  "id": "2026-12-04-feed-1",
+  "status": "done",
+  "file": "2026-12-04-feed-1.png",
+  "checks": "O/U/I on-model, each once, letters visible, U lotus legs; FRIDAY'S FINEST / BEST BOARD OF THE WEEK. right; headline top ~14%, feet ~78%; kinara unlit (not Kwanzaa yet)",
+  "notes": "v2 after fix (v1 headline at ~10%, kinara all lit)"
+ },
+ {
+  "id": "2026-12-04-x-1",
+  "status": "done",
+  "file": "2026-12-04-x-1.png",
+  "checks": "S+W on-model (S angled brows, W friendly, cape/Santa hat/belt/mittens/boots, letters visible), each once; FRIDAY'S FINEST / BEST BOARD OF THE WEEK. right; headline top ~14%, feet ~88%",
+  "notes": "first pass; headline very tight to side margins is fine (x 160-1400)"
+ },
+ {
+  "id": "2026-12-05-x-1",
+  "status": "done",
+  "file": "2026-12-05-x-1.png",
+  "checks": "D on-model (glasses, pencil, gelt, sweater, beanie, letter visible); DEWEY STUDIES EVERY LETTER / CAST SATURDAY right; headline top ~16%, D left / headline right; hanukkiah ok",
+  "notes": "two dreidels in corners show a small gimel glyph and gifts have star-of-David decor (tiny); crop or accept"
+ },
+ {
+  "id": "2026-12-06-x-1",
+  "status": "done",
+  "file": "2026-12-06-x-1.png",
+  "checks": "R on-model (nightcap+holly, quilt, cocoa mug, letter visible, sleepy face), once; SWEEP SUNDAY / ALL 18 DAILIES. ONE DAY. right; headline top ~20%, R at right, feet ~83%",
+  "notes": "first pass"
+ },
+ {
+  "id": "2026-12-06-fb-1",
+  "status": "done",
+  "file": "2026-12-06-fb-1.png",
+  "checks": "C/O/W on-model (C teeth, dreidel, scarf+beanie; O antlers/bells/pom-poms; W Santa hat/belt/mittens/boots/cape), each once, letters visible; SWEEP SUNDAY / ALL 18 DAILIES. ONE DAY. right; headline top ~14%, feet ~85%",
+  "notes": "v2 after fix (v1 headline at ~9%). Gelt coins show tiny star-of-David emboss (decor)"
+ },
+ {
+  "id": "2026-12-07-x-1",
+  "status": "done",
+  "file": "2026-12-07-x-1.png",
+  "checks": "O/I/D on-model (Ozzy one-eye, Ivy letter visible, Dewey glasses+pencil+gelt), each once; MONDAY MASTERS / THE CROWN IS OPEN. right; headline top ~14%, crown behind in middle; feet ~87%",
+  "notes": "first pass; tiny dreidel glyph pattern on D sweater is costume art"
+ },
+ {
+  "id": "2026-12-08-x-1",
+  "status": "done",
+  "file": "2026-12-08-x-1.png",
+  "checks": "U (lotus legs, kinara all UNLIT) + W on-model, each once, letters visible; WORD OF THE DAY QUIZ spelled right, no sub line; headline top ~12% (slightly into top band, fixable with accept --scale/--top), headline bottom ~40%; empty band 40-62% is plain mountains/lake scenery, no card; mascots far left/right, feet ~87%",
+  "notes": "headline glow outline is orange (series recolor will handle)"
+ },
+ {
+  "id": "2026-12-09-x-1",
+  "status": "done",
+  "file": "2026-12-09-x-1.png",
+  "checks": "C+O on-model (C teeth/dreidel/scarf/beanie/gelt; O antlers/bells/4 pom-poms), far left/right, each once; MUDDLE WEDNESDAY / FOUR WORDS. ONE PUNCHLINE. right; center 30% below sub line plain scenery; feet ~85%",
+  "notes": "headline top ~11% (slightly into top band): use accept --scale/--top"
+ },
+ {
+  "id": "2026-12-10-pin-1",
+  "status": "done",
+  "file": "2026-12-10-pin-1.png",
+  "checks": "D+I on-model (glasses/pencil/gelt/sweater; Ivy letter visible, mittens), each once; HOW TO PLAY SUDOCIOUS / A NEW PUZZLE EVERY DAY. right; headline top ~15%, floating tiles blank; feet ~84%",
+  "notes": "first pass"
+ },
+ {
+  "id": "2026-12-09-feed-1",
+  "status": "done",
+  "file": "2026-12-09-feed-1.png",
+  "checks": "R (nightcap/holly/quilt/mug, letter visible) + U (lotus legs, kinara all unlit) on-model, each once; MUDDLE WEDNESDAY / CAPTION THIS. right; headline top ~14.6%; dark empty wall area 40-60% plain; feet ~85%",
+  "notes": "v3 after 2 fixes (v1/v2 had tiny flames on all 7 candles)"
+ },
+ {
+  "id": "2026-12-10-pin-2",
+  "status": "done",
+  "file": "2026-12-10-pin-2.png",
+  "checks": "O(Ozzy)+C on-model (one-eye/sweater/beanie; C teeth/dreidel/scarf/gelt), each once, letters visible; SCORE / WORD OF THE DAY right; headline top ~15%; confetti no letters; feet ~85%",
+  "notes": "first pass"
+ },
+ {
+  "id": "2026-12-10-pin-3",
+  "status": "done",
+  "file": "2026-12-10-pin-3.png",
+  "checks": "W on-model (friendly, Santa hat/belt/buckle/mittens/boots/cape), W letter fully visible, once; MEET W. / BRING YOUR FAMILY. right; headline top ~13.7%; feet ~87%",
+  "notes": "first pass"
+ },
+ {
+  "id": "2026-12-10-x-1",
+  "status": "done",
+  "file": "2026-12-10-x-1.png",
+  "checks": "R + D on-model, far left/right, each once, letters visible; WORD OF THE DAY QUIZ right, no sub line; headline top ~14%; empty band 45-65% is plain lake scenery; feet ~86%",
+  "notes": "typed via JS insert (clean prompt); first attempt in this tab was garbled by cross-tab keystrokes and was stopped before generating"
+ },
+ {
+  "id": "2026-12-11-feed-1",
+  "status": "done",
+  "file": "2026-12-11-feed-1.png",
+  "checks": "S on-model (angled determined brows, kente sash/scarf/corn, S letter visible), once; FRIDAY'S FINEST / BEST BOARD OF THE WEEK. right; headline top ~12.4% (slightly into top band); feet bottom ~90.5% (touches the 9% bottom band)",
+  "notes": "large character: use accept --scale ~0.93 --top to fit; not retried"
+ },
+ {
+  "id": "2026-12-11-x-1",
+  "status": "done",
+  "file": "2026-12-11-x-1.png",
+  "checks": "I/O(Opal heart sunglasses, cape, muff, gift)/C on-model, each once, all letters visible; FRIDAY'S FINEST / BEST BOARD OF THE WEEK. right; headline top ~13%; feet ~86%",
+  "notes": "first pass; gelt coins have tiny star emboss"
+ }
+]

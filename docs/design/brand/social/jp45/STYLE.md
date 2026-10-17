@@ -41,17 +41,17 @@ Safe margin 48 / 54 / 50 px from every edge. Floating tiles only at the edges, n
 
 ## Headline color by season x series (hue in degrees; recolored in code on the keyed lettering)
 Each series keeps its name, lettering and layout across seasons; only the hue shifts with the season.
-| Series | Standard (cast colors) | Halloween | Thanksgiving |
-|---|---|---|---|
-| Launch / teasers / brand one-offs | purple-pink (original) | purple-pink | purple-pink |
-| MONDAY MASTERS | blue (D) 225-210 | ghostly blue-violet 250-235 | deep plum 305-325 |
-| WORD OF THE DAY QUIZ (+ word pins) | teal (C) 190-175 | slime green 105-85 | sage 100-90 |
-| MUDDLE WEDNESDAY (+ explainer pins) | orange / gold 45-28 | pumpkin orange 32-18 | burnt orange 25-15 |
-| 7 LETTERS. ONE WORD. (Hubbub tease) | green (I) 150-135 | potion teal 175-160 | golden wheat 48-40 |
-| FRIDAY'S FINEST | red-pink 350-335 | blood / candy red 358-345 | cranberry 350-340 |
-| SWEEP SUNDAY | purple (original) | witch purple 285-305 | maple brown 22-15 |
-| CAST SATURDAY | one color per letter, all cast colors | candy-corn yellow / orange / red-orange | harvest: cranberry, wheat, burnt orange, sage, plum |
-| Holiday one-offs | DIWALI marigold-vermilion 42-8; VETERANS DAY navy blue 222-210 | HALLOWEEN EVE / HAPPY HALLOWEEN keep the slime-drip Halloween lettering | THANKSGIVING / EVE / HAPPY harvest; FAMILY LEAGUE sage |
+| Series | Standard (cast colors) | Halloween | Thanksgiving | Winter holidays (Dec 1-26) |
+|---|---|---|---|---|
+| Launch / teasers / brand one-offs | purple-pink (original) | purple-pink | purple-pink | purple-pink (winter reveal, gift, recap, Meet pins) |
+| MONDAY MASTERS | blue (D) 225-210 | ghostly blue-violet 250-235 | deep plum 305-325 | frost blue 205-192 |
+| WORD OF THE DAY QUIZ (+ word pins) | teal (C) 190-175 | slime green 105-85 | sage 100-90 | pine green 145-128 |
+| MUDDLE WEDNESDAY (+ explainer pins) | orange / gold 45-28 | pumpkin orange 32-18 | burnt orange 25-15 | candlelight gold 48-38 |
+| 7 LETTERS. ONE WORD. (Hubbub tease) | green (I) 150-135 | potion teal 175-160 | golden wheat 48-40 | northern-lights teal 172-160 |
+| FRIDAY'S FINEST | red-pink 350-335 | blood / candy red 358-345 | cranberry 350-340 | holly red 358-348 |
+| SWEEP SUNDAY | purple (original) | witch purple 285-305 | maple brown 22-15 | midnight indigo 238-226 |
+| CAST SATURDAY | one color per letter, all cast colors | candy-corn yellow / orange / red-orange | harvest: cranberry, wheat, burnt orange, sage, plum | stepped red/green/gold/ice/plum (`--nl`) |
+| Holiday one-offs | DIWALI marigold-vermilion 42-8; VETERANS DAY navy blue 222-210 | HALLOWEEN EVE / HAPPY HALLOWEEN keep the slime-drip Halloween lettering | THANKSGIVING / EVE / HAPPY harvest; FAMILY LEAGUE sage | HAPPY HANUKKAH blue 222-205; MERRY CHRISTMAS holly red 359-349; HAPPY KWANZAA green 140-128 (one hue each: two-color sweeps looked broken) |
 
 Gold sub-line lettering stays gold in every season. Tile accent, sub-line stroke and headline glow follow the series hue.
 

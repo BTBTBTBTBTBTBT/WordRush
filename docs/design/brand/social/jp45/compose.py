@@ -58,6 +58,14 @@ SERIES_COLORS = {
         'pangram': ('grad', 48, 40, 0.85, 1), 'friday': ('grad', 350, 340, 1, 0.85), 'cast': ('multi', [345, 42, 22, 95, 305]),
         'league': ('grad', 100, 90, 0.55, 0.85), 'veterans': None,
     },
+    'winter': {     # Dec 1-26 (BLOCK-2 plan table); brand one-offs (winter reveal, gift, recap, cast pins) keep the house purple-pink
+        'default': None, 'brand': None, 'winter': None, 'gift': None, 'pin-cast': None,
+        'monday': ('grad', 205, 192, 0.9, 1), 'wotd': ('grad', 145, 128, 0.9, 0.95), 'pin-word': ('grad', 145, 128, 0.9, 0.95),
+        'muddle': ('grad', 48, 38, 1, 1), 'pin-explainer': ('grad', 48, 38, 1, 1), 'pangram': ('grad', 172, 160, 0.9, 1),
+        'friday': ('grad', 358, 348, 1, 0.92), 'sweep': ('grad', 238, 226, 0.9, 0.9), 'cast': ('multi', [355, 140, 45, 210, 300]),
+        'holiday-hanukkah': ('grad', 222, 205, 0.9, 1), 'holiday-christmas': ('grad', 359, 349, 1, 0.95),
+        'holiday-kwanzaa': ('grad', 140, 128, 0.9, 0.9),
+    },
 }
 
 

@@ -160,7 +160,8 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/s.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/d.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/s.png",
-    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-18-feed/portrait.png"
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-18-feed/portrait.png",
+    "/private/tmp/claude-501/-Users-brianterchin-Developer-WordRush--claude-worktrees-new-session-38fb01/c71b5614-4332-4087-96d2-47d25779769a/scratchpad/b2/muddle-portrait-layout-example.png"
    ],
    "status": "done",
    "priority": "normal",
@@ -168,7 +169,7 @@
    "hint": "hint: none (yesterday's, already-played cartoon)",
    "layout": "calm empty rectangle ~70% x 28% between the sub line and the mascots' heads, mascots standing low (heads below 68% of the height), headline in the top 33%",
    "content": "cartoon|<yesterday Muddle cartoon file>|700",
-   "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Muddle Wednesday: caption this).\nATTACH: hero/d.png = canonical Dewey; hero/s.png = canonical Scoot; winter-holidays/d.png = Dewey's approved winter costume art; winter-holidays/s.png = Scoot's approved winter costume art; 2026-11-18-feed/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Dewey (the letter D): blue-and-silver knit Hanukkah sweater with a dreidel and snowflake pattern (round opening for the D), beanie, holding a chocolate gelt coin; Scoot (the letter S): kente-inspired sash, scarf and an ear of corn baton; keeps his angled, determined brows (friendly raised brows on S are off-model). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MUDDLE WEDNESDAY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"CAPTION THIS.\".\nSETTING: two mascots standing low under a calm empty rectangle (70% width x 28% height) for the cartoon, frosty wall. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; calm empty rectangle ~70% x 28% between the sub line and the mascots' heads, mascots standing low (heads below 68% of the height), headline in the top 33%; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
+   "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Muddle Wednesday: caption this).\nATTACH: hero/d.png = canonical Dewey; hero/s.png = canonical Scoot; winter-holidays/d.png = Dewey's approved winter costume art; winter-holidays/s.png = Scoot's approved winter costume art; 2026-11-18-feed/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Dewey (the letter D): blue-and-silver knit Hanukkah sweater with a dreidel and snowflake pattern (round opening for the D), beanie, holding a chocolate gelt coin; Scoot (the letter S): kente-inspired sash, scarf and an ear of corn baton; keeps his angled, determined brows (friendly raised brows on S are off-model). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MUDDLE WEDNESDAY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"CAPTION THIS.\".\nSETTING: two mascots standing low under a calm empty rectangle (70% width x 28% height) for the cartoon, frosty wall. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; calm empty rectangle ~70% x 28% between the sub line and the mascots' heads, mascots standing low (heads below 68% of the height), headline in the top 33%; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only. LAYOUT (strict, this is a redo): headline top at about 15 percent of the height, headline + sub line end by 37 percent; the band from 37 percent to 66 percent of the height must be EMPTY plain wall/scenery across the middle 75 percent of the width (no props, no cards, no frames, no text) \u2014 a cartoon is added there in code; both mascots SMALL (each about 22 percent of the frame height) standing low with their hat tops below 66 percent of the height. Attached muddle-portrait-layout-example.png shows exactly this layout (ignore its characters).",
    "tab_group": "A",
    "note": "captured 10-16 block 2 runner A (retry 2: first try drew a cream card in the empty area, rejected; keeper = plain stone wall, D + S on-model vs hero/winter art, headline + CAPTION THIS. right; empty band is only ~14% tall (mascots' heads at ~52%), so pass --scale/--top or shrink the cartoon when accepting)"
   },
@@ -248,19 +249,19 @@
    "headline": "BLISS",
    "sub": "WORD OF THE DAY",
    "cast": [
-    "o2"
+    "d"
    ],
    "series": "pin-word",
    "refs": [
-    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/o2.png",
-    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o2.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/d.png",
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/d.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-2/pin.png"
    ],
    "status": "done",
    "priority": "normal",
-   "notes": "cocoa steam and soft snow, one mascot centered",
+   "notes": "redo 10-17: Dewey instead of Opal (same-day duplicate of MEET OPAL)",
    "hint": "hint: none (BLISS was the Oct 19 Word of the Day: a past word)",
-   "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Pin: Word card, BLISS).\nATTACH: hero/o2.png = canonical Opal; winter-holidays/o2.png = Opal's approved winter costume art; 2026-11-19-pin-2/pin.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 1 character(s), each exactly once: Opal (the letter O): Christmas cape with a bow, a muff and a gift (heart sunglasses stay on). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"BLISS\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"WORD OF THE DAY\".\nSETTING: cocoa steam and soft snow, one mascot centered. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
+   "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Pin: Word card, BLISS).\nATTACH: hero/d.png = canonical Dewey; winter-holidays/d.png = Dewey's approved winter costume art; 2026-11-19-pin-2/pin.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 1 character(s), each exactly once: Dewey (the letter D): his winter costume exactly as attached (blue knit sweater and beanie), reading a small book under a warm lamp (round glasses stay on). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"BLISS\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"WORD OF THE DAY\".\nSETTING: a cozy reading nook: cocoa steam, a warm lamp and soft snow outside, one mascot centered. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
    "tab_group": "A",
    "note": "captured 10-16 block 2 runner A (whole scene, O2 Opal on-model: heart sunglasses, cape, bow, muff, gift; BLISS + WORD OF THE DAY spelled right; hint: the headline word BLISS is the day's word card)"
   },
@@ -527,7 +528,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/s.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-26-holiday/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "front",
    "notes": "a warm table scene in red, black and green: a kinara with SEVEN candle positions (three red left, one black center, three green right) with only the black center candle lit for day one, a woven mkeka mat, ears of corn (muhindi), the unity cup (kikombe), kente-inspired trim, soft snow",
    "hint": "hint: none",
@@ -561,7 +562,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/i.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-20-feed/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "three mascots cheering around a small gold trophy, snowy window behind",
    "hint": "hint: none",
@@ -592,7 +593,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/w.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-20-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "a podium-free scene: two mascots in winter costume with a gold ribbon rosette between them, string lights",
    "hint": "hint: none",
@@ -619,7 +620,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/d.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-14-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "D alone in the Hanukkah dreidel sweater and beanie holding gelt, blue and silver night, snow, one hanukkiah glowing softly behind",
    "hint": "hint: none",
@@ -652,7 +653,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/w.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-22-fb/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "three mascots with a tall stack of colorful game tiles and a mug of cocoa, snowy window",
    "hint": "hint: none",
@@ -679,7 +680,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/r.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-22-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "R alone in the quilt wrap and striped nightcap holding a cocoa mug, soft snow, midnight-indigo glow",
    "hint": "hint: none",
@@ -712,7 +713,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/d.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-23-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "frosty blue-silver night, a gold crown resting on a snowdrift in the middle distance",
    "hint": "hint: none",
@@ -742,7 +743,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/w.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots low at the sides, pine branches and snow, calm empty band for the word card",
    "hint": "hint: word card shows the day's Word of the Day only",
@@ -772,15 +773,16 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/cast/hero/u.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/r.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/u.png",
-    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-18-feed/portrait.png"
+    "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-18-feed/portrait.png",
+    "/private/tmp/claude-501/-Users-brianterchin-Developer-WordRush--claude-worktrees-new-session-38fb01/c71b5614-4332-4087-96d2-47d25779769a/scratchpad/b2/muddle-portrait-layout-example.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots low under a calm empty rectangle for the cartoon, cozy snow-lit wall",
    "hint": "hint: none (yesterday's cartoon)",
    "layout": "calm empty rectangle ~70% x 28% between the sub line and the mascots' heads; mascots low",
    "content": "cartoon|<yesterday Muddle cartoon file>|700",
-   "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Muddle Wednesday: caption this).\nATTACH: hero/r.png = canonical Rip; hero/u.png = canonical Umi; winter-holidays/r.png = Rip's approved winter costume art; winter-holidays/u.png = Umi's approved winter costume art; 2026-11-18-feed/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Rip (the letter R): patchwork quilt wrap, striped nightcap with holly and a cocoa mug; Umi (the letter U): Kwanzaa wrap with red, black and green kente-inspired trim and a beanie, holding a kinara (3 red, 1 black, 3 green candles). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MUDDLE WEDNESDAY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"CAPTION THIS.\".\nSETTING: two mascots low under a calm empty rectangle for the cartoon, cozy snow-lit wall. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; calm empty rectangle ~70% x 28% between the sub line and the mascots' heads; mascots low; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only.",
+   "prompt": "Make a 2:3 portrait (1024x1536) social-media scene for the Wordocious word-game brand (Muddle Wednesday: caption this).\nATTACH: hero/r.png = canonical Rip; hero/u.png = canonical Umi; winter-holidays/r.png = Rip's approved winter costume art; winter-holidays/u.png = Umi's approved winter costume art; 2026-11-18-feed/portrait.png = approved layout and lettering style example (ignore its season colors and props).\nCHARACTERS: draw exactly 2 character(s), each exactly once: Rip (the letter R): patchwork quilt wrap, striped nightcap with holly and a cocoa mug; Umi (the letter U): Kwanzaa wrap with red, black and green kente-inspired trim and a beanie, holding a kinara (3 red, 1 black, 3 green candles). Each must match its attached art exactly: same letter shape, colors, eyes, mouth and teeth, brows, limbs and proportions. W is always friendly. Costumes sit naturally on the body, nothing pasted on or floating, and the letter stays fully visible.\nHEADLINE in the house bubble lettering (glossy, puffy purple-pink letters with a white highlight and a darker rim, exactly like the style example): \"MUDDLE WEDNESDAY\". Spell it letter by letter exactly like this. SUB LINE in gold-to-orange glossy lettering, one line under it: \"CAPTION THIS.\".\nSETTING: two mascots low under a calm empty rectangle for the cartoon, cozy snow-lit wall. Winter-holidays look (Christmas, Hanukkah and Kwanzaa all share the season): snow, warm string lights, deep midnight blue with cream and gold; objects, food, light and color only, no religious garments on anyone.\nLAYOUT: keep the top 14 percent and the bottom 9 percent of the frame as calm background only (no lettering, no feet, no props); headline fully inside the middle 70 percent; calm empty rectangle ~70% x 28% between the sub line and the mascots' heads; mascots low; cast feet on one baseline above the bottom band.\nDO NOT draw: the Wordocious wordmark, a footer or URL, any other words or letters, emoji, watermarks, speech bubbles, extra characters or a second copy of any character. American spelling only. LAYOUT (strict, this is a redo): headline top at about 15 percent of the height, headline + sub line end by 37 percent; the band from 37 percent to 66 percent of the height must be EMPTY plain wall/scenery across the middle 75 percent of the width (no props, no cards, no frames, no text) \u2014 a cartoon is added there in code; both mascots SMALL (each about 22 percent of the frame height) standing low with their hat tops below 66 percent of the height. Attached muddle-portrait-layout-example.png shows exactly this layout (ignore its characters).",
    "tab_group": "B"
   },
   {
@@ -806,7 +808,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o1.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-18-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots far left and far right, low, with a calm empty center",
    "hint": "hint: none (yesterday's cartoon)",
@@ -838,7 +840,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/i.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-1/pin.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "frosty winter study, a few glossy number tiles floating at the edges (decor only, no solved grid)",
    "hint": "hint: none",
@@ -868,7 +870,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/c.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-2/pin.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "snow and gold confetti sparkle",
    "hint": "hint: none (SCORE was the Nov 26 Word of the Day)",
@@ -895,7 +897,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/w.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-3/pin.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "W alone in the Santa hat, belt and mittens, snowy village glow",
    "hint": "hint: none",
@@ -925,7 +927,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/d.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots low at the sides, string lights across the top, snow, calm empty band for the word card",
    "hint": "hint: Word of the Day on the card only",
@@ -954,7 +956,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/s.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-20-feed/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "S alone with a determined look in the Kwanzaa kente sash, holding the corn baton like a trophy, snow",
    "hint": "hint: none",
@@ -987,7 +989,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/c.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-20-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "three mascots in a row with a gold ribbon rosette, warm window light, snow",
    "hint": "hint: none",
@@ -1555,7 +1557,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/w.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-26-fb/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots holding a big wrapped gift together, glowing shield emblem on the ribbon",
    "hint": "hint: none",
@@ -1620,7 +1622,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o1.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-18-feed/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots low under a calm empty rectangle for the cartoon, string lights on a frosted wall",
    "hint": "hint: none (yesterday's cartoon)",
@@ -1652,7 +1654,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o2.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-18-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots far left and far right, low, with a calm empty center, ribbon and snow",
    "hint": "hint: none (yesterday's cartoon)",
@@ -1684,7 +1686,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/o3.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-1/pin.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "cozy winter library with frosted crossword-shaped windows (decor only, no letters in the cells)",
    "hint": "hint: none",
@@ -1714,7 +1716,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/c.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-2/pin.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "night sky, stars and gentle snowfall",
    "hint": "hint: none (SKIES was the Oct 23 Word of the Day)",
@@ -1753,7 +1755,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/r.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-pin-3/pin.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "five cast members together under string lights, a mix of costumes, snow",
    "hint": "hint: none",
@@ -1783,7 +1785,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/r.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-19-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots low at the sides, stockings and string lights, soft snow, calm empty band for the word card",
    "hint": "hint: Word of the Day on the card only",
@@ -1815,7 +1817,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/d.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-20-feed/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots with a small gold trophy among gift boxes, warm light",
    "hint": "hint: none",
@@ -1845,7 +1847,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/s.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-20-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "two mascots with a gold ribbon rosette, a few wrapped gifts and a glowing window",
    "hint": "hint: none",
@@ -1872,7 +1874,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/r.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-14-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "R alone in the patchwork quilt wrap, striped nightcap with holly and a cocoa mug, soft snow, warm window glow",
    "hint": "hint: none",
@@ -1908,7 +1910,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/u.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-26-fb/portrait.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "a midnight-blue sky with gold confetti and a softly glowing countdown clock face that shows no readable time, the four together, snow melting into sparkle",
    "hint": "hint: none (teaser only, no stats)",
@@ -1941,7 +1943,7 @@
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/seasons/winter-holidays/cast/i.png",
     "/Users/brianterchin/Developer/WordRush/.claude/worktrees/new-session-38fb01/docs/design/brand/social/jp45/2026-11-22-x/landscape.png"
    ],
-   "status": "todo",
+   "status": "done",
    "priority": "normal",
    "notes": "three mascots with colored game tiles drifting like snow, red-black-green accents in the trim, midnight-indigo glow",
    "hint": "hint: none",
@@ -1951,7 +1953,8 @@
  ],
  "limit": {
   "hit": "2026-10-16 ~21:12 CT (runner B)",
-  "resets": "2026-10-17 10:40 AM CT (per ChatGPT: \"try again tomorrow at 10:40 AM\", Plus plan image limit)"
+  "resets": "2026-10-17 10:40 AM CT (per ChatGPT: \"try again tomorrow at 10:40 AM\", Plus plan image limit)",
+  "note_10_17": "Block 2 finished 10-17: 61 + 3 redos generated by two Sonnet runners (+1 redo runner) without hitting the limit (~32 images in ~35 min)."
  },
  "note": "Block 2 (Nov 30 - Dec 27). status todo|sent|done. scene.py reads only incoming/full/queue.json, so append these items first: from incoming/full run python3 -c \"import json;a=json.load(open('queue.json'));b=json.load(open('queue-block2.json'));a['queue']+=b['queue'];json.dump(a,open('queue.json','w'),indent=1)\". tab_group A-D = four parallel ChatGPT tabs (free web app, MacBook Chrome only; never click Share). Each item's 'prompt' is ready to paste with its 'refs' attached."
 }

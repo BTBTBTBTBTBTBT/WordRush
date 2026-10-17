@@ -1,0 +1,93 @@
+[
+ {
+  "id": "2026-12-22-feed-1",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-22-feed-1.png",
+  "checks": "O+W on-model, W letter fully visible (gift held low at hips); spelling OK; layout: headline top ~8% (above 14% band) -> use accept --scale/--top; holiday: gift + shield OK, no religious garments",
+  "notes": "headline starts high; feet at ~84% OK"
+ },
+ {
+  "id": "2026-12-23-x-1",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-23-x-1.png",
+  "checks": "R+O on-model (cocoa mug, holly nightcap, quilt; O cape/bow/muff/gift/heart shades); MUDDLE WEDNESDAY / FOUR WORDS. ONE PUNCHLINE. correct; center ~30% empty, mascots far left/right low; headline top ~11% (use accept --top/--scale); holiday OK",
+  "notes": "R cape edge reaches ~x33% - fine"
+ },
+ {
+  "id": "2026-12-23-feed-1",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-23-feed-1.png",
+  "checks": "I+O on-model; MUDDLE WEDNESDAY / CAPTION THIS. correct; empty plain band ~40-62% (retry 2 removed the cream card, shrank mascots); headline top 17%; holiday OK",
+  "notes": "2 retries used (v1 had cream card + headline at 5%)"
+ },
+ {
+  "id": "2026-12-24-pin-1",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-24-pin-1.png",
+  "checks": "D (Hanukkah sweater, gelt, beanie, glasses+pencil per hero) + O on-model, letters visible; HOW TO PLAY CROSSWORDOCIOUS / A NEW PUZZLE EVERY DAY. spelled right; headline top ~18.5%, bottom band calm; library windows checkered, no letters; no religious garments",
+  "notes": "hanukkiah in decor only"
+ },
+ {
+  "id": "2026-12-24-pin-2",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-24-pin-2.png",
+  "checks": "O+C on-model (antlers/bells/bib/pompoms; blue-silver scarf+beanie, dreidel, gelt at feet), letters visible; SKIES / WORD OF THE DAY correct; headline top ~13.5% (borderline), sub spans ~6-93% width; bottom band calm; dreidel carries a Hebrew glyph (same as costume art)",
+  "notes": "pompom touches Cosmo's scarf, minor"
+ },
+ {
+  "id": "2026-12-24-pin-3",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-24-pin-3.png",
+  "checks": "W,D,U,O,R all on-model, each once, letters visible (U lotus pose); HAPPY HOLIDAYS / FROM THE WHOLE CAST. correct; kinara 3 red-1 black-3 green all UNLIT (Kwanzaa not started); headline top ~11% (above 14% band -> use accept --scale/--top)",
+  "notes": "retry 1 fixed candles/pencil; headline still ~11%"
+ },
+ {
+  "id": "2026-12-24-x-1",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-24-x-1.png",
+  "checks": "W+R on-model (Rip now red-white nightcap w/ holly after 1 retry); WORD OF THE DAY QUIZ correct, no sub line; empty center band + mascots far left/right; headline top ~13.7%; holiday OK",
+  "notes": "1 retry used"
+ },
+ {
+  "id": "2026-12-25-feed-1",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-25-feed-1.png",
+  "checks": "U (lotus, kinara 3R-1B-3G all unlit) + D (gelt, pencil) on-model, letters visible; FRIDAY'S FINEST / BEST BOARD OF THE WEEK. correct; trophy + gifts; headline top ~11% (use accept --scale/--top); no religious garments",
+  "notes": "Star of David pattern appears on one gift wrap (decor)"
+ },
+ {
+  "id": "2026-12-25-x-1",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-25-x-1.png",
+  "checks": "C (dreidel, gelt, scarf, beanie) + S (kente sash/scarf/corn, angled determined brows) on-model, letters visible; FRIDAY'S FINEST / BEST BOARD OF THE WEEK. correct; rosette + gifts; headline top ~14.6% OK; no religious garments",
+  "notes": "gelt coins carry a small star (as costume art)"
+ },
+ {
+  "id": "2026-12-26-x-1",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-26-x-1.png",
+  "checks": "R on-model (red-white striped nightcap w/ holly, patchwork quilt wrap, cocoa mug, sleepy face), letter visible, once; RIP TAKES IT EASY / CAST SATURDAY correct; headline side-by-side right (top ~20%), bottom band calm; nightcap pom reaches ~12.7% (slight top-band intrusion, left side); holiday OK",
+  "notes": "composition is Rip left / headline right, not centered stack"
+ },
+ {
+  "id": "2026-12-27-x-1",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-27-x-1.png",
+  "checks": "S (angled brows, sash/scarf/corn), U (lotus, kinara day 2: flames only on black + leftmost red), I (scarf, earmuffs, mittens) on-model, letters visible; SWEEP SUNDAY / ALL 18 DAILIES. ONE DAY. correct; blank colored tiles; headline top ~10.7% (above 14% band); S/I feet reach ~91% (touch bottom 9% band) -> use accept --scale/--top",
+  "notes": "no religious garments"
+ },
+ {
+  "id": "2026-12-27-feed-1",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-27-feed-1.png",
+  "checks": "W,O(heart shades, gift/muff low, O ring fully visible),C(dreidel,gelt),U(lotus) on-model, once each; YOUR YEAR IN WORDS / COMING SOON. correct; clock face has tick marks only (no numerals/hands); kinara day 2 (flames only black + leftmost red); headline top ~12.5% (above 14% band -> accept --scale/--top)",
+  "notes": "1 retry used (v1 O half covered, 3 flames)"
+ },
+ {
+  "id": "2026-12-03-pin-2",
+  "status": "done",
+  "file": "docs/design/brand/social/jp45/incoming/full/2026-12-03-pin-2.png",
+  "checks": "Dewey on-model (blue dreidel sweater/beanie, round glasses, letter visible) reading a blank-page book under lamp, cocoa mug; BLISS / WORD OF THE DAY correct; headline top ~11.5% (above 14% band -> accept --scale/--top); feet ~79%",
+  "notes": "overwrote the earlier Opal version of 2026-12-03-pin-2.png; hint none"
+ }
+]
